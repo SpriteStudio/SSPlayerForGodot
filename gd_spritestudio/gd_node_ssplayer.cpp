@@ -516,6 +516,27 @@ bool GdNodeSsPlayer::_set( const StringName& p_name, const Variant& p_property )
 	if ( p_name == GdUiText( "anime_pack" ) ) {
 		setAnimePack( p_property );
 
+		if ( !m_ResAnimePack.is_null() ) {
+			SsAnimePack*	pAnimePack = m_ResAnimePack->getAnimePack();
+
+			if ( !pAnimePack ) {
+				return	true;
+			}
+
+			const std::vector<SsAnimation*>&	listAnimation = pAnimePack->animeList;
+
+			for ( int i = 0; i < listAnimation.size(); i++ ) {
+				SsAnimation*	pAnimation = listAnimation[i];
+
+				if ( !pAnimation->isSetup ) {
+					String	strName = String::utf8( pAnimation->name.c_str() );
+
+					setAnimation( strName );
+					break;
+				}
+			}
+		}
+
 		return	true;
 	}else
 	if ( p_name == GdUiText( "animation" ) ) {
