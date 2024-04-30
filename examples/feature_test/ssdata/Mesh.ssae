@@ -1,0 +1,486 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<SpriteStudioAnimePack version="2.00.04" edition="Professional" editorVersion="6.6.5">
+	<settings>
+		<fps>30</fps>
+		<frameCount>11</frameCount>
+		<sortMode>prio</sortMode>
+		<canvasSize>320 320</canvasSize>
+		<pivot>0 0</pivot>
+		<bgColor>FF323232</bgColor>
+		<gridSize>32</gridSize>
+		<gridColor>FF808080</gridColor>
+		<ik_depth>3</ik_depth>
+		<startFrame>0</startFrame>
+		<endFrame>10</endFrame>
+		<bgSettings>
+			<value>
+				<imagePath></imagePath>
+				<imageDisp>1</imageDisp>
+				<imageOffset>0 0</imageOffset>
+				<imageCanvas>0 0</imageCanvas>
+				<imagePivot>0 0</imagePivot>
+			</value>
+			<value>
+				<imagePath></imagePath>
+				<imageDisp>1</imageDisp>
+				<imageOffset>0 0</imageOffset>
+				<imageCanvas>0 0</imageCanvas>
+				<imagePivot>0 0</imagePivot>
+			</value>
+		</bgSettings>
+		<outStartNum>0</outStartNum>
+	</settings>
+	<name>Mesh</name>
+	<exportPath></exportPath>
+	<Model>
+		<partList>
+			<value>
+				<name>root</name>
+				<arrayIndex>0</arrayIndex>
+				<parentIndex>-1</parentIndex>
+				<type>null</type>
+				<boundsType>none</boundsType>
+				<inheritType>self</inheritType>
+				<ineheritRates>
+					<ALPH>1</ALPH>
+					<IFLH>0</IFLH>
+					<IFLV>0</IFLV>
+					<FLPH>0</FLPH>
+					<FLPV>0</FLPV>
+					<HIDE>0</HIDE>
+				</ineheritRates>
+				<alphaBlendType>mix</alphaBlendType>
+				<show>1</show>
+				<locked>0</locked>
+				<expandAttribute>0</expandAttribute>
+				<expandChildren>1</expandChildren>
+				<refCellTag></refCellTag>
+				<maskInfluence>1</maskInfluence>
+			</value>
+			<value>
+				<name>joint_1</name>
+				<arrayIndex>1</arrayIndex>
+				<parentIndex>0</parentIndex>
+				<type>joint</type>
+				<boundsType>none</boundsType>
+				<inheritType>parent</inheritType>
+				<ineheritRates>
+					<ALPH>1</ALPH>
+					<IFLH>0</IFLH>
+					<IFLV>0</IFLV>
+					<FLPH>0</FLPH>
+					<FLPV>0</FLPV>
+					<HIDE>0</HIDE>
+				</ineheritRates>
+				<alphaBlendType>mix</alphaBlendType>
+				<show>1</show>
+				<locked>0</locked>
+				<expandAttribute>0</expandAttribute>
+				<expandChildren>1</expandChildren>
+				<refCellTag></refCellTag>
+				<maskInfluence>1</maskInfluence>
+			</value>
+			<value>
+				<name>bone_1</name>
+				<arrayIndex>2</arrayIndex>
+				<parentIndex>1</parentIndex>
+				<type>armature</type>
+				<boundsType>none</boundsType>
+				<inheritType>parent</inheritType>
+				<ineheritRates>
+					<ALPH>1</ALPH>
+					<IFLH>0</IFLH>
+					<IFLV>0</IFLV>
+					<FLPH>0</FLPH>
+					<FLPV>0</FLPV>
+					<HIDE>0</HIDE>
+				</ineheritRates>
+				<alphaBlendType>mix</alphaBlendType>
+				<show>1</show>
+				<locked>0</locked>
+				<expandAttribute>0</expandAttribute>
+				<expandChildren>1</expandChildren>
+				<colorLabel>FFFF0000</colorLabel>
+				<refCellTag></refCellTag>
+				<boneLength>64</boneLength>
+				<bonePosition>-32 32</bonePosition>
+				<boneRotation>0</boneRotation>
+				<maskInfluence>1</maskInfluence>
+			</value>
+			<value>
+				<name>bone_2</name>
+				<arrayIndex>3</arrayIndex>
+				<parentIndex>1</parentIndex>
+				<type>armature</type>
+				<boundsType>none</boundsType>
+				<inheritType>parent</inheritType>
+				<ineheritRates>
+					<ALPH>1</ALPH>
+					<IFLH>0</IFLH>
+					<IFLV>0</IFLV>
+					<FLPH>0</FLPH>
+					<FLPV>0</FLPV>
+					<HIDE>0</HIDE>
+				</ineheritRates>
+				<alphaBlendType>mix</alphaBlendType>
+				<show>1</show>
+				<locked>0</locked>
+				<expandAttribute>0</expandAttribute>
+				<expandChildren>1</expandChildren>
+				<colorLabel>Green</colorLabel>
+				<refCellTag></refCellTag>
+				<boneLength>64</boneLength>
+				<bonePosition>-32 -32</bonePosition>
+				<boneRotation>0</boneRotation>
+				<maskInfluence>1</maskInfluence>
+			</value>
+			<value>
+				<name>mesh_skin</name>
+				<arrayIndex>4</arrayIndex>
+				<parentIndex>1</parentIndex>
+				<type>mesh</type>
+				<boundsType>none</boundsType>
+				<inheritType>parent</inheritType>
+				<meshWeightType>0</meshWeightType>
+				<meshWeightStrong>3</meshWeightStrong>
+				<ineheritRates>
+					<ALPH>1</ALPH>
+					<IFLH>0</IFLH>
+					<IFLV>0</IFLV>
+					<FLPH>0</FLPH>
+					<FLPV>0</FLPV>
+					<HIDE>0</HIDE>
+				</ineheritRates>
+				<alphaBlendType>mix</alphaBlendType>
+				<show>1</show>
+				<locked>0</locked>
+				<expandAttribute>0</expandAttribute>
+				<expandChildren>1</expandChildren>
+				<refCellTag></refCellTag>
+				<maskInfluence>1</maskInfluence>
+			</value>
+			<value>
+				<name>mesh_deform</name>
+				<arrayIndex>5</arrayIndex>
+				<parentIndex>0</parentIndex>
+				<type>mesh</type>
+				<boundsType>none</boundsType>
+				<inheritType>parent</inheritType>
+				<meshWeightType>0</meshWeightType>
+				<meshWeightStrong>3</meshWeightStrong>
+				<ineheritRates>
+					<ALPH>1</ALPH>
+					<IFLH>0</IFLH>
+					<IFLV>0</IFLV>
+					<FLPH>0</FLPH>
+					<FLPV>0</FLPV>
+					<HIDE>0</HIDE>
+				</ineheritRates>
+				<alphaBlendType>mix</alphaBlendType>
+				<show>1</show>
+				<locked>0</locked>
+				<expandAttribute>0</expandAttribute>
+				<expandChildren>1</expandChildren>
+				<refCellTag></refCellTag>
+				<maskInfluence>1</maskInfluence>
+			</value>
+		</partList>
+		<boneList>
+			<item key="bone_1">0</item>
+			<item key="bone_2">1</item>
+		</boneList>
+		<meshList>
+			<value>2 0 97 8.00 -8.00 1 3 8.00 56.00,1 0 100 24.00 -8.00,1 0 100 40.00 -8.00,2 0 97 56.00 -8.00 1 3 56.00 56.00,2 0 78 8.00 -24.00 1 22 8.00 40.00,2 0 87 24.00 -24.00 1 13 24.00 40.00,2 0 87 40.00 -24.00 1 13 40.00 40.00,2 0 78 56.00 -24.00 1 22 56.00 40.00,2 0 22 8.00 -40.00 1 78 8.00 24.00,2 0 13 24.00 -40.00 1 87 24.00 24.00,2 0 13 40.00 -40.00 1 87 40.00 24.00,2 0 22 56.00 -40.00 1 78 56.00 24.00,2 0 3 8.00 -56.00 1 97 8.00 8.00,1 1 100 24.00 8.00,1 1 100 40.00 8.00,2 0 3 56.00 -56.00 1 97 56.00 8.00,</value>
+			<value />
+		</meshList>
+	</Model>
+	<cellmapNames>
+		<value>common.ssce</value>
+	</cellmapNames>
+	<animeList>
+		<anime>
+			<name>Setup</name>
+			<overrideSettings>1</overrideSettings>
+			<settings>
+				<fps>30</fps>
+				<frameCount>1</frameCount>
+				<sortMode>prio</sortMode>
+				<canvasSize>320 320</canvasSize>
+				<pivot>0 0</pivot>
+				<bgColor>FF323232</bgColor>
+				<gridSize>32</gridSize>
+				<gridColor>FF808080</gridColor>
+				<ik_depth>3</ik_depth>
+				<startFrame>0</startFrame>
+				<endFrame>0</endFrame>
+				<bgSettings>
+					<value>
+						<imagePath></imagePath>
+						<imageDisp>1</imageDisp>
+						<imageOffset>0 0</imageOffset>
+						<imageCanvas>0 0</imageCanvas>
+						<imagePivot>0 0</imagePivot>
+					</value>
+					<value>
+						<imagePath></imagePath>
+						<imageDisp>1</imageDisp>
+						<imageOffset>0 0</imageOffset>
+						<imageCanvas>0 0</imageCanvas>
+						<imagePivot>0 0</imagePivot>
+					</value>
+				</bgSettings>
+				<outStartNum>0</outStartNum>
+			</settings>
+			<labels />
+			<guidelines />
+			<isSetup>1</isSetup>
+			<partAnimes>
+				<partAnime>
+					<partName>root</partName>
+					<attributes>
+						<attribute tag="HIDE">
+							<key time="0">
+								<value>0</value>
+							</key>
+						</attribute>
+					</attributes>
+				</partAnime>
+				<partAnime>
+					<partName>joint_1</partName>
+					<attributes>
+						<attribute tag="POSX">
+							<key time="0">
+								<value>-64</value>
+							</key>
+						</attribute>
+						<attribute tag="POSY">
+							<key time="0">
+								<value>0</value>
+							</key>
+						</attribute>
+						<attribute tag="ROTZ">
+							<key time="0">
+								<value>0</value>
+							</key>
+						</attribute>
+						<attribute tag="HIDE">
+							<key time="0">
+								<value>0</value>
+							</key>
+						</attribute>
+					</attributes>
+				</partAnime>
+				<partAnime>
+					<partName>bone_1</partName>
+					<attributes>
+						<attribute tag="HIDE">
+							<key time="0">
+								<value>0</value>
+							</key>
+						</attribute>
+					</attributes>
+				</partAnime>
+				<partAnime>
+					<partName>bone_2</partName>
+					<attributes>
+						<attribute tag="HIDE">
+							<key time="0">
+								<value>0</value>
+							</key>
+						</attribute>
+					</attributes>
+				</partAnime>
+				<partAnime>
+					<partName>mesh_skin</partName>
+					<attributes>
+						<attribute tag="CELL">
+							<key time="0">
+								<value>
+									<mapId>0</mapId>
+									<name>Check_grid</name>
+								</value>
+							</key>
+						</attribute>
+						<attribute tag="POSX">
+							<key time="0">
+								<value>0</value>
+							</key>
+						</attribute>
+						<attribute tag="POSY">
+							<key time="0">
+								<value>0</value>
+							</key>
+						</attribute>
+						<attribute tag="ROTZ">
+							<key time="0">
+								<value>0</value>
+							</key>
+						</attribute>
+						<attribute tag="HIDE">
+							<key time="0">
+								<value>0</value>
+							</key>
+						</attribute>
+					</attributes>
+				</partAnime>
+				<partAnime>
+					<partName>mesh_deform</partName>
+					<attributes>
+						<attribute tag="CELL">
+							<key time="0">
+								<value>
+									<mapId>0</mapId>
+									<name>Check_grid</name>
+								</value>
+							</key>
+						</attribute>
+						<attribute tag="POSX">
+							<key time="0">
+								<value>64</value>
+							</key>
+						</attribute>
+						<attribute tag="POSY">
+							<key time="0">
+								<value>0</value>
+							</key>
+						</attribute>
+						<attribute tag="ROTZ">
+							<key time="0">
+								<value>0</value>
+							</key>
+						</attribute>
+						<attribute tag="HIDE">
+							<key time="0">
+								<value>0</value>
+							</key>
+						</attribute>
+					</attributes>
+				</partAnime>
+			</partAnimes>
+		</anime>
+		<anime>
+			<name>anime_1</name>
+			<overrideSettings>1</overrideSettings>
+			<settings>
+				<fps>30</fps>
+				<frameCount>11</frameCount>
+				<sortMode>prio</sortMode>
+				<canvasSize>320 320</canvasSize>
+				<pivot>0 0</pivot>
+				<bgColor>FF323232</bgColor>
+				<gridSize>32</gridSize>
+				<gridColor>FF808080</gridColor>
+				<ik_depth>3</ik_depth>
+				<startFrame>0</startFrame>
+				<endFrame>10</endFrame>
+				<bgSettings>
+					<value>
+						<imagePath></imagePath>
+						<imageDisp>1</imageDisp>
+						<imageOffset>0 0</imageOffset>
+						<imageCanvas>0 0</imageCanvas>
+						<imagePivot>0 0</imagePivot>
+					</value>
+					<value>
+						<imagePath></imagePath>
+						<imageDisp>1</imageDisp>
+						<imageOffset>0 0</imageOffset>
+						<imageCanvas>0 0</imageCanvas>
+						<imagePivot>0 0</imagePivot>
+					</value>
+				</bgSettings>
+				<outStartNum>0</outStartNum>
+			</settings>
+			<labels />
+			<guidelines />
+			<isSetup>0</isSetup>
+			<partAnimes>
+				<partAnime>
+					<partName>root</partName>
+					<attributes>
+						<attribute tag="HIDE">
+							<key time="0">
+								<value>0</value>
+							</key>
+						</attribute>
+					</attributes>
+				</partAnime>
+				<partAnime>
+					<partName>bone_1</partName>
+					<attributes>
+						<attribute tag="POSX">
+							<key time="0" ipType="linear">
+								<value>-32</value>
+							</key>
+						</attribute>
+						<attribute tag="POSY">
+							<key time="0" ipType="linear">
+								<value>32</value>
+							</key>
+						</attribute>
+						<attribute tag="ROTZ">
+							<key time="0" ipType="linear">
+								<value>0</value>
+							</key>
+							<key time="10" ipType="linear">
+								<value>90.0924606323242</value>
+							</key>
+						</attribute>
+						<attribute tag="HIDE">
+							<key time="0">
+								<value>0</value>
+							</key>
+						</attribute>
+					</attributes>
+				</partAnime>
+				<partAnime>
+					<partName>bone_2</partName>
+					<attributes>
+						<attribute tag="POSX">
+							<key time="0" ipType="linear">
+								<value>-32</value>
+							</key>
+						</attribute>
+						<attribute tag="POSY">
+							<key time="0" ipType="linear">
+								<value>-32</value>
+							</key>
+						</attribute>
+						<attribute tag="ROTZ">
+							<key time="0" ipType="linear">
+								<value>0</value>
+							</key>
+							<key time="10" ipType="linear">
+								<value>-92.9098434448242</value>
+							</key>
+						</attribute>
+						<attribute tag="HIDE">
+							<key time="0">
+								<value>0</value>
+							</key>
+						</attribute>
+					</attributes>
+				</partAnime>
+				<partAnime>
+					<partName>mesh_deform</partName>
+					<attributes>
+						<attribute tag="DEFM">
+							<key time="0" ipType="linear">
+								<value>
+									<vsize>16</vsize>
+									<vchg>0 </vchg>
+								</value>
+							</key>
+							<key time="10" ipType="linear">
+								<value>
+									<vsize>16</vsize>
+									<vchg>8 0 -6.50 8.00 3 7.00 7.25 5 -8.25 8.00 6 10.25 8.25 9 -8.25 -7.25 10 9.25 -8.75 12 -8.00 -8.50 15 8.50 -9.50 </vchg>
+								</value>
+							</key>
+						</attribute>
+					</attributes>
+				</partAnime>
+			</partAnimes>
+		</anime>
+	</animeList>
+</SpriteStudioAnimePack>

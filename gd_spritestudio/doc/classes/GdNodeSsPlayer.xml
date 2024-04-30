@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="GdNodeSsPlayer" inherits="Node2D" version="3.6" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../class.xsd">
+	<brief_description>
+	</brief_description>
+	<description>
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="get_animation" qualifiers="const">
+			<return type="String" />
+			<description>
+			</description>
+		</method>
+		<method name="get_anime_pack" qualifiers="const">
+			<return type="String" />
+			<description>
+			</description>
+		</method>
+		<method name="get_end_frame" qualifiers="const">
+			<return type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="get_fps" qualifiers="const">
+			<return type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="get_frame" qualifiers="const">
+			<return type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="get_loop" qualifiers="const">
+			<return type="bool" />
+			<description>
+			</description>
+		</method>
+		<method name="get_play" qualifiers="const">
+			<return type="bool" />
+			<description>
+			</description>
+		</method>
+		<method name="get_start_frame" qualifiers="const">
+			<return type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="pause">
+			<return type="void" />
+			<argument index="0" name="b" type="bool" />
+			<description>
+			</description>
+		</method>
+		<method name="play">
+			<return type="void" />
+			<description>
+			</description>
+		</method>
+		<method name="set_animation">
+			<return type="void" />
+			<argument index="0" name="name" type="String" />
+			<description>
+			</description>
+		</method>
+		<method name="set_anime_pack">
+			<return type="void" />
+			<argument index="0" name="name" type="String" />
+			<description>
+			</description>
+		</method>
+		<method name="set_frame">
+			<return type="void" />
+			<argument index="0" name="frame" type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="set_loop">
+			<return type="void" />
+			<argument index="0" name="loop" type="bool" />
+			<description>
+			</description>
+		</method>
+		<method name="set_play">
+			<return type="void" />
+			<argument index="0" name="play" type="bool" />
+			<description>
+			</description>
+		</method>
+		<method name="stop">
+			<return type="void" />
+			<description>
+			</description>
+		</method>
+	</methods>
+	<members>
+		<member name="res_player" type="GdResourceSsPlayer" setter="set_player_resource" getter="get_player_resource">
+		</member>
+	</members>
+	<signals>
+		<signal name="animation_changed">
+			<argument index="0" name="name" type="String" />
+			<description>
+			</description>
+		</signal>
+		<signal name="animation_finished">
+			<argument index="0" name="name" type="String" />
+			<description>
+			</description>
+		</signal>
+		<signal name="anime_pack_changed">
+			<argument index="0" name="name" type="String" />
+			<description>
+			</description>
+		</signal>
+		<signal name="frame_changed">
+			<argument index="0" name="frame" type="int" />
+			<description>
+			</description>
+		</signal>
+		<signal name="signal">
+			<argument index="0" name="command" type="String" />
+			<argument index="1" name="value" type="Dictionary" />
+			<description>
+			</description>
+		</signal>
+		<signal name="user_data">
+			<argument index="0" name="flag" type="int" />
+			<argument index="1" name="int_value" type="int" />
+			<argument index="2" name="rect_value" type="Rect2" />
+			<argument index="3" name="point_value" type="Vector2" />
+			<argument index="4" name="string_value" type="String" />
+			<description>
+			</description>
+		</signal>
+	</signals>
+	<constants>
+	</constants>
+</class>

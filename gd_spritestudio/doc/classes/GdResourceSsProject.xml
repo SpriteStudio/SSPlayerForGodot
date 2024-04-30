@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="GdResourceSsProject" inherits="Resource" version="3.6" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../class.xsd">
+	<brief_description>
+	</brief_description>
+	<description>
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="get_anime_pack_count" qualifiers="const">
+			<return type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="get_anime_pack_names" qualifiers="const">
+			<return type="PoolStringArray" />
+			<description>
+			</description>
+		</method>
+		<method name="get_anime_pack_resource" qualifiers="const">
+			<return type="GdResourceSsAnimePack" />
+			<argument index="0" name="name" type="String" />
+			<description>
+			</description>
+		</method>
+		<method name="get_cell_map_count" qualifiers="const">
+			<return type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="get_cell_map_names" qualifiers="const">
+			<return type="PoolStringArray" />
+			<description>
+			</description>
+		</method>
+		<method name="get_cell_map_resource" qualifiers="const">
+			<return type="GdResourceSsCellMap" />
+			<argument index="0" name="index" type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="get_effect_count" qualifiers="const">
+			<return type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="get_effect_names" qualifiers="const">
+			<return type="PoolStringArray" />
+			<description>
+			</description>
+		</method>
+		<method name="get_effect_resource" qualifiers="const">
+			<return type="GdResourceSsEffect" />
+			<argument index="0" name="index" type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="set_anime_pack_resource">
+			<return type="void" />
+			<argument index="0" name="res_anime_pack" type="GdResourceSsAnimePack" />
+			<argument index="1" name="name" type="String" />
+			<description>
+			</description>
+		</method>
+		<method name="set_cell_map_resource">
+			<return type="void" />
+			<argument index="0" name="res_cell_map" type="GdResourceSsCellMap" />
+			<argument index="1" name="index" type="int" />
+			<description>
+			</description>
+		</method>
+		<method name="set_effect_resource">
+			<return type="void" />
+			<argument index="0" name="res_effect" type="GdResourceSsEffect" />
+			<argument index="1" name="index" type="int" />
+			<description>
+			</description>
+		</method>
+	</methods>
+	<constants>
+	</constants>
+</class>

@@ -1,0 +1,23 @@
+﻿#!/usr/bin/env python
+
+Import("env")
+Import("env_modules")
+
+env_gd_spritestudio = env_modules.Clone()
+
+env_gd_spritestudio.add_source_files(env.modules_sources, "*.cpp")
+env_gd_spritestudio.add_source_files(env.modules_sources, "SpriteStudio6-SDK/Common/Loader/tinyxml2/*.cpp")
+env_gd_spritestudio.add_source_files(env.modules_sources, "SpriteStudio6-SDK/Common/Loader/*.cpp")
+env_gd_spritestudio.add_source_files(env.modules_sources, "SpriteStudio6-SDK/Common/Helper/*.cpp")
+env_gd_spritestudio.add_source_files(env.modules_sources, "SpriteStudio6-SDK/Common/Animator/*.cpp")
+
+env_gd_spritestudio.Append(CPPDEFINES = '_NOTUSE_STBI')
+env_gd_spritestudio.Append(CPPDEFINES = '_NOTUSE_TEXTURE_FULLPATH')
+env_gd_spritestudio.Append(CPPDEFINES = '_NOTUSE_EXCEPTION')
+
+env_gd_spritestudio.Append(
+	CPPPATH=[
+		"SpriteStudio6-SDK/Common/Loader",
+		"SpriteStudio6-SDK/Common/Helper",
+		"SpriteStudio6-SDK/Common/Animator",
+	])
