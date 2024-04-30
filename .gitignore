@@ -1,7 +1,4 @@
-gd_spritestudio/__pycache__/
 *.obj
 .vscode/
-/gd_spritestudio/SpriteStudio6-SDK
 /godot
-/gd_spritestudio/*.o
 .godot

@@ -64,14 +64,10 @@ brew install scons
 ## Godot と SpriteStudio SDK の取得 (Windows/Mac 共通)
 
 本リポジトリをクローンし、リポジトリルートから以下のコマンドを実行します。  
-サブモジュール化を検討中
 
 ```bat
 git clone https://github.com/godotengine/godot.git -b 3.x
-pushd gd_spritestudio
-git clone https://github.com/SpriteStudio/SpriteStudio6-SDK.git 
-pushd SpriteStudio6-SDK
-popd
+git submodule update --init --recursive
 popd
 ```
 
