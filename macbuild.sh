@@ -1,6 +1,7 @@
-#!/bin/bash
-_BUILD_ARCH=x86_64
+#!/bin/bash -e
 
+HOST_ARCH=$(uname -m)
+_BUILD_ARCH=${HOST_ARCH}
 if [ $# -ge 1 ]; then
     _BUILD_ARCH=$1
 fi
