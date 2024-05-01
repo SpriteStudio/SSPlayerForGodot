@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/zsh
 
 # for x86
-./macbuild.sh x86_64
+./macbuild.sh arch:x86_64

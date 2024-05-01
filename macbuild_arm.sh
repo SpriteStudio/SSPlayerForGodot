@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/zsh
 
 # for ARM64
-./macbuild.sh arm64
+./macbuild.sh arch:arm64
