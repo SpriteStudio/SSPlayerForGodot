@@ -1,0 +1,20 @@
+diff --git a/platform/osx/detect.py b/platform/osx/detect.py
+index a36e5a9d78..bc4d9c6930 100644
+--- a/platform/osx/detect.py
++++ b/platform/osx/detect.py
+@@ -106,8 +106,13 @@ def configure(env):
+             env["AS"] = mpprefix + "/libexec/llvm-" + mpclangver + "/bin/llvm-as"
+             env.Append(CPPDEFINES=["__MACPORTS__"])  # hack to fix libvpx MM256_BROADCASTSI128_SI256 define
+         else:
+-            env["CC"] = "clang"
+-            env["CXX"] = "clang++"
++            ccache_path = os.environ.get("CCACHE")
++            if ccache_path is None:
++                env["CC"] = "clang"
++                env["CXX"] = "clang++"
++            else:
++                env["CC"] = ccache_path + " clang"
++                env["CXX"] = ccache_path + " clang++"
+ 
+         detect_darwin_sdk_path("osx", env)
+         env.Append(CCFLAGS=["-isysroot", "$MACOS_SDK_PATH"])

@@ -1,0 +1,20 @@
+diff --git a/platform/macos/detect.py b/platform/macos/detect.py
+index 382828a082..a48920a639 100644
+--- a/platform/macos/detect.py
++++ b/platform/macos/detect.py
+@@ -151,8 +151,13 @@ def configure(env: "Environment"):
+             env["RANLIB"] = mpprefix + "/libexec/llvm-" + mpclangver + "/bin/llvm-ranlib"
+             env["AS"] = mpprefix + "/libexec/llvm-" + mpclangver + "/bin/llvm-as"
+         else:
+-            env["CC"] = "clang"
+-            env["CXX"] = "clang++"
++            ccache_path = os.environ.get("CCACHE")
++            if ccache_path is None:
++                env["CC"] = "clang"
++                env["CXX"] = "clang++"
++            else:
++                env["CC"] = ccache_path + " clang"
++                env["CXX"] = ccache_path + " clang++"
+ 
+         detect_darwin_sdk_path("macos", env)
+         env.Append(CCFLAGS=["-isysroot", "$MACOS_SDK_PATH"])
