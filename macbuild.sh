@@ -1,23 +1,15 @@
 #!/bin/zsh -e
 
-if ! declare -p CCACHE > /dev/null 2>&1; then
-    if type "sccache" > /dev/null; then
-        export CCACHE=sccache
-    elif type "ccache" > /dev/null; then
-        export CCACHE=ccache
-    fi
-    echo "set ${CCACHE} as CCACHE"
-    export _USE_DEFAULT_CCACHE=1
-fi
-
 HOST_ARCH=$(uname -m)
 pushd godot > /dev/null
 GODOT_BRANCH=$(git branch --show-current | sed -e "s/[\r\n]\+//g")
+GODOT_TAG=$(git describe --tags --abbrev=0 | sed -e "s/[\r\n]\+//g")
 popd > /dev/null
 
 declare -A args=(
-  ["version"]="3.x"
   ["arch"]=${HOST_ARCH}
+  ["ccache"]="false"
+  ["version"]="3.x"
 )
 
 while (( $# > 0 )); do
@@ -32,13 +24,35 @@ while (( $# > 0 )); do
   fi
 done
 
-# Godot
+echo "arguments"
+for key in ${(k)args}; do
+  echo "  $key => $args[$key]"
+done
+echo ""
+
+# ccache
+if [[ ${args[ccache]} == "true" ]]; then
+    if ! declare -p CCACHE > /dev/null 2>&1; then
+        if type "sccache" > /dev/null; then
+            export CCACHE=sccache
+            export _USE_DEFAULT_CCACHE=1
+        elif type "ccache" > /dev/null; then
+            export CCACHE=ccache
+            export _USE_DEFAULT_CCACHE=1
+        fi
+        echo "set ${CCACHE} as CCACHE"
+    fi
+fi
+
+# Godot Version
 if [[ -n $GODOT_BRANCH ]]; then
     VERSION=${GODOT_BRANCH}
+elif [[ -n $GODOT_TAG ]]; then
+    VERSION=${GODOT_TAG}
 else
     VERSION=${args[version]}
 fi
-echo "VERSION: ${VERSION}"
+echo "Godot Version: ${VERSION}"
 
 if [[ ${VERSION} = *"3."* ]]; then
     # 3.x
@@ -53,8 +67,11 @@ else
 fi
 
 pushd godot
-git checkout platform/${args[platform]}/detect.py
-git apply ../misc/ccache/${args[platform]}_ccache.patch
+# enable ccache on Godot
+if [[ ${args[ccache]} == "true" ]]; then
+  git checkout platform/${args[platform]}/detect.py
+  git apply ../misc/ccache/${args[platform]}_ccache.patch
+fi
 
 scons platform=${args[platform]} arch=${args[arch]} compiledb=yes custom_modules="../gd_spritestudio"
 
@@ -65,7 +82,10 @@ scons platform=${args[platform]} arch=${args[arch]} compiledb=yes custom_modules
 /bin/chmod +x Godot.app/Contents/MacOS/Godot 
 codesign --force --timestamp --options=runtime --entitlements misc/dist/${args[platform]}/editor.entitlements -s - Godot.app
 
-git checkout platform/${args[platform]}/detect.py
+# revert enabling ccache on Godot
+if [[ ${args[ccache]} == "true" ]]; then
+  git checkout platform/${args[platform]}/detect.py
+fi
 popd
 
 if [[ _USE_DEFAULT_CCACHE -eq 1 ]]; then
