@@ -2,159 +2,153 @@
 
 # はじめに
 
-本プラグインは OPTPiX SpriteStudio で作成したアニメーションを Godot エンジン上で再生するためのプラグインです。  
+本プラグインは [OPTPiX SpriteStudio](https://www.webtech.co.jp/spritestudio/index.html) で作成したアニメーションを [Godot Engine](https://godotengine.org/) 上で再生するためのプラグインです。  
 実行時パフォーマンスを優先するためC++モジュールの形態になっています。  
 このため後述のビルド環境のセットアップが必要になります。  
 
-### 対応する OPTPiX SpriteStudio のバージョン
+## 対応する [OPTPiX SpriteStudio](https://www.webtech.co.jp/spritestudio/index.html) のバージョン
 
 Ver.6 と Ver.7 に対応しています。  
 ただし、Ver.7.1 で追加された新機能(テキスト、サウンド等)には未対応です。  
 
-### 対応する [Godot Engine](https://github.com/godotengine/godot) のバージョン
+## 対応する [Godot Engine](https://github.com/godotengine/godot) のバージョン
 
-#### 2024/04/30時点の対応状況
-- 3.x ブランチでWindows/Macでビルド、および実行を確認しています。
-- 4.2 ブランチに現在対応中です。
+### 2024/04/30時点の対応状況
+- [3.x ブランチ](https://github.com/godotengine/godot/tree/3.x)でWindows/Macでビルド、および実行を確認しています。
+- [4.2 ブランチ](https://github.com/godotengine/godot/tree/4.2)に現在対応中です。
 
 # ビルド環境の構築
 
 以降でビルド環境の構築手順について説明していきます。  
 
-## ビルドツールのセットアップ
+## Windows
 
-### Windows
-
-Godot公式のコンパイル手順  
-https://docs.godotengine.org/en/stable/contributing/development/compiling/compiling_for_windows.html
-※4.x 系のページのみ存在 (2024/02/22時点)
+[Godot公式のコンパイル手順](https://docs.godotengine.org/en/stable/contributing/development/compiling/compiling_for_windows.html)
 
 必要なツール
 * VisualStudio 2017 or 2019(推奨)
   * or MSYS2 + MinGW + gcc + make
 * Python 3.6 以降
-* scons
+* scons 3.0 以降
 
 VisualStudio 2019 でのビルド・デバッグを確認しています。
 
-sconsは下記でインストールできます。(上記リンクにも記載あり)
+scons は下記でインストールできます。(上記リンクにも記載あり)
 
-```
+```bat
 python -m pip install scons
 ```
 
-### macOS
+## macOS
 
-Godot公式のコンパイル手順  
-https://docs.godotengine.org/ja/4.x/contributing/development/compiling/compiling_for_macos.html
+[Godot公式のコンパイル手順](https://docs.godotengine.org/ja/4.x/contributing/development/compiling/compiling_for_macos.html)
 
 必要なツール
 * Xcode
-* Python3.6 以降
-* scons
+* Python 3.6 以降
+* scons 3.0 以降
+* Vulkan SDK for MoltenVK (4 対応用)
 
-scons はHomebrewでインストールができます。
+scons は [Homebrew](https://brew.sh/
+) でインストールができます。
 
-https://brew.sh/
-
-```
+```sh
 brew install scons
 ```
 
-## Godot と SpriteStudio SDK の取得 (Windows/Mac 共通)
+Vulkan SDK for MoltenVK はホストのアーキテクチャのバイナリのみをサポートする Godot Engine をビルドする場合は [Homebrew](https://brew.sh/) で MoltenVK をインストールができます。
 
-本リポジトリをクローンし、リポジトリルートから以下のコマンドを実行します。  
+```sh
+brew install molten-vk
+```
+
+ホストアーキテクチャとは異なるアーキテクチャの Godot Engine を生成する場合や、Universal Binary な Godot Engine を生成する場合は、 [Vulkan SDK for MoltenVK](https://vulkan.lunarg.com/sdk/home) をインストールしてください。
+
+
+# ソース取得
+本リポジトリをクローンしてください。
+
+```sh
+git clone https://github.com/SpriteStudio/SSPlayerForGodot.git
+```
+
+SSPlayerForGodot ディレクトリから以下のコマンドを実行し、 Godot Engine と SpriteStudio SDK を取得します。
 
 ```bat
 git clone https://github.com/godotengine/godot.git -b 3.x
 git submodule update --init --recursive
-popd
 ```
 
-ルートにある setup.bat で上記を行っています。
+[setup.bat](./setup.bat) で上記を行っています。
 
-## ビルド
+# ビルド
 
-### Windowsでのビルド  
+## Windowsでのビルド  
 
 ```bat
 pushd godot
 scons platform=windows vsproj=yes compiledb=yes custom_modules="../gd_spritestudio"
 popd
 ```
-上記は makesln.bat に該当します。
+上記は [makesln.bat](./makesln.bat) に該当します。
 
-### Macでのビルド  
+## Macでのビルド  
 
-`./godot` フォルダに移動し、ビルドするアーキテクチャに応じて下記を実行します。
-
-#### Intel
-
-```sh
-scons platform=osx arch=x86_64 compiledb=yes custom_modules="../gd_spritestudio"
-```
-
-#### Apple Silicon
+[macbuild.sh](./macbuild.sh) でビルド可能です。
+引数を指定しない場合は、ホストマシンのアーキテクチャと同じアーキテクチャ向けにビルドします。
 
 ```sh
-scons platform=osx arch=arm64 compiledb=yes custom_modules="../gd_spritestudio"
+./macbuild.sh
 ```
 
-#### Universal
+アーキテクチャを明示的に指定する場合は `arch:` に引数を追加してください。 (ホストアーキテクチャと異なる Godot Engine をビルドする場合は Universal Binary 対応の [Vulkan SDK for MoltenVK](https://vulkan.lunarg.com/sdk/home) をインストールしてください。)
 
-上記を二つをビルドし
+
+arm64 (Apple Silicon)
 
 ```sh
-lipo -create bin/godot.macos.tools.x86_64 bin/godot.macos.tools.arm64 -output bin/godot.macos.tools.universal
+./macbuild.sh arch:arm64
 ```
 
-でアプリの形態にします。  
-Godot 内にアプリのテンプレートが用意されているのでそちらを利用します。
-
-`godot`フォルダ直下で下記を実行します。
+x86_64 (Intel)
 
 ```sh
-rm -rf ./Godot.app
-cp -r misc/dist/osx_tools.app ./Godot.app
-mkdir -p Godot.app/Contents/MacOS
-cp bin/godot.osx.tools.x86_64 Godot.app/Contents/MacOS/Godot
-chmod +x Godot.app/Contents/MacOS/Godot 
-codesign --force --timestamp --options=runtime --entitlements misc/dist/osx/editor.entitlements -s - Godot.app
+./macbuild.sh arch:x86_64
 ```
 
-`cp bin/godot.osx.tools.x86_64` の末尾の `x86_64` は、Apple Silicon の場合は、`arm64` に、
-Universalの場合は`universal` に書き換えてください。
+Universal Binary (supports both arm64 and x86_64)
 
-macbuild.sh には上述のビルドからアプリの形態にしてデフォルトの署名を施すまでの処理が記述されています。  
-第一引数にアーキテクチャ(x86_64, arm64 )を指定できます。 
-省略するとx86_64になります。  
+```sh
+./macbuild.sh arch:universal
+```
+
 
 `Godot.app` を開いて起動を確認します。
 
 ビルド環境の構築については以上です。
 
-## 使い方
+# 使い方
 
-### SpriteStudioデータのインポート
+## SpriteStudioデータのインポート
 
 SpriteStudioデータのインポート手順について説明します。  
 現在の SpriteStudio for Godot プラグインでは sspj ファイルを直接指定する形態になっています。  
 ご利用のプロジェクト下のフォルダに sspj、ssae、ssce と画像ファイルなどの一式を配置します。  
 
-### SpriteStudioノードの作成と sspj ファイルの指定
+## SpriteStudioノードの作成と sspj ファイルの指定
 
 1. 「Node を新規作成」から「GdNodeSsPlayer」を選択し、「作成」ボタンを押します。
 2. インスペクターの「Res Player」から「新規 GdResourceSsPlayer」を選択します。
 3. GdResourceSsPlayer の「Res Project」から「読み込み」を選択します。
 4. 「ファイルを開く」ダイアログから「*.sspj」ファイルを選択して開きます。
 
-### アニメーションの指定
+## アニメーションの指定
 
 1. 「Animation Settings」を展開「Anime Pack」から再生させる「*.ssae」ファイルを選択します。
 2. 続いて「Animation」から再生させるアニメーションを選択します。
 3. Frame をドラッグしたり、Play フラグをオンにすることでプレビューできます。
 
-#### インスペクターの各プロパティの意味
+### インスペクターの各プロパティの意味
 
 ![image](./doc_images/ssnode_inspector.png)
 
@@ -300,33 +294,33 @@ value：パラメータ名と値のコレクション
   - SpriteStudio公式の一部のみ対応しています。
   - カスタムシェーダーは独自に追加・対応する必要があります。
 
-## サンプル
+# サンプル
 
 examples フォルダにサンプルプロジェクトがあります。  
 
-### feature_test
+## [feature_test](./examples/feature_test)
 
 基本機能のテストプロジェクトです。  
 以下のシーンがあります。  
 
-- v6_feature.tscn
+- [v6_feature.tscn](./examples/feature_test/v6_feature.tscn)
   - SpriteStudio v6.0~v7.0 までの各機能の再生状態を確認できます。
   - 確認したい機能ノードの可視性を有効にしてください。
   - Signal、UserData はそれぞれシグナル、ユーザーデータのキーに到達したタイミングでGodotのシグナルを発行するようになっています。
   - シーンを実行するとコンソールに受信したパラメータが出力されます。
   - ssdata サブフォルダにインポート元のプロジェクトファイル(v6_all.sspj)があります。
-- sspj_load.tscn
+- [sspj_load.tscn](./examples/feature_test/sspj_load.tscn)
   - GDスクリプトからSSプロジェクトをロードしアニメーションを指定して再生するサンプルです。
   - アニメーション終了時に別のSSプロジェクトに読み替えるようになっています。
-- texture_change.tscn
+- [texture_change.tscn](./examples/feature_test/texture_change.tscn)
   - 再生中にセルマップリソースのテクスチャを変更するサンプルです。
   - インスペクタにある Change のチェックをOn/Offすると切り替わります。
 
-### mesh_bone
+## [mesh_bone](./examples/mesh_bone)
 
 メッシュ、ボーン、エフェクトなどを利用したキャラクターアニメのサンプルです。
 
-### particle_effect
+## [particle_effect](./examples/particle_effect)
 
 エフェクト機能を利用したサンプルです。  
 シーンに表示されるアニメーションは40種類のうちの一部になります。  
