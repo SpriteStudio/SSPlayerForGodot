@@ -9,6 +9,7 @@ popd > /dev/null
 declare -A opts=(
   # Godot Build Options
   ["arch"]=${HOST_ARCH}
+  ["scons_opts"]=""
 
   # Build Options
   ["ccache"]="false"
@@ -69,25 +70,38 @@ else
     opts[app_bin]="godot.macos.editor"
 fi
 
+if [[ ${opts[arch]:l} == "universal" ]]; then
+    ARCHES=('arm64' 'x86_64')
+else
+    ARCHES=${opts[arch]}
+fi
+
 pushd godot
 # enable ccache on Godot
 if [[ ${opts[ccache]} == "true" ]]; then
-  git checkout platform/${opts[platform]}/detect.py
-  git apply ../misc/ccache/${opts[platform]}_ccache.patch
+    git checkout platform/${opts[platform]}/detect.py
+    git apply ../misc/ccache/${opts[platform]}_ccache.patch
 fi
 
-scons platform=${opts[platform]} arch=${opts[arch]} compiledb=yes custom_modules="../gd_spritestudio"
+for arch in $ARCHES; do
+    echo "build target arch: $arch"
+    echo "${opts[scons_opts]}"
+    scons platform=${opts[platform]} arch=${arch} compiledb=yes custom_modules="../gd_spritestudio" ${opts[scons_opts]}
+done
 
 /bin/rm -rf ./Godot.app
 /bin/cp -r misc/dist/${opts[app_template]} ./Godot.app
 /bin/mkdir -p Godot.app/Contents/MacOS
+if [[ ${opts[arch]:l} == "universal" ]]; then
+    lipo -create bin/${opts[app_bin]}.arm64 bin/${opts[app_bin]}.x86_64 -output bin/${opts[app_bin]}.${opts[arch]}
+fi
 /bin/cp bin/${opts[app_bin]}.${opts[arch]} Godot.app/Contents/MacOS/Godot
 /bin/chmod +x Godot.app/Contents/MacOS/Godot 
 codesign --force --timestamp --options=runtime --entitlements misc/dist/${opts[platform]}/editor.entitlements -s - Godot.app
 
 # revert enabling ccache on Godot
 if [[ ${opts[ccache]} == "true" ]]; then
-  git checkout platform/${opts[platform]}/detect.py
+    git checkout platform/${opts[platform]}/detect.py
 fi
 popd
 
