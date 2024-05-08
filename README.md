@@ -6,7 +6,7 @@
 
 実行時パフォーマンスを優先するため C++ モジュールの形態になっています。
 SpriteStudioPlayer for Godot を利用する場合、SpriteStudioPlayer のカスタムモジュールを組み込んだ Godot Engine の Editor を手元でビルドする必要があります。
-このため、後述の[ビルド環境のセットアップ](#ビルド環境のセットアップ)が必要になります。  
+このため、後述の[ビルド](#ビルド)が必要になります。  
 
 ## 対応する [OPTPiX SpriteStudio](https://www.webtech.co.jp/spritestudio/index.html) のバージョン
 
@@ -19,53 +19,8 @@ Ver.6 と Ver.7 に対応しています。
 - [3.x ブランチ](https://github.com/godotengine/godot/tree/3.x)でWindows/Macでビルド、および実行を確認しています。
 - [4.2 ブランチ](https://github.com/godotengine/godot/tree/4.2)に現在対応中です。
 
-# ビルド環境のセットアップ
-
-以降でビルド環境の構築手順について説明していきます。  
-
-## Windows
-
-[Godot公式のコンパイル手順](https://docs.godotengine.org/en/stable/contributing/development/compiling/compiling_for_windows.html)
-
-必要なツール
-* VisualStudio 2017 or 2019(推奨)
-  * or MSYS2 + MinGW + gcc + make
-* Python 3.6 以降
-* scons 3.0 以降
-
-VisualStudio 2019 でのビルド・デバッグを確認しています。
-
-scons は下記でインストールできます。(上記リンクにも記載あり)
-
-```bat
-python -m pip install scons
-```
-
-## macOS
-
-[Godot公式のコンパイル手順](https://docs.godotengine.org/ja/4.x/contributing/development/compiling/compiling_for_macos.html)
-
-必要なツール
-* Xcode
-* Python 3.6 以降
-* scons 3.0 以降
-* Vulkan SDK for MoltenVK (4 対応用)
-
-scons は [Homebrew](https://brew.sh/) でインストールができます。
-
-```sh
-brew install scons
-```
-
-Vulkan SDK for MoltenVK も [Homebrew](https://brew.sh/) でインストール可能です。 
-
-```sh
-brew install molten-vk
-```
-
-ホストアーキテクチャとは異なるアーキテクチャの Godot Engine を生成する場合や、Universal Binary な Godot Engine を生成する場合は、 [Vulkan SDK for MoltenVK](https://vulkan.lunarg.com/sdk/home) をインストールしてください。
-
 # ソース取得
+
 本リポジトリをクローンしてください。
 
 ```sh
@@ -83,7 +38,29 @@ git submodule update --init --recursive
 
 # ビルド
 
-## Windowsでのビルド  
+## Windows
+
+### ビルド環境のセットアップ
+
+以降でビルド環境の構築手順について説明していきます。  
+
+[Godot公式のコンパイル手順](https://docs.godotengine.org/en/stable/contributing/development/compiling/compiling_for_windows.html)
+
+必要なツール
+* VisualStudio 2017 or 2019(推奨)
+  * or MSYS2 + MinGW + gcc + make
+* Python 3.6 以降
+* scons 3.0 以降
+
+VisualStudio 2019 でのビルド・デバッグを確認しています。
+
+scons は下記でインストールできます。(上記リンクにも記載あり)
+
+```bat
+python -m pip install scons
+```
+
+### ビルド
 
 ```bat
 pushd godot
@@ -92,30 +69,55 @@ popd
 ```
 上記は [makesln.bat](./makesln.bat) に該当します。
 
-## Macでのビルド  
+
+## macOS
+
+### ビルド環境のセットアップ
+
+[Godot公式のコンパイル手順](https://docs.godotengine.org/ja/4.x/contributing/development/compiling/compiling_for_macos.html)
+
+必要なツール
+* Xcode
+* Python 3.6 以降
+* scons 3.0 以降
+* Vulkan SDK for MoltenVK (4 対応用)
+
+Xcode 以外は [Homebrew](https://brew.sh/) でインストールができます。
+
+```sh
+brew install python3 scons 
+```
+
+```sh
+brew install molten-vk
+```
+
+ホストアーキテクチャとは異なるアーキテクチャの Godot Engine をビルドする場合や、Universal Binary な Godot Engine をビルドする場合は、`molten-vk` の代わりに Universal Binary 対応している [Vulkan SDK for MoltenVK](https://vulkan.lunarg.com/sdk/home) をインストールしてください。
+
+### ビルド
 
 [macbuild.sh](./macbuild.sh) でビルド可能です。
-引数を指定しない場合は、ホストマシンのアーキテクチャと同じアーキテクチャ向けにビルドします。
 
 ```sh
 ./macbuild.sh
 ```
 
-アーキテクチャを明示的に指定する場合は `arch:` に引数を追加してください。 (ホストアーキテクチャと異なる Godot Engine をビルドする場合は Universal Binary 対応の [Vulkan SDK for MoltenVK](https://vulkan.lunarg.com/sdk/home) をインストールしてください。)
+引数を指定しない場合はホストマシンのアーキテクチャと同じアーキテクチャ向けにビルドします。
+アーキテクチャを明示的に指定する場合は `arch:` に引数を追加してください。
 
-Universal Binary (supports both arm64 and x86_64)
+**Universal Binary (supports both arm64 and x86_64)**
 
 ```sh
 ./macbuild.sh arch:universal
 ```
 
-arm64 (Apple Silicon)
+**arm64 (Apple Silicon)**
 
 ```sh
 ./macbuild.sh arch:arm64
 ```
 
-x86_64 (Intel)
+**x86_64 (Intel)**
 
 ```sh
 ./macbuild.sh arch:x86_64
