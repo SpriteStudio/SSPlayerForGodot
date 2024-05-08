@@ -7,30 +7,42 @@ GODOT_TAG=$(git describe --tags --abbrev=0 | sed -e "s/[\r\n]\+//g")
 popd > /dev/null
 
 declare -A opts=(
-  # Godot Build Options
-  ["arch"]=${HOST_ARCH}
-  ["scons_opts"]=""
+    # Godot Build Options
+    ["arch"]=${HOST_ARCH}
+    ["scons_opts"]=""
 
-  # Build Options
-  ["ccache"]="false"
-  ["version"]="3.x"
+    # Build Options
+    ["ccache"]="false"
+    ["version"]="3.x"
 )
 
-while (( $# > 0 )); do
-  item="$1"
-  shift
+APP=$(basename $0)
+func usage() {
+    echo "Usage: $APP [options]"
+    echo "Options:"
+    echo "  arch:<arch>         Target architecture (default: ${HOST_ARCH})"
+    echo "  ccache:<true|false> Enable ccache (default: false)"
+    echo "  version:<version>   Godot version. $APP uses this version at can not getting Godot version from git branch or tag. (default: 3.x)"
+}
 
-  if [[ $item = *":"* ]]; then
-    kv=(${(@s/:/)item})
-    key=$kv[1]
-    value=$kv[2]
-    opts[$key]=$value
-  fi
+while (( $# > 0 )); do
+    item="$1"
+    shift
+
+    if [[ $item = *":"* ]]; then
+        kv=(${(@s/:/)item})
+        key=$kv[1]
+        value=$kv[2]
+        opts[$key]=$value
+    elif [[ $item = *"help"* || $item == "-h" || $item == "--h" ]]; then
+        usage
+        exit 0
+    fi
 done
 
 echo "options"
 for key in ${(k)opts}; do
-  echo "  $key => $opts[$key]"
+    echo "  $key => $opts[$key]"
 done
 echo ""
 
@@ -58,7 +70,7 @@ else
 fi
 echo "Godot Version: ${VERSION}"
 
-if [[ ${VERSION} = *"3."* ]]; then
+if [[ ${VERSION} =~ ^3\..* ]]; then
     # 3.x
     opts[platform]="osx"
     opts[app_template]="osx_tools.app"
