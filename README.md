@@ -30,13 +30,32 @@ git clone https://github.com/SpriteStudio/SSPlayerForGodot.git
 SSPlayerForGodot ディレクトリから以下のコマンドを実行し、 Godot Engine と SpriteStudio SDK を取得します。
 
 ```bat
-git clone https://github.com/godotengine/godot.git -b 3.x
+git clone https://github.com/godotengine/godot.git
 git submodule update --init --recursive
 ```
 
 [setup.bat](./setup.bat) で上記を行っています。
 
 # ビルド
+## ブランチ選択
+SSPlayerForGodot ディレクトリ の `godot` ディレクトリ内でビルドする Godot Engine のブランチを選択してください。
+
+### 3.x
+```bash
+pushd godot
+git checkout 3.x
+popd 
+```
+
+### 4.2
+
+（現在対応中です）
+
+```bash
+pushd godot
+git checkout 4.2
+popd 
+```
 
 ## Windows
 
@@ -153,17 +172,19 @@ SpriteStudioデータのインポート手順について説明します。
 ![image](./doc_images/ssnode_inspector.png)
 
 ```
-GdNodeSsPlayer - SsPlayer を扱うノード
-  └ Res Player - SsPlayer が使用するリソース
-    └ Res Project - sspj ファイル
-      └ CellMap Settings - セルマップの設定
-        └ <ssce ファイル> - セルマップ
-  └ Animation Settings - アニメーションの設定
-    └ Anime Pack - アニメパック
-    └ Animation - アニメーション
-    └ Frame - 現在のフレーム
-    └ Loop - ループ再生フラグ
-    └ Play - 再生フラグ
+GdNodeSsPlayer               - SsPlayer を扱うノード
+├── Res Player               - SsPlayer が使用するリソース
+│   └── Res Project          - sspj ファイル
+│      └── CellMap Settings  - セルマップの設定
+│         ├── ssce File 01   - セルマップ
+│         └── ssce File 02   - セルマップ
+│
+└── Animation Settings       - アニメーションの設定
+    ├── Anime Pack           - アニメパック
+    ├── Animation            - アニメーション
+    ├── Frame                - 現在のフレーム
+    ├── Loop                 - ループ再生フラグ
+    └── Play                 - 再生フラグ
 ```
 
 ## クラス
@@ -175,22 +196,22 @@ GDScript からコントロールできるクラスの役割と主要なメソ�
 
 SpriteStudio の各種 .ss** ファイルに相当するリソースを管理するクラスがあります。
 
-#### GdResourceSsProject クラス
+#### [GdResourceSsProject](./gd_spritestudio/gd_resource_ssproject.h) クラス
 
 １つの sspj ファイルに相当するリソースを取り扱うクラスです。
 sspj に登録された ssae, ssce, ssee 各々のリソースの取得と設定を行います。
 
-#### GdResourceSsCellMap クラス
+#### [GdResourceSsCellMap](./gd_spritestudio/gd_resource_sscellmap.h) クラス
 
 １つの ssce ファイルに相当するリソースを取り扱うクラスです。
 現在テクスチャの取得と設定を行うメンバーのみ対応しています。
 
-#### GdResourceSsAnimePack クラス
+#### [GdResourceSsAnimePack](./gd_spritestudio/gd_resource_ssanimepack.h) クラス
 
 １つの ssae ファイルに相当するリソースを取り扱うクラスです。
 内包しているアニメーションの数、とアニメーション名の取得を行えます。
 
-#### GdResourceSsPlayer クラス
+#### [GdResourceSsPlayer](./gd_spritestudio/gd_resource_ssplayer.h) クラス
 
 現在 GdResourceSsProject リソースを設定、取得するアクセサのみです。
 
