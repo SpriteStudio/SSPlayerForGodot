@@ -122,24 +122,24 @@ brew install molten-vk
 ```
 
 引数を指定しない場合はホストマシンのアーキテクチャと同じアーキテクチャ向けにビルドします。
-アーキテクチャを明示的に指定する場合は `arch:` に引数を追加してください。
+アーキテクチャを明示的に指定する場合は `arch=` に引数を追加してください。
 
 **Universal Binary (supports both arm64 and x86_64)**
 
 ```sh
-./macbuild.sh arch:universal
+./macbuild.sh arch=universal
 ```
 
 **arm64 (Apple Silicon)**
 
 ```sh
-./macbuild.sh arch:arm64
+./macbuild.sh arch=arm64
 ```
 
 **x86_64 (Intel)**
 
 ```sh
-./macbuild.sh arch:x86_64
+./macbuild.sh arch=x86_64
 ```
 
 `godot/Godot.app` を開いて起動を確認します。
