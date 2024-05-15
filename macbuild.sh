@@ -1,30 +1,43 @@
 #!/bin/zsh -e
 
+ROOTDIR=`dirname $0`
+ROOTDIR=`cd $ROOTDIR && pwd -P`
+
 HOST_ARCH=$(uname -m)
-pushd godot > /dev/null
+pushd $ROOTDIR/godot > /dev/null
 GODOT_BRANCH=$(git branch --show-current | sed -e "s/[\r\n]\+//g")
 GODOT_TAG=$(git describe --tags --abbrev=0 | sed -e "s/[\r\n]\+//g")
 popd > /dev/null
 
-declare -A opts=(
-    # Godot Build Options
-    ["arch"]=${HOST_ARCH}
-    ["scons_opts"]=""
-    ["tests"]="no"
+# Godot scons default options
+declare -A scons_default_opts=(
+    [arch]=${HOST_ARCH}
+    [compiledb]="yes"
+    [custom_modules]="../gd_spritestudio"
+)
 
-    # Build Options
-    ["ccache"]="no"
-    ["version"]="3.x"
+# macbuild default options
+declare -A macbuild_default_opts=(
+    [ccache]="no"
+    [version]="3.x"
+)
+
+declare -A opts=(
+    ${(kv)macbuild_default_opts}
+    ${(kv)scons_default_opts}
 )
 
 APP=$(basename $0)
 func usage() {
     echo "Usage: $APP [options]"
-    echo "Options:"
+    echo "$APP options:"
     echo "  arch=<arch>         Target architecture (default: ${HOST_ARCH})"
-    echo "  tests=<yes|no>      Enable unit tests for only 4.2 (default: no)"
-    echo "  ccache=<yes|no>     Enable ccache (default: no)"
-    echo "  version=<version>   Godot version. $APP uses this version at can not getting Godot version from git branch or tag. (default: 3.x)"
+    echo "  ccache=<yes|no>     Enable ccache (default: ${macbuild_default_opts[ccache]})"
+    echo "  version=<version>   Godot version. $APP uses this version at can not getting Godot version from git branch or tag. (default: ${macbuild_default_opts[version]})"
+    echo "Godot scons options: "
+    pushd $ROOTDIR/godot > /dev/null
+    scons --help
+    popd > /dev/null
 }
 
 while (( $# > 0 )); do
@@ -43,12 +56,12 @@ while (( $# > 0 )); do
 done
 
 echo "options"
-for key in ${(k)opts}; do
-    echo "  $key => $opts[$key]"
+for key value in ${(kv)opts}; do
+    echo "  $key => $value"
 done
 echo ""
 
-# ccache
+# enable ccache
 if [[ ${opts[ccache]} == "yes" ]]; then
     if ! declare -p CCACHE > /dev/null 2>&1; then
         if type "sccache" > /dev/null; then
@@ -62,7 +75,7 @@ if [[ ${opts[ccache]} == "yes" ]]; then
     fi
 fi
 
-# Godot Version
+# get Godot Version
 if [[ -n $GODOT_BRANCH ]]; then
     VERSION=${GODOT_BRANCH}
 elif [[ -n $GODOT_TAG ]]; then
@@ -72,56 +85,74 @@ else
 fi
 echo "Godot Version: ${VERSION}"
 
+# set internal parameters for each Godot version
+declare -A internal_opts=(
+    [platform]=""
+    [app_template]=""
+    [app_bin]=""
+)
 if [[ ${VERSION} =~ ^3\..* ]]; then
     # 3.x
-    opts[platform]="osx"
-    opts[app_template]="osx_tools.app"
-    opts[app_bin]="godot.osx.tools"
-
-    scons_command_opts="platform=${opts[platform]} compiledb=yes custom_modules='../gd_spritestudio' ${opts[scons_opts]}"
+    internal_opts[platform]="osx"
+    internal_opts[app_template]="osx_tools.app"
+    internal_opts[app_bin]="godot.osx.tools"
 else
     # 4.x
-    opts[platform]="macos"
-    opts[app_template]="macos_tools.app"
-    opts[app_bin]="godot.macos.editor"
-
-    scons_command_opts="platform=${opts[platform]} compiledb=yes custom_modules='../gd_spritestudio' tests=${opts[tests]} ${opts[scons_opts]}"
+    internal_opts[platform]="macos"
+    internal_opts[app_template]="macos_tools.app"
+    internal_opts[app_bin]="godot.macos.editor"
 fi
 
+# validate scons command options from macbuild.sh options
+scons_command_opts="platform=${internal_opts[platform]}"
+for key value in ${(kv)opts}; do
+    if [[ -v macbuild_default_opts[$key] ]]; then
+        # skip macbuild default options
+        continue
+    fi
+    if [[ $key == "arch" ]]; then
+        # skip arch option
+        continue
+    fi
+    scons_command_opts="$scons_command_opts $key=$value"
+done
+echo "scons command options: $scons_command_opts"
+
+pushd $ROOTDIR/godot
+# enable ccache on Godot
+if [[ ${opts[ccache]} == "yes" ]]; then
+    git checkout platform/${internal_opts[platform]}/detect.py
+    git apply ../misc/ccache/${internal_opts[platform]}_ccache.patch
+fi
+
+# build Godot
+alias scons_macro="scons ${scons_command_opts}"
 if [[ ${opts[arch]} == "universal" ]]; then
     ARCHES=('arm64' 'x86_64')
 else
     ARCHES=${opts[arch]}
 fi
-
-pushd godot
-# enable ccache on Godot
-if [[ ${opts[ccache]} == "yes" ]]; then
-    git checkout platform/${opts[platform]}/detect.py
-    git apply ../misc/ccache/${opts[platform]}_ccache.patch
-fi
-
-alias scons_macro="scons ${scons_command_opts}"
 for arch in $ARCHES; do
-    echo "build target arch: $arch"
+    echo "scons command build target arch: $arch"
     scons_macro arch=$arch
 done
 
+# create Godot.app
 /bin/rm -rf ./Godot.app
-/bin/cp -r misc/dist/${opts[app_template]} ./Godot.app
+/bin/cp -r misc/dist/${internal_opts[app_template]} ./Godot.app
 /bin/mkdir -p Godot.app/Contents/MacOS
 if [[ ${opts[arch]} == "universal" ]]; then
-    lipo -create bin/${opts[app_bin]}.arm64 bin/${opts[app_bin]}.x86_64 -output bin/${opts[app_bin]}.${opts[arch]}
+    lipo -create bin/${internal_opts[app_bin]}.arm64 bin/${internal_opts[app_bin]}.x86_64 -output bin/${internal_opts[app_bin]}.${opts[arch]}
 fi
-/bin/cp bin/${opts[app_bin]}.${opts[arch]} Godot.app/Contents/MacOS/Godot
+/bin/cp bin/${internal_opts[app_bin]}.${opts[arch]} Godot.app/Contents/MacOS/Godot
 /bin/chmod +x Godot.app/Contents/MacOS/Godot 
-codesign --force --timestamp --options=runtime --entitlements misc/dist/${opts[platform]}/editor.entitlements -s - Godot.app
+codesign --force --timestamp --options=runtime --entitlements misc/dist/${internal_opts[platform]}/editor.entitlements -s - Godot.app
 
 # revert enabling ccache on Godot
 if [[ ${opts[ccache]} == "yes" ]]; then
-    git checkout platform/${opts[platform]}/detect.py
+    git checkout platform/${internal_opts[platform]}/detect.py
 fi
-popd
+popd # $ROOTDIR/godot
 
 if [[ _USE_DEFAULT_CCACHE -eq 1 ]]; then
     unset CCACHE
