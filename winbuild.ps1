@@ -42,7 +42,7 @@ function usage() {
     popd
 }
 
-foreach ($item in $args) {
+foreach ($item in $Args) {
     if ($item -match "=") {
         $kv = $item -split "="
         $opts[$kv[0]] = $kv[1].ToLower()
