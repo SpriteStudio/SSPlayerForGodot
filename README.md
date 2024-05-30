@@ -81,12 +81,21 @@ python -m pip install scons
 
 ### ビルド
 
-```bat
-pushd godot
-scons platform=windows vsproj=yes compiledb=yes custom_modules="../gd_spritestudio"
-popd
+[winbuild.ps1](./winbuild.ps1) でビルド可能です。
+
+**PowerShell**
+
+```powershell
+$env:PYTHONUTF8=1
+.\winbuild.ps1
 ```
-上記は [makesln.bat](./makesln.bat) に該当します。
+
+**Cmd**
+
+```cmd
+set PYTHONUTF8=1
+PowerShell.exe -ExecutionPolicy Bypass -File .\winbuild.ps1
+```
 
 
 ## macOS
