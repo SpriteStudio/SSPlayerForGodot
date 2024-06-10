@@ -554,7 +554,7 @@ bool GdNodeSsPlayer::_set( const StringName& p_name, const Variant& p_property )
 
 		return	true;
 	}else
-	if ( p_name == GdUiText( "play" ) ) {
+	if ( p_name == GdUiText( "playing" ) ) {
 		setPlay( p_property );
 
 		return	true;
@@ -585,7 +585,7 @@ bool GdNodeSsPlayer::_get( const StringName& p_name, Variant& r_property ) const
 
 		return	true;
 	}else
-	if ( p_name == GdUiText( "play" ) ) {
+	if ( p_name == GdUiText( "playing" ) ) {
 		r_property = getPlay();
 
 		return	true;
@@ -673,7 +673,7 @@ void GdNodeSsPlayer::_get_property_list( List<PropertyInfo>* p_list ) const
 
 			p_list->push_back( animationsPropertyInfo );
 
-			animationsPropertyInfo.name = GdUiText( "play" );
+			animationsPropertyInfo.name = GdUiText( "playing" );
 			animationsPropertyInfo.type = Variant::BOOL;
 			animationsPropertyInfo.usage = PROPERTY_USAGE_EDITOR | PROPERTY_USAGE_STORAGE;
 			animationsPropertyInfo.hint = PROPERTY_HINT_NONE;
