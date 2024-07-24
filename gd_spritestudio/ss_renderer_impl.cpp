@@ -567,12 +567,23 @@ void SsRendererImpl::renderPart( SsPartState* state )
 	
 	if ( state->is_parts_color ) {
 		if ( state->partsColorValue.target == SsColorBlendTarget::whole ) {
+#if 0
 			rates[0] = state->partsColorValue.color.rate;
+#else
+			rates[0] = (float)state->partsColorValue.color.rgba.a / 255.0f;
+#endif
 		}else{
+#if 0
 			rates[0] = state->partsColorValue.colors[0].rate;
 			rates[1] = state->partsColorValue.colors[1].rate;
 			rates[2] = state->partsColorValue.colors[2].rate;
 			rates[3] = state->partsColorValue.colors[3].rate;
+#else
+			rates[0] = state->partsColorValue.colors[0].rgba.a / 255.0f;
+			rates[1] = state->partsColorValue.colors[1].rgba.a / 255.0f;
+			rates[2] = state->partsColorValue.colors[2].rgba.a / 255.0f;
+			rates[3] = state->partsColorValue.colors[3].rgba.a / 255.0f;
+#endif
 
 			int a = 0;
 			a += state->partsColorValue.colors[0].rgba.a;
@@ -601,9 +612,9 @@ void SsRendererImpl::renderPart( SsPartState* state )
 
 	updateShaderSource( *pSprite, m_eBlendTypeDrawing, state->shaderValue.id );
 
-	pVisualServer->material_set_param( pSprite->materialId, "src_ratio", ( type <= 1 ? 1.0f - rates[0] : 1.0f ) );
-	pVisualServer->material_set_param( pSprite->materialId, "dst_ratio", ( type == 3 ? -rates[0] : rates[0] ) );
-	pVisualServer->material_set_param( pSprite->materialId, "dst_src_ratio", ( type == 1 ? 1.0f : 0.0f ) );
+	pVisualServer->material_set_param( pSprite->materialId, "src_ratio", ( type <= 1 ? 1.0f - rates[0] : 1.0f ) );	/* mul, mix */
+	pVisualServer->material_set_param( pSprite->materialId, "dst_ratio", ( type == 3 ? -rates[0] : rates[0] ) );	/* sub */
+	pVisualServer->material_set_param( pSprite->materialId, "dst_src_ratio", ( type == 1 ? 1.0f : 0.0f ) );	/* mul */
 
 	pVisualServer->material_set_param( pSprite->materialId, "A_TW", _args[0] );
 	pVisualServer->material_set_param( pSprite->materialId, "A_TH", _args[1] );
