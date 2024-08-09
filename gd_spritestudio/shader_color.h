@@ -29,6 +29,8 @@ uniform float P_3;
 
 uniform sampler2D color;
 uniform sampler2D alpha;
+uniform sampler2D color_authentic;
+uniform sampler2D alpha_authentic;
 
 uniform float use_mask;
 uniform float draw_mask;
@@ -75,7 +77,8 @@ vec4 ssPostProc( vec4 c, vec4 p )
 
 void fragment()
 {
-	COLOR = ssPreProc( COLOR, TEXTURE, UV );
+//	COLOR = ssPreProc( COLOR, TEXTURE, UV );
+	COLOR = ssPreProc( COLOR, color_authentic, UV );
 //	COLOR = ssMainProc();
 //	COLOR = ssPostProc( COLOR, texture( color, SCREEN_UV, 0.0 ) );
 }
