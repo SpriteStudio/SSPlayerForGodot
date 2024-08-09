@@ -1136,6 +1136,10 @@ void SsRendererImpl::renderSpriteSimple( float matrix[16], int width, int height
 //	pVisualServer->draw( false );
 //	pVisualServer->sync();
 
+	/* MEMO: Ver.3 and Ver.4 handle vertex-colors differently on "fragment" shader.            */
+	/*       In Ver.4, before user's "fragment" processing, "COLOR" is multiplied texel-color. */
+	/*       In order to get unprocessed vertex-color, set dummy (always white) to "TEXTURE"   */
+	/*         and decode original-texture on another-stage.  (Measures for Ver.4 spec.)       */
 	pVisualServer->material_set_param( pSprite->materialId, "color", ridTextureDummy );
 	pVisualServer->material_set_param( pSprite->materialId, "alpha", ridTextureDummy );
 	pVisualServer->material_set_param( pSprite->materialId, "color_authentic", texture->get_rid() );
@@ -1368,19 +1372,6 @@ void SsRendererImpl::updateShaderSource( PartSprite& sprite, SsBlendType::_enum 
 			WARN_PRINT_ONCE( "shader " + String( strId.c_str() ) + " not found." );
 		}
 	}
-
-//	strShader = shader_color_ss_bmask;
-//	strShader = shader_color_ss_circle;
-//	strShader = shader_color_ss_hsb;
-//	strShader = shader_color_ss_move;
-//	strShader = shader_color_ss_noise;
-//	strShader = shader_color_ss_outline;
-//	strShader = shader_color_ss_pix;
-//	strShader = shader_color_ss_scatter;
-//	strShader = shader_color_ss_sepia;
-//	strShader = shader_color_ss_spot;
-//	strShader = shader_color_ss_step;
-//	strShader = shader_color_ss_wave;
 
 	pVisualServer->shader_set_code( sprite.shaderId, strShader );
 
