@@ -35,6 +35,8 @@
 
 SsSdkUsing
 
+static const RID ridTextureDummy = RID();
+
 static void setupTextureCombinerTo_NoBlendRGB_MultiplyAlpha_()
 {
 #if 0
@@ -567,12 +569,12 @@ void SsRendererImpl::renderPart( SsPartState* state )
 	
 	if ( state->is_parts_color ) {
 		if ( state->partsColorValue.target == SsColorBlendTarget::whole ) {
-			rates[0] = state->partsColorValue.color.rate;
+			rates[0] = ( type == 0 ? state->partsColorValue.color.rate : (float)state->partsColorValue.color.rgba.a / 255.0f );	/* 0:mix */
 		}else{
-			rates[0] = state->partsColorValue.colors[0].rate;
-			rates[1] = state->partsColorValue.colors[1].rate;
-			rates[2] = state->partsColorValue.colors[2].rate;
-			rates[3] = state->partsColorValue.colors[3].rate;
+			rates[0] = state->partsColorValue.colors[0].rgba.a / 255.0f;
+			rates[1] = state->partsColorValue.colors[1].rgba.a / 255.0f;
+			rates[2] = state->partsColorValue.colors[2].rgba.a / 255.0f;
+			rates[3] = state->partsColorValue.colors[3].rgba.a / 255.0f;
 
 			int a = 0;
 			a += state->partsColorValue.colors[0].rgba.a;
@@ -601,9 +603,9 @@ void SsRendererImpl::renderPart( SsPartState* state )
 
 	updateShaderSource( *pSprite, m_eBlendTypeDrawing, state->shaderValue.id );
 
-	pVisualServer->material_set_param( pSprite->materialId, "src_ratio", ( type <= 1 ? 1.0f - rates[0] : 1.0f ) );
-	pVisualServer->material_set_param( pSprite->materialId, "dst_ratio", ( type == 3 ? -rates[0] : rates[0] ) );
-	pVisualServer->material_set_param( pSprite->materialId, "dst_src_ratio", ( type == 1 ? 1.0f : 0.0f ) );
+	pVisualServer->material_set_param( pSprite->materialId, "src_ratio", ( type <= 1 ? 1.0f - rates[0] : 1.0f ) );	/* 1:mul, 0:mix */
+	pVisualServer->material_set_param( pSprite->materialId, "dst_ratio", ( type == 3 ? -rates[0] : rates[0] ) );	/* 3:sub */
+	pVisualServer->material_set_param( pSprite->materialId, "dst_src_ratio", ( type == 1 ? 1.0f : 0.0f ) );	/* 1:mul */
 
 	pVisualServer->material_set_param( pSprite->materialId, "A_TW", _args[0] );
 	pVisualServer->material_set_param( pSprite->materialId, "A_TH", _args[1] );
@@ -633,8 +635,10 @@ void SsRendererImpl::renderPart( SsPartState* state )
 //	pVisualServer->draw( false );
 //	pVisualServer->sync();
 
-	pVisualServer->material_set_param( pSprite->materialId, "color", m_RendererColor.getTextureRid() );
-	pVisualServer->material_set_param( pSprite->materialId, "alpha", m_RendererAlpha.getTextureRid() );
+	pVisualServer->material_set_param( pSprite->materialId, "color", ridTextureDummy );
+	pVisualServer->material_set_param( pSprite->materialId, "alpha", ridTextureDummy );
+	pVisualServer->material_set_param( pSprite->materialId, "color_authentic", texture->get_rid() );
+	pVisualServer->material_set_param( pSprite->materialId, "alpha_authentic", texture->get_rid() );
 
 	if ( state->partType == SsPartType::mesh ) {
 		SsMeshPart*		mesh = state->meshPart.get();
@@ -692,7 +696,7 @@ void SsRendererImpl::renderPart( SsPartState* state )
 				vecCoord,
 				vecBone,
 				vecWeight,
-				texture->get_rid()
+				ridTextureDummy	// texture->get_rid()
 			);
 		}
 	}else
@@ -752,7 +756,7 @@ void SsRendererImpl::renderPart( SsPartState* state )
 			vecCoord,
 			vecBone,
 			vecWeight,
-			texture->get_rid()
+			ridTextureDummy	// texture->get_rid()
 		);
 	}else
 	{
@@ -1132,8 +1136,14 @@ void SsRendererImpl::renderSpriteSimple( float matrix[16], int width, int height
 //	pVisualServer->draw( false );
 //	pVisualServer->sync();
 
-	pVisualServer->material_set_param( pSprite->materialId, "color", m_RendererColor.getTextureRid() );
-	pVisualServer->material_set_param( pSprite->materialId, "alpha", m_RendererAlpha.getTextureRid() );
+	/* MEMO: Ver.3 and Ver.4 handle vertex-colors differently on "fragment" shader.            */
+	/*       In Ver.4, before user's "fragment" processing, "COLOR" is multiplied texel-color. */
+	/*       In order to get unprocessed vertex-color, set dummy (always white) to "TEXTURE"   */
+	/*         and decode original-texture on another-stage.  (Measures for Ver.4 spec.)       */
+	pVisualServer->material_set_param( pSprite->materialId, "color", ridTextureDummy );
+	pVisualServer->material_set_param( pSprite->materialId, "alpha", ridTextureDummy );
+	pVisualServer->material_set_param( pSprite->materialId, "color_authentic", texture->get_rid() );
+	pVisualServer->material_set_param( pSprite->materialId, "alpha_authentic", texture->get_rid() );
 
 	pVisualServer->canvas_item_add_triangle_array(
 		colorCanvasItemId,
@@ -1143,7 +1153,7 @@ void SsRendererImpl::renderSpriteSimple( float matrix[16], int width, int height
 		vecCoord,
 		vecBone,
 		vecWeight,
-		texture->get_rid()
+		ridTextureDummy	// texture->get_rid()
 	);
 }
 
