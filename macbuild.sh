@@ -19,7 +19,7 @@ declare -A scons_default_opts=(
 # macbuild default options
 declare -A macbuild_default_opts=(
     [ccache]="no"
-    [version]="3.x"
+    [version]="4.3"
 )
 
 declare -A opts=(

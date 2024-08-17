@@ -15,21 +15,20 @@ Ver.6 と Ver.7 に対応しています。
 
 ## 対応する [Godot Engine](https://github.com/godotengine/godot) のバージョン
 
-### 2024/04/30時点の対応状況
-- [3.x ブランチ](https://github.com/godotengine/godot/tree/3.x)でWindows/Macでビルド、および実行を確認しています。
-- [4.2 ブランチ](https://github.com/godotengine/godot/tree/4.2)に現在対応中です。
+- [4.3 ブランチ](https://github.com/godotengine/godot/tree/4.3)で Windows / macOS でビルド、および実行を確認しています。
+- [3.x ブランチ](https://github.com/godotengine/godot/tree/3.x)で Windows / macOS でビルド、および実行を確認しています。
 
 # ソース取得
 
 本リポジトリをクローンしてください。
 
-```sh
+```bash
 git clone https://github.com/SpriteStudio/SSPlayerForGodot.git
 ```
 
 SSPlayerForGodot ディレクトリから以下のコマンドを実行し、 Godot Engine と SpriteStudio SDK を取得します。
 
-```bat
+```bash
 git clone https://github.com/godotengine/godot.git
 git submodule update --init --recursive
 ```
@@ -40,20 +39,18 @@ git submodule update --init --recursive
 ## ブランチ選択
 SSPlayerForGodot ディレクトリ の `godot` ディレクトリ内でビルドする Godot Engine のブランチを選択してください。
 
+### 4.3
+
+```bash
+pushd godot
+git checkout 4.3
+popd 
+```
+
 ### 3.x
 ```bash
 pushd godot
 git checkout 3.x
-popd 
-```
-
-### 4.2
-
-（現在対応中です）
-
-```bash
-pushd godot
-git checkout 4.2
 popd 
 ```
 
@@ -66,8 +63,9 @@ popd
 [Godot公式のコンパイル手順](https://docs.godotengine.org/en/stable/contributing/development/compiling/compiling_for_windows.html)
 
 必要なツール
-* VisualStudio 2017 or 2019(推奨)
-  * or MSYS2 + MinGW + gcc + make
+* ビルドツール (いずれかを選択)
+    * VisualStudio 2017 or 2019(推奨)
+    * MSYS2 + MinGW + gcc + make
 * Python 3.6 以降
 * scons 3.0 以降
 
@@ -230,8 +228,11 @@ GdNodeSsPlayer に前述のリソースを指定することで再生を行い�
 以下はファイルの読み込みから再生開始までのシンプルなサンプルコードです。  
 
 ```python
-
-onready var ssnode = $target # GdNodeSsPlayerノードを指します。
+# GdNodeSsPlayerノードを指します。
+## Godot 4
+@onread var ssnode = $target
+## Godot 3.x
+# onready var ssnode = $target
 
 func _ready():
   # sspj ファイルを読み込みます。
@@ -242,7 +243,10 @@ func _ready():
   ssnode.set_animation("anime_1")
     
   # アニメーション終了時コールバックの設定
-  ssnode.connect("animation_finished", self, "_on_animation_finished")
+  ## Godot 4
+  ssnode.connect("animation_finished", Callable(self, "_on_animation_finished"))
+  ## Godot 3.x
+  # ssnode.connect("animation_finished", self, "_on_animation_finished")
 
   # ループを指定して再生を開始します。
   ssnode.set_loop(true)
@@ -327,6 +331,8 @@ value：パラメータ名と値のコレクション
 # サンプル
 
 [examples フォルダ](./examples/)にサンプルプロジェクトがあります。
+
+**サンプルプロジェクトは 3.x 向けに作っているため、4.3 で利用する際は "Convert Full Project" を実行してから利用してください。**
 
 ## [feature_test](./examples/feature_test)
 
