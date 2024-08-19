@@ -22,7 +22,7 @@ $scons_default_opts = @{
 # winbuild default options
 $winbuild_default_opts = @{
     ccache = "no"
-    version = "3.x"
+    version = "4.3"
 }
 
 $opts = @{}
@@ -86,7 +86,7 @@ $internal_opts=@{
 if ($VERSION -like "3.*") { 
     # 3.x
 } else {
-    # 4.2
+    # 4.x
 }
 
 # validate scons command options from winbuild options
