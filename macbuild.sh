@@ -20,6 +20,7 @@ declare -A scons_default_opts=(
 declare -A macbuild_default_opts=(
     [ccache]="no"
     [version]="4.3"
+    [strip]="no"
 )
 
 declare -A opts=(
@@ -34,6 +35,7 @@ func usage() {
     echo "  arch=<arch>         Target architecture (default: ${HOST_ARCH})"
     echo "  ccache=<yes|no>     Enable ccache (default: ${macbuild_default_opts[ccache]})"
     echo "  version=<version>   Godot version. $APP uses this version at can not getting Godot version from git branch or tag. (default: ${macbuild_default_opts[version]})"
+    echo "  strip=<yes|no>      Execute strip command to the app binary (default: ${macbuild_default_opts[strip]})"
     echo "Godot scons options: "
     pushd $ROOTDIR/godot > /dev/null
     scons --help
@@ -94,14 +96,18 @@ declare -A internal_opts=(
 if [[ ${VERSION} =~ ^3\..* ]]; then
     # 3.x
     internal_opts[platform]="osx"
+    internal_opts[app_target]="tools"
     internal_opts[app_template]="osx_tools.app"
-    internal_opts[app_bin]="godot.osx.tools"
 else
     # 4.x
     internal_opts[platform]="macos"
+    internal_opts[app_target]="editor"
     internal_opts[app_template]="macos_tools.app"
-    internal_opts[app_bin]="godot.macos.editor"
 fi
+if [[ -n ${opts[target]} ]]; then
+    internal_opts[app_target]=${opts[target]}
+fi
+internal_opts[app_bin]="godot.${internal_opts[platform]}.${internal_opts[app_target]}"
 
 # validate scons command options from macbuild.sh options
 scons_command_opts="platform=${internal_opts[platform]}"
@@ -136,6 +142,11 @@ for arch in $ARCHES; do
     echo "scons command build target arch: $arch"
     scons_macro arch=$arch
 done
+
+# strip binary
+if [[ ${opts[strip]} == "yes" ]]; then
+    strip ./bin/godot.*
+fi
 
 # create Godot.app
 /bin/rm -rf ./Godot.app
