@@ -364,7 +364,7 @@ value：パラメータ名と値のコレクション
 
 # お問い合わせ
 
-ご質問、ご要望、不具合のご報告は [Issues](https://github.com/SpriteStudio/SSPlayerForGodot/issues) に投稿してください。  
+ご質問、ご要望、不具合のご報告は [Issues](../issues) に投稿してください。  
 非公開でのお問い合わせを希望される場合は、[ヘルプセンター](https://www.webtech.co.jp/help/ja/spritestudio7/inquiries/ssplayer_tool/) よりお寄せください。  
 再現データなどの送付が必要な場合も、上記ヘルプセンター経由でファイルを送信してください。  
 
@@ -376,5 +376,5 @@ Copyright © CRI Middleware Co., Ltd.
 
 =========================================================  
 
-* SpriteStudio, Web Technologyは、株式会社ＣＲＩ・ミドルウェアの登録商標です。  
+* SpriteStudio, Web Technologyは、株式会社ウェブテクノロジの登録商標です。
 * その他の商品名は各社の登録商標または商標です。  
