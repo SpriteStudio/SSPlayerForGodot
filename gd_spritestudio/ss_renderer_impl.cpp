@@ -1778,6 +1778,7 @@ void SsRendererImpl::makePrimitive( SsPartState* state )
 	else
 	{
 		// パーツカラー無し
+		calcCenterVertexColor(state->colors, rates, vertexID);
 		for (int i = 0; i < 5; ++i)
 			state->colors[i * 4 + 3] = alpha;
 
