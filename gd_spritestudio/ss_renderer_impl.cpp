@@ -19,6 +19,7 @@
 
 #include "shader_color.h"
 #include "shader_color_ss_bmask.h"
+#include "shader_color_ss_blur.h"
 #include "shader_color_ss_circle.h"
 #include "shader_color_ss_hsb.h"
 #include "shader_color_ss_move.h"
@@ -202,6 +203,7 @@ SsRendererImpl::SsRendererImpl()
 	m_mapPartSpriteIdx.clear();
 
 	m_dicShader["ss-bmask"] = shader_color_ss_bmask;
+	m_dicShader["ss-blur"] = shader_color_ss_blur;
 	m_dicShader["ss-circle"] = shader_color_ss_circle;
 	m_dicShader["ss-hsb"] = shader_color_ss_hsb;
 	m_dicShader["ss-move"] = shader_color_ss_move;
