@@ -591,7 +591,7 @@ void SsRendererImpl::renderPart( SsPartState* state )
 			{
 				alpha = state->localalpha;
 			}
-			for (int i = 0; i < 4; ++i)
+			for (int i = 0; i < 5; ++i)
 			{
 				if (state->partsColorValue.blendType == SsBlendType::mix)
 				{
@@ -1757,6 +1757,7 @@ void SsRendererImpl::makePrimitive( SsPartState* state )
 				{
 					state->colors[i * 4 + 3] *= alpha;
 				}
+
 				rates[i] = 1.0f;
 				vertexID[i * 2] = i;
 				vertexID[i * 2 + 1] = i;
