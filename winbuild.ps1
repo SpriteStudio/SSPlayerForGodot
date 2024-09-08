@@ -7,8 +7,16 @@ if ($cpuArch -eq "12") {
 }
 
 pushd $rootDirectory/godot
-$GODOT_BRANCH = (git branch --show-current).Trim()
-$GODOT_TAG = (git describe --tags --abbrev=0).Trim()
+try {
+    $GODOT_BRANCH = (git branch --show-current).Trim()
+} catch {
+    $GODOT_BRANCH = ""
+}
+try {
+    $GODOT_TAG = (git describe --tags --abbrev=0).Trim()
+} catch {
+    $GODOT_TAG = ""
+}
 popd
 
 # Godot scons default options
