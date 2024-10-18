@@ -26,6 +26,7 @@ GdNodeSsPlayer::GdNodeSsPlayer()
 , m_bLoop( false )
 , m_bPlay( false )
 , m_bPause( false )
+, m_bTextureInterpolate( true )
 {
 	GdNotifier::getInstance().addItem( this );
 
@@ -356,6 +357,16 @@ int GdNodeSsPlayer::getFps() const
 	return	0;
 }
 
+void GdNodeSsPlayer::setTextureInterpolate( bool bSwitch )
+{
+	m_bTextureInterpolate = bSwitch;
+}
+
+bool GdNodeSsPlayer::getTextureInterpolate() const
+{
+	return m_bTextureInterpolate;
+}
+
 void GdNodeSsPlayer::setLoop( bool bLoop )
 {
 	m_bLoop = bLoop;
@@ -449,6 +460,8 @@ void GdNodeSsPlayer::_bind_methods()
 	ClassDB::bind_method( D_METHOD( "get_loop" ), &GdNodeSsPlayer::getLoop );
 	ClassDB::bind_method( D_METHOD( "set_play", "play" ), &GdNodeSsPlayer::setPlay );
 	ClassDB::bind_method( D_METHOD( "get_play" ), &GdNodeSsPlayer::getPlay );
+	ClassDB::bind_method( D_METHOD( "set_texture_interpolate", "interpolate" ), &GdNodeSsPlayer::setTextureInterpolate );
+	ClassDB::bind_method( D_METHOD( "get_texture_interpolate" ), &GdNodeSsPlayer::getTextureInterpolate );
 	ClassDB::bind_method( D_METHOD( "play" ), &GdNodeSsPlayer::play );
 	ClassDB::bind_method( D_METHOD( "pause", "b" ), &GdNodeSsPlayer::pause );
 	ClassDB::bind_method( D_METHOD( "stop" ), &GdNodeSsPlayer::stop );
@@ -559,6 +572,11 @@ bool GdNodeSsPlayer::_set( const StringName& p_name, const Variant& p_property )
 
 		return	true;
 	}
+	if ( p_name == GdUiText( "texture_interpolate" ) ) {
+		setTextureInterpolate( p_property );
+
+		return	true;
+	}
 
 	return	false;
 }
@@ -587,6 +605,11 @@ bool GdNodeSsPlayer::_get( const StringName& p_name, Variant& r_property ) const
 	}else
 	if ( p_name == GdUiText( "playing" ) ) {
 		r_property = getPlay();
+
+		return	true;
+	}
+	if ( p_name == GdUiText( "texture_interpolate" ) ) {
+		r_property = getTextureInterpolate();
 
 		return	true;
 	}
@@ -674,6 +697,13 @@ void GdNodeSsPlayer::_get_property_list( List<PropertyInfo>* p_list ) const
 			p_list->push_back( animationsPropertyInfo );
 
 			animationsPropertyInfo.name = GdUiText( "playing" );
+			animationsPropertyInfo.type = Variant::BOOL;
+			animationsPropertyInfo.usage = PROPERTY_USAGE_EDITOR | PROPERTY_USAGE_STORAGE;
+			animationsPropertyInfo.hint = PROPERTY_HINT_NONE;
+
+			p_list->push_back( animationsPropertyInfo );
+
+			animationsPropertyInfo.name = GdUiText( "texture_interpolate" );
 			animationsPropertyInfo.type = Variant::BOOL;
 			animationsPropertyInfo.usage = PROPERTY_USAGE_EDITOR | PROPERTY_USAGE_STORAGE;
 			animationsPropertyInfo.hint = PROPERTY_HINT_NONE;
@@ -878,6 +908,7 @@ void GdNodeSsPlayer::drawAnimation()
 
 		m_AnimeDecoder->draw();
 
+		m_Renderer.setTextureInterpolate( m_bTextureInterpolate );
 		m_Renderer.draw( get_canvas_item() );
 	}
 }
@@ -975,6 +1006,7 @@ void GdNodeSsPlayer::fetchAnimation()
 				m_Renderer.setCanvasSize( fW, fH );
 				m_Renderer.setCanvasCenter( fX, fY );
 				m_Renderer.setFps( iFps );
+//				m_Renderer.setTextureInterpolate( m_bTextureInterpolate );	/* Updated in drawAnimation() */
 			}
 
 			m_Renderer.createPartSprites( &pAnimePack->Model, pProject );

@@ -27,6 +27,8 @@ uniform float P_1;
 uniform float P_2;
 uniform float P_3;
 
+uniform float S_INTPL;
+
 uniform sampler2D color;
 uniform sampler2D alpha;
 uniform sampler2D color_authentic;
@@ -57,6 +59,17 @@ vec4 getBlendColor( vec4 c, vec4 p )
 	return	vec4( p.rgb * src_ratio + mix( vec3( 1.0 ), p.rgb, dst_src_ratio ) * c.rgb * dst_ratio, p.a * c.a );
 }
 
+vec4 ssTextureSample( sampler2D tex, vec2 st )
+{
+	vec2 uv = st;
+	if(S_INTPL < 0.5 )	{
+		uv *= vec2( A_TW, A_TH );
+		uv = floor( uv ) + vec2( 0.5, 0.5 );
+		uv *= vec2( A_U1, A_V1 );
+	}
+
+	return	texture( tex, uv );
+}
 vec4 ssPreProc( vec4 col, sampler2D tex, vec2 st, inout bool pass )
 {
 	float	fWidth = P_0;
@@ -82,7 +95,8 @@ vec4 ssPreProc( vec4 col, sampler2D tex, vec2 st, inout bool pass )
 
 	s = l * sin( Coord.y * 384.0 * fWidth * 0.5 + Pi * 2.0 * fPhase ) * fPixW;
 
-	Pixel = texture( tex, vec2( Coord.x + s, Coord.y ) );
+//	Pixel = texture( tex, vec2( Coord.x + s, Coord.y ) );
+	Pixel = ssTextureSample( tex, vec2( Coord.x + s, Coord.y ) );
 
 	return	getBlendColor( col, Pixel );
 }

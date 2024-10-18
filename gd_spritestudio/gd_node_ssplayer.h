@@ -45,6 +45,9 @@ public :
 	int getEndFrame() const;
 	int getFps() const;
 
+	void setTextureInterpolate( bool bSwitch );
+	bool getTextureInterpolate() const;
+
 	void setLoop( bool bLoop );
 	bool getLoop() const;
 	void setPlay( bool bPlay );
@@ -93,6 +96,8 @@ private :
 	bool								m_bLoop;
 	bool								m_bPlay;
 	bool								m_bPause;
+
+	bool								m_bTextureInterpolate;
 };
 
 #endif // GD_NODE_SSPLAYER_H

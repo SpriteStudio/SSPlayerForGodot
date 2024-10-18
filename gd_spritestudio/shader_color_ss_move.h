@@ -57,6 +57,17 @@ vec4 getBlendColor( vec4 c, vec4 p )
 	return	vec4( p.rgb * src_ratio + mix( vec3( 1.0 ), p.rgb, dst_src_ratio ) * c.rgb * dst_ratio, p.a * c.a );
 }
 
+vec4 ssTextureSample( sampler2D tex, vec2 st )
+{
+	vec2 uv = st;
+	if(S_INTPL < 0.5 )	{
+		uv *= vec2( A_TW, A_TH );
+		uv = floor( uv ) + vec2( 0.5, 0.5 );
+		uv *= vec2( A_U1, A_V1 );
+	}
+
+	return	texture( tex, uv );
+}
 vec4 ssPreProc( vec4 col, sampler2D tex, vec2 st, inout bool pass )
 {
 	float	fDistance = P_0;
@@ -87,11 +98,12 @@ vec4 ssPreProc( vec4 col, sampler2D tex, vec2 st, inout bool pass )
 	Coord += Vel * float(iCount);
 
 	Coord -= Vel;
-	Pixel = texture( tex, Coord );
-
+//	Pixel = texture( tex, Coord );
+	Pixel = ssTextureSample( tex, Coord );
 	for ( int i = 1; i < iCount; i++ ) {
 		Coord -= Vel;
-		Pixel = mix( texture( tex, Coord ), Pixel, 0.96 * abs( fPower ) );
+//		Pixel = mix( texture( tex, Coord ), Pixel, 0.96 * abs( fPower ) );
+		Pixel = mix( ssTextureSample( tex, Coord ), Pixel, 0.96 * abs( fPower ) );
 	}
 
 	return	getBlendColor( col, Pixel );
