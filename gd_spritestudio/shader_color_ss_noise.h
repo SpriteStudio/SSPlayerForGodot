@@ -27,6 +27,8 @@ uniform float P_1;
 uniform float P_2;
 uniform float P_3;
 
+uniform float S_INTPL;
+
 uniform sampler2D color;
 uniform sampler2D alpha;
 uniform sampler2D color_authentic;
@@ -62,6 +64,17 @@ float rand( vec2 p )
 	return	fract( sin( dot( p, vec2( 12.9898, 78.233 ) ) ) * 43758.5453 );
 }
 
+vec4 ssTextureSample( sampler2D tex, vec2 st )
+{
+	vec2 uv = st;
+	if(S_INTPL < 0.5 )	{
+		uv *= vec2( A_TW, A_TH );
+		uv = floor( uv ) + vec2( 0.5, 0.5 );
+		uv *= vec2( A_U1, A_V1 );
+	}
+
+	return	texture( tex, uv );
+}
 vec4 ssPreProc( vec4 col, sampler2D tex, vec2 st, inout bool pass )
 {
 	float	fPower = P_0;
@@ -79,7 +92,8 @@ vec4 ssPreProc( vec4 col, sampler2D tex, vec2 st, inout bool pass )
 	Coord = st;
 	u = vec2( floor( Coord.x * A_TW ) / A_TW, floor( Coord.y * A_TH ) / A_TH );
 
-	Pixel = texture( tex, Coord );
+//	Pixel = texture( tex, Coord );
+	Pixel = ssTextureSample( tex, Coord );
 
 	vec2	t = u + vec2( fPhase );
 	vec3	c;

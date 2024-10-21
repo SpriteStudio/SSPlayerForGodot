@@ -27,6 +27,8 @@ uniform float P_1;
 uniform float P_2;
 uniform float P_3;
 
+uniform float S_INTPL;
+
 uniform sampler2D color;
 uniform sampler2D alpha;
 uniform sampler2D color_authentic;
@@ -106,6 +108,17 @@ vec4 adjustHSB( vec4 col, float fRatioH, float fRatioS, float fRatioB )
 	return	toRGB( hsb );
 }
 
+vec4 ssTextureSample( sampler2D tex, vec2 st )
+{
+	vec2 uv = st;
+	if(S_INTPL < 0.5 )	{
+		uv *= vec2( A_TW, A_TH );
+		uv = floor( uv ) + vec2( 0.5, 0.5 );
+		uv *= vec2( A_U1, A_V1 );
+	}
+
+	return	texture( tex, uv );
+}
 vec4 ssPreProc( vec4 col, sampler2D tex, vec2 st, inout bool pass )
 {
 	float	fHue = P_0;
@@ -116,7 +129,8 @@ vec4 ssPreProc( vec4 col, sampler2D tex, vec2 st, inout bool pass )
 		return	adjustHSB( col, fHue, fSaturation, fBrightness );
 	}
 
-	vec4	Pixel = texture( tex, st );
+//	vec4	Pixel = texture( tex, st );
+	vec4	Pixel = ssTextureSample( tex, st );
 
 	return	getBlendColor( col, adjustHSB( Pixel, fHue, fSaturation, fBrightness ) );
 }

@@ -27,6 +27,8 @@ uniform float P_1;
 uniform float P_2;
 uniform float P_3;
 
+uniform float S_INTPL;
+
 uniform sampler2D color;
 uniform sampler2D alpha;
 uniform sampler2D color_authentic;
@@ -57,6 +59,17 @@ vec4 getBlendColor( vec4 c, vec4 p )
 	return	vec4( p.rgb * src_ratio + mix( vec3( 1.0 ), p.rgb, dst_src_ratio ) * c.rgb * dst_ratio, p.a * c.a );
 }
 
+vec4 ssTextureSample( sampler2D tex, vec2 st )
+{
+	vec2 uv = st;
+	if(S_INTPL < 0.5 )	{
+		uv *= vec2( A_TW, A_TH );
+		uv = floor( uv ) + vec2( 0.5, 0.5 );
+		uv *= vec2( A_U1, A_V1 );
+	}
+
+	return	texture( tex, uv );
+}
 float toOutlineValue( vec2 p, vec2 v, float fRatio, sampler2D tex )
 {
 	vec4	Pixel;
@@ -66,16 +79,16 @@ float toOutlineValue( vec2 p, vec2 v, float fRatio, sampler2D tex )
 
 	lo = 0.0;
 
-	Pixel = texture( tex, p + vec2( -v.x, 0.0 ) );
+	Pixel = ssTextureSample( tex, p + vec2( -v.x, 0.0 ) );
 	lo += step( Pixel.a, fRatio );
-	Pixel = texture( tex, p + vec2( +v.x, 0.0 ) );
+	Pixel = ssTextureSample( tex, p + vec2( +v.x, 0.0 ) );
 	lo += step( Pixel.a, fRatio );
-	Pixel = texture( tex, p + vec2( 0.0, -v.y ) );
+	Pixel = ssTextureSample( tex, p + vec2( 0.0, -v.y ) );
 	lo += step( Pixel.a, fRatio );
-	Pixel = texture( tex, p + vec2( 0.0, +v.y ) );
+	Pixel = ssTextureSample( tex, p + vec2( 0.0, +v.y ) );
 	lo += step( Pixel.a, fRatio );
 
-	Pixel = texture( tex, p );
+	Pixel = ssTextureSample( tex, p );
 
 	hi = step( fRatio + e, Pixel.a );
 

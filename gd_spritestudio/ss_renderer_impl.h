@@ -39,6 +39,8 @@ public :
 	void setCanvasCenter( float fX, float fY );
 	void setFps( int iFps );
 	int getFps() const;
+	void setTextureInterpolate( bool bSwitch );
+	bool getTextureInterpolate() const;
 
 	void createPartSprites( SsModel* pModel, SsProject* pProject );
 	void updateUserData( SsAnimeDecoder* pDecoder );
@@ -84,6 +86,8 @@ private :
 
 	int							m_iZOrder;
 	int							m_iChildZOrder;
+
+	bool						m_bTextureInterpolate;
 
 	GdRenderer					m_RendererColor;
 	GdRenderer					m_RendererAlpha;

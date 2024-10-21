@@ -194,6 +194,8 @@ SsRendererImpl::SsRendererImpl()
 	m_iZOrder = 0;
 	m_iChildZOrder = 0;
 
+	m_bTextureInterpolate = true;
+
 	m_RendererColor.init();
 	m_RendererAlpha.init();
 
@@ -268,6 +270,15 @@ void SsRendererImpl::setFps( int iFps )
 int SsRendererImpl::getFps() const
 {
 	return	m_iFps;
+}
+
+void SsRendererImpl::setTextureInterpolate( bool bSwitch )
+{
+	m_bTextureInterpolate = bSwitch;
+}
+bool SsRendererImpl::getTextureInterpolate() const
+{
+	return m_bTextureInterpolate;
 }
 
 void SsRendererImpl::createPartSprites( SsModel* pModel, SsProject* pProject )
@@ -624,6 +635,8 @@ void SsRendererImpl::renderPart( SsPartState* state )
 	pVisualServer->material_set_param( pSprite->materialId, "P_1", state->shaderValue.param[1] );
 	pVisualServer->material_set_param( pSprite->materialId, "P_2", state->shaderValue.param[2] );
 	pVisualServer->material_set_param( pSprite->materialId, "P_3", state->shaderValue.param[3] );
+
+	pVisualServer->material_set_param( pSprite->materialId, "S_INTPL", (m_bTextureInterpolate) ? 1.0f : 0.0f );
 
 //	Transform2D			transCanvas;
 //	Rect2				rect = Rect2( 0, 0, m_fCanvasWidth, m_fCanvasHeight );
@@ -1125,6 +1138,8 @@ void SsRendererImpl::renderSpriteSimple( float matrix[16], int width, int height
 	pVisualServer->material_set_param( pSprite->materialId, "P_1", state->shaderValue.param[1] );
 	pVisualServer->material_set_param( pSprite->materialId, "P_2", state->shaderValue.param[2] );
 	pVisualServer->material_set_param( pSprite->materialId, "P_3", state->shaderValue.param[3] );
+
+	pVisualServer->material_set_param( pSprite->materialId, "S_INTPL", (m_bTextureInterpolate) ? 1.0f : 0.0f );
 
 //	Transform2D			transCanvas;
 //	Rect2				rect = Rect2( 0, 0, m_fCanvasWidth, m_fCanvasHeight );
