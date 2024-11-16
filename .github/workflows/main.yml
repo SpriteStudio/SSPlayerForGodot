@@ -33,7 +33,7 @@ jobs:
   win_build:
     strategy:
       matrix:
-        platform: [windows-latest]
+        platform: [self-hosted]
         version: [4.3, 3.x]
     runs-on: ${{ matrix.platform }}
     steps:
