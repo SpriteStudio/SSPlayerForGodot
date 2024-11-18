@@ -384,9 +384,9 @@ value：パラメータ名と値のコレクション
 
 株式会社ＣＲＩ・ミドルウェア  
 ​https://www.cri-mw.co.jp/  
-Copyright © CRI Middleware Co., Ltd.  
+Copyright © CRI Middleware Co., Ltd.   
 
 =========================================================  
 
-* SpriteStudio, Web Technologyは、株式会社ウェブテクノロジの登録商標です。
+* SpriteStudio, Web Technology は、株式会社ウェブテクノロジの登録商標です。  
 * その他の商品名は各社の登録商標または商標です。  
