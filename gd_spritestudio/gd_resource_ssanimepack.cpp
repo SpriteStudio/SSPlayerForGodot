@@ -49,9 +49,17 @@ int GdResourceSsAnimePack::getAnimationCount() const
 	return	0;
 }
 
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+PackedStringArray GdResourceSsAnimePack::getAnimationNames() const
+#else
 Vector<String> GdResourceSsAnimePack::getAnimationNames() const
+#endif
 {
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+	PackedStringArray	vec;
+#else
 	Vector<String>	vec;
+#endif
 
 	if ( m_pAnimePack ) {
 		for ( int i = 0; i < m_pAnimePack->animeList.size(); i++ ) {

@@ -4,6 +4,10 @@
 */
 #include "gd_io.h"
 
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+#include <godot_cpp/classes/file_access.hpp>
+using namespace godot;
+#else
 #ifdef GD_V4
 #include "core/io/file_access.h"
 #endif
@@ -11,6 +15,7 @@
 #include "core/os/file_access.h"
 #endif
 #include "core/io/stream_peer.h"
+#endif
 
 GdIO::GdIO()
 {
@@ -25,6 +30,21 @@ String GdIO::loadStringFromFile( const String& strPath )
 	Error				err;
 	String				str = String( "" );
 
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+	Ref<FileAccess>		resFileAccess = FileAccess::open( strPath, FileAccess::READ);
+	if ( resFileAccess.is_valid() ) {
+		ERR_PRINT( String( "loadStringFromFile error: " ) + String::num( err ) );
+		resFileAccess->close();
+		return str;
+	}
+
+	while ( !resFileAccess->eof_reached() ) {
+		str += resFileAccess->get_line();
+	}
+
+	resFileAccess->close();
+
+#endif
 #ifdef GD_V4
 	Ref<FileAccess>		resFileAccess = FileAccess::open( strPath, FileAccess::READ, &err );
 

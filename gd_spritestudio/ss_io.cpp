@@ -9,7 +9,7 @@
 #include "gd_packet_sscellmap.h"
 #include "gd_packet_sseffect.h"
 
-#ifdef GD_V4
+#if defined(GD_V4) || defined(SPRITESTUDIO_GODOT_EXTENSION)
 #define	POOL_BYTE_ARRAY	PACKED_BYTE_ARRAY
 #endif
 #ifdef GD_V3
@@ -857,7 +857,7 @@ bool SsIO::push( StreamPeerBuffer& st, SsEffectBehavior& behavior )
 
 		push( st, eType );
 
-		switch ( eType ) {
+		switch ( static_cast<int>(eType) ) {
 		case SsEffectFunctionType::Basic :
 			{
 				ParticleElementBasic*			w = (ParticleElementBasic*)v;
@@ -1915,7 +1915,7 @@ bool SsIO::pull( StreamPeerBuffer& st, SsEffectBehavior& behavior )
 
 		pull( st, eType );
 
-		switch ( eType ) {
+		switch ( static_cast<int>(eType) ) {
 		case SsEffectFunctionType::Basic :
 			{
 				auto	w = new ParticleElementBasic();
