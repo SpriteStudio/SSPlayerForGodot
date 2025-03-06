@@ -9,7 +9,7 @@
 #include "gd_packet_sscellmap.h"
 #include "gd_packet_sseffect.h"
 
-#ifdef GD_V4
+#if defined(GD_V4) || defined(SPRITESTUDIO_GODOT_EXTENSION)
 #define	POOL_BYTE_ARRAY	PACKED_BYTE_ARRAY
 #endif
 #ifdef GD_V3
