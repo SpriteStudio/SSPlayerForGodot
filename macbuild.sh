@@ -21,6 +21,7 @@ declare -A macbuild_default_opts=(
     [ccache]="no"
     [version]="4.3"
     [strip]="no"
+    [extension]="yes"
 )
 
 declare -A opts=(
@@ -56,6 +57,10 @@ while (( $# > 0 )); do
         exit 0
     fi
 done
+
+if [[ ${opts[extension]} == "yes" ]]; then
+    unset 'opts[custom_modules]'
+fi
 
 echo "options"
 for key value in ${(kv)opts}; do

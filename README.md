@@ -30,6 +30,10 @@ SSPlayerForGodot ディレクトリから以下のコマンドを実行し、 Go
 
 ```bash
 git clone https://github.com/godotengine/godot.git
+git clone https://github.com/godotengine/godot-cpp.git godot-cpp
+```
+
+```bash
 git submodule update --init --recursive
 ```
 
@@ -54,9 +58,8 @@ git checkout 3.x
 popd 
 ```
 
-## Windows
-
-### ビルド環境のセットアップ
+## ビルド環境のセットアップ
+### Windows
 
 以降でビルド環境の構築手順について説明していきます。  
 
@@ -77,28 +80,7 @@ scons は下記でインストールできます。(上記リンクにも記載�
 python -m pip install scons
 ```
 
-### ビルド
-
-[winbuild.ps1](./winbuild.ps1) でビルド可能です。
-
-**PowerShell**
-
-```powershell
-$env:PYTHONUTF8=1
-.\winbuild.ps1
-```
-
-**Cmd**
-
-```cmd
-set PYTHONUTF8=1
-PowerShell.exe -ExecutionPolicy Bypass -File .\winbuild.ps1
-```
-
-
-## macOS
-
-### ビルド環境のセットアップ
+### macOS
 
 [Godot公式のコンパイル手順](https://docs.godotengine.org/ja/4.x/contributing/development/compiling/compiling_for_macos.html)
 
@@ -119,6 +101,26 @@ brew install molten-vk
 ```
 
 ホストアーキテクチャとは異なるアーキテクチャの Godot Engine をビルドする場合や、Universal Binary な Godot Engine をビルドする場合は、`molten-vk` の代わりに Universal Binary 対応している [Vulkan SDK for MoltenVK](https://vulkan.lunarg.com/sdk/home) をインストールしてください。
+
+
+## ビルド
+
+[winbuild.ps1](./winbuild.ps1) でビルド可能です。
+
+**PowerShell**
+
+```powershell
+$env:PYTHONUTF8=1
+.\winbuild.ps1
+```
+
+**Cmd**
+
+```cmd
+set PYTHONUTF8=1
+PowerShell.exe -ExecutionPolicy Bypass -File .\winbuild.ps1
+```
+
 
 ### ビルド
 
