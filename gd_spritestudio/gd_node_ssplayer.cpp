@@ -109,7 +109,7 @@ void GdNodeSsPlayer::setPlayerResource( const Ref<GdResourceSsPlayer>& resPlayer
 {
 	m_ResPlayer = resPlayer;
 
-	m_strAnimationSelected.clear();
+	m_strAnimationSelected.resize(0);
 	fetchAnimation();
 
 #ifdef GD_V4
@@ -145,7 +145,7 @@ void GdNodeSsPlayer::setAnimePack( const String& strName )
 
 	postAnimePackChanged( m_strAnimePackSelected );
 
-	m_strAnimationSelected.clear();
+	m_strAnimationSelected.resize(0);
 	fetchAnimation();
 
 #ifdef GD_V4
@@ -269,7 +269,7 @@ void GdNodeSsPlayer::setFrame( int iFrame )
 						const SsSignalParam&	param = command.params.at( k );
 						String					strParamId = String::utf8( param.paramId.c_str() );
 
-						switch ( param.type ) {
+						switch ( static_cast<int>(param.type) ) {
 						case SsSignalParamType::index :
 						case SsSignalParamType::integer :
 							dic[strParamId] = Variant( param.value.i );
@@ -526,7 +526,7 @@ void GdNodeSsPlayer::_bind_methods()
 
 bool GdNodeSsPlayer::_set( const StringName& p_name, const Variant& p_property )
 {
-	if ( p_name == GdUiText( "anime_pack" ) ) {
+	if ( p_name == StringName(GdUiText( "anime_pack" )) ) {
 		setAnimePack( p_property );
 
 		if ( !m_ResAnimePack.is_null() ) {
@@ -552,27 +552,27 @@ bool GdNodeSsPlayer::_set( const StringName& p_name, const Variant& p_property )
 
 		return	true;
 	}else
-	if ( p_name == GdUiText( "animation" ) ) {
+	if ( p_name == StringName(GdUiText( "animation" )) ) {
 		setAnimation( p_property );
 
 		return	true;
 	}else
-	if ( p_name == GdUiText( "frame" ) ) {
+	if ( p_name == StringName(GdUiText( "frame" )) ) {
 		setFrame( p_property );
 
 		return	true;
 	}else
-	if ( p_name == GdUiText( "loop" ) ) {
+	if ( p_name == StringName(GdUiText( "loop" )) ) {
 		setLoop( p_property );
 
 		return	true;
 	}else
-	if ( p_name == GdUiText( "playing" ) ) {
+	if ( p_name == StringName(GdUiText( "playing" )) ) {
 		setPlay( p_property );
 
 		return	true;
 	}
-	if ( p_name == GdUiText( "texture_interpolate" ) ) {
+	if ( p_name == StringName(GdUiText( "texture_interpolate" )) ) {
 		setTextureInterpolate( p_property );
 
 		return	true;
@@ -583,32 +583,32 @@ bool GdNodeSsPlayer::_set( const StringName& p_name, const Variant& p_property )
 
 bool GdNodeSsPlayer::_get( const StringName& p_name, Variant& r_property ) const
 {
-	if ( p_name == GdUiText( "anime_pack" ) ) {
+	if ( p_name == StringName(GdUiText( "anime_pack" )) ) {
 		r_property = getAnimePack();
 
 		return	true;
 	}else
-	if ( p_name == GdUiText( "animation" ) ) {
+	if ( p_name == StringName(GdUiText( "animation" )) ) {
 		r_property = getAnimation();
 
 		return	true;
 	}else
-	if ( p_name == GdUiText( "frame" ) ) {
+	if ( p_name == StringName(GdUiText( "frame" )) ) {
 		r_property = getFrame();
 
 		return	true;
 	}else
-	if ( p_name == GdUiText( "loop" ) ) {
+	if ( p_name == StringName(GdUiText( "loop" )) ) {
 		r_property = getLoop();
 
 		return	true;
 	}else
-	if ( p_name == GdUiText( "playing" ) ) {
+	if ( p_name == StringName(GdUiText( "playing" )) ) {
 		r_property = getPlay();
 
 		return	true;
 	}
-	if ( p_name == GdUiText( "texture_interpolate" ) ) {
+	if ( p_name == StringName(GdUiText( "texture_interpolate" )) ) {
 		r_property = getTextureInterpolate();
 
 		return	true;
@@ -619,7 +619,11 @@ bool GdNodeSsPlayer::_get( const StringName& p_name, Variant& r_property ) const
 
 void GdNodeSsPlayer::_get_property_list( List<PropertyInfo>* p_list ) const
 {
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+	PackedStringArray vecAnimePackName;
+#else
 	Vector<String>	vecAnimePackName;
+#endif
 
 	vecAnimePackName.insert( 0, GdUiText( "-- Empty --" ) );
 
@@ -627,7 +631,7 @@ void GdNodeSsPlayer::_get_property_list( List<PropertyInfo>* p_list ) const
 		Ref<GdResourceSsProject>	resProject = m_ResPlayer->getProjectResource();
 
 		if ( !resProject.is_null() ) {
-			Vector<String>			vec = resProject->getAnimePackNames();
+			auto			vec = resProject->getAnimePackNames();
 
 			for ( int i = 0; i < vec.size(); i++ ) {
 				String		str = vec.get( i );
@@ -649,7 +653,11 @@ void GdNodeSsPlayer::_get_property_list( List<PropertyInfo>* p_list ) const
 
 	if ( !m_ResAnimePack.is_null() ) {
 		PropertyInfo	animationsPropertyInfo;
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+		PackedStringArray	vecAnimationName = m_ResAnimePack->getAnimationNames();
+#else
 		Vector<String>	vecAnimationName = m_ResAnimePack->getAnimationNames();
+#endif
 
 		animationsPropertyInfo.name = GdUiText( "animation" );
 		animationsPropertyInfo.type = Variant::STRING;
@@ -670,7 +678,11 @@ void GdNodeSsPlayer::_get_property_list( List<PropertyInfo>* p_list ) const
 		SsAnimation*	pAnimation = pAnimePack->findAnimation( strAnimationName );
 
 		if ( pAnimation ) {
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+			PackedStringArray	vecRange;
+#else
 			Vector<String>	vecRange;
+#endif
 
 			vecRange.push_back( String::num( pAnimation->settings.startFrame ) );
 			vecRange.push_back( String::num( pAnimation->settings.endFrame ) );
@@ -916,7 +928,7 @@ void GdNodeSsPlayer::drawAnimation()
 void GdNodeSsPlayer::fetchAnimation()
 {
 	m_bAnimeDecoder = false;
-	if ( !m_strAnimationSelected.length() == 0 ) {
+	if ( !m_strAnimationSelected.is_empty() ) {
 		if ( m_ResPlayer.is_null() ) {
 			return;
 		}

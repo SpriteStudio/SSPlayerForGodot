@@ -4,11 +4,16 @@
 */
 #include "register_types.h"
 
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+#include <godot_cpp/core/class_db.hpp>
+using namespace godot;
+#else
 #ifdef GD_V4
 #include "core/object/class_db.h"
 #endif
 #ifdef GD_V3
 #include "core/class_db.h"
+#endif
 #endif
 
 #include "gd_node_ssplayer.h"
@@ -55,7 +60,7 @@ void register_gd_spritestudio_types()
 	ClassDB::register_class<GdResourceSsCellMap>();
 	ClassDB::register_class<GdResourceSsEffect>();
 
-#ifdef GD_V4
+#if defined(GD_V4) || defined(SPRITESTUDIO_GODOT_EXTENSION)
 	s_LoaderSsProject.instantiate();
 	s_LoaderSsAnimePack.instantiate();
 	s_LoaderSsCellMap.instantiate();
@@ -84,6 +89,20 @@ void register_gd_spritestudio_types()
 	s_SaverBssEffect.instance();
 #endif
 
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+	ResourceLoader::get_singleton()->add_resource_format_loader( s_LoaderSsProject );
+	ResourceLoader::get_singleton()->add_resource_format_loader( s_LoaderSsAnimePack );
+	ResourceLoader::get_singleton()->add_resource_format_loader( s_LoaderSsCellMap );
+	ResourceLoader::get_singleton()->add_resource_format_loader( s_LoaderSsEffect );
+	ResourceLoader::get_singleton()->add_resource_format_loader( s_LoaderBssProject );
+	ResourceLoader::get_singleton()->add_resource_format_loader( s_LoaderBssAnimePack );
+	ResourceLoader::get_singleton()->add_resource_format_loader( s_LoaderBssCellMap );
+	ResourceLoader::get_singleton()->add_resource_format_loader( s_LoaderBssEffect );
+	ResourceSaver::get_singleton()->add_resource_format_saver( s_SaverBssProject );
+	ResourceSaver::get_singleton()->add_resource_format_saver( s_SaverBssAnimePack );
+	ResourceSaver::get_singleton()->add_resource_format_saver( s_SaverBssCellMap );
+	ResourceSaver::get_singleton()->add_resource_format_saver( s_SaverBssEffect );
+#else
 	ResourceLoader::add_resource_format_loader( s_LoaderSsProject );
 	ResourceLoader::add_resource_format_loader( s_LoaderSsAnimePack );
 	ResourceLoader::add_resource_format_loader( s_LoaderSsCellMap );
@@ -96,10 +115,25 @@ void register_gd_spritestudio_types()
 	ResourceSaver::add_resource_format_saver( s_SaverBssAnimePack );
 	ResourceSaver::add_resource_format_saver( s_SaverBssCellMap );
 	ResourceSaver::add_resource_format_saver( s_SaverBssEffect );
+#endif
 }
 
 void unregister_gd_spritestudio_types()
 {
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+	ResourceSaver::get_singleton()->remove_resource_format_saver( s_SaverBssEffect );
+	ResourceSaver::get_singleton()->remove_resource_format_saver( s_SaverBssCellMap );
+	ResourceSaver::get_singleton()->remove_resource_format_saver( s_SaverBssAnimePack );
+	ResourceSaver::get_singleton()->remove_resource_format_saver( s_SaverBssProject );
+	ResourceLoader::get_singleton()->remove_resource_format_loader( s_LoaderBssEffect );
+	ResourceLoader::get_singleton()->remove_resource_format_loader( s_LoaderBssCellMap );
+	ResourceLoader::get_singleton()->remove_resource_format_loader( s_LoaderBssAnimePack );
+	ResourceLoader::get_singleton()->remove_resource_format_loader( s_LoaderBssProject );
+	ResourceLoader::get_singleton()->remove_resource_format_loader( s_LoaderSsEffect );
+	ResourceLoader::get_singleton()->remove_resource_format_loader( s_LoaderSsCellMap );
+	ResourceLoader::get_singleton()->remove_resource_format_loader( s_LoaderSsAnimePack );
+	ResourceLoader::get_singleton()->remove_resource_format_loader( s_LoaderSsProject );
+#else
 	ResourceSaver::remove_resource_format_saver( s_SaverBssEffect );
 	ResourceSaver::remove_resource_format_saver( s_SaverBssCellMap );
 	ResourceSaver::remove_resource_format_saver( s_SaverBssAnimePack );
@@ -112,7 +146,8 @@ void unregister_gd_spritestudio_types()
 	ResourceLoader::remove_resource_format_loader( s_LoaderSsCellMap );
 	ResourceLoader::remove_resource_format_loader( s_LoaderSsAnimePack );
 	ResourceLoader::remove_resource_format_loader( s_LoaderSsProject );
-
+#endif
+	
 	s_SaverBssEffect.unref();
 	s_SaverBssCellMap.unref();
 	s_SaverBssAnimePack.unref();

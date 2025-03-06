@@ -9,11 +9,15 @@
 
 #include "ss_io.h"
 
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+Error GdSaverBssProject::_save(const Ref<Resource> &p_resource, const String &p_path, uint32_t p_flags)
+#else
 #ifdef GD_V4
 Error GdSaverBssProject::save( const Ref<Resource>& p_resource, const String& p_path, uint32_t p_flags )
 #endif
 #ifdef GD_V3
 Error GdSaverBssProject::save( const String& p_path, const RES& p_resource, uint32_t p_flags )
+#endif
 #endif
 {
 	if ( !Object::cast_to<GdResourceSsDocument>( *p_resource ) ) {
@@ -35,16 +39,30 @@ Error GdSaverBssProject::save( const String& p_path, const RES& p_resource, uint
 	return	GdIO::saveVariantToFile( p_path, SsIO::toProjectVariant( strSource ) );
 }
 
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+bool GdSaverBssProject::_recognize(const Ref<Resource> &p_resource)
+#else
 #ifdef GD_V4
 bool GdSaverBssProject::recognize( const Ref<Resource>& p_resource ) const
 #endif
 #ifdef GD_V3
 bool GdSaverBssProject::recognize( const RES& p_resource ) const
 #endif
+#endif
 {
 	return	( Object::cast_to<GdResourceSsDocument>( *p_resource ) != NULL );
 }
 
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+PackedStringArray GdSaverBssProject::_get_recognized_extensions(const Ref<Resource> &resource)
+{
+    PackedStringArray extensions;
+    if (Object::cast_to<GdResourceSsDocument>(*resource)) {
+        extensions.push_back("gdsspj");
+    }
+    return extensions;
+}
+#else
 #ifdef GD_V4
 void GdSaverBssProject::get_recognized_extensions( const Ref<Resource>& p_resource, List<String>* p_extensions ) const
 #endif
@@ -56,3 +74,4 @@ void GdSaverBssProject::get_recognized_extensions( const RES& p_resource, List<S
 		p_extensions->push_back( "gdsspj" );
 	}
 }
+#endif
