@@ -140,7 +140,7 @@ for key value in ${(kv)opts}; do
     fi
     scons_command_opts="$scons_command_opts $key=$value"
 done
-scons_command_opts="$scons_command_opts -j ${CPUS}"
+scons_command_opts="$scons_command_opts -j $macbuild_default_opts[cpus]"
 
 echo "scons command options: $scons_command_opts"
 

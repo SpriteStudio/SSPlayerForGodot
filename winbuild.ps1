@@ -5,6 +5,7 @@ if ($arch.Value -match "AMD64") {
 } else {
     $HOST_ARCH = "arm64"
 }
+$cpus = Get-Item Env:NUMBER_OF_PROCESSORS
 
 pushd $rootDirectory/godot
 try {
@@ -29,6 +30,7 @@ $scons_default_opts = @{
 
 # winbuild default options
 $winbuild_default_opts = @{
+    cpus = ${cpus}
     ccache = "no"
     version = "4.3"
 }
@@ -42,6 +44,7 @@ function usage() {
     echo "Usage: $APP [options]"
     echo "$APP options:"
     echo "  arch=<arch>         Target architecture (default: ${HOST_ARCH})"
+    echo "  cpus=<nums>         number of scons -j option"
     # echo "  ccache=<yes|no>     Enable ccache (default: $($winbuild_default_opts.ccache))"
     echo "  version=<version>   Godot version. $APP uses this version at can not getting Godot version from git branch or tag. (default: $($winbuild_default_opts.version))"
     echo "Godot scons options: "
@@ -106,6 +109,9 @@ foreach ($key in $opts.Keys) {
     }
     $scons_command_opts += " $key=$($opts[$key])"
 }
+$scons_command_opts += "$scons_command_opts -j $winbuild_default_opts.cpus"
+
+
 echo "scons command options: $scons_command_opts"
 
 pushd $rootDirectory/godot
