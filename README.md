@@ -122,12 +122,12 @@ PowerShell.exe -ExecutionPolicy Bypass -File .\winbuild.ps1
 ```
 
 
-### ビルド
+### macOS ビルド
 
-[macbuild.sh](./macbuild.sh) でビルド可能です。
+[build.sh](./build.sh) でビルド可能です。
 
 ```sh
-./macbuild.sh
+./build.sh
 ```
 
 引数を指定しない場合はホストマシンのアーキテクチャと同じアーキテクチャ向けにビルドします。
@@ -136,19 +136,19 @@ PowerShell.exe -ExecutionPolicy Bypass -File .\winbuild.ps1
 **Universal Binary (supports both arm64 and x86_64)**
 
 ```sh
-./macbuild.sh arch=universal
+./build.sh arch=universal
 ```
 
 **arm64 (Apple Silicon)**
 
 ```sh
-./macbuild.sh arch=arm64
+./build.sh arch=arm64
 ```
 
 **x86_64 (Intel)**
 
 ```sh
-./macbuild.sh arch=x86_64
+./build.sh arch=x86_64
 ```
 
 `godot/Godot.app` を開いて起動を確認します。
