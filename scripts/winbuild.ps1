@@ -1,4 +1,5 @@
-$rootDirectory = Split-Path -Parent $PSCommandPath
+$baseDirectory = Split-Path -Parent $PSCommandPath
+$rootDirectory = Split-Path -Parent $baseDirectory
 $arch = Get-Item Env:PROCESSOR_ARCHITECTURE
 if ($arch.Value -match "AMD64") {
     $HOST_ARCH = "x64"
