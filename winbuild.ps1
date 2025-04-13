@@ -1,9 +1,9 @@
 $rootDirectory = Split-Path -Parent $PSCommandPath
-$cpuArch=(wmic cpu get Architecture)[2].Trim()
-if ($cpuArch -eq "12") {
-    $HOST_ARCH = "arm64"
-} else {
+$arch = Get-Item Env:PROCESSOR_ARCHITECTURE
+if ($arch.Value -match "AMD64") {
     $HOST_ARCH = "x64"
+} else {
+    $HOST_ARCH = "arm64"
 }
 
 pushd $rootDirectory/godot
