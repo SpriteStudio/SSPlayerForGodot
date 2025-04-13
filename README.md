@@ -105,29 +105,29 @@ brew install molten-vk
 
 ## ビルド
 
-[winbuild.ps1](./winbuild.ps1) でビルド可能です。
+[winbuild.ps1](./scripts/winbuild.ps1) でビルド可能です。
 
 **PowerShell**
 
 ```powershell
 $env:PYTHONUTF8=1
-.\winbuild.ps1
+.\scripts\winbuild.ps1
 ```
 
 **Cmd**
 
 ```cmd
 set PYTHONUTF8=1
-PowerShell.exe -ExecutionPolicy Bypass -File .\winbuild.ps1
+PowerShell.exe -ExecutionPolicy Bypass -File .\scripts\winbuild.ps1
 ```
 
 
 ### macOS ビルド
 
-[build.sh](./build.sh) でビルド可能です。
+[build.sh](./scripts/build.sh) でビルド可能です。
 
 ```sh
-./build.sh
+./scripts/build.sh
 ```
 
 引数を指定しない場合はホストマシンのアーキテクチャと同じアーキテクチャ向けにビルドします。
@@ -136,19 +136,19 @@ PowerShell.exe -ExecutionPolicy Bypass -File .\winbuild.ps1
 **Universal Binary (supports both arm64 and x86_64)**
 
 ```sh
-./build.sh arch=universal
+./scripts/build.sh arch=universal
 ```
 
 **arm64 (Apple Silicon)**
 
 ```sh
-./build.sh arch=arm64
+./scripts/build.sh arch=arm64
 ```
 
 **x86_64 (Intel)**
 
 ```sh
-./build.sh arch=x86_64
+./scripts/build.sh arch=x86_64
 ```
 
 `godot/Godot.app` を開いて起動を確認します。
