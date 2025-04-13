@@ -29,7 +29,7 @@ jobs:
       if: ${{ matrix.version == 4.3 }}
     - name: build godot
       run: |
-        ./macbuild.sh version=${{ matrix.version }}
+        ./scripts/build.sh version=${{ matrix.version }}
   win_build:
     strategy:
       matrix:
@@ -70,4 +70,4 @@ jobs:
       shell: pwsh
       run: |
         $env:PYTHONUTF8=1
-        .\winbuild.ps1 version=${{ matrix.version }}
+        .\scripts\winbuild.ps1 version=${{ matrix.version }}
