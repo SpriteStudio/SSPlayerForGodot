@@ -26,19 +26,20 @@ popd > /dev/null
 # Godot scons default options
 declare -A scons_default_opts=(
     [arch]=${HOST_ARCH}
+    [platform]=${PLATFORM}
     [target]="editor"
     [compiledb]="yes"
 )
 
 # macbuild default options
-declare -A macbuild_default_opts=(
+declare -A build_default_opts=(
     [cpus]=${CPUS}
     [version]="4.3"
     [strip]="no"
 )
 
 declare -A opts=(
-    ${(kv)macbuild_default_opts}
+    ${(kv)build_default_opts}
     ${(kv)scons_default_opts}
 )
 
@@ -47,10 +48,11 @@ func usage() {
     echo "Usage: $APP [options]"
     echo "$APP options:"
     echo "  arch=<arch>         Target architecture (default: ${HOST_ARCH})"
+    echo "  platform=<platform> Target platform (default: ${scons_default_opts[platform]})"
     echo "  cpus=<nums>         number of scons -j option"
-    echo "  target=<target>     build target (default: ${macbuild_default_opts[target]})"
-    echo "  version=<version>   Godot version. $APP uses this version at can not getting Godot version from git branch or tag. (default: ${macbuild_default_opts[version]})"
-    echo "  strip=<yes|no>      Execute strip command to the app binary (default: ${macbuild_default_opts[strip]})"
+    echo "  target=<target>     build target (default: ${build_default_opts[target]})"
+    echo "  version=<version>   Godot version. $APP uses this version at can not getting Godot version from git branch or tag. (default: ${build_default_opts[version]})"
+    echo "  strip=<yes|no>      Execute strip command to the app binary (default: ${build_default_opts[strip]})"
     echo "Godot scons options: "
     pushd $ROOTDIR/godot-cpp > /dev/null
     scons --help
@@ -88,35 +90,9 @@ else
 fi
 echo "Godot Version: ${VERSION}"
 
-# set internal parameters for each Godot version
-declare -A internal_opts=(
-    [platform]=""
-    [app_template]=""
-    [app_bin]=""
-)
-if [[ ${VERSION} =~ ^3\..* ]]; then
-    # 3.x
-    if [[ "${PLATFORM}" == "macos" ]]; then
-        internal_opts[platform]="osx"
-    else
-        internal_opts[platform]=${PLATFORM}
-    fi
-    internal_opts[app_target]="tools"
-    internal_opts[app_template]="osx_tools.app"
-else
-    # 4.x
-    internal_opts[platform]=${PLATFORM}
-    internal_opts[app_template]="macos_tools.app"
-fi
-if [[ -n ${opts[target]} ]]; then
-    internal_opts[app_target]=${opts[target]}
-fi
-internal_opts[app_bin]="godot.${internal_opts[platform]}.${internal_opts[app_target]}"
-
 # validate scons command options from macbuild.sh options
-scons_command_opts="platform=${internal_opts[platform]}"
 for key value in ${(kv)opts}; do
-    if [[ -v macbuild_default_opts[$key] ]]; then
+    if [[ -v build_default_opts[$key] ]]; then
         # skip macbuild default options
         continue
     fi
@@ -126,25 +102,47 @@ for key value in ${(kv)opts}; do
     fi
     scons_command_opts="$scons_command_opts $key=$value"
 done
-scons_command_opts="$scons_command_opts -j $macbuild_default_opts[cpus]"
+scons_command_opts="$scons_command_opts -j $build_default_opts[cpus]"
 
 echo "scons command options: $scons_command_opts"
 
-# build Godot
+if [[ "$opts[platform]" = "macos" ]] || [[ "$opts[platform]" = "ios" ]]; then
+    BINDIR=./bin/${opts[platform]}/${opts[platform]}.framework
+else
+    BINDIR=./bin/${opts[platform]}
+fi
+TMPDIR=./bin/tmp
+
+/bin/mkdir -p ${BINDIR}
 alias scons_macro="scons ${scons_command_opts}"
 if [[ ${opts[arch]} == "universal" ]]; then
-    ARCHES=('arm64' 'x86_64')
+    if [[ ${opts[platform]} == "android" ]]; then
+        ARCHES=('arm64' 'x86_64')
+    else 
+        ARCHES=${opts[arch]}
+    fi
 else
     ARCHES=${opts[arch]}
 fi
 for arch in $ARCHES; do
     echo "scons command build target arch: $arch"
     scons_macro arch=$arch
+    # TODO
+    # if [[ ${opts[strip]} == "yes" ]]; then
+    #     strip ${BINDIR}/libSSGodot.macos.${opts[target]}
+    # fi
+    #if [[ ${opts[platform]} == "macos" ]] || [[ ${opts[platform]} == "ios" ]]; then
+    #    /bin/mkdir -p ${TMPDIR}
+    #    mv ${BINDIR}/libSSGodot.${opts[platform]}.${opts[target]} ${TMPDIR}/libSSGodot.${opts[platform]}.${opts[target]}.$arch
+    #fi
 done
 
-if [[ "$PLATFORM" == "macos" ]]; then
-    # strip binary
-    if [[ ${opts[strip]} == "yes" ]]; then
-        strip ./bin/${internal_opts[platform]}/macos.framework/libSSGodot.macos.${internal_opts[target]}
+if [[ ${opts[platform]} == "macos" ]] || [[ ${opts[platform]} == "ios" ]]; then
+    if [[ ${opts[arch]} == "universal" ]]; then
+        lipo -create ${TMPDIR}/libSSGodot.${opts[platform]}.${opts[target]}.x86_64 ${TMPDIR}/libSSGodot.${opts[platform]}.${opts[target]}.arm64 -output ${BINDIR}/libSSGodot.${opts[platform]}.${opts[target]}
+    else
+        mv ${TMPDIR}/libSSGodot.${opts[platform]}.${opts[target]}.${opts[arch]} ${BINDIR}/libSSGodot.${opts[platform]}.${opts[target]}
     fi
+    /bin/rm -rf ${TMPDIR}
 fi
+

@@ -31,8 +31,8 @@ declare -A scons_default_opts=(
     [custom_modules]="../gd_spritestudio"
 )
 
-# macbuild default options
-declare -A macbuild_default_opts=(
+# build default options
+declare -A build_default_opts=(
     [cpus]=${CPUS}
     [ccache]="no"
     [version]="4.3"
@@ -40,7 +40,7 @@ declare -A macbuild_default_opts=(
 )
 
 declare -A opts=(
-    ${(kv)macbuild_default_opts}
+    ${(kv)build_default_opts}
     ${(kv)scons_default_opts}
 )
 
@@ -50,9 +50,9 @@ func usage() {
     echo "$APP options:"
     echo "  arch=<arch>         Target architecture (default: ${HOST_ARCH})"
     echo "  cpus=<nums>         number of scons -j option"
-    echo "  ccache=<yes|no>     Enable ccache (default: ${macbuild_default_opts[ccache]})"
-    echo "  version=<version>   Godot version. $APP uses this version at can not getting Godot version from git branch or tag. (default: ${macbuild_default_opts[version]})"
-    echo "  strip=<yes|no>      Execute strip command to the app binary (default: ${macbuild_default_opts[strip]})"
+    echo "  ccache=<yes|no>     Enable ccache (default: ${build_default_opts[ccache]})"
+    echo "  version=<version>   Godot version. $APP uses this version at can not getting Godot version from git branch or tag. (default: ${build_default_opts[version]})"
+    echo "  strip=<yes|no>      Execute strip command to the app binary (default: ${build_default_opts[strip]})"
     echo "Godot scons options: "
     pushd $ROOTDIR/godot > /dev/null
     scons --help
@@ -130,11 +130,11 @@ if [[ -n ${opts[target]} ]]; then
 fi
 internal_opts[app_bin]="godot.${internal_opts[platform]}.${internal_opts[app_target]}"
 
-# validate scons command options from macbuild.sh options
+# validate scons command options from build.sh options
 scons_command_opts="platform=${internal_opts[platform]}"
 for key value in ${(kv)opts}; do
-    if [[ -v macbuild_default_opts[$key] ]]; then
-        # skip macbuild default options
+    if [[ -v build_default_opts[$key] ]]; then
+        # skip build default options
         continue
     fi
     if [[ $key == "arch" ]]; then
@@ -143,7 +143,7 @@ for key value in ${(kv)opts}; do
     fi
     scons_command_opts="$scons_command_opts $key=$value"
 done
-scons_command_opts="$scons_command_opts -j $macbuild_default_opts[cpus]"
+scons_command_opts="$scons_command_opts -j $build_default_opts[cpus]"
 
 echo "scons command options: $scons_command_opts"
 
