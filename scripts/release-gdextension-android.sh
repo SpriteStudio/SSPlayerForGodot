@@ -7,9 +7,9 @@ ROOTDIR=$(cd $ROOTDIR && pwd -P)
 
 pushd ${ROOTDIR} > /dev/null
 
-targets=("editor" "template_release" "template_debug")
+targets=("template_release" "template_debug")
 for target in ${targets[@]}; do
-    scripts/build-extension.sh platform=macos arch=universal strip=yes target=${target}
+    scripts/build-extension.sh platform=android arch=universal strip=yes target=${target}
 done
 
 popd > /dev/null # ${ROOTDIR}
