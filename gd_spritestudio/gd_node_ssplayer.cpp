@@ -928,7 +928,11 @@ void GdNodeSsPlayer::drawAnimation()
 void GdNodeSsPlayer::fetchAnimation()
 {
 	m_bAnimeDecoder = false;
+#if defined(GD_V4) || defined(SPRITESTUDIO_GODOT_EXTENSION)
 	if ( !m_strAnimationSelected.is_empty() ) {
+#else if defined(GD_V3)
+	if ( !m_strAnimationSelected.length() == 0 ) {
+#endif
 		if ( m_ResPlayer.is_null() ) {
 			return;
 		}
