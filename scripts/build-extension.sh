@@ -111,7 +111,6 @@ if [[ "$opts[platform]" = "macos" ]] || [[ "$opts[platform]" = "ios" ]]; then
 else
     BINDIR=./bin/${opts[platform]}
 fi
-TMPDIR=./bin/tmp
 
 /bin/mkdir -p ${BINDIR}
 alias scons_macro="scons ${scons_command_opts}"
@@ -131,18 +130,8 @@ for arch in $ARCHES; do
     # if [[ ${opts[strip]} == "yes" ]]; then
     #     strip ${BINDIR}/libSSGodot.macos.${opts[target]}
     # fi
-    #if [[ ${opts[platform]} == "macos" ]] || [[ ${opts[platform]} == "ios" ]]; then
-    #    /bin/mkdir -p ${TMPDIR}
-    #    mv ${BINDIR}/libSSGodot.${opts[platform]}.${opts[target]} ${TMPDIR}/libSSGodot.${opts[platform]}.${opts[target]}.$arch
-    #fi
-done
-
-if [[ ${opts[platform]} == "macos" ]] || [[ ${opts[platform]} == "ios" ]]; then
-    if [[ ${opts[arch]} == "universal" ]]; then
-        lipo -create ${TMPDIR}/libSSGodot.${opts[platform]}.${opts[target]}.x86_64 ${TMPDIR}/libSSGodot.${opts[platform]}.${opts[target]}.arm64 -output ${BINDIR}/libSSGodot.${opts[platform]}.${opts[target]}
-    else
-        mv ${TMPDIR}/libSSGodot.${opts[platform]}.${opts[target]}.${opts[arch]} ${BINDIR}/libSSGodot.${opts[platform]}.${opts[target]}
+    if [[ ${opts[platform]} == "ios" ]] && [[ ${opts[ios_simulator]} == "yes" ]]; then
+        echo mv
+        mv ${BINDIR}/libSSGodot.${opts[platform]}.${opts[target]} ${BINDIR}/libSSGodot.${opts[platform]}.${opts[target]}.simulator
     fi
-    /bin/rm -rf ${TMPDIR}
-fi
-
+done

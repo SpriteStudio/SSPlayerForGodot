@@ -3,8 +3,7 @@
 BASEDIR=$(dirname $0)
 BASEDIR=$(cd $BASEDIR && pwd -P)
 ROOTDIR=${BASEDIR}/..
-ROOTDIR=`cd $ROOTDIR && pwd -P`
-
+ROOTDIR=$(cd $ROOTDIR && pwd -P)
 
 CPUS=2
 if [ "$OSTYPE" = "msys" ]; then
