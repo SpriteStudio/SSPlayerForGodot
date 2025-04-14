@@ -1377,7 +1377,7 @@ void SsRendererImpl::updateShaderSource( PartSprite& sprite, SsBlendType::_enum 
 
 	float	fComposite = 0.0f;
 
-	switch ( eBlendType ) {
+	switch ( static_cast<int>(eBlendType) ) {
 	case SsBlendType::mix :
 		fComposite = 0.0f;
 		break;

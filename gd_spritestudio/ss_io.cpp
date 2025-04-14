@@ -857,7 +857,7 @@ bool SsIO::push( StreamPeerBuffer& st, SsEffectBehavior& behavior )
 
 		push( st, eType );
 
-		switch ( eType ) {
+		switch ( static_cast<int>(eType) ) {
 		case SsEffectFunctionType::Basic :
 			{
 				ParticleElementBasic*			w = (ParticleElementBasic*)v;
@@ -1915,7 +1915,7 @@ bool SsIO::pull( StreamPeerBuffer& st, SsEffectBehavior& behavior )
 
 		pull( st, eType );
 
-		switch ( eType ) {
+		switch ( static_cast<int>(eType) ) {
 		case SsEffectFunctionType::Basic :
 			{
 				auto	w = new ParticleElementBasic();
