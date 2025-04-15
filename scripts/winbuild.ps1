@@ -1,12 +1,12 @@
 $baseDirectory = Split-Path -Parent $PSCommandPath
 $rootDirectory = Split-Path -Parent $baseDirectory
-$arch = Get-Item Env:PROCESSOR_ARCHITECTURE
-if ($arch.Value -match "AMD64") {
+$arch = (Get-Item Env:PROCESSOR_ARCHITECTURE).Value
+if ($arch -match "AMD64") {
     $HOST_ARCH = "x64"
 } else {
     $HOST_ARCH = "arm64"
 }
-$cpus = Get-Item Env:NUMBER_OF_PROCESSORS
+$cpus = (Get-Item Env:NUMBER_OF_PROCESSORS).Value
 
 pushd $rootDirectory/godot
 try {
@@ -31,7 +31,7 @@ $scons_default_opts = @{
 
 # winbuild default options
 $winbuild_default_opts = @{
-    cpus = ${cpus}
+    cpus = $cpus
     ccache = "no"
     version = "4.3"
 }
@@ -45,7 +45,7 @@ function usage() {
     echo "Usage: $APP [options]"
     echo "$APP options:"
     echo "  arch=<arch>         Target architecture (default: ${HOST_ARCH})"
-    echo "  cpus=<nums>         number of scons -j option"
+    echo "  cpus=<nums>         number of scons -j option (default: $cpus)"
     # echo "  ccache=<yes|no>     Enable ccache (default: $($winbuild_default_opts.ccache))"
     echo "  version=<version>   Godot version. $APP uses this version at can not getting Godot version from git branch or tag. (default: $($winbuild_default_opts.version))"
     echo "Godot scons options: "
@@ -110,7 +110,8 @@ foreach ($key in $opts.Keys) {
     }
     $scons_command_opts += " $key=$($opts[$key])"
 }
-$scons_command_opts += "$scons_command_opts -j $winbuild_default_opts.cpus"
+$j = $opts["cpus"]
+$scons_command_opts += "$scons_command_opts -j $j"
 
 
 echo "scons command options: $scons_command_opts"
