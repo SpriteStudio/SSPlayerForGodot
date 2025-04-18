@@ -4,6 +4,11 @@
 */
 #include "gd_renderer.h"
 
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+#include <godot_cpp/classes/rendering_server.hpp>
+#define	VisualServer	RenderingServer
+using namespace godot;
+#else
 #ifdef GD_V4
 #include "servers/rendering_server.h"
 #define	VisualServer	RenderingServer
@@ -11,11 +16,16 @@
 #ifdef GD_V3
 #include "servers/visual_server.h"
 #endif
+#endif
 
 static inline void safeFree( RID& rid )
 {
 	if ( rid.is_valid() ) {
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+		VisualServer::get_singleton()->free_rid( rid );
+#else
 		VisualServer::get_singleton()->free( rid );
+#endif
 		rid = RID();
 	}
 }
