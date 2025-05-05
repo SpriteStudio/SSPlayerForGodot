@@ -106,6 +106,8 @@ scons_command_opts="$scons_command_opts -j $build_default_opts[cpus]"
 
 echo "scons command options: $scons_command_opts"
 
+pushd ${ROOTDIR} > /dev/null
+
 if [[ "$opts[platform]" = "macos" ]] || [[ "$opts[platform]" = "ios" ]]; then
     BINDIR=./bin/${opts[platform]}/${opts[platform]}.framework
 else
@@ -135,3 +137,4 @@ for arch in $ARCHES; do
         mv ${BINDIR}/libSSGodot.${opts[platform]}.${opts[target]} ${BINDIR}/libSSGodot.${opts[platform]}.${opts[target]}.simulator
     fi
 done
+popd > /dev/null # ${ROOTDIR}
