@@ -26,6 +26,8 @@ popd > /dev/null
 # Godot scons default options
 declare -A scons_default_opts=(
     [arch]=${HOST_ARCH}
+    [platform]=${PLATFORM}
+    [target]="editor"
     [compiledb]="yes"
     [custom_modules]="../gd_spritestudio"
 )
@@ -48,6 +50,8 @@ func usage() {
     echo "Usage: $APP [options]"
     echo "$APP options:"
     echo "  arch=<arch>         Target architecture (default: ${HOST_ARCH})"
+    echo "  platform=<platform> Target platform (default: ${PLATFORM})"
+    echo "  target=<target>     Target (default: ${scons_default_opts[target]})"
     echo "  cpus=<nums>         number of scons -j option"
     echo "  ccache=<yes|no>     Enable ccache (default: ${build_default_opts[ccache]})"
     echo "  version=<version>   Godot version. $APP uses this version at can not getting Godot version from git branch or tag. (default: ${build_default_opts[version]})"
@@ -105,7 +109,6 @@ echo "Godot Version: ${VERSION}"
 
 # set internal parameters for each Godot version
 declare -A internal_opts=(
-    [platform]=""
     [app_template]=""
     [app_bin]=""
 )
@@ -130,7 +133,6 @@ fi
 internal_opts[app_bin]="godot.${internal_opts[platform]}.${internal_opts[app_target]}"
 
 # validate scons command options from build.sh options
-scons_command_opts="platform=${internal_opts[platform]}"
 for key value in ${(kv)opts}; do
     if [[ -v build_default_opts[$key] ]]; then
         # skip build default options
@@ -168,32 +170,35 @@ for arch in $ARCHES; do
     scons_macro arch=$arch
 done
 
+# strip binary
+if [[ ${opts[strip]} == "yes" ]]; then
+    strip ./bin/godot.*
+fi
+
 if [[ "$PLATFORM" == "macos" ]]; then
-    # strip binary
-    if [[ ${opts[strip]} == "yes" ]]; then
-        strip ./bin/godot.*
+    if [[ ${opts[target]} == "editor" ]]; then
+        # create Godot.app
+        /bin/rm -rf ./Godot.app
+        /bin/cp -r misc/dist/${internal_opts[app_template]} ./Godot.app
+        /bin/mkdir -p Godot.app/Contents/MacOS
+        if [[ ${opts[arch]} == "universal" ]]; then
+            lipo -create bin/${internal_opts[app_bin]}.arm64 bin/${internal_opts[app_bin]}.x86_64 -output bin/${internal_opts[app_bin]}.${opts[arch]}
+        fi
+        /bin/cp bin/${internal_opts[app_bin]}.${opts[arch]} Godot.app/Contents/MacOS/Godot
+        /bin/chmod +x Godot.app/Contents/MacOS/Godot 
+        codesign --force --timestamp --options=runtime --entitlements misc/dist/${internal_opts[platform]}/editor.entitlements -s - Godot.app
     fi
 
-    # create Godot.app
-    /bin/rm -rf ./Godot.app
-    /bin/cp -r misc/dist/${internal_opts[app_template]} ./Godot.app
-    /bin/mkdir -p Godot.app/Contents/MacOS
-    if [[ ${opts[arch]} == "universal" ]]; then
-        lipo -create bin/${internal_opts[app_bin]}.arm64 bin/${internal_opts[app_bin]}.x86_64 -output bin/${internal_opts[app_bin]}.${opts[arch]}
-    fi
-    /bin/cp bin/${internal_opts[app_bin]}.${opts[arch]} Godot.app/Contents/MacOS/Godot
-    /bin/chmod +x Godot.app/Contents/MacOS/Godot 
-    codesign --force --timestamp --options=runtime --entitlements misc/dist/${internal_opts[platform]}/editor.entitlements -s - Godot.app
-
-    # revert enabling ccache on Godot
-    if [[ ${opts[ccache]} == "yes" ]]; then
-        git checkout platform/${internal_opts[platform]}/detect.py
-    fi
 fi
 
 popd # $ROOTDIR/godot
 
 if [[ "$PLATFORM" == "macos" ]]; then
+    # revert enabling ccache on Godot
+    if [[ ${opts[ccache]} == "yes" ]]; then
+        git checkout platform/${internal_opts[platform]}/detect.py
+    fi
+
     if [[ _USE_DEFAULT_CCACHE -eq 1 ]]; then
         unset CCACHE
     fi

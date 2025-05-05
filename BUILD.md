@@ -1,0 +1,182 @@
+# ブランチ選択
+SSPlayerForGodot ディレクトリ の `godot` ディレクトリ内でビルドする Godot Engine のブランチを選択してください。
+
+## 4.3
+
+```bash
+pushd godot
+git checkout 4.3
+popd 
+```
+
+## 3.x
+```bash
+pushd godot
+git checkout 3.x
+popd 
+```
+
+# ビルド環境のセットアップ
+## Windows
+
+以降でビルド環境の構築手順について説明していきます。  
+
+[Godot公式のコンパイル手順](https://docs.godotengine.org/en/stable/contributing/development/compiling/compiling_for_windows.html)
+
+必要なツール
+* ビルドツール (いずれかを選択)
+    * VisualStudio 2017 or 2019(推奨)
+    * MSYS2 + MinGW + gcc + make
+* Python 3.6 以降
+* scons 3.0 以降
+
+VisualStudio 2019 でのビルド・デバッグを確認しています。
+
+scons は下記でインストールできます。(上記リンクにも記載あり)
+
+```bat
+python -m pip install scons
+```
+
+## macOS
+
+[Godot公式のコンパイル手順](https://docs.godotengine.org/ja/4.x/contributing/development/compiling/compiling_for_macos.html)
+
+必要なツール
+* Xcode
+* Python 3.6 以降
+* scons 3.0 以降
+* Vulkan SDK for MoltenVK (4 対応用)
+* emscripten (optional)
+* Android SDK / Android NDK (optional)
+
+Xcode 以外は [Homebrew](https://brew.sh/) でインストールができます。
+
+```sh
+brew install python3 scons 
+```
+
+```sh
+brew install molten-vk
+```
+
+ホストアーキテクチャとは異なるアーキテクチャの Godot Engine をビルドする場合や、Universal Binary な Godot Engine をビルドする場合は、`molten-vk` の代わりに Universal Binary 対応している [Vulkan SDK for MoltenVK](https://vulkan.lunarg.com/sdk/home) をインストールしてください。
+
+(Optional) target を Web のビルドをする際は emscripten をインストールしてください。
+
+```sh
+brew install emscripten
+```
+
+# ビルド
+## Windows 
+[winbuild.ps1](./scripts/winbuild.ps1) でビルド可能です。
+
+**PowerShell**
+
+```powershell
+$env:PYTHONUTF8=1
+.\scripts\winbuild.ps1
+```
+
+**Cmd**
+
+```cmd
+set PYTHONUTF8=1
+PowerShell.exe -ExecutionPolicy Bypass -File .\scripts\winbuild.ps1
+```
+
+
+## macOS ビルド
+
+[build.sh](./scripts/build.sh) でビルド可能です。
+
+```sh
+./scripts/build.sh
+```
+
+引数を指定しない場合はホストマシンのアーキテクチャと同じアーキテクチャ向けにビルドします。
+アーキテクチャを明示的に指定する場合は `arch=` に引数を追加してください。
+
+**Universal Binary (supports both arm64 and x86_64)**
+
+```sh
+./scripts/build.sh arch=universal
+```
+
+**arm64 (Apple Silicon)**
+
+```sh
+./scripts/build.sh arch=arm64
+```
+
+**x86_64 (Intel)**
+
+```sh
+./scripts/build.sh arch=x86_64
+```
+
+`godot/Godot.app` を開いて起動を確認します。
+
+
+# GDExtension
+## Windows 
+[winbuild-gdextension.ps1](./scripts/winbuild-gdextension.ps1) でビルド可能です。
+
+**PowerShell**
+
+```powershell
+$env:PYTHONUTF8=1
+.\scripts\winbuild-gdextension.ps1
+```
+
+**Cmd**
+
+```cmd
+set PYTHONUTF8=1
+PowerShell.exe -ExecutionPolicy Bypass -File .\scripts\winbuild-gdextension.ps1
+```
+
+
+## macOS, linux, iOS, Android, Web ビルド
+
+macOS か Linux で実行してください。
+
+[build-extension.sh](./scripts/build-extension.sh) でビルド可能です。
+
+```sh
+./scripts/build-extension.sh
+```
+
+# リリースビルド
+各プラットフォームの gdextension の editor, template_debug, template_release をまとめてビルドスクリプトは下記の通りです。
+
+windows
+```
+.\scripts\release-gdextension-windows.ps1
+```
+
+macOS
+```sh
+./scripts/release-gdextension-macos.sh
+```
+
+Linux
+```sh
+./scripts/release-gdextension-linux.sh
+```
+
+iOS
+```sh
+./scripts/release-gdextension-ios.sh
+```
+
+Android
+```sh
+./scripts/release-gdextension-android.sh
+```
+
+Web
+```sh
+./scripts/release-gdextension-web.sh
+```
