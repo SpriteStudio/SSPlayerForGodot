@@ -44,12 +44,7 @@ void GdResourceSsProject::setAnimePackResource( const Ref<GdResourceSsAnimePack>
 
 	m_mapResAnimePack[strName] = resAnimePack;
 
-#ifdef GD_V4
-	notify_property_list_changed();
-#endif
-#ifdef GD_V3
-	property_list_changed_notify();
-#endif
+	NOTIFY_PROPERTY_LIST_CHANGED();
 
 	GdNotifier::getInstance().notifyResourceProjectChanged( this );
 }
@@ -71,12 +66,7 @@ void GdResourceSsProject::setCellMapResource( const Ref<GdResourceSsCellMap>& re
 
 	m_vecResCellMap.set( iIndex, resCellMap );
 
-#ifdef GD_V4
-	notify_property_list_changed();
-#endif
-#ifdef GD_V3
-	property_list_changed_notify();
-#endif
+	NOTIFY_PROPERTY_LIST_CHANGED();
 
 	GdNotifier::getInstance().notifyResourceProjectChanged( this );
 }
@@ -124,12 +114,7 @@ void GdResourceSsProject::setEffectResource( const Ref<GdResourceSsEffect>& resE
 
 	m_vecResEffect.set( iIndex, resEffect );
 
-#ifdef GD_V4
-	notify_property_list_changed();
-#endif
-#ifdef GD_V3
-	property_list_changed_notify();
-#endif
+	NOTIFY_PROPERTY_LIST_CHANGED();
 
 	GdNotifier::getInstance().notifyResourceProjectChanged( this );
 }
@@ -161,48 +146,28 @@ Error GdResourceSsProject::loadFromFile( const String& strPath, const String& st
 
 	m_strRoot = strRel.get_base_dir();
 	m_strRoot = m_strRoot.replace( "res://", "" );
-#if defined(GD_V4) || defined(SPRITESTUDIO_GODOT_EXTENSION)
-	if ( !m_strRoot.is_empty() && !m_strRoot.ends_with( "/" ) )
-#elif defined(GD_V3)
-	if ( !m_strRoot.length() == 0 && !m_strRoot.ends_with( "/" ) )
-#endif
+	if ( !EMPTY(m_strRoot) && !m_strRoot.ends_with( "/" ) )
 	{
 		m_strRoot += "/";
 	}
 
 	m_strAnimePack = m_strRoot + String::utf8( m_pProject->settings.animeBaseDirectory.c_str() );
-#if defined(GD_V4) || defined(SPRITESTUDIO_GODOT_EXTENSION)
-	if ( !m_strAnimePack.is_empty() && !m_strAnimePack.ends_with( "/" ) )
-#elif defined(GD_V3)
-	if ( !m_strAnimePack.length() == 0 && !m_strAnimePack.ends_with( "/" ) )
-#endif
+	if ( EMPTY(m_strAnimePack) && !m_strAnimePack.ends_with( "/" ) )
 	{
 		m_strAnimePack += "/";
 	}
 	m_strCellMap = m_strRoot + String::utf8( m_pProject->settings.cellMapBaseDirectory.c_str() );
-#if defined(GD_V4) || defined(SPRITESTUDIO_GODOT_EXTENSION)
-	if ( !m_strCellMap.is_empty() && !m_strCellMap.ends_with( "/" ) )
-#elif defined(GD_V3)
-	if ( !m_strCellMap.length() == 0 && !m_strCellMap.ends_with( "/" ) )
-#endif
+	if ( EMPTY(m_strCellMap) && !m_strCellMap.ends_with( "/" ) )
 	{
 		m_strCellMap += "/";
 	}
 	m_strImage = m_strRoot + String::utf8( m_pProject->settings.imageBaseDirectory.c_str() );
-#if defined(GD_V4) || defined(SPRITESTUDIO_GODOT_EXTENSION)
-	if ( !m_strImage.is_empty() && !m_strImage.ends_with( "/" ) )
-#elif defined(GD_V3)
-	if ( !m_strImage.length() == 0 && !m_strImage.ends_with( "/" ) )
-#endif
+	if ( EMPTY(m_strImage) && !m_strImage.ends_with( "/" ) )
 	{
 		m_strImage += "/";
 	}
 	m_strEffect = m_strRoot + String::utf8( m_pProject->settings.effectBaseDirectory.c_str() );
-#if defined(GD_V4) || defined(SPRITESTUDIO_GODOT_EXTENSION)
-	if ( !m_strEffect.is_empty() && !m_strEffect.ends_with( "/" ) )
-#elif defined(GD_V3)
-	if ( !m_strEffect.length() == 0 && !m_strEffect.ends_with( "/" ) )
-#endif
+	if ( EMPTY(m_strEffect) && !m_strEffect.ends_with( "/" ) )
 	{
 		m_strEffect += "/";
 	}

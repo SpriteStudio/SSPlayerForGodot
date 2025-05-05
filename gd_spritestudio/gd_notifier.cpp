@@ -42,7 +42,7 @@ void GdNotifier::removeItem( GdNotifierItem* pItem )
 		return;
 	}
 
-#ifdef GD_V4
+#if defined(GD_V4) || defined(SPRITESTUDIO_GODOT_EXTENSION)
 	m_vecItem.remove_at( iIndex );
 #endif
 #ifdef GD_V3

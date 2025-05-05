@@ -61,48 +61,28 @@ void GdNodeSsPlayer::resourcePlayerChanged( const Ref<GdResourceSsPlayer>& resPl
 {
 	fetchAnimation();
 
-#ifdef GD_V4
-	notify_property_list_changed();
-#endif
-#ifdef GD_V3
-	property_list_changed_notify();
-#endif
+	NOTIFY_PROPERTY_LIST_CHANGED();
 }
 
 void GdNodeSsPlayer::resourceProjectChanged( const Ref<GdResourceSsProject>& resProject )
 {
 	fetchAnimation();
 
-#ifdef GD_V4
-	notify_property_list_changed();
-#endif
-#ifdef GD_V3
-	property_list_changed_notify();
-#endif
+	NOTIFY_PROPERTY_LIST_CHANGED();
 }
 
 void GdNodeSsPlayer::resourceAnimePackChanged( const Ref<GdResourceSsAnimePack>& resAnimePack )
 {
 	fetchAnimation();
 
-#ifdef GD_V4
-	notify_property_list_changed();
-#endif
-#ifdef GD_V3
-	property_list_changed_notify();
-#endif
+	NOTIFY_PROPERTY_LIST_CHANGED();
 }
 
 void GdNodeSsPlayer::resourceCellMapChanged( const Ref<GdResourceSsCellMap>& resCellMap )
 {
 	fetchAnimation();
 
-#ifdef GD_V4
-	notify_property_list_changed();
-#endif
-#ifdef GD_V3
-	property_list_changed_notify();
-#endif
+	NOTIFY_PROPERTY_LIST_CHANGED();
 }
 
 void GdNodeSsPlayer::setPlayerResource( const Ref<GdResourceSsPlayer>& resPlayer )
@@ -112,12 +92,7 @@ void GdNodeSsPlayer::setPlayerResource( const Ref<GdResourceSsPlayer>& resPlayer
 	m_strAnimationSelected.resize(0);
 	fetchAnimation();
 
-#ifdef GD_V4
-	notify_property_list_changed();
-#endif
-#ifdef GD_V3
-	property_list_changed_notify();
-#endif
+	NOTIFY_PROPERTY_LIST_CHANGED();
 }
 
 Ref<GdResourceSsPlayer> GdNodeSsPlayer::getPlayerResource() const
@@ -148,12 +123,7 @@ void GdNodeSsPlayer::setAnimePack( const String& strName )
 	m_strAnimationSelected.resize(0);
 	fetchAnimation();
 
-#ifdef GD_V4
-	notify_property_list_changed();
-#endif
-#ifdef GD_V3
-	property_list_changed_notify();
-#endif
+	NOTIFY_PROPERTY_LIST_CHANGED();
 }
 
 String GdNodeSsPlayer::getAnimePack() const
@@ -169,12 +139,7 @@ void GdNodeSsPlayer::setAnimation( const String& strName )
 
 	fetchAnimation();
 
-#ifdef GD_V4
-	notify_property_list_changed();
-#endif
-#ifdef GD_V3
-	property_list_changed_notify();
-#endif
+	NOTIFY_PROPERTY_LIST_CHANGED();
 }
 
 String GdNodeSsPlayer::getAnimation() const
@@ -693,12 +658,8 @@ void GdNodeSsPlayer::_get_property_list( List<PropertyInfo>* p_list ) const
 			vecRange.push_back( String::num( 0.1 ) );
 
 			animationsPropertyInfo.name = GdUiText( "frame" );
-#ifdef GD_V4
-			animationsPropertyInfo.type = Variant::FLOAT;
-#endif
-#ifdef GD_V3
-			animationsPropertyInfo.type = Variant::REAL;
-#endif
+			animationsPropertyInfo.type = VARIANT_FLOAT;
+
 			animationsPropertyInfo.usage = PROPERTY_USAGE_EDITOR | PROPERTY_USAGE_STORAGE;
 			animationsPropertyInfo.hint_string = String( "," ).join( vecRange );
 			animationsPropertyInfo.hint = PROPERTY_HINT_RANGE;
@@ -908,7 +869,7 @@ void GdNodeSsPlayer::updateAnimation( float delta )
 		m_AnimeDecoder->update( iDelta );
 	}
 
-#ifdef GD_V4
+#if defined(GD_V4) || defined(SPRITESTUDIO_GODOT_EXTENSION)
 	queue_redraw();
 #endif
 #ifdef GD_V3
@@ -932,11 +893,7 @@ void GdNodeSsPlayer::drawAnimation()
 void GdNodeSsPlayer::fetchAnimation()
 {
 	m_bAnimeDecoder = false;
-#if defined(GD_V4) || defined(SPRITESTUDIO_GODOT_EXTENSION)
-	if ( !m_strAnimationSelected.is_empty() ) {
-#elif defined(GD_V3)
-	if ( !m_strAnimationSelected.length() == 0 ) {
-#endif
+	if ( !EMPTY(m_strAnimationSelected) ) {
 		if ( m_ResPlayer.is_null() ) {
 			return;
 		}

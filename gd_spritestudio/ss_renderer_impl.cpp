@@ -236,7 +236,7 @@ void SsRendererImpl::draw( RID rid )
 	Transform2D			transCanvas;
 	Rect2				rect = Rect2( 0, 0, m_fCanvasWidth, m_fCanvasHeight );
 
-#ifdef GD_V4
+#if defined(GD_V4) || defined(SPRITESTUDIO_GODOT_EXTENSION)
 	transCanvas.set_scale( Size2( 1, -1 ) );
 	transCanvas.translate_local( -m_fCanvasWidth + m_fCanvasX, 0 - m_fCanvasY );
 #endif

@@ -97,7 +97,7 @@ void GdRenderer::setTranslate( float fX, float fY )
 	VisualServer*	pVisualServer = VisualServer::get_singleton();
 	Transform2D		trans;
 
-#ifdef GD_V4
+#if defined(GD_V4) || defined(SPRITESTUDIO_GODOT_EXTENSION)
 	trans.translate_local( fX, fY );
 #endif
 #ifdef GD_V3

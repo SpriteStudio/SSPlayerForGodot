@@ -60,11 +60,15 @@ Error GdResourceSsCellMap::loadFromFile( const String& strPath, const String& st
 
 	String	str = String::utf8( m_pCellMap->imagePath.c_str() );
 
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+    m_Texture = ResourceLoader::get_singleton()->load( str, "", ResourceLoader::CACHE_MODE_REUSE);
+#else
 #ifdef GD_V4
 	m_Texture = ResourceLoader::load( str, "", ResourceFormatLoader::CACHE_MODE_REUSE, &err );
 #endif
 #ifdef GD_V3
 	m_Texture = ResourceLoader::load( str, "", false, &err );
+#endif
 #endif
 
 	return	OK;
