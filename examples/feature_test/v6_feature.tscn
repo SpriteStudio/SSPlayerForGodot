@@ -294,7 +294,8 @@ anime_pack = "Basic.ssae"
 animation = "anime_1"
 frame = 0
 loop = true
-play = true
+playing = true
+texture_interpolate = true
 
 [node name="BlendMode" type="GdNodeSsPlayer" parent="."]
 visible = false
@@ -304,7 +305,8 @@ anime_pack = "BlendMode.ssae"
 animation = "anime_1"
 frame = 8
 loop = false
-play = false
+playing = false
+texture_interpolate = true
 
 [node name="Effect" type="GdNodeSsPlayer" parent="."]
 visible = false
@@ -314,7 +316,8 @@ anime_pack = "Effect.ssae"
 animation = "anime_1"
 frame = 0
 loop = true
-play = true
+playing = true
+texture_interpolate = true
 
 [node name="effect_test" type="GdNodeSsPlayer" parent="."]
 visible = false
@@ -322,9 +325,10 @@ position = Vector2( 290, 260 )
 res_player = SubResource( 19 )
 anime_pack = "effect_test.ssae"
 animation = "anime_1"
-frame = 26
+frame = 0
 loop = true
-play = true
+playing = true
+texture_interpolate = true
 
 [node name="Instance" type="GdNodeSsPlayer" parent="."]
 visible = false
@@ -334,7 +338,8 @@ anime_pack = "Instance.ssae"
 animation = "anime_1"
 frame = 0
 loop = true
-play = true
+playing = true
+texture_interpolate = true
 
 [node name="Interpolation" type="GdNodeSsPlayer" parent="."]
 visible = false
@@ -344,7 +349,8 @@ anime_pack = "Interpolation.ssae"
 animation = "anime_1"
 frame = 0
 loop = true
-play = true
+playing = true
+texture_interpolate = true
 
 [node name="Mask" type="GdNodeSsPlayer" parent="."]
 visible = false
@@ -354,7 +360,8 @@ anime_pack = "Mask.ssae"
 animation = "anime_1"
 frame = 0
 loop = true
-play = true
+playing = true
+texture_interpolate = true
 __meta__ = {
 "_editor_description_": ""
 }
@@ -367,7 +374,8 @@ anime_pack = "Mesh.ssae"
 animation = "anime_1"
 frame = 0
 loop = true
-play = true
+playing = true
+texture_interpolate = true
 
 [node name="PartsColor" type="Node" parent="."]
 
@@ -379,7 +387,8 @@ anime_pack = "PartsColor.ssae"
 animation = "PartsColor_only"
 frame = 0
 loop = false
-play = false
+playing = false
+texture_interpolate = true
 
 [node name="PartsColor_with_transparent" type="GdNodeSsPlayer" parent="PartsColor"]
 visible = false
@@ -389,7 +398,8 @@ anime_pack = "PartsColor.ssae"
 animation = "PartsColor_with_Transparent"
 frame = 0
 loop = false
-play = false
+playing = false
+texture_interpolate = true
 
 [node name="Shader" type="GdNodeSsPlayer" parent="."]
 visible = false
@@ -399,7 +409,8 @@ anime_pack = "Shader.ssae"
 animation = "default"
 frame = 0
 loop = true
-play = true
+playing = true
+texture_interpolate = true
 
 [node name="Signal" type="GdNodeSsPlayer" parent="."]
 visible = false
@@ -409,7 +420,8 @@ anime_pack = "Signal.ssae"
 animation = "anime_1"
 frame = 0
 loop = true
-play = true
+playing = true
+texture_interpolate = true
 script = ExtResource( 4 )
 
 [node name="UserData" type="GdNodeSsPlayer" parent="."]
@@ -420,7 +432,8 @@ anime_pack = "UserData.ssae"
 animation = "anime_1"
 frame = 0
 loop = true
-play = true
+playing = true
+texture_interpolate = true
 script = ExtResource( 3 )
 
 [node name="v6_Deprecated" type="GdNodeSsPlayer" parent="."]
@@ -429,9 +442,10 @@ position = Vector2( 159, 96 )
 res_player = SubResource( 18 )
 anime_pack = "DeprecatedFeatures.ssae"
 animation = "anime_1"
-frame = 9
+frame = 6
 loop = true
-play = true
+playing = true
+texture_interpolate = true
 
 [connection signal="signal" from="Signal" to="Signal" method="_on_Signal_signal"]
 [connection signal="user_data" from="UserData" to="UserData" method="_on_UserData_user_data"]

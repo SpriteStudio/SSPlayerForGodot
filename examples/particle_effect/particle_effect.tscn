@@ -16,7 +16,8 @@ anime_pack = "e023.ssae"
 animation = "flashexplosion"
 frame = 48
 loop = true
-play = true
+playing = true
+texture_interpolate = true
 
 [node name="GdNodeSsPlayer2" type="GdNodeSsPlayer" parent="."]
 position = Vector2( 1604, 1116 )
@@ -26,7 +27,8 @@ anime_pack = "e002.ssae"
 animation = "fireworks1"
 frame = 39
 loop = true
-play = true
+playing = true
+texture_interpolate = true
 
 [node name="GdNodeSsPlayer3" type="GdNodeSsPlayer" parent="."]
 position = Vector2( 2564, 644 )
@@ -35,7 +37,8 @@ anime_pack = "e005.ssae"
 animation = "explosion"
 frame = 34
 loop = true
-play = true
+playing = true
+texture_interpolate = true
 
 [node name="GdNodeSsPlayer4" type="GdNodeSsPlayer" parent="."]
 position = Vector2( 3480, 944 )
@@ -45,7 +48,8 @@ anime_pack = "e015.ssae"
 animation = "comet"
 frame = 61
 loop = true
-play = true
+playing = true
+texture_interpolate = true
 
 [node name="GdNodeSsPlayer5" type="GdNodeSsPlayer" parent="."]
 position = Vector2( 532, 2140 )
@@ -55,7 +59,8 @@ anime_pack = "e016.ssae"
 animation = "magiccircle2"
 frame = 57
 loop = true
-play = true
+playing = true
+texture_interpolate = true
 
 [node name="GdNodeSsPlayer6" type="GdNodeSsPlayer" parent="."]
 position = Vector2( 1568, 1948 )
@@ -64,16 +69,18 @@ anime_pack = "e017.ssae"
 animation = "cinder"
 frame = 66
 loop = true
-play = true
+playing = true
+texture_interpolate = true
 
 [node name="GdNodeSsPlayer7" type="GdNodeSsPlayer" parent="."]
 position = Vector2( 2564, 1904 )
 res_player = SubResource( 1 )
 anime_pack = "e031.ssae"
 animation = "poisoncloud"
-frame = 138
+frame = 130
 loop = true
-play = true
+playing = true
+texture_interpolate = true
 
 [node name="GdNodeSsPlayer8" type="GdNodeSsPlayer" parent="."]
 position = Vector2( 3468, 2260 )
@@ -82,4 +89,5 @@ anime_pack = "e028.ssae"
 animation = "beam"
 frame = 108
 loop = true
-play = true
+playing = true
+texture_interpolate = true
