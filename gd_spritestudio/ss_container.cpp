@@ -4,11 +4,16 @@
 */
 #include "ss_container.h"
 
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+#include <godot_cpp/variant/variant.hpp>
+using namespace godot;
+#else
 #ifdef GD_V4
 #include "core/variant/variant.h"
 #endif
 #ifdef GD_V3
 #include "core/variant.h"
+#endif
 #endif
 
 #include "gd_io.h"
@@ -264,7 +269,7 @@ void SsContainer::unloadProject( SsProject* pProject )
 			if ( e->getRef() <= 0 ) {
 				delete e;
 
-#ifdef GD_V4
+#if defined(GD_V4) || defined(SPRITESTUDIO_GODOT_EXTENSION)
 				m_vecItemProject.remove_at( i );
 #endif
 #ifdef GD_V3
@@ -288,7 +293,7 @@ void SsContainer::unloadAnimePack( SsAnimePack* pAnimePack )
 			if ( e->getRef() <= 0 ) {
 				delete e;
 
-#ifdef GD_V4
+#if defined(GD_V4) || defined(SPRITESTUDIO_GODOT_EXTENSION)
 				m_vecItemAnimePack.remove_at( i );
 #endif
 #ifdef GD_V3
@@ -312,7 +317,7 @@ void SsContainer::unloadCellMap( SsCellMap* pCellMap )
 			if ( e->getRef() <= 0 ) {
 				delete e;
 
-#ifdef GD_V4
+#if defined(GD_V4) || defined(SPRITESTUDIO_GODOT_EXTENSION)
 				m_vecItemCellMap.remove_at( i );
 #endif
 #ifdef GD_V3
@@ -336,7 +341,7 @@ void SsContainer::unloadEffect( SsEffectFile* pEffect )
 			if ( e->getRef() <= 0 ) {
 				delete e;
 
-#ifdef GD_V4
+#if defined(GD_V4) || defined(SPRITESTUDIO_GODOT_EXTENSION)
 				m_vecItemEffect.remove_at( i );
 #endif
 #ifdef GD_V3

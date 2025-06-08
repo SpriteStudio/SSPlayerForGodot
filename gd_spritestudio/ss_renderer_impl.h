@@ -7,11 +7,16 @@
 
 #include "gd_macros.h"
 
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+#include <godot_cpp/variant/dictionary.hpp>
+using namespace godot;
+#else
 #ifdef GD_V4
 #include "core/variant/dictionary.h"
 #endif
 #ifdef GD_V3
 #include "core/dictionary.h"
+#endif
 #endif
 
 #include "SpriteStudio6-SDK/Common/Loader/ssloader_ssae.h"

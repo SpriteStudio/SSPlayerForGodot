@@ -7,11 +7,16 @@
 
 #include "gd_macros.h"
 
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+#include <godot_cpp/classes/resource.hpp>
+using namespace godot;
+#else
 #ifdef GD_V4
 #include "core/io/resource.h"
 #endif
 #ifdef GD_V3
 #include "core/resource.h"
+#endif
 #endif
 
 #include "SpriteStudio6-SDK/Common/Loader/ssloader_ssee.h"
