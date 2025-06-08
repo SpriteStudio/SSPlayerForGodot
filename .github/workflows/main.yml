@@ -6,8 +6,8 @@ jobs:
   mac_build:
     strategy:
       matrix:
-        platform: [macos-latest]
-        version: [4.3, 3.x]
+        platform: macos-latest
+        version: 4.3
     runs-on: ${{ matrix.platform }}
     steps:
     - uses: actions/checkout@v4
@@ -34,10 +34,39 @@ jobs:
     - name: build godot
       run: |
         ./scripts/build.sh version=${{ matrix.version }}
+
+  mac_build_3:
+    strategy:
+      matrix:
+        platform: macos-latest
+        version: 3.x
+    runs-on: ${{ matrix.platform }}
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: 'recursive'
+    - name: clone Godot repository
+      uses: GuillaumeFalourd/clone-github-repo-action@v2.3
+      with:
+        depth: 1
+        branch: ${{ matrix.version }}
+        owner: 'godotengine'
+        repository: 'godot'
+    - name: prepare scons
+      run: |
+          brew install python3 scons
+    - name: install molten-vk
+      run: |
+          brew install molten-vk
+      if: ${{ matrix.version == 4.3 }}
+    - name: build godot
+      run: |
+        ./scripts/build_v3.sh version=${{ matrix.version }}
+
   win_build:
     strategy:
       matrix:
-        platform: [windows-latest]
+        platform: windows-latest
         version: [4.3, 3.x]
     runs-on: ${{ matrix.platform }}
     steps:
@@ -75,3 +104,4 @@ jobs:
       run: |
         $env:PYTHONUTF8=1
         .\scripts\winbuild.ps1 version=${{ matrix.version }}
+
