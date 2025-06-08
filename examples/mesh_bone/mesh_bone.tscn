@@ -14,4 +14,5 @@ anime_pack = "Knight_arrow.ssae"
 animation = "Arrow_Attack"
 frame = 53
 loop = true
-play = true
+playing = true
+texture_interpolate = true
