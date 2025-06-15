@@ -137,4 +137,7 @@ for arch in $ARCHES; do
         mv ${BINDIR}/libSSGodot.${opts[platform]}.${opts[target]} ${BINDIR}/libSSGodot.${opts[platform]}.${opts[target]}.simulator
     fi
 done
+
+/bin/cp misc/ssplayer_godot_extension.gdextension ./examples/feature_test_gdextension/bin
+
 popd > /dev/null # ${ROOTDIR}

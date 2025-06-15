@@ -11,7 +11,7 @@ def validate_parent_dir(key, val, env):
         raise UserError("'%s' is not a directory: %s" % (key, os.path.dirname(val)))
 
 libname = "SSGodot"
-projectdir = "demo"
+projectdir = os.path.join("examples", "feature_test_gdextension")
 
 localEnv = Environment(tools=["default"], PLATFORM="")
 
