@@ -1514,7 +1514,12 @@ void SsRendererImpl::makePrimitive( SsPartState* state )
 //		glTexParameteri(gl_target, GL_TEXTURE_WRAP_T, wrapMode);
 
 		// セルが持つUV値をまず設定
-		std::memcpy( state->uvs, state->cellValue.uvs, sizeof( state->uvs ));
+		//std::memcpy( state->uvs, state->cellValue.uvs, sizeof( state->uvs ));
+		for (int i = 0; i < sizeof(state->cellValue.uvs) / sizeof(state->cellValue.uvs[0]); i++)
+		{
+			state->uvs[i * 2 + 0] = state->cellValue.uvs[i].x;
+			state->uvs[i * 2 + 1] = state->cellValue.uvs[i].y;
+		}
 
 		// UV アニメの適用
 //		glMatrixMode(GL_TEXTURE);
@@ -1633,6 +1638,10 @@ void SsRendererImpl::makePrimitive( SsPartState* state )
 
 			++uvorder;
 		}
+
+		// オーバーランスタート修正
+		const int * uvorder = &sUvOrders[order][0];
+
 		for (int i = 0; i < 4; ++i)
 		{
 			int idx = *uvorder;
@@ -1649,6 +1658,10 @@ void SsRendererImpl::makePrimitive( SsPartState* state )
 
 			++uvorder;
 		}
+
+		// オーバーランスタート修正
+		const int * uvorder = &sUvOrders[order][0];
+
 		for (int i = 0; i < 4; ++i)
 		{
 			int idx = *uvorder;
