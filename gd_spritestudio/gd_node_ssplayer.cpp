@@ -48,8 +48,14 @@ GdNodeSsPlayer::~GdNodeSsPlayer()
 	SsCurrentRenderer::SetCurrentRender( &m_Renderer );
 
 	// 二重解放対策：SsAnimeDecoder 側に生ポインタの所有権を渡していない場合に限り解放する。
-	if (!m_bAnimeDecoder)
+	if (m_bAnimeDecoder)
 	{
+		// 解放のみ
+		m_CellMapList.release();
+	}
+	else
+	{
+		// ここで削除
 		m_CellMapList.reset();
 	}
 
