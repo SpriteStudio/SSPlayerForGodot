@@ -1,5 +1,5 @@
 ﻿// generated argstr
-static const String shader_color_ss_outline =
+static const char* shader_color_ss_outline =
 "/*!\n"
 "* \file		shader_color_ss_outline.gdshader\n"
 "* \author	CRI Middleware Co., Ltd.\n"
