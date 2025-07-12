@@ -32,9 +32,14 @@ String GdIO::loadStringFromFile( const String& strPath )
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
 	Ref<FileAccess>		resFileAccess = FileAccess::open( strPath, FileAccess::READ);
-	if ( resFileAccess.is_valid() ) {
+	err = resFileAccess->get_error();
+	if ( err != OK ) {
 		ERR_PRINT( String( "loadStringFromFile error: " ) + String::num( err ) );
-		resFileAccess->close();
+
+		if ( resFileAccess.is_valid() ) {
+			resFileAccess->close();
+		}
+
 		return str;
 	}
 
@@ -89,6 +94,24 @@ Error GdIO::saveStringToFile( const String& strPath, const String& str )
 {
 	Error				err;
 
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+	Ref<FileAccess>		resFileAccess = FileAccess::open( strPath, FileAccess::WRITE);
+	err = resFileAccess->get_error();
+	if ( err != OK ) {
+		ERR_PRINT( String( "saveStringToFile error: " ) + String::num( err ) );
+
+		if ( resFileAccess.is_valid() ) {
+			resFileAccess->close();
+		}
+
+		return err;
+	}
+
+	resFileAccess->store_string( str );
+
+	resFileAccess->close();
+
+#endif
 #ifdef GD_V4
 	Ref<FileAccess>		resFileAccess = FileAccess::open( strPath, FileAccess::WRITE, &err );
 
@@ -132,6 +155,23 @@ Variant GdIO::loadVariantFromFile( const String& strPath )
 	Error				err;
 	Variant				val = Variant( "" );
 
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+	Ref<FileAccess>		resFileAccess = FileAccess::open( strPath, FileAccess::READ);
+	err = resFileAccess->get_error();
+	if ( err != OK ) {
+		ERR_PRINT( String( "loadVariantFromFile error: " ) + String::num( err ) );
+
+		if ( resFileAccess.is_valid() ) {
+			resFileAccess->close();
+		}
+
+		return	val;
+	}
+
+	val = resFileAccess->get_var();
+
+	resFileAccess->close();
+#else
 #ifdef GD_V4
 	Ref<FileAccess>		resFileAccess = FileAccess::open( strPath, FileAccess::READ, &err );
 
@@ -190,6 +230,7 @@ Variant GdIO::loadVariantFromFile( const String& strPath )
 
 	memdelete_arr( pBuf );
 #endif
+#endif
 
 	return	val;
 }
@@ -198,6 +239,22 @@ Error GdIO::saveVariantToFile( const String& strPath, const Variant& val )
 {
 	Error				err;
 
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+	Ref<FileAccess>		resFileAccess = FileAccess::open( strPath, FileAccess::WRITE);
+	err = resFileAccess->get_error();
+	if ( err != OK ) {
+		ERR_PRINT( String( "saveVariantToFile error: " ) + String::num( err ) );
+
+		if ( resFileAccess.is_valid() ) {
+			resFileAccess->close();
+		}
+
+		return	err;
+	}
+
+	resFileAccess->store_var(val);
+
+#endif
 #ifdef GD_V4
 	Ref<FileAccess>		resFileAccess = FileAccess::open( strPath, FileAccess::WRITE, &err );
 

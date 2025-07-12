@@ -40,6 +40,7 @@ opts.Update(localEnv)
 Help(opts.GenerateHelpText(localEnv))
 
 env = localEnv.Clone()
+
 env["compiledb"] = False
 
 env.Tool("compilation_db")
@@ -63,21 +64,27 @@ Run the following command to download godot-cpp:
 
 env = SConscript("godot-cpp/SConstruct", {"env": env, "customs": customs})
 
-env.Append(CPPDEFINES=["SPRITESTUDIO_GODOT_EXTENSION", "_NOTUSE_STBI", "_NOTUSE_TEXTURE_FULLPATH", "_NOTUSE_EXCEPTION"])
+env.Append(CPPDEFINES = "SPRITESTUDIO_GODOT_EXTENSION")
+env.Append(CPPDEFINES = "_NOTUSE_STBI")
+env.Append(CPPDEFINES = "_NOTUSE_TEXTURE_FULLPATH")
+env.Append(CPPDEFINES = "_NOTUSE_EXCEPTION")
 env.Append(CPPPATH=["src/"])
 env.Append(
 	CPPPATH=[
 		"gd_spritestudio/SpriteStudio6-SDK/Common/Loader",
-		"gd_spritestudio/SpriteStudio6-SDK/Common/Helper",
 		"gd_spritestudio/SpriteStudio6-SDK/Common/Animator",
+		"gd_spritestudio/SpriteStudio6-SDK/Common/Helper",
 	]
 )
 
 sources = Glob("gd_spritestudio/*.cpp")
 sources.extend(Glob("gd_spritestudio/SpriteStudio6-SDK/Common/Loader/tinyxml2/*.cpp"))
 sources.extend(Glob("gd_spritestudio/SpriteStudio6-SDK/Common/Loader/*.cpp"))
-sources.extend(Glob("gd_spritestudio/SpriteStudio6-SDK/Common/Helper/*.cpp"))
 sources.extend(Glob("gd_spritestudio/SpriteStudio6-SDK/Common/Animator/*.cpp"))
+sources.extend(Glob("gd_spritestudio/SpriteStudio6-SDK/Common/Helper/DebugPrint.cpp"))
+sources.extend(Glob("gd_spritestudio/SpriteStudio6-SDK/Common/Helper/IsshTexture.cpp"))
+sources.extend(Glob("gd_spritestudio/SpriteStudio6-SDK/Common/Helper/stb_image.c"))
+
 
 if env["target"] in ["editor", "template_debug"]:
     try:
