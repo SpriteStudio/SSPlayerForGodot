@@ -17,23 +17,26 @@
 #include "ss_macros.h"
 #include "ss_texture_impl.h"
 
-#include "shader_color.def"
-#include "shader_color_ss_bmask.def"
-#include "shader_color_ss_circle.def"
-#include "shader_color_ss_hsb.def"
-#include "shader_color_ss_move.def"
-#include "shader_color_ss_noise.def"
-#include "shader_color_ss_outline.def"
-#include "shader_color_ss_pix.def"
-#include "shader_color_ss_scatter.def"
-#include "shader_color_ss_sepia.def"
-#include "shader_color_ss_spot.def"
-#include "shader_color_ss_step.def"
-#include "shader_color_ss_wave.def"
+#include "shader_color.h"
+#include "shader_color_ss_bmask.h"
+#include "shader_color_ss_blur.h"
+#include "shader_color_ss_circle.h"
+#include "shader_color_ss_hsb.h"
+#include "shader_color_ss_move.h"
+#include "shader_color_ss_noise.h"
+#include "shader_color_ss_outline.h"
+#include "shader_color_ss_pix.h"
+#include "shader_color_ss_scatter.h"
+#include "shader_color_ss_sepia.h"
+#include "shader_color_ss_spot.h"
+#include "shader_color_ss_step.h"
+#include "shader_color_ss_wave.h"
 
-#include "shader_alpha.def"
+#include "shader_alpha.h"
 
 SsSdkUsing
+
+static const RID ridTextureDummy = RID();
 
 static void setupTextureCombinerTo_NoBlendRGB_MultiplyAlpha_()
 {
@@ -191,6 +194,8 @@ SsRendererImpl::SsRendererImpl()
 	m_iZOrder = 0;
 	m_iChildZOrder = 0;
 
+	m_bTextureInterpolate = true;
+
 	m_RendererColor.init();
 	m_RendererAlpha.init();
 
@@ -200,6 +205,7 @@ SsRendererImpl::SsRendererImpl()
 	m_mapPartSpriteIdx.clear();
 
 	m_dicShader["ss-bmask"] = shader_color_ss_bmask;
+	m_dicShader["ss-blur"] = shader_color_ss_blur;
 	m_dicShader["ss-circle"] = shader_color_ss_circle;
 	m_dicShader["ss-hsb"] = shader_color_ss_hsb;
 	m_dicShader["ss-move"] = shader_color_ss_move;
@@ -264,6 +270,15 @@ void SsRendererImpl::setFps( int iFps )
 int SsRendererImpl::getFps() const
 {
 	return	m_iFps;
+}
+
+void SsRendererImpl::setTextureInterpolate( bool bSwitch )
+{
+	m_bTextureInterpolate = bSwitch;
+}
+bool SsRendererImpl::getTextureInterpolate() const
+{
+	return m_bTextureInterpolate;
 }
 
 void SsRendererImpl::createPartSprites( SsModel* pModel, SsProject* pProject )
@@ -567,8 +582,13 @@ void SsRendererImpl::renderPart( SsPartState* state )
 	
 	if ( state->is_parts_color ) {
 		if ( state->partsColorValue.target == SsColorBlendTarget::whole ) {
+#if 0
 			rates[0] = state->partsColorValue.color.rate;
+#else
+			rates[0] = ( type == 0 ? state->partsColorValue.color.rate : (float)state->partsColorValue.color.rgba.a / 255.0f );	/* 0:mix */
+#endif
 		}else{
+#if 0
 			rates[0] = state->partsColorValue.colors[0].rate;
 			rates[1] = state->partsColorValue.colors[1].rate;
 			rates[2] = state->partsColorValue.colors[2].rate;
@@ -581,13 +601,31 @@ void SsRendererImpl::renderPart( SsPartState* state )
 			a += state->partsColorValue.colors[3].rgba.a;
 			a /= 4;
 			rates[0] = (float)a / 255.0f;
+#else
+			rates[0] = state->partsColorValue.colors[0].rgba.a / 255.0f;
+			rates[1] = state->partsColorValue.colors[1].rgba.a / 255.0f;
+			rates[2] = state->partsColorValue.colors[2].rgba.a / 255.0f;
+			rates[3] = state->partsColorValue.colors[3].rgba.a / 255.0f;
+
+			float a = 0;
+			a += state->partsColorValue.colors[0].rgba.a;
+			a += state->partsColorValue.colors[1].rgba.a;
+			a += state->partsColorValue.colors[2].rgba.a;
+			a += state->partsColorValue.colors[3].rgba.a;
+			a *= 0.25f;
+			rates[4] = a;
+#endif
 
 			float 	alpha = state->alpha;
 			if (state->localalpha != 1.0f)
 			{
 				alpha = state->localalpha;
 			}
+#if 0
 			for (int i = 0; i < 4; ++i)
+#else
+			for (int i = 0; i < 5; ++i)
+#endif
 			{
 				if (state->partsColorValue.blendType == SsBlendType::mix)
 				{
@@ -601,9 +639,9 @@ void SsRendererImpl::renderPart( SsPartState* state )
 
 	updateShaderSource( *pSprite, m_eBlendTypeDrawing, state->shaderValue.id );
 
-	pVisualServer->material_set_param( pSprite->materialId, "src_ratio", ( type <= 1 ? 1.0f - rates[0] : 1.0f ) );
-	pVisualServer->material_set_param( pSprite->materialId, "dst_ratio", ( type == 3 ? -rates[0] : rates[0] ) );
-	pVisualServer->material_set_param( pSprite->materialId, "dst_src_ratio", ( type == 1 ? 1.0f : 0.0f ) );
+	pVisualServer->material_set_param( pSprite->materialId, "src_ratio", ( type <= 1 ? 1.0f - rates[0] : 1.0f ) );	/* 1:mul, 0:mix */
+	pVisualServer->material_set_param( pSprite->materialId, "dst_ratio", ( type == 3 ? -rates[0] : rates[0] ) );	/* 3:sub */
+	pVisualServer->material_set_param( pSprite->materialId, "dst_src_ratio", ( type == 1 ? 1.0f : 0.0f ) );	/* 1:mul */
 
 	pVisualServer->material_set_param( pSprite->materialId, "A_TW", _args[0] );
 	pVisualServer->material_set_param( pSprite->materialId, "A_TH", _args[1] );
@@ -621,6 +659,8 @@ void SsRendererImpl::renderPart( SsPartState* state )
 	pVisualServer->material_set_param( pSprite->materialId, "P_2", state->shaderValue.param[2] );
 	pVisualServer->material_set_param( pSprite->materialId, "P_3", state->shaderValue.param[3] );
 
+	pVisualServer->material_set_param( pSprite->materialId, "S_INTPL", (m_bTextureInterpolate) ? 1.0f : 0.0f );
+
 //	Transform2D			transCanvas;
 //	Rect2				rect = Rect2( 0, 0, m_fCanvasWidth, m_fCanvasHeight );
 
@@ -633,8 +673,10 @@ void SsRendererImpl::renderPart( SsPartState* state )
 //	pVisualServer->draw( false );
 //	pVisualServer->sync();
 
-	pVisualServer->material_set_param( pSprite->materialId, "color", m_RendererColor.getTextureRid() );
-	pVisualServer->material_set_param( pSprite->materialId, "alpha", m_RendererAlpha.getTextureRid() );
+	pVisualServer->material_set_param( pSprite->materialId, "color", ridTextureDummy );
+	pVisualServer->material_set_param( pSprite->materialId, "alpha", ridTextureDummy );
+	pVisualServer->material_set_param( pSprite->materialId, "color_authentic", texture->get_rid() );
+	pVisualServer->material_set_param( pSprite->materialId, "alpha_authentic", texture->get_rid() );
 
 	if ( state->partType == SsPartType::mesh ) {
 		SsMeshPart*		mesh = state->meshPart.get();
@@ -692,7 +734,7 @@ void SsRendererImpl::renderPart( SsPartState* state )
 				vecCoord,
 				vecBone,
 				vecWeight,
-				texture->get_rid()
+				ridTextureDummy	// texture->get_rid()
 			);
 		}
 	}else
@@ -752,7 +794,7 @@ void SsRendererImpl::renderPart( SsPartState* state )
 			vecCoord,
 			vecBone,
 			vecWeight,
-			texture->get_rid()
+			ridTextureDummy	// texture->get_rid()
 		);
 	}else
 	{
@@ -1120,6 +1162,8 @@ void SsRendererImpl::renderSpriteSimple( float matrix[16], int width, int height
 	pVisualServer->material_set_param( pSprite->materialId, "P_2", state->shaderValue.param[2] );
 	pVisualServer->material_set_param( pSprite->materialId, "P_3", state->shaderValue.param[3] );
 
+	pVisualServer->material_set_param( pSprite->materialId, "S_INTPL", (m_bTextureInterpolate) ? 1.0f : 0.0f );
+
 //	Transform2D			transCanvas;
 //	Rect2				rect = Rect2( 0, 0, m_fCanvasWidth, m_fCanvasHeight );
 
@@ -1132,8 +1176,14 @@ void SsRendererImpl::renderSpriteSimple( float matrix[16], int width, int height
 //	pVisualServer->draw( false );
 //	pVisualServer->sync();
 
-	pVisualServer->material_set_param( pSprite->materialId, "color", m_RendererColor.getTextureRid() );
-	pVisualServer->material_set_param( pSprite->materialId, "alpha", m_RendererAlpha.getTextureRid() );
+	/* MEMO: Ver.3 and Ver.4 handle vertex-colors differently on "fragment" shader.            */
+	/*       In Ver.4, before user's "fragment" processing, "COLOR" is multiplied texel-color. */
+	/*       In order to get unprocessed vertex-color, set dummy (always white) to "TEXTURE"   */
+	/*         and decode original-texture on another-stage.  (Measures for Ver.4 spec.)       */
+	pVisualServer->material_set_param( pSprite->materialId, "color", ridTextureDummy );
+	pVisualServer->material_set_param( pSprite->materialId, "alpha", ridTextureDummy );
+	pVisualServer->material_set_param( pSprite->materialId, "color_authentic", texture->get_rid() );
+	pVisualServer->material_set_param( pSprite->materialId, "alpha_authentic", texture->get_rid() );
 
 	pVisualServer->canvas_item_add_triangle_array(
 		colorCanvasItemId,
@@ -1143,7 +1193,7 @@ void SsRendererImpl::renderSpriteSimple( float matrix[16], int width, int height
 		vecCoord,
 		vecBone,
 		vecWeight,
-		texture->get_rid()
+		ridTextureDummy	// texture->get_rid()
 	);
 }
 
@@ -1770,6 +1820,7 @@ void SsRendererImpl::makePrimitive( SsPartState* state )
 	else
 	{
 		// パーツカラー無し
+		calcCenterVertexColor(state->colors, rates, vertexID);
 		for (int i = 0; i < 5; ++i)
 			state->colors[i * 4 + 3] = alpha;
 
