@@ -21,3 +21,9 @@ env_gd_spritestudio.Append(
 		"SpriteStudio6-SDK/Common/Helper",
 		"SpriteStudio6-SDK/Common/Animator",
 	])
+
+if not env_gd_spritestudio.msvc:
+    env_gd_spritestudio.Append(CXXFLAGS=["-Wno-inconsistent-missing-override"])
+
+if env['platform'] == 'macos':
+    env_gd_spritestudio.Append(LINKFLAGS=['-framework', 'Metal'])
