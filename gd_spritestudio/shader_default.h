@@ -1,4 +1,4 @@
-static const String shader_default = R"(
+static const char* shader_default = R"(
 /*!
 * \file		shader_default.gdshader
 * \author	CRI Middleware Co., Ltd.
