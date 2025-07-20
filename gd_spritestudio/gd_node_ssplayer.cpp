@@ -48,13 +48,25 @@ GdNodeSsPlayer::~GdNodeSsPlayer()
 	m_Renderer.m_iSetup = 0;
 	SsCurrentRenderer::SetCurrentRender( &m_Renderer );
 
-	m_bAnimeDecoder = false;
-	m_AnimeDecoder.release();
-	m_CellMapList.release();
+	// 二重解放対策：SsAnimeDecoder 側に生ポインタの所有権を渡していない場合に限り解放する。
+	if (m_bAnimeDecoder)
+	{
+		// 解放のみ
+		m_CellMapList.release();
+	}
+	else
+	{
+		// ここで削除
+		m_CellMapList.reset();
+	}
 
 	m_bAnimeDecoder = false;
-	m_AnimeDecoder = 0;
-	m_CellMapList = 0;
+	m_AnimeDecoder.reset();
+	//m_CellMapList.reset();
+
+	m_bAnimeDecoder = false;
+	//m_AnimeDecoder = 0;
+	//m_CellMapList = 0;
 }
 
 void GdNodeSsPlayer::resourcePlayerChanged( const Ref<GdResourceSsPlayer>& resPlayer )

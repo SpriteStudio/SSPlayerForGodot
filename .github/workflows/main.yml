@@ -23,9 +23,13 @@ jobs:
     - name: prepare scons
       run: |
           brew install python3 scons
-    - name: install molten-vk
+    - name: install Vulkan SDK
       run: |
-          brew install molten-vk
+          curl -L "https://sdk.lunarg.com/sdk/download/1.4.321.0/mac/vulkansdk-macos-1.4.321.0.zip" -o /tmp/vulkan-sdk.zip
+          unzip /tmp/vulkan-sdk.zip -d /tmp/vulkan-sdk
+          /tmp/vulkan-sdk/vulkansdk-macOS-1.4.321.0.app/Contents/MacOS/vulkansdk-macOS-1.4.321.0 --accept-licenses --default-answer --confirm-command install
+          rm -f /tmp/vulkan-sdk.zip
+          rm -rf /tmp/vulkan-sdk
       if: ${{ matrix.version == 4.3 }}
     - name: build godot
       run: |

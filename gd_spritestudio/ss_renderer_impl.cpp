@@ -1541,7 +1541,12 @@ void SsRendererImpl::makePrimitive( SsPartState* state )
 //		glTexParameteri(gl_target, GL_TEXTURE_WRAP_T, wrapMode);
 
 		// セルが持つUV値をまず設定
-		std::memcpy( state->uvs, state->cellValue.uvs, sizeof( state->uvs ));
+		//std::memcpy( state->uvs, state->cellValue.uvs, sizeof( state->uvs ));
+		for (int i = 0; i < sizeof(state->cellValue.uvs) / sizeof(state->cellValue.uvs[0]); i++)
+		{
+			state->uvs[i * 2 + 0] = state->cellValue.uvs[i].x;
+			state->uvs[i * 2 + 1] = state->cellValue.uvs[i].y;
+		}
 
 		// UV アニメの適用
 //		glMatrixMode(GL_TEXTURE);
@@ -1633,7 +1638,7 @@ void SsRendererImpl::makePrimitive( SsPartState* state )
 		fCoordCV = 0.0f;
 		for (int i = 0; i < 4; ++i)
 		{
-			int idx = *uvorder;
+			int idx = uvorder[i];
 			if (texture_is_pow2 == false)
 			{
 				// GL_TEXTURE_RECTANGLE_ARBではuv座標系が0～1ではなくピクセルになるので変換
@@ -1658,11 +1663,13 @@ void SsRendererImpl::makePrimitive( SsPartState* state )
 #endif
 			}
 
-			++uvorder;
+			// スコープを抜けた後の範囲外読み取りの修正
+			//++uvorder;
 		}
+
 		for (int i = 0; i < 4; ++i)
 		{
-			int idx = *uvorder;
+			int idx = uvorder[i];
 			SsVector3	vertexIn;
 			SsVector3	vertexOut;
 
@@ -1673,12 +1680,11 @@ void SsRendererImpl::makePrimitive( SsPartState* state )
 			MatrixTransformVector3( texMat, vertexIn, vertexOut );
 			uvs[idx * 2] = vertexOut.x;
 			uvs[idx * 2 + 1] = vertexOut.y;
-
-			++uvorder;
 		}
+
 		for (int i = 0; i < 4; ++i)
 		{
-			int idx = *uvorder;
+			int idx = uvorder[i];
 			if ( i == 0 ) {
 				fCoordLU = uvs[idx * 2];
 				fCoordTV = uvs[idx * 2 + 1];
@@ -1693,8 +1699,6 @@ void SsRendererImpl::makePrimitive( SsPartState* state )
 
 			fCoordCU += uvs[idx * 2];
 			fCoordCV += uvs[idx * 2 + 1];
-
-			++uvorder;
 		}
 
 #if SPRITESTUDIO6SDK_USE_TRIANGLE_FIN
