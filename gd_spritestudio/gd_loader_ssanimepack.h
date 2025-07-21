@@ -22,6 +22,8 @@ class GdLoaderSsAnimePack : public ResourceFormatLoader
 
 public :
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
+	static void _bind_methods(){};
+
 	PackedStringArray _get_recognized_extensions();
 
 	bool _handles_type(const StringName &p_type);

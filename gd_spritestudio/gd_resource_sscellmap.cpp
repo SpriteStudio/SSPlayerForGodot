@@ -62,6 +62,7 @@ Error GdResourceSsCellMap::loadFromFile( const String& strPath, const String& st
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
     m_Texture = ResourceLoader::get_singleton()->load( str, "", ResourceLoader::CACHE_MODE_REUSE);
+	err = OK; // TODO: improve
 #else
 #ifdef GD_V4
 	m_Texture = ResourceLoader::load( str, "", ResourceFormatLoader::CACHE_MODE_REUSE, &err );
@@ -71,7 +72,7 @@ Error GdResourceSsCellMap::loadFromFile( const String& strPath, const String& st
 #endif
 #endif
 
-	return	OK;
+	return	err;
 }
 
 Error GdResourceSsCellMap::saveToFile( const String& strPath, const Ref<Resource>& res )

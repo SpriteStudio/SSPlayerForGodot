@@ -179,9 +179,9 @@ Error GdResourceSsProject::loadFromFile( const String& strPath, const String& st
 
 	for ( int i = 0; i < m_pProject->animepackNames.size(); i++ ) {
 		String	strName = String::utf8( m_pProject->animepackNames[i].c_str() );
-
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
-		Ref<GdResourceSsAnimePack>	resAnimePack = ResourceLoader::get_singleton()->load( m_strAnimePack + strName, "", ResourceLoader::CACHE_MODE_REUSE);
+		Ref<GdResourceSsAnimePack>	resAnimePack = ResourceLoader::get_singleton()->load( m_strAnimePack + strName, "", ResourceLoader::CacheMode::CACHE_MODE_REUSE);
+		err = OK; // TODO: improve
 #else
 #ifdef GD_V4
 		Ref<GdResourceSsAnimePack>	resAnimePack = ResourceLoader::load( m_strAnimePack + strName, "", ResourceFormatLoader::CACHE_MODE_REUSE, &err );
@@ -190,7 +190,6 @@ Error GdResourceSsProject::loadFromFile( const String& strPath, const String& st
 		Ref<GdResourceSsAnimePack>	resAnimePack = ResourceLoader::load( m_strAnimePack + strName, "", false, &err );
 #endif
 #endif
-
 		m_mapResAnimePack[strName] = resAnimePack;
 
 		if ( err != OK ) {
@@ -210,7 +209,8 @@ Error GdResourceSsProject::loadFromFile( const String& strPath, const String& st
 		String	strName = String::utf8( m_pProject->cellmapNames[i].c_str() );
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
-		Ref<GdResourceSsCellMap>	resCellMap = ResourceLoader::get_singleton()->load( m_strCellMap + strName, "", ResourceLoader::CACHE_MODE_REUSE);
+		Ref<GdResourceSsCellMap>	resCellMap = ResourceLoader::get_singleton()->load( m_strCellMap + strName, "", ResourceLoader::CacheMode::CACHE_MODE_REUSE);
+		err = OK; // TODO: improve
 #else
 #ifdef GD_V4
 		Ref<GdResourceSsCellMap>	resCellMap = ResourceLoader::load( m_strCellMap + strName, "", ResourceFormatLoader::CACHE_MODE_REUSE, &err );
@@ -245,6 +245,7 @@ Error GdResourceSsProject::loadFromFile( const String& strPath, const String& st
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
 		Ref<GdResourceSsEffect>		resEffect = ResourceLoader::get_singleton()->load( m_strEffect + strName, "", ResourceLoader::CACHE_MODE_REUSE);
+		err = OK; // TODO: improve
 #else
 #ifdef GD_V4
 		Ref<GdResourceSsEffect>		resEffect = ResourceLoader::load( m_strEffect + strName, "", ResourceFormatLoader::CACHE_MODE_REUSE, &err );

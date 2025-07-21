@@ -61,6 +61,20 @@ void register_gd_spritestudio_types()
 	ClassDB::register_class<GdResourceSsCellMap>();
 	ClassDB::register_class<GdResourceSsEffect>();
 
+	ClassDB::register_class<GdLoaderSsProject>();
+	ClassDB::register_class<GdLoaderSsAnimePack>();
+	ClassDB::register_class<GdLoaderSsCellMap>();
+	ClassDB::register_class<GdLoaderSsEffect>();
+	ClassDB::register_class<GdLoaderBssProject>();
+	ClassDB::register_class<GdLoaderBssAnimePack>();
+	ClassDB::register_class<GdLoaderBssCellMap>();
+	ClassDB::register_class<GdLoaderBssEffect>();
+	ClassDB::register_class<GdSaverBssProject>();
+	ClassDB::register_class<GdSaverBssAnimePack>();
+	ClassDB::register_class<GdSaverBssCellMap>();
+	ClassDB::register_class<GdSaverBssEffect>();
+
+
 #if defined(GD_V4) || defined(SPRITESTUDIO_GODOT_EXTENSION)
 	s_LoaderSsProject.instantiate();
 	s_LoaderSsAnimePack.instantiate();

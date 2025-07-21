@@ -7,7 +7,7 @@
 #include "gd_resource_sscellmap.h"
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
-Variant _load(const String &p_path, const String &p_original_path, bool use_sub_threads, int32_t cache_mode)
+Variant GdLoaderSsCellMap::_load(const String &p_path, const String &p_original_path, bool p_use_sub_threads, int32_t p_cache_mode)
 #else
 #ifdef GD_V4
 Ref<Resource> GdLoaderSsCellMap::load( const String& p_path, const String& p_original_path, Error* r_error, bool p_use_sub_threads, float* r_progress, CacheMode p_cache_mode )
