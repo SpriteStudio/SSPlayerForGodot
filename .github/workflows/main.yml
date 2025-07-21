@@ -6,7 +6,7 @@ jobs:
   mac_build:
     strategy:
       matrix:
-        platform: [macos-latest]
+        platform: [macos-latest-xlarge]
         version: [4.3, 3.x]
     runs-on: ${{ matrix.platform }}
     steps:
