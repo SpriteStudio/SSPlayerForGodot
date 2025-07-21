@@ -4,12 +4,18 @@
 */
 #include "ss_renderer_impl.h"
 
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+#include <godot_cpp/classes/rendering_server.hpp>
+#define VisualServer    RenderingServer
+using namespace godot;
+#else
 #ifdef GD_V4
 #include "servers/rendering_server.h"
 #define	VisualServer	RenderingServer
 #endif
 #ifdef GD_V3
 #include "servers/visual_server.h"
+#endif
 #endif
 
 #include "SpriteStudio6-SDK/Common/Animator/ssplayer_matrix.h"
@@ -36,7 +42,7 @@
 
 SsSdkUsing
 
-static const RID ridTextureDummy = RID();
+// static const RID ridTextureDummy = RID();
 
 static void setupTextureCombinerTo_NoBlendRGB_MultiplyAlpha_()
 {
@@ -230,7 +236,7 @@ void SsRendererImpl::draw( RID rid )
 	Transform2D			transCanvas;
 	Rect2				rect = Rect2( 0, 0, m_fCanvasWidth, m_fCanvasHeight );
 
-#ifdef GD_V4
+#if defined(GD_V4) || defined(SPRITESTUDIO_GODOT_EXTENSION)
 	transCanvas.set_scale( Size2( 1, -1 ) );
 	transCanvas.translate_local( -m_fCanvasWidth + m_fCanvasX, 0 - m_fCanvasY );
 #endif
@@ -569,12 +575,21 @@ void SsRendererImpl::renderPart( SsPartState* state )
 	pVisualServer->canvas_item_set_material( pSprite->colorCanvasItemId, pSprite->materialId );
 	pVisualServer->canvas_item_set_material( pSprite->alphaCanvasItemId, pSprite->materialId );
 
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+	PackedVector2Array vecPosition;
+	PackedInt32Array vecIndex;
+	PackedColorArray vecColor;
+	PackedVector2Array vecCoord;
+	PackedInt32Array vecBone;
+	PackedFloat32Array vecWeight;
+#else
 	Vector<Point2>		vecPosition;
 	Vector<int>			vecIndex;
 	Vector<Color>		vecColor;
 	Vector<Point2>		vecCoord;
 	Vector<int>			vecBone;
 	Vector<float>		vecWeight;
+#endif
 
 	int		type = (int)state->partsColorValue.blendType;
 	float*	rates = _rates;
@@ -650,8 +665,8 @@ void SsRendererImpl::renderPart( SsPartState* state )
 //	pVisualServer->draw( false );
 //	pVisualServer->sync();
 
-	pVisualServer->material_set_param( pSprite->materialId, "color", ridTextureDummy );
-	pVisualServer->material_set_param( pSprite->materialId, "alpha", ridTextureDummy );
+	pVisualServer->material_set_param( pSprite->materialId, "color", RID() );
+	pVisualServer->material_set_param( pSprite->materialId, "alpha", RID() );
 	pVisualServer->material_set_param( pSprite->materialId, "color_authentic", texture->get_rid() );
 	pVisualServer->material_set_param( pSprite->materialId, "alpha_authentic", texture->get_rid() );
 
@@ -711,7 +726,7 @@ void SsRendererImpl::renderPart( SsPartState* state )
 				vecCoord,
 				vecBone,
 				vecWeight,
-				ridTextureDummy	// texture->get_rid()
+				RID()	// texture->get_rid()
 			);
 		}
 	}else
@@ -771,7 +786,7 @@ void SsRendererImpl::renderPart( SsPartState* state )
 			vecCoord,
 			vecBone,
 			vecWeight,
-			ridTextureDummy	// texture->get_rid()
+			RID()	// texture->get_rid()
 		);
 	}else
 	{
@@ -1067,12 +1082,21 @@ void SsRendererImpl::renderSpriteSimple( float matrix[16], int width, int height
 	tuv[4] = uv2.x; tuv[5] = uv2.y;
 	tuv[6] = uv2.x; tuv[7] = uv1.y;
 
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+	PackedVector2Array vecPosition;
+	PackedInt32Array vecIndex;
+	PackedColorArray vecColor;
+	PackedVector2Array vecCoord;
+	PackedInt32Array vecBone;
+	PackedFloat32Array vecWeight;
+#else
 	Vector<Point2>		vecPosition;
 	Vector<int>			vecIndex;
 	Vector<Color>		vecColor;
 	Vector<Point2>		vecCoord;
 	Vector<int>			vecBone;
 	Vector<float>		vecWeight;
+#endif
 
 	const uint8_t	indicesStrip[] = { 0, 1, 3, 1, 3, 2 };
 	const uint8_t*	pIndices = NULL;
@@ -1157,8 +1181,8 @@ void SsRendererImpl::renderSpriteSimple( float matrix[16], int width, int height
 	/*       In Ver.4, before user's "fragment" processing, "COLOR" is multiplied texel-color. */
 	/*       In order to get unprocessed vertex-color, set dummy (always white) to "TEXTURE"   */
 	/*         and decode original-texture on another-stage.  (Measures for Ver.4 spec.)       */
-	pVisualServer->material_set_param( pSprite->materialId, "color", ridTextureDummy );
-	pVisualServer->material_set_param( pSprite->materialId, "alpha", ridTextureDummy );
+	pVisualServer->material_set_param( pSprite->materialId, "color", RID() );
+	pVisualServer->material_set_param( pSprite->materialId, "alpha", RID() );
 	pVisualServer->material_set_param( pSprite->materialId, "color_authentic", texture->get_rid() );
 	pVisualServer->material_set_param( pSprite->materialId, "alpha_authentic", texture->get_rid() );
 
@@ -1170,7 +1194,7 @@ void SsRendererImpl::renderSpriteSimple( float matrix[16], int width, int height
 		vecCoord,
 		vecBone,
 		vecWeight,
-		ridTextureDummy	// texture->get_rid()
+		RID()	// texture->get_rid()
 	);
 }
 
@@ -1353,7 +1377,7 @@ void SsRendererImpl::updateShaderSource( PartSprite& sprite, SsBlendType::_enum 
 
 	float	fComposite = 0.0f;
 
-	switch ( eBlendType ) {
+	switch ( static_cast<int>(eBlendType) ) {
 	case SsBlendType::mix :
 		fComposite = 0.0f;
 		break;
@@ -1988,23 +2012,54 @@ void SsRendererImpl::freePartSprites()
 	for ( int i = 0; i < m_vecPartSprite.size(); i++ ) {
 		auto	e = m_vecPartSprite[i];
 
-		if ( e->colorCanvasItemId.is_valid() ) pVisualServer->free( e->colorCanvasItemId );
-		if ( e->alphaCanvasItemId.is_valid() ) pVisualServer->free( e->alphaCanvasItemId );
+		if ( e->colorCanvasItemId.is_valid() )
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+			pVisualServer->free_rid( e->colorCanvasItemId );
+#else
+			pVisualServer->free( e->colorCanvasItemId );
+#endif
+
+		if ( e->alphaCanvasItemId.is_valid() )
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+		pVisualServer->free_rid( e->colorCanvasItemId );
+#else
+		pVisualServer->free( e->alphaCanvasItemId );
+#endif
 
 		for ( int j = 0; j < e->vecChildColorCanvasItemId.size(); j++ ) {
 			auto	e2 = e->vecChildColorCanvasItemId[j];
 
-			if ( e2.is_valid() ) pVisualServer->free( e2 );
+			if ( e2.is_valid() )
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+				pVisualServer->free_rid( e2 );
+#else
+				pVisualServer->free( e2 );
+#endif
 		}
 
 		for ( int j = 0; j < e->vecChildAlphaCanvasItemId.size(); j++ ) {
 			auto	e2 = e->vecChildAlphaCanvasItemId[j];
 
-			if ( e2.is_valid() ) pVisualServer->free( e2 );
+			if ( e2.is_valid() )
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+				pVisualServer->free_rid( e2 );
+#else
+				pVisualServer->free( e2 );
+#endif
 		}
 
-		if ( e->materialId.is_valid() ) pVisualServer->free( e->materialId );
-		if ( e->shaderId.is_valid() ) pVisualServer->free( e->shaderId );
+		if ( e->materialId.is_valid() )
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+			pVisualServer->free_rid( e->materialId );
+#else
+			pVisualServer->free( e->materialId );
+#endif
+		if ( e->shaderId.is_valid() )
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+			pVisualServer->free_rid( e->shaderId );
+#else
+			pVisualServer->free( e->materialId );
+#endif
 
 		delete e;
 	}
@@ -2015,23 +2070,53 @@ void SsRendererImpl::freePartSprites()
 		for ( auto it2 = e.begin(); it2 != e.end(); it2++ ) {
 			auto	ee = *it2;
 
-			if ( ee->colorCanvasItemId.is_valid() ) pVisualServer->free( ee->colorCanvasItemId );
-			if ( ee->alphaCanvasItemId.is_valid() ) pVisualServer->free( ee->alphaCanvasItemId );
+			if ( ee->colorCanvasItemId.is_valid() )
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+				pVisualServer->free_rid( ee->colorCanvasItemId );
+#else
+				pVisualServer->free( ee->colorCanvasItemId );
+#endif
+			if ( ee->alphaCanvasItemId.is_valid() )
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+				pVisualServer->free_rid( ee->alphaCanvasItemId );
+#else
+				pVisualServer->free( ee->alphaCanvasItemId );
+#endif
 
 			for ( int j = 0; j < ee->vecChildColorCanvasItemId.size(); j++ ) {
 				auto	e2 = ee->vecChildColorCanvasItemId[j];
 
-				if ( e2.is_valid() ) pVisualServer->free( e2 );
+				if ( e2.is_valid() )
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+				pVisualServer->free_rid( e2 );
+#else
+				pVisualServer->free( e2 );
+#endif
 			}
 
 			for ( int j = 0; j < ee->vecChildAlphaCanvasItemId.size(); j++ ) {
 				auto	e2 = ee->vecChildAlphaCanvasItemId[j];
 
-				if ( e2.is_valid() ) pVisualServer->free( e2 );
+				if ( e2.is_valid() )
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+					pVisualServer->free_rid( e2 );
+#else
+					pVisualServer->free( e2 );
+#endif
 			}
 
-			if ( ee->materialId.is_valid() ) pVisualServer->free( ee->materialId );
-			if ( ee->shaderId.is_valid() ) pVisualServer->free( ee->shaderId );
+			if ( ee->materialId.is_valid() )
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+				pVisualServer->free_rid( ee->materialId );
+#else
+				pVisualServer->free( ee->materialId );
+#endif
+			if ( ee->shaderId.is_valid() )
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+				pVisualServer->free_rid( ee->materialId );
+#else
+				pVisualServer->free( ee->shaderId );
+#endif
 
 			delete ee;
 		}

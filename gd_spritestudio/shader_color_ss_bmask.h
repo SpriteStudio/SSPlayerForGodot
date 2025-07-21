@@ -1,4 +1,4 @@
-static const String shader_color_ss_bmask = R"(
+static const char* shader_color_ss_bmask = R"(
 /*!
 * \file		shader_color_ss_bmask.gdshader
 * \author	CRI Middleware Co., Ltd.

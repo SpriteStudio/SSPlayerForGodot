@@ -1,4 +1,4 @@
-static const String shader_color_ss_blur = R"(
+static const char* shader_color_ss_blur = R"(
 /*!
 * \file		shader_color_ss_blur.gdshader
 * \author	CRI Middleware Co., Ltd.

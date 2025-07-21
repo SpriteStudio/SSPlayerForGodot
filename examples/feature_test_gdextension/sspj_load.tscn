@@ -1,0 +1,28 @@
+[gd_scene load_steps=5 format=2]
+
+[ext_resource path="res://sspj_load.gd" type="Script" id=5]
+
+[sub_resource type="Animation" id=3]
+length = 0.001
+loop = true
+
+[sub_resource type="Animation" id=4]
+resource_name = "SsPlayer"
+length = 2.03337
+loop = true
+step = 0.0333333
+
+[sub_resource type="GdResourceSsPlayer" id=5]
+
+[node name="Root" type="Node"]
+script = ExtResource( 5 )
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+anims/RESET = SubResource( 3 )
+anims/SsPlayer = SubResource( 4 )
+
+[node name="by_script" type="GdNodeSsPlayer" parent="."]
+position = Vector2( 345, 275 )
+res_player = SubResource( 5 )
+
+[connection signal="animation_finished" from="by_script" to="." method="_on_animation_finished"]
