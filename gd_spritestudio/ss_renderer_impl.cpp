@@ -42,7 +42,7 @@ using namespace godot;
 
 SsSdkUsing
 
-static const RID ridTextureDummy = RID();
+// static const RID ridTextureDummy = RID();
 
 static void setupTextureCombinerTo_NoBlendRGB_MultiplyAlpha_()
 {
@@ -665,8 +665,8 @@ void SsRendererImpl::renderPart( SsPartState* state )
 //	pVisualServer->draw( false );
 //	pVisualServer->sync();
 
-	pVisualServer->material_set_param( pSprite->materialId, "color", ridTextureDummy );
-	pVisualServer->material_set_param( pSprite->materialId, "alpha", ridTextureDummy );
+	pVisualServer->material_set_param( pSprite->materialId, "color", RID() );
+	pVisualServer->material_set_param( pSprite->materialId, "alpha", RID() );
 	pVisualServer->material_set_param( pSprite->materialId, "color_authentic", texture->get_rid() );
 	pVisualServer->material_set_param( pSprite->materialId, "alpha_authentic", texture->get_rid() );
 
@@ -726,7 +726,7 @@ void SsRendererImpl::renderPart( SsPartState* state )
 				vecCoord,
 				vecBone,
 				vecWeight,
-				ridTextureDummy	// texture->get_rid()
+				RID()	// texture->get_rid()
 			);
 		}
 	}else
@@ -786,7 +786,7 @@ void SsRendererImpl::renderPart( SsPartState* state )
 			vecCoord,
 			vecBone,
 			vecWeight,
-			ridTextureDummy	// texture->get_rid()
+			RID()	// texture->get_rid()
 		);
 	}else
 	{
@@ -1181,8 +1181,8 @@ void SsRendererImpl::renderSpriteSimple( float matrix[16], int width, int height
 	/*       In Ver.4, before user's "fragment" processing, "COLOR" is multiplied texel-color. */
 	/*       In order to get unprocessed vertex-color, set dummy (always white) to "TEXTURE"   */
 	/*         and decode original-texture on another-stage.  (Measures for Ver.4 spec.)       */
-	pVisualServer->material_set_param( pSprite->materialId, "color", ridTextureDummy );
-	pVisualServer->material_set_param( pSprite->materialId, "alpha", ridTextureDummy );
+	pVisualServer->material_set_param( pSprite->materialId, "color", RID() );
+	pVisualServer->material_set_param( pSprite->materialId, "alpha", RID() );
 	pVisualServer->material_set_param( pSprite->materialId, "color_authentic", texture->get_rid() );
 	pVisualServer->material_set_param( pSprite->materialId, "alpha_authentic", texture->get_rid() );
 
@@ -1194,7 +1194,7 @@ void SsRendererImpl::renderSpriteSimple( float matrix[16], int width, int height
 		vecCoord,
 		vecBone,
 		vecWeight,
-		ridTextureDummy	// texture->get_rid()
+		RID()	// texture->get_rid()
 	);
 }
 
