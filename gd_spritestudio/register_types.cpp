@@ -11,6 +11,8 @@
 #include "core/class_db.h"
 #endif
 
+#define GD_SS_BSS_ENABLED 0
+
 #include "gd_node_ssplayer.h"
 #include "gd_resource_ssdocument.h"
 #include "gd_resource_ssplayer.h"
@@ -22,6 +24,7 @@
 #include "gd_loader_ssanimepack.h"
 #include "gd_loader_sscellmap.h"
 #include "gd_loader_sseffect.h"
+#if GD_SS_BSS_ENABLED
 #include "gd_loader_bssproject.h"
 #include "gd_loader_bssanimepack.h"
 #include "gd_loader_bsscellmap.h"
@@ -30,11 +33,14 @@
 #include "gd_saver_bssanimepack.h"
 #include "gd_saver_bsscellmap.h"
 #include "gd_saver_bsseffect.h"
+#endif
 
 static Ref<GdLoaderSsProject>		s_LoaderSsProject;
 static Ref<GdLoaderSsAnimePack>		s_LoaderSsAnimePack;
 static Ref<GdLoaderSsCellMap>		s_LoaderSsCellMap;
 static Ref<GdLoaderSsEffect>		s_LoaderSsEffect;
+
+#if GD_SS_BSS_ENABLED
 static Ref<GdLoaderBssProject>		s_LoaderBssProject;
 static Ref<GdLoaderBssAnimePack>	s_LoaderBssAnimePack;
 static Ref<GdLoaderBssCellMap>		s_LoaderBssCellMap;
@@ -43,6 +49,7 @@ static Ref<GdSaverBssProject>		s_SaverBssProject;
 static Ref<GdSaverBssAnimePack>		s_SaverBssAnimePack;
 static Ref<GdSaverBssCellMap>		s_SaverBssCellMap;
 static Ref<GdSaverBssEffect>		s_SaverBssEffect;
+#endif
 
 void register_gd_spritestudio_types()
 {
@@ -60,6 +67,7 @@ void register_gd_spritestudio_types()
 	s_LoaderSsAnimePack.instantiate();
 	s_LoaderSsCellMap.instantiate();
 	s_LoaderSsEffect.instantiate();
+  #if GD_SS_BSS_ENABLED
 	s_LoaderBssProject.instantiate();
 	s_LoaderBssAnimePack.instantiate();
 	s_LoaderBssCellMap.instantiate();
@@ -68,12 +76,15 @@ void register_gd_spritestudio_types()
 	s_SaverBssAnimePack.instantiate();
 	s_SaverBssCellMap.instantiate();
 	s_SaverBssEffect.instantiate();
+  #endif
 #endif
 #ifdef GD_V3
 	s_LoaderSsProject.instance();
 	s_LoaderSsAnimePack.instance();
 	s_LoaderSsCellMap.instance();
 	s_LoaderSsEffect.instance();
+
+  #if GD_SS_BSS_ENABLED
 	s_LoaderBssProject.instance();
 	s_LoaderBssAnimePack.instance();
 	s_LoaderBssCellMap.instance();
@@ -82,12 +93,15 @@ void register_gd_spritestudio_types()
 	s_SaverBssAnimePack.instance();
 	s_SaverBssCellMap.instance();
 	s_SaverBssEffect.instance();
+  #endif
+
 #endif
 
 	ResourceLoader::add_resource_format_loader( s_LoaderSsProject );
 	ResourceLoader::add_resource_format_loader( s_LoaderSsAnimePack );
 	ResourceLoader::add_resource_format_loader( s_LoaderSsCellMap );
 	ResourceLoader::add_resource_format_loader( s_LoaderSsEffect );
+#if GD_SS_BSS_ENABLED
 	ResourceLoader::add_resource_format_loader( s_LoaderBssProject );
 	ResourceLoader::add_resource_format_loader( s_LoaderBssAnimePack );
 	ResourceLoader::add_resource_format_loader( s_LoaderBssCellMap );
@@ -96,10 +110,12 @@ void register_gd_spritestudio_types()
 	ResourceSaver::add_resource_format_saver( s_SaverBssAnimePack );
 	ResourceSaver::add_resource_format_saver( s_SaverBssCellMap );
 	ResourceSaver::add_resource_format_saver( s_SaverBssEffect );
+#endif
 }
 
 void unregister_gd_spritestudio_types()
 {
+#if GD_SS_BSS_ENABLED
 	ResourceSaver::remove_resource_format_saver( s_SaverBssEffect );
 	ResourceSaver::remove_resource_format_saver( s_SaverBssCellMap );
 	ResourceSaver::remove_resource_format_saver( s_SaverBssAnimePack );
@@ -108,11 +124,13 @@ void unregister_gd_spritestudio_types()
 	ResourceLoader::remove_resource_format_loader( s_LoaderBssCellMap );
 	ResourceLoader::remove_resource_format_loader( s_LoaderBssAnimePack );
 	ResourceLoader::remove_resource_format_loader( s_LoaderBssProject );
+#endif
 	ResourceLoader::remove_resource_format_loader( s_LoaderSsEffect );
 	ResourceLoader::remove_resource_format_loader( s_LoaderSsCellMap );
 	ResourceLoader::remove_resource_format_loader( s_LoaderSsAnimePack );
 	ResourceLoader::remove_resource_format_loader( s_LoaderSsProject );
 
+#if GD_SS_BSS_ENABLED
 	s_SaverBssEffect.unref();
 	s_SaverBssCellMap.unref();
 	s_SaverBssAnimePack.unref();
@@ -121,6 +139,7 @@ void unregister_gd_spritestudio_types()
 	s_LoaderBssCellMap.unref();
 	s_LoaderBssAnimePack.unref();
 	s_LoaderBssProject.unref();
+#endif
 	s_LoaderSsEffect.unref();
 	s_LoaderSsCellMap.unref();
 	s_LoaderSsAnimePack.unref();
