@@ -1,5 +1,5 @@
 # ブランチ選択
-SSPlayerForGodot ディレクトリ の `godot` ディレクトリ内でビルドする Godot Engine のブランチを選択してください。
+SSPlayerForGodot ディレクトリの `godot` ディレクトリ内でビルドする Godot Engine のブランチを選択してください。
 
 ## 4.3
 
@@ -10,9 +10,18 @@ popd
 ```
 
 ## 3.x
+
 ```bash
 pushd godot
 git checkout 3.x
+popd 
+```
+
+## GDExtension
+
+```bash
+pushd godot-cpp
+git checkout 4.3
 popd 
 ```
 
@@ -25,7 +34,7 @@ popd
 
 必要なツール
 * ビルドツール (いずれかを選択)
-    * VisualStudio 2017 or 2019(推奨)
+    * VisualStudio 2019(推奨) or 2022
     * MSYS2 + MinGW + gcc + make
 * Python 3.6 以降
 * scons 3.0 以降
@@ -60,7 +69,7 @@ brew install python3 scons
 brew install molten-vk
 ```
 
-ホストアーキテクチャとは異なるアーキテクチャの Godot Engine をビルドする場合や、Universal Binary な Godot Engine をビルドする場合は、`molten-vk` の代わりに Universal Binary 対応している [Vulkan SDK for MoltenVK](https://vulkan.lunarg.com/sdk/home) をインストールしてください。
+ホストアーキテクチャとは異なるアーキテクチャの Godot Engine をビルドする場合や Universal Binary 対応 Godot Engine をビルドする場合は `molten-vk` の代わりに Universal Binary 対応している [Vulkan SDK for MoltenVK](https://vulkan.lunarg.com/sdk/home) をインストールしてください。
 
 (Optional) target を Web のビルドをする際は emscripten をインストールしてください。
 
@@ -70,6 +79,8 @@ brew install emscripten
 
 # ビルド
 ## Windows 
+### 4.3
+
 [winbuild.ps1](./scripts/winbuild.ps1) でビルド可能です。
 
 **PowerShell**
@@ -86,8 +97,13 @@ set PYTHONUTF8=1
 PowerShell.exe -ExecutionPolicy Bypass -File .\scripts\winbuild.ps1
 ```
 
+### 3.x
+
+...
 
 ## macOS ビルド
+
+### 4.3
 
 [build.sh](./scripts/build.sh) でビルド可能です。
 
@@ -118,6 +134,37 @@ PowerShell.exe -ExecutionPolicy Bypass -File .\scripts\winbuild.ps1
 
 `godot/Godot.app` を開いて起動を確認します。
 
+### 3.x
+
+[build-v3.sh](./scripts/build-v3.sh) でビルド可能です。
+
+```sh
+./scripts/build-v3.sh
+```
+
+引数を指定しない場合はホストマシンのアーキテクチャと同じアーキテクチャ向けにビルドします。
+アーキテクチャを明示的に指定する場合は `arch=` に引数を追加してください。
+
+**Universal Binary (supports both arm64 and x86_64)**
+
+```sh
+./scripts/build-v3.sh arch=universal
+```
+
+**arm64 (Apple Silicon)**
+
+```sh
+./scripts/build-v3.sh arch=arm64
+```
+
+**x86_64 (Intel)**
+
+```sh
+./scripts/build-v3.sh arch=x86_64
+```
+
+`godot/Godot.app` を開いて起動を確認します。
+
 
 # GDExtension
 ## Windows 
@@ -137,7 +184,6 @@ set PYTHONUTF8=1
 PowerShell.exe -ExecutionPolicy Bypass -File .\scripts\winbuild-gdextension.ps1
 ```
 
-
 ## macOS, linux, iOS, Android, Web ビルド
 
 macOS か Linux で実行してください。
@@ -148,7 +194,13 @@ macOS か Linux で実行してください。
 ./scripts/build-extension.sh
 ```
 
+
 # リリースビルド
+## 4.3
+
+...
+
+## GDExtension
 各プラットフォームの gdextension の editor, template_debug, template_release をまとめてビルドスクリプトは下記の通りです。
 
 windows
@@ -180,3 +232,7 @@ Web
 ```sh
 ./scripts/release-gdextension-web.sh
 ```
+
+## 3.x
+
+...
