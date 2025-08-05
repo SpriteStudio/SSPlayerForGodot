@@ -81,20 +81,20 @@ brew install emscripten
 ## Windows 
 ### 4.3
 
-[winbuild.ps1](./scripts/winbuild.ps1) でビルド可能です。
+[build.ps1](./scripts/build.ps1) でビルド可能です。
 
 **PowerShell**
 
 ```powershell
 $env:PYTHONUTF8=1
-.\scripts\winbuild.ps1
+.\scripts\build.ps1
 ```
 
 **Cmd**
 
 ```cmd
 set PYTHONUTF8=1
-PowerShell.exe -ExecutionPolicy Bypass -File .\scripts\winbuild.ps1
+PowerShell.exe -ExecutionPolicy Bypass -File .\scripts\build.ps1
 ```
 
 ### 3.x

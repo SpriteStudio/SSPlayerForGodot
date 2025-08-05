@@ -24,7 +24,9 @@ popd
 # Godot scons default options
 $scons_default_opts = @{
     arch = $HOST_ARCH
+    platform = "windows"
     vsproj = "no"
+    target = "editor"
     compiledb = "yes"
     custom_modules = "../gd_spritestudio"
 }
@@ -45,6 +47,7 @@ function usage() {
     echo "Usage: $APP [options]"
     echo "$APP options:"
     echo "  arch=<arch>         Target architecture (default: ${HOST_ARCH})"
+    echo "  target=<target>     Target (default: ${scons_default_opts.target})"
     echo "  cpus=<nums>         number of scons -j option (default: $cpus)"
     # echo "  ccache=<yes|no>     Enable ccache (default: $($winbuild_default_opts.ccache))"
     echo "  version=<version>   Godot version. $APP uses this version at can not getting Godot version from git branch or tag. (default: $($winbuild_default_opts.version))"
@@ -90,16 +93,6 @@ if (![string]::IsNullOrEmpty($GODOT_BRANCH)) {
     $VERSION = $opts.version
 }
 echo "Godot Version: ${VERSION}" 
-
-# set internal parameters for each Godot version
-$internal_opts=@{
-    platform = "windows"
-}
-if ($VERSION -like "3.*") { 
-    # 3.x
-} else {
-    # 4.x
-}
 
 # validate scons command options from winbuild options
 $scons_command_opts = "platform=$($internal_opts.platform)"
