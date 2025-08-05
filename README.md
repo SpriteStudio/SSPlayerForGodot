@@ -5,8 +5,8 @@
 本プラグインは [OPTPiX SpriteStudio](https://www.webtech.co.jp/spritestudio/index.html) で作成したアニメーションを [Godot Engine](https://godotengine.org/) 上で再生するためのプラグインです。  
 
 実行時パフォーマンスを優先するため C++ モジュールの形態になっています。
-SpriteStudioPlayer for Godot を利用する場合、SpriteStudioPlayer のカスタムモジュールを組み込んだ Godot Engine の Editor を手元でビルドする必要があります。
-このため、後述の[ビルド](#ビルド)が必要になります。  
+SpriteStudioPlayer for Godot を利用する場合、SpriteStudioPlayer の[カスタムモジュール](https://docs.godotengine.org/en/stable/contributing/development/core_and_modules/custom_modules_in_cpp.html) を組み込んだ Godot Engine の Editor を手元でビルドするか、 SpriteStudioPlayer の [GDExtension](https://docs.godotengine.org/en/stable/tutorials/scripting/gdextension/what_is_gdextension.html) をプロジェクトへ入れる必要があります。
+
 
 ## 対応する [OPTPiX SpriteStudio](https://www.webtech.co.jp/spritestudio/index.html) のバージョン
 
@@ -23,28 +23,57 @@ Ver.6 と Ver.7 に対応しています。
 本リポジトリをクローンしてください。
 
 ```bash
-git clone https://github.com/SpriteStudio/SSPlayerForGodot.git
+git clone --recursive https://github.com/SpriteStudio/SSPlayerForGodot.git
+cd SSPlayerForGodot
 ```
 
-SSPlayerForGodot ディレクトリから以下のコマンドを実行し、 Godot Engine と SpriteStudio SDK を取得します。
+SSPlayerForGodot ディレクトリから以下のコマンドを実行し、 Godot を取得します。
 
 ```bash
 git clone https://github.com/godotengine/godot.git
-git clone https://github.com/godotengine/godot-cpp.git godot-cpp
 ```
+
+gdextension をビルドする場合は godot-cpp を取得します。
 
 ```bash
-git submodule update --init --recursive
+git clone https://github.com/godotengine/godot-cpp.git
 ```
 
-[setup.bat](./setup.bat) で上記を行っています。
+# ブランチ選択
+SSPlayerForGodot ディレクトリの `godot` ディレクトリ内でビルドする Godot Engine のブランチを選択してください。
+
+## Godot
+### 4.3
+
+```bash
+pushd godot
+git checkout 4.3
+popd 
+```
+
+### 3.x
+
+```bash
+pushd godot
+git checkout 3.x
+popd 
+```
+
+## GDExtension
+gdextension をビルドする場合は `godot-cpp` ディレクトリで対照する Godot Engine バージョンと同じブランチ名を選択してください。
+
+
+```bash
+pushd godot-cpp
+git checkout 4.3
+popd 
+```
 
 # ビルド
 
 [BUILD.md](BUILD.md) を参照してください。
 
 # 使い方
-
 ## SpriteStudioデータのインポート
 
 SpriteStudioデータのインポート手順について説明します。  
@@ -263,6 +292,13 @@ value：パラメータ名と値のコレクション
 エフェクト機能を利用したサンプルです。  
 シーンに表示されるアニメーションは40種類のうちの一部になります。  
 インスペクタの Anime Pack からその他のアニメーションも確認できます。
+
+## [feature_test_gdextension](./examples/feature_test_gdextension)
+
+gdextension の動作確認用プロジェクトです。
+
+確認できるサンプルは [feature_test](./examples/feature_test) と同じものになります。
+
 
 # お問い合わせ
 

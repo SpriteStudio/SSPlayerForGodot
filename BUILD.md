@@ -1,29 +1,3 @@
-# ブランチ選択
-SSPlayerForGodot ディレクトリの `godot` ディレクトリ内でビルドする Godot Engine のブランチを選択してください。
-
-## 4.3
-
-```bash
-pushd godot
-git checkout 4.3
-popd 
-```
-
-## 3.x
-
-```bash
-pushd godot
-git checkout 3.x
-popd 
-```
-
-## GDExtension
-
-```bash
-pushd godot-cpp
-git checkout 4.3
-popd 
-```
 
 # ビルド環境のセットアップ
 ## Windows
