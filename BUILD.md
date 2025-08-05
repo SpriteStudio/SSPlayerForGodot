@@ -168,20 +168,20 @@ PowerShell.exe -ExecutionPolicy Bypass -File .\scripts\build.ps1
 
 # GDExtension
 ## Windows 
-[winbuild-gdextension.ps1](./scripts/winbuild-gdextension.ps1) でビルド可能です。
+[build-extension.ps1](./scripts/build-extension.ps1) でビルド可能です。
 
 **PowerShell**
 
 ```powershell
 $env:PYTHONUTF8=1
-.\scripts\winbuild-gdextension.ps1
+.\scripts\build-extension.ps1
 ```
 
 **Cmd**
 
 ```cmd
 set PYTHONUTF8=1
-PowerShell.exe -ExecutionPolicy Bypass -File .\scripts\winbuild-gdextension.ps1
+PowerShell.exe -ExecutionPolicy Bypass -File .\scripts\build-extension.ps1
 ```
 
 ## macOS, linux, iOS, Android, Web ビルド

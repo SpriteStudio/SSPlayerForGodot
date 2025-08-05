@@ -69,23 +69,6 @@ foreach ($item in $Args) {
 $opts
 echo ""
 
-# get Godot Version
-if (![string]::IsNullOrEmpty($GODOT_BRANCH)) {
-    $VERSION = $GODOT_BRANCH
-} elseif (![string]::IsNullOrEmpty($GODOT_TAG)) {
-    $VERSION = $GODOT_TAG
-} else {
-    $VERSION = $opts.version
-}
-echo "Godot Version: ${VERSION}" 
-
-# set internal parameters for each Godot version
-if ($VERSION -like "3.*") { 
-    # 3.x
-} else {
-    # 4.x
-}
-
 # validate scons command options from winbuild options
 foreach ($key in $opts.Keys) {
     if ($winbuild_default_opts.ContainsKey($key)) {
@@ -101,5 +84,11 @@ $scons_command_opts += "$scons_command_opts -j $j"
 echo "scons command options: $scons_command_opts"
 
 pushd $rootDirectory
+
+$BINDIR = "bin/$opts[platform]"
+mkdir "$BINDIR" -Force
 Invoke-Expression "scons $scons_command_opts"
+
+cp misc\ssplayer_godot_extension.gdextension examples\feature_test_gdextension\bin
+
 popd
