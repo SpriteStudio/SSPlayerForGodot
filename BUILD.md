@@ -99,7 +99,21 @@ PowerShell.exe -ExecutionPolicy Bypass -File .\scripts\build.ps1
 
 ### 3.x
 
-...
+[build-v3.ps1](./scripts/build-v3.ps1) でビルド可能です。
+
+**PowerShell**
+
+```powershell
+$env:PYTHONUTF8=1
+.\scripts\build-v3.ps1
+```
+
+**Cmd**
+
+```cmd
+set PYTHONUTF8=1
+PowerShell.exe -ExecutionPolicy Bypass -File .\scripts\build-v3.ps1
+```
 
 ## macOS ビルド
 
