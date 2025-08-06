@@ -184,7 +184,8 @@ Error GdResourceSsProject::loadFromFile( const String& strPath, const String& st
 		err = OK; // TODO: improve
 #else
 #ifdef GD_V4
-		Ref<GdResourceSsAnimePack>	resAnimePack = ResourceLoader::load( m_strAnimePack + strName, "", ResourceFormatLoader::CACHE_MODE_REUSE, &err );
+		Ref<GdResourceSsAnimePack>	resAnimePack = ResourceLoader::load( m_strAnimePack + strName, "", ResourceFormatLoader::CacheMode::CACHE_MODE_REUSE);
+		err = OK; // TODO: improve
 #endif
 #ifdef GD_V3
 		Ref<GdResourceSsAnimePack>	resAnimePack = ResourceLoader::load( m_strAnimePack + strName, "", false, &err );

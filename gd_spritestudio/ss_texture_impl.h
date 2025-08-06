@@ -18,6 +18,9 @@
 using namespace godot;
 #else
 #include "scene/resources/texture.h"
+#ifdef GD_V4
+#include "core/io/resource_loader.h"
+#endif
 #endif
 
 #include "ss_macros.h"

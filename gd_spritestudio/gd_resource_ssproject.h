@@ -15,6 +15,7 @@ using namespace godot;
 #else
 #ifdef GD_V4
 #include "core/io/resource.h"
+#include "core/io/resource_loader.h"
 #include "core/templates/vmap.h"
 #endif
 #ifdef GD_V3
