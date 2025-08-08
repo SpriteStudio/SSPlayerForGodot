@@ -11,11 +11,7 @@ env:
 
 jobs:
   mac_build:
-    strategy:
-      matrix:
-        platform: macos-latest
-        version: ${{ env.GODOT_VERSION_4 }}
-    runs-on: ${{ matrix.platform }}
+    runs-on: macos-latest
     steps:
     - uses: actions/checkout@v4
       with:
@@ -24,7 +20,7 @@ jobs:
       uses: GuillaumeFalourd/clone-github-repo-action@v2.3
       with:
         depth: 1
-        branch: ${{ matrix.version }}
+        branch: ${{ env.GODOT_VERSION_4 }}
         owner: 'godotengine'
         repository: 'godot'
     - name: prepare scons
@@ -42,11 +38,7 @@ jobs:
         ./scripts/build.sh
 
   win_build:
-    strategy:
-      matrix:
-        platform: windows-latest
-        version: ${{ env.GODOT_VERSION_4 }}
-    runs-on: ${{ matrix.platform }}
+    runs-on: windows-latest
     steps:
     - uses: actions/checkout@v4
       with:
@@ -55,7 +47,7 @@ jobs:
       uses: GuillaumeFalourd/clone-github-repo-action@v2.3
       with:
         depth: 1
-        branch: ${{ matrix.version }}
+        branch: ${{ env.GODOT_VERSION_4 }}
         owner: 'godotengine'
         repository: 'godot'
     - name: Setup Python and SCons
