@@ -51,7 +51,10 @@ jobs:
         owner: 'godotengine'
         repository: 'godot'
     - name: Setup Python and SCons
-      uses: ./godot/.github/actions/godot-deps
+      run: |
+        choco install python3
+        python -m pip install --upgrade pip
+        python -m pip install scons
     - name: Download Direct3D 12 SDK components
       run: python ./godot/misc/scripts/install_d3d12_sdk_windows.py
     - name: Download pre-built ANGLE static libraries
