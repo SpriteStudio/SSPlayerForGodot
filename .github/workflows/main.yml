@@ -35,7 +35,7 @@ jobs:
           rm -rf /tmp/vulkan-sdk
     - name: build godot
       run: |
-        ./scripts/build.sh
+        ./scripts/build.sh arch=universal compiledb=no strip=yes
 
   win_build:
     runs-on: windows-latest
