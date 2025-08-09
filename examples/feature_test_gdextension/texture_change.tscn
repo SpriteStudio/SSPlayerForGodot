@@ -1,0 +1,21 @@
+[gd_scene load_steps=5 format=2]
+
+[ext_resource path="res://ssdata/v6_all.sspj" type="GdResourceSsProject" id=1]
+[ext_resource path="res://texture_change.gd" type="Script" id=3]
+[ext_resource path="res://ssdata/common_2.png" type="Texture2D" id=4]
+
+[sub_resource type="GdResourceSsPlayer" id=20]
+res_project = ExtResource( 1 )
+
+[node name="Root" type="Node"]
+
+[node name="TextureChange" type="GdNodeSsPlayer" parent="."]
+position = Vector2( 252, 239 )
+res_player = SubResource( 20 )
+anime_pack = "Basic.ssae"
+animation = "anime_1"
+frame = 0
+loop = false
+play = false
+script = ExtResource( 3 )
+to_texture = ExtResource( 4 )

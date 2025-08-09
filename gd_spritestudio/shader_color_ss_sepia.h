@@ -1,4 +1,4 @@
-static const String shader_color_ss_sepia = R"(
+static const char* shader_color_ss_sepia = R"(
 /*!
 * \file		shader_color_ss_sepia.gdshader
 * \author	CRI Middleware Co., Ltd.

@@ -1,4 +1,4 @@
-static const String shader_color_ss_outline = R"(
+static const char* shader_color_ss_outline = R"(
 /*!
 * \file		shader_color_ss_outline.gdshader
 * \author	CRI Middleware Co., Ltd.

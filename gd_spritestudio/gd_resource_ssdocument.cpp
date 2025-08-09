@@ -8,7 +8,7 @@
 
 GdResourceSsDocument::GdResourceSsDocument()
 {
-	m_strSource.clear();
+	m_strSource.resize(0);
 }
 
 GdResourceSsDocument::~GdResourceSsDocument()

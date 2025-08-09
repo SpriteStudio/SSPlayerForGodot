@@ -4,6 +4,11 @@
 */
 #include "gd_renderer.h"
 
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+#include <godot_cpp/classes/rendering_server.hpp>
+#define	VisualServer	RenderingServer
+using namespace godot;
+#else
 #ifdef GD_V4
 #include "servers/rendering_server.h"
 #define	VisualServer	RenderingServer
@@ -11,11 +16,16 @@
 #ifdef GD_V3
 #include "servers/visual_server.h"
 #endif
+#endif
 
 static inline void safeFree( RID& rid )
 {
 	if ( rid.is_valid() ) {
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+		VisualServer::get_singleton()->free_rid( rid );
+#else
 		VisualServer::get_singleton()->free( rid );
+#endif
 		rid = RID();
 	}
 }
@@ -53,6 +63,15 @@ void GdRenderer::init()
 
 	pVisualServer->viewport_attach_canvas( m_ViewPortId, m_CanvasId );
 
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+	RID			viewPortTextureId = pVisualServer->viewport_get_texture( m_ViewPortId );
+	Ref<Image>	viewPortTextureData = pVisualServer->texture_2d_get( viewPortTextureId );
+
+	m_TextureId = pVisualServer->texture_2d_create( viewPortTextureData );
+
+//	pVisualServer->texture_set_proxy( m_TextureId, viewPortTextureId );
+	m_TextureId = viewPortTextureId;
+#else
 #ifdef GD_V4
 	RID			viewPortTextureId = pVisualServer->viewport_get_texture( m_ViewPortId );
 	Ref<Image>	viewPortTextureData = pVisualServer->texture_2d_get( viewPortTextureId );
@@ -69,6 +88,7 @@ void GdRenderer::init()
 	m_TextureId = pVisualServer->texture_create_from_image( viewPortTextureData );
 
 	pVisualServer->texture_set_proxy( m_TextureId, viewPortTextureId );
+#endif
 #endif
 
 	pVisualServer->viewport_set_active( m_ViewPortId, true );
@@ -87,7 +107,7 @@ void GdRenderer::setTranslate( float fX, float fY )
 	VisualServer*	pVisualServer = VisualServer::get_singleton();
 	Transform2D		trans;
 
-#ifdef GD_V4
+#if defined(GD_V4) || defined(SPRITESTUDIO_GODOT_EXTENSION)
 	trans.translate_local( fX, fY );
 #endif
 #ifdef GD_V3

@@ -44,12 +44,7 @@ void GdResourceSsProject::setAnimePackResource( const Ref<GdResourceSsAnimePack>
 
 	m_mapResAnimePack[strName] = resAnimePack;
 
-#ifdef GD_V4
-	notify_property_list_changed();
-#endif
-#ifdef GD_V3
-	property_list_changed_notify();
-#endif
+	NOTIFY_PROPERTY_LIST_CHANGED();
 
 	GdNotifier::getInstance().notifyResourceProjectChanged( this );
 }
@@ -71,12 +66,7 @@ void GdResourceSsProject::setCellMapResource( const Ref<GdResourceSsCellMap>& re
 
 	m_vecResCellMap.set( iIndex, resCellMap );
 
-#ifdef GD_V4
-	notify_property_list_changed();
-#endif
-#ifdef GD_V3
-	property_list_changed_notify();
-#endif
+	NOTIFY_PROPERTY_LIST_CHANGED();
 
 	GdNotifier::getInstance().notifyResourceProjectChanged( this );
 }
@@ -124,12 +114,7 @@ void GdResourceSsProject::setEffectResource( const Ref<GdResourceSsEffect>& resE
 
 	m_vecResEffect.set( iIndex, resEffect );
 
-#ifdef GD_V4
-	notify_property_list_changed();
-#endif
-#ifdef GD_V3
-	property_list_changed_notify();
-#endif
+	NOTIFY_PROPERTY_LIST_CHANGED();
 
 	GdNotifier::getInstance().notifyResourceProjectChanged( this );
 }
@@ -161,24 +146,29 @@ Error GdResourceSsProject::loadFromFile( const String& strPath, const String& st
 
 	m_strRoot = strRel.get_base_dir();
 	m_strRoot = m_strRoot.replace( "res://", "" );
-	if ( !m_strRoot.length() == 0 && !m_strRoot.ends_with( "/" ) ) {
+	if ( !EMPTY(m_strRoot) && !m_strRoot.ends_with( "/" ) )
+	{
 		m_strRoot += "/";
 	}
 
 	m_strAnimePack = m_strRoot + String::utf8( m_pProject->settings.animeBaseDirectory.c_str() );
-	if ( !m_strAnimePack.length() == 0 && !m_strAnimePack.ends_with( "/" ) ) {
+	if ( EMPTY(m_strAnimePack) && !m_strAnimePack.ends_with( "/" ) )
+	{
 		m_strAnimePack += "/";
 	}
 	m_strCellMap = m_strRoot + String::utf8( m_pProject->settings.cellMapBaseDirectory.c_str() );
-	if ( !m_strCellMap.length() == 0 && !m_strCellMap.ends_with( "/" ) ) {
+	if ( EMPTY(m_strCellMap) && !m_strCellMap.ends_with( "/" ) )
+	{
 		m_strCellMap += "/";
 	}
 	m_strImage = m_strRoot + String::utf8( m_pProject->settings.imageBaseDirectory.c_str() );
-	if ( !m_strImage.length() == 0 && !m_strImage.ends_with( "/" ) ) {
+	if ( EMPTY(m_strImage) && !m_strImage.ends_with( "/" ) )
+	{
 		m_strImage += "/";
 	}
 	m_strEffect = m_strRoot + String::utf8( m_pProject->settings.effectBaseDirectory.c_str() );
-	if ( !m_strEffect.length() == 0 && !m_strEffect.ends_with( "/" ) ) {
+	if ( EMPTY(m_strEffect) && !m_strEffect.ends_with( "/" ) )
+	{
 		m_strEffect += "/";
 	}
 
@@ -189,14 +179,18 @@ Error GdResourceSsProject::loadFromFile( const String& strPath, const String& st
 
 	for ( int i = 0; i < m_pProject->animepackNames.size(); i++ ) {
 		String	strName = String::utf8( m_pProject->animepackNames[i].c_str() );
-
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+		Ref<GdResourceSsAnimePack>	resAnimePack = ResourceLoader::get_singleton()->load( m_strAnimePack + strName, "", ResourceLoader::CacheMode::CACHE_MODE_REUSE);
+		err = OK; // TODO: improve
+#else
 #ifdef GD_V4
-		Ref<GdResourceSsAnimePack>	resAnimePack = ResourceLoader::load( m_strAnimePack + strName, "", ResourceFormatLoader::CACHE_MODE_REUSE, &err );
+		Ref<GdResourceSsAnimePack>	resAnimePack = ResourceLoader::load( m_strAnimePack + strName, "", ResourceFormatLoader::CacheMode::CACHE_MODE_REUSE);
+		err = OK; // TODO: improve
 #endif
 #ifdef GD_V3
 		Ref<GdResourceSsAnimePack>	resAnimePack = ResourceLoader::load( m_strAnimePack + strName, "", false, &err );
 #endif
-
+#endif
 		m_mapResAnimePack[strName] = resAnimePack;
 
 		if ( err != OK ) {
@@ -215,11 +209,16 @@ Error GdResourceSsProject::loadFromFile( const String& strPath, const String& st
 	for ( int i = 0; i < m_pProject->cellmapNames.size(); i++ ) {
 		String	strName = String::utf8( m_pProject->cellmapNames[i].c_str() );
 
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+		Ref<GdResourceSsCellMap>	resCellMap = ResourceLoader::get_singleton()->load( m_strCellMap + strName, "", ResourceLoader::CacheMode::CACHE_MODE_REUSE);
+		err = OK; // TODO: improve
+#else
 #ifdef GD_V4
 		Ref<GdResourceSsCellMap>	resCellMap = ResourceLoader::load( m_strCellMap + strName, "", ResourceFormatLoader::CACHE_MODE_REUSE, &err );
 #endif
 #ifdef GD_V3
 		Ref<GdResourceSsCellMap>	resCellMap = ResourceLoader::load( m_strCellMap + strName, "", false, &err );
+#endif
 #endif
 
 		m_vecResCellMap.push_back( resCellMap );
@@ -244,11 +243,17 @@ Error GdResourceSsProject::loadFromFile( const String& strPath, const String& st
 	for ( int i = 0; i < m_pProject->effectFileNames.size(); i++ ) {
 		String	strName = String::utf8( m_pProject->effectFileNames[i].c_str() );
 
+
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+		Ref<GdResourceSsEffect>		resEffect = ResourceLoader::get_singleton()->load( m_strEffect + strName, "", ResourceLoader::CACHE_MODE_REUSE);
+		err = OK; // TODO: improve
+#else
 #ifdef GD_V4
 		Ref<GdResourceSsEffect>		resEffect = ResourceLoader::load( m_strEffect + strName, "", ResourceFormatLoader::CACHE_MODE_REUSE, &err );
 #endif
 #ifdef GD_V3
 		Ref<GdResourceSsEffect>		resEffect = ResourceLoader::load( m_strEffect + strName, "", false, &err );
+#endif
 #endif
 
 		m_vecResEffect.push_back( resEffect );
@@ -308,9 +313,17 @@ int GdResourceSsProject::getEffectCount() const
 	return	0;
 }
 
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+PackedStringArray GdResourceSsProject::getAnimePackNames() const
+#else
 Vector<String> GdResourceSsProject::getAnimePackNames() const
+#endif
 {
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+    PackedStringArray vec;
+#else
 	Vector<String>	vec;
+#endif
 
 	if ( m_pProject ) {
 		for ( int i = 0; i < m_pProject->getAnimePackNum(); i++ ) {
@@ -323,9 +336,17 @@ Vector<String> GdResourceSsProject::getAnimePackNames() const
 	return	vec;
 }
 
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+PackedStringArray GdResourceSsProject::getCellMapNames() const
+#else
 Vector<String> GdResourceSsProject::getCellMapNames() const
+#endif
 {
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+    PackedStringArray vec;
+#else
 	Vector<String>	vec;
+#endif
 
 	if ( m_pProject ) {
 		for ( int i = 0; i < m_pProject->getCellMapNum(); i++ ) {
@@ -338,9 +359,17 @@ Vector<String> GdResourceSsProject::getCellMapNames() const
 	return	vec;
 }
 
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+PackedStringArray GdResourceSsProject::getEffectNames() const
+#else
 Vector<String> GdResourceSsProject::getEffectNames() const
+#endif
 {
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+    PackedStringArray vec;
+#else
 	Vector<String>	vec;
+#endif
 
 	if ( m_pProject ) {
 		for ( int i = 0; i < m_pProject->getEffectFileNum(); i++ ) {

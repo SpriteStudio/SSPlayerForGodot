@@ -7,6 +7,11 @@
 
 #include "gd_macros.h"
 
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+#include <godot_cpp/variant/rect2.hpp>
+#include <godot_cpp/variant/rid.hpp>
+using namespace godot;
+#else
 #ifdef GD_V4
 #include "core/templates/rid.h"
 #endif
@@ -14,6 +19,7 @@
 #include "core/rid.h"
 #endif
 #include "core/math/rect2.h"
+#endif
 
 class GdRenderer
 {

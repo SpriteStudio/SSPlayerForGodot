@@ -36,11 +36,18 @@ bool SsTextureImpl::Load( const char* filename )
 {
 	Error	err;
 
+
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+	m_Texture = ResourceLoader::get_singleton()->load( filename, "", ResourceLoader::CACHE_MODE_REUSE);
+	err = OK; // TODO: improve
+#else
 #ifdef GD_V4
-	m_Texture = ResourceLoader::load( filename, "", ResourceFormatLoader::CACHE_MODE_REUSE, &err );
+	m_Texture = ResourceLoader::load( filename, "", ResourceFormatLoader::CacheMode::CACHE_MODE_REUSE);
+	err = OK; // TODO: improve
 #endif
 #ifdef GD_V3
 	m_Texture = ResourceLoader::load( filename, "", false, &err );
+#endif
 #endif
 
 	if ( err != OK ) {
