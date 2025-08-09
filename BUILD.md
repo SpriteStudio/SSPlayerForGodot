@@ -53,7 +53,7 @@ brew install emscripten
 
 # ビルド
 ## Windows 
-### 4.3
+### 4
 
 [build.ps1](./scripts/build.ps1) でビルド可能です。
 
@@ -91,7 +91,7 @@ PowerShell.exe -ExecutionPolicy Bypass -File .\scripts\build-v3.ps1
 
 ## macOS ビルド
 
-### 4.3
+### 4
 
 [build.sh](./scripts/build.sh) でビルド可能です。
 
@@ -184,7 +184,7 @@ macOS か Linux で実行してください。
 
 
 # リリースビルド
-## 4.3
+## 4
 
 ...
 

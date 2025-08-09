@@ -15,7 +15,7 @@ Ver.6 と Ver.7 に対応しています。
 
 ## 対応する [Godot Engine](https://github.com/godotengine/godot) のバージョン
 
-- [4.3 ブランチ](https://github.com/godotengine/godot/tree/4.3)で Windows / macOS でビルド、および実行を確認しています。
+- [4.4 ブランチ](https://github.com/godotengine/godot/tree/4.4)で Windows / macOS でビルド、および実行を確認しています。
 - [3.x ブランチ](https://github.com/godotengine/godot/tree/3.x)で Windows / macOS でビルド、および実行を確認しています。
 
 # ソース取得
@@ -43,11 +43,11 @@ git clone https://github.com/godotengine/godot-cpp.git
 SSPlayerForGodot ディレクトリの `godot` ディレクトリ内でビルドする Godot Engine のブランチを選択してください。
 
 ## Godot
-### 4.3
+### 4.4
 
 ```bash
 pushd godot
-git checkout 4.3
+git checkout 4.4
 popd 
 ```
 
@@ -65,7 +65,7 @@ gdextension をビルドする場合は `godot-cpp` ディレクトリで対照�
 
 ```bash
 pushd godot-cpp
-git checkout 4.3
+git checkout 4.4
 popd 
 ```
 
@@ -263,7 +263,7 @@ value：パラメータ名と値のコレクション
 
 [examples フォルダ](./examples/)にサンプルプロジェクトがあります。
 
-**サンプルプロジェクトは 3.x 向けに作っているため、4.3 で利用する際は "Convert Full Project" を実行してから利用してください。**
+**サンプルプロジェクトは 3.x 向けに作っているため、4.4 で利用する際は "Convert Full Project" を実行してから利用してください。**
 
 ## [feature_test](./examples/feature_test)
 

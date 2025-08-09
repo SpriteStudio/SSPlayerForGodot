@@ -34,7 +34,7 @@ declare -A scons_default_opts=(
 # macbuild default options
 declare -A build_default_opts=(
     [cpus]=${CPUS}
-    [version]="4.3"
+    [version]="4.4"
     [strip]="no"
 )
 
