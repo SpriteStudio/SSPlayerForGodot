@@ -9,8 +9,8 @@ pushd ${ROOTDIR} > /dev/null
 
 targets=("editor" "template_release" "template_debug")
 for target in ${targets[@]}; do
-    scripts/build.sh platform=ios arch=arm64 strip=yes target=${target} ios_simulator=no
-    scripts/build.sh platform=ios arch=universal strip=yes target=${target} ios_simulator=yes
+    scripts/build.sh platform=ios arch=arm64 compiledb=no strip=yes target=${target} ios_simulator=no
+    scripts/build.sh platform=ios arch=universal compiledb=no strip=yes target=${target} ios_simulator=yes
 done
 
 popd > /dev/null # ${ROOTDIR}
