@@ -8,6 +8,7 @@ on:
 env:
   GODOT_VERSION_4: 4.4
   GODOT_VERSION_3: 3.x
+  PYTHONUTF8: 1
 
 jobs:
   mac_build:
@@ -24,8 +25,7 @@ jobs:
         owner: 'godotengine'
         repository: 'godot'
     - name: prepare scons
-      run: |
-          brew install python3 scons
+      uses: ./.github/actions/setup-scons
     - name: install Vulkan SDK
       run: |
           curl -L "https://sdk.lunarg.com/sdk/download/1.4.321.0/mac/vulkansdk-macos-1.4.321.0.zip" -o /tmp/vulkan-sdk.zip
@@ -50,11 +50,8 @@ jobs:
         branch: ${{ env.GODOT_VERSION_4 }}
         owner: 'godotengine'
         repository: 'godot'
-    - name: Setup Python and SCons
-      run: |
-        choco install python3
-        python -m pip install --upgrade pip
-        python -m pip install scons
+    - name: prepare scons
+      uses: ./.github/actions/setup-scons
     - name: Download Direct3D 12 SDK components
       run: python ./godot/misc/scripts/install_d3d12_sdk_windows.py
     - name: Download pre-built ANGLE static libraries
@@ -71,7 +68,6 @@ jobs:
     - name: build godot
       shell: pwsh
       run: |
-        $env:PYTHONUTF8=1
         .\scripts\build.ps1
 
 #  mac_build_3:
