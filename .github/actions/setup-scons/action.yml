@@ -13,5 +13,6 @@ runs:
       shell: bash
       run: |
         python -c "import sys; print(sys.version)"
+        python -m pip install --upgrade pip
         python -m pip install scons
         scons --version

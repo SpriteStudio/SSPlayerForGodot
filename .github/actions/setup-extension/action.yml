@@ -1,0 +1,25 @@
+name: Setup extension
+description: Setup build dependencies for extension.
+
+inputs:
+  platform:
+    required: true
+    description: Target platform.
+
+runs:
+  using: composite
+  steps:
+    - name: prepare scons
+      uses: ./.github/actions/setup-scons
+
+    - name: Setup Android dependencies
+      if: inputs.platform == 'android'
+      uses: nttld/setup-ndk@v1
+      with:
+        link-to-sdk: true
+
+    - name: Setup Web dependencies
+      if: inputs.platform == 'web'
+      uses: mymindstorm/setup-emsdk@v14
+      with:
+        no-cache: true
