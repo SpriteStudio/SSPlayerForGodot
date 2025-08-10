@@ -12,17 +12,17 @@ env:
 
 jobs:
   godot:
-    name: ${{ env.GODOT_VERSION_4 }} ${{ matrix.name }}
+    name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          - name: 🏁 Windows (x86_64, MSVC)
+          - name: Godot 4.x 🏁 Windows (x86_64, MSVC)
             os: windows-latest
             platform: windows
 
-          - name: 🍎 macOS (universal)
+          - name: Godot 4.x 🍎 macOS (universal)
             os: macos-15
             platform: macos
 
@@ -54,17 +54,17 @@ jobs:
         .\scripts\build.ps1 compiledb=no strip=yes
 
   godot_v3:
-    name: ${{ env.GODOT_VERSION_3 }} ${{ matrix.name }}
+    name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          - name: 🏁 Windows (x86_64, MSVC)
+          - name: Godot 3.x 🏁 Windows (x86_64, MSVC)
             os: windows-latest
             platform: windows
 
-          - name: 🍎 macOS (universal)
+          - name: Godot 3.x 🍎 macOS (universal)
             os: macos-latest
             platform: macos
 
@@ -88,9 +88,9 @@ jobs:
     - name: build godot
       if: matrix.platform == 'macos'
       run: |
-        ./scripts/build_v3.sh arch=universal compiledb=no strip=yes
+        ./scripts/build-v3.sh arch=universal compiledb=no strip=yes
     - name: build godot
       if: matrix.platform == 'windows'
       shell: pwsh
       run: |
-        .\scripts\build_v3.ps1 compiledb=no strip=yes
+        .\scripts\build-v3.ps1 compiledb=no strip=yes
