@@ -13,6 +13,7 @@ runs:
       uses: ./.github/actions/setup-scons
 
     - name: install Vulkan SDK
+      shell: bash
       run: |
           curl -L "https://sdk.lunarg.com/sdk/download/1.4.321.0/mac/vulkansdk-macos-1.4.321.0.zip" -o /tmp/vulkan-sdk.zip
           unzip /tmp/vulkan-sdk.zip -d /tmp/vulkan-sdk
@@ -22,6 +23,7 @@ runs:
       if: inputs.platform == 'macos'
 
     - name: Download Direct3D 12 SDK components
+      shell: cmd
       run: python ./godot/misc/scripts/install_d3d12_sdk_windows.py
       if: inputs.platform == 'windows'
 
@@ -35,5 +37,6 @@ runs:
       if: inputs.platform == 'windows'
 
     - name: Extract pre-built ANGLE static libraries
+      shell: pwsh
       run: Expand-Archive -Force angle/angle.zip ${{github.workspace}}/
       if: inputs.platform == 'windows'
