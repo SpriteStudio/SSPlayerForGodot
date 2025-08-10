@@ -11,8 +11,21 @@ env:
   PYTHONUTF8: 1
 
 jobs:
-  mac_build:
-    runs-on: macos-15
+  godot:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: 🏁 Windows (x86_64, MSVC)
+            os: windows-latest
+            platform: windows
+
+          - name: 🍎 macOS (universal)
+            os: macos-15
+            platform: macos
+
     steps:
     - uses: actions/checkout@v4
       with:
@@ -24,48 +37,15 @@ jobs:
         branch: ${{ env.GODOT_VERSION_4 }}
         owner: 'godotengine'
         repository: 'godot'
-    - name: prepare scons
-      uses: ./.github/actions/setup-scons
-    - name: install Vulkan SDK
-      run: |
-          curl -L "https://sdk.lunarg.com/sdk/download/1.4.321.0/mac/vulkansdk-macos-1.4.321.0.zip" -o /tmp/vulkan-sdk.zip
-          unzip /tmp/vulkan-sdk.zip -d /tmp/vulkan-sdk
-          /tmp/vulkan-sdk/vulkansdk-macOS-1.4.321.0.app/Contents/MacOS/vulkansdk-macOS-1.4.321.0 --accept-licenses --default-answer --confirm-command install
-          rm -f /tmp/vulkan-sdk.zip
-          rm -rf /tmp/vulkan-sdk
+
+    - name: setup for godot
+      uses: ./.github/actions/setup-godot
     - name: build godot
+      if: inputs.platform == 'macos'
       run: |
         ./scripts/build.sh arch=universal compiledb=no strip=yes
-
-  win_build:
-    runs-on: windows-latest
-    steps:
-    - uses: actions/checkout@v4
-      with:
-        submodules: 'recursive'
-    - name: clone Godot repository
-      uses: GuillaumeFalourd/clone-github-repo-action@v2.3
-      with:
-        depth: 1
-        branch: ${{ env.GODOT_VERSION_4 }}
-        owner: 'godotengine'
-        repository: 'godot'
-    - name: prepare scons
-      uses: ./.github/actions/setup-scons
-    - name: Download Direct3D 12 SDK components
-      run: python ./godot/misc/scripts/install_d3d12_sdk_windows.py
-    - name: Download pre-built ANGLE static libraries
-      uses: dsaltares/fetch-gh-release-asset@1.1.2
-      with:
-        repo: godotengine/godot-angle-static
-        version: tags/chromium/6601.2
-        file: godot-angle-static-x86_64-msvc-release.zip
-        target: angle/angle.zip
-
-    - name: Extract pre-built ANGLE static libraries
-      run: Expand-Archive -Force angle/angle.zip ${{github.workspace}}/
-
     - name: build godot
+      if: inputs.platform == 'windows'
       shell: pwsh
       run: |
         .\scripts\build.ps1
