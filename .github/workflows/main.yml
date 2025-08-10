@@ -8,7 +8,7 @@ on:
 env:
   GODOT_VERSION_4: 4.4
   GODOT_VERSION_3: 3.x
-  PYTHONUTF8: 1
+  PYTHONIOENCODING: utf8
 
 jobs:
   godot:
@@ -79,12 +79,8 @@ jobs:
         branch: ${{ env.GODOT_VERSION_3 }}
         owner: 'godotengine'
         repository: 'godot'
-
     - name: setup for godot
-      uses: ./.github/actions/setup-godot
-      with:
-        platform: ${{ matrix.platform }}
-
+      uses: ./.github/actions/setup-scons
     - name: build godot
       if: matrix.platform == 'macos'
       run: |
