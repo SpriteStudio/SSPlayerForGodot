@@ -41,14 +41,14 @@ jobs:
     - name: setup for godot
       uses: ./.github/actions/setup-godot
     - name: build godot
-      if: inputs.platform == 'macos'
       run: |
         ./scripts/build.sh arch=universal compiledb=no strip=yes
+      if: inputs.platform == 'macos'
     - name: build godot
-      if: inputs.platform == 'windows'
       shell: pwsh
       run: |
         .\scripts\build.ps1
+      if: inputs.platform == 'windows'
 
 #  mac_build_3:
 #    strategy:
