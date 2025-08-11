@@ -1,0 +1,35 @@
+name: Setup codesign
+description: Setup codesin
+
+inputs:
+  platform:
+    required: true
+    description: Target platform.
+
+runs:
+  using: composite
+  steps:
+    - name: Retrieve the secret and decode it to a file
+      if: inputs.platform == 'macOS' || inputs.platform == 'iOS'
+      env:
+        DEV_CERT_APP2: ${{ secrets.DEV_CERT_APP2 }}
+        DEV_CERT_PASS: ${{ secrets.DEV_CERT_PASS }}
+        KC_PASS: ${{ secrets.KC_PASS }}
+      run: |
+        # create variables
+        CERTIFICATE_PATH=$RUNNER_TEMP/build_certificate.p12
+        KEYCHAIN_PATH=app-signing.keychain-db
+        echo "KEYCHAIN_PATH=$KEYCHAIN_PATH" >> $GITHUB_ENV
+
+        # import certificate and provisioning profile from secrets
+        echo -n "$DEV_CERT_APP2" | base64 --decode > $CERTIFICATE_PATH
+
+        # create temporary keychain
+        security create-keychain -p "$KC_PASS" $KEYCHAIN_PATH
+        security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
+        security unlock-keychain -p "$KC_PASS" $KEYCHAIN_PATH
+
+        # import certificate to keychain
+        security import $CERTIFICATE_PATH -P "$DEV_CERT_PASS" -f pkcs12 -k $KEYCHAIN_PATH -T /usr/bin/codesign
+        security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KC_PASS" $KEYCHAIN_PATH
+        security list-keychain -d user -s $KEYCHAIN_PATH

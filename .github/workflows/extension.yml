@@ -80,13 +80,27 @@ jobs:
 
       - name: build macOS
         if: matrix.platform == 'macos'
+        env:
+          DEV_ID_APPLICATION: ${{ secrets.DEV_ID_APPLICATION }}
         run: |
           ./scripts/release-gdextension-macos.sh
 
+          for f in ./bin/macos/macos.framework/*
+          do
+            codesign --force --verify --verbose --keychain ${{ env.KEYCHAIN_PATH }} --sign "${DEV_ID_APPLICATION}" $f --options runtime --timestamp
+          done
+
       - name: build iOS
         if: matrix.platform == 'ios'
+        env:
+          DEV_ID_APPLICATION: ${{ secrets.DEV_ID_APPLICATION }}
         run: |
           ./scripts/release-gdextension-ios.sh
+
+          for f in $(find ./bin/ios -name '*.dylib')
+          do
+            codesign --force --verify --verbose --keychain ${{ env.KEYCHAIN_PATH }} --sign "${DEV_ID_APPLICATION}" $f --options runtime --timestamp
+          done
 
       - name: build Android
         if: matrix.platform == 'android'
