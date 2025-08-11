@@ -1,3 +1,53 @@
+# ソース取得
+
+本リポジトリをクローンしてください。
+
+```bash
+git clone --recursive https://github.com/SpriteStudio/SSPlayerForGodot.git
+cd SSPlayerForGodot
+```
+
+SSPlayerForGodot ディレクトリから以下のコマンドを実行し、 Godot を取得します。
+
+```bash
+git clone https://github.com/godotengine/godot.git
+```
+
+gdextension をビルドする場合は godot-cpp を取得します。
+
+```bash
+git clone https://github.com/godotengine/godot-cpp.git
+```
+
+# ブランチ選択
+SSPlayerForGodot ディレクトリの `godot` ディレクトリ内でビルドする Godot Engine のブランチを選択してください。
+
+## Godot
+### 4.4
+
+```bash
+pushd godot
+git checkout 4.4
+popd 
+```
+
+### 3.x
+
+```bash
+pushd godot
+git checkout 3.x
+popd 
+```
+
+## GDExtension
+gdextension をビルドする場合は `godot-cpp` ディレクトリで対照する Godot Engine バージョンと同じブランチ名を選択してください。
+
+
+```bash
+pushd godot-cpp
+git checkout 4.4
+popd 
+```
 
 # ビルド環境のセットアップ
 ## Windows
