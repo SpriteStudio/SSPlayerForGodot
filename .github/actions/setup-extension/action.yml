@@ -32,8 +32,3 @@ runs:
       uses: mymindstorm/setup-emsdk@v14
       with:
         no-cache: true
-
-    - name: setup codesign
-      uses: ./.github/actions/setup-codesign
-      with:
-        platform: ${{ inputs.platform }}
