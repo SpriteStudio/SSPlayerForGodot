@@ -1,0 +1,18 @@
+name: Setup scons
+description: Setup build dependencies for godot-cpp.
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Python (for SCons)
+      uses: actions/setup-python@v5
+      with:
+        python-version: 3.x
+
+    - name: Setup SCons
+      shell: bash
+      run: |
+        python -c "import sys; print(sys.version)"
+        python -m pip install --upgrade pip
+        python -m pip install scons
+        scons --version

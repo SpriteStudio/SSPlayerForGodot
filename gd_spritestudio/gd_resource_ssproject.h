@@ -7,12 +7,20 @@
 
 #include "gd_macros.h"
 
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+#include <godot_cpp/classes/resource.hpp>
+#include <godot_cpp/classes/resource_loader.hpp>
+#include <godot_cpp/templates/vmap.hpp>
+using namespace godot;
+#else
 #ifdef GD_V4
 #include "core/io/resource.h"
+#include "core/io/resource_loader.h"
 #include "core/templates/vmap.h"
 #endif
 #ifdef GD_V3
 #include "core/resource.h"
+#endif
 #endif
 
 #include "SpriteStudio6-SDK/Common/Loader/ssloader_sspj.h"
@@ -50,9 +58,15 @@ public :
 	int getCellMapCount() const;
 	int getEffectCount() const;
 
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+	PackedStringArray getAnimePackNames() const;
+	PackedStringArray getCellMapNames() const;
+	PackedStringArray getEffectNames() const;
+#else
 	Vector<String> getAnimePackNames() const;
 	Vector<String> getCellMapNames() const;
 	Vector<String> getEffectNames() const;
+#endif
 
 	SsProject* getProject() const;
 	String getRoot() const;

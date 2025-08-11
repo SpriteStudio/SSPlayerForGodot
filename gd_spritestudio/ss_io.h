@@ -5,7 +5,13 @@
 #ifndef SS_IO_H
 #define SS_IO_H
 
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+#include <godot_cpp/classes/stream_peer.hpp>
+#include <godot_cpp/classes/stream_peer_buffer.hpp>
+using namespace godot;
+#else
 #include "core/io/stream_peer.h"
+#endif
 
 #include "SpriteStudio6-SDK/Common/Loader/ssloader_sspj.h"
 

@@ -5,15 +5,28 @@
 #ifndef GD_MACROS_H
 #define GD_MACROS_H
 
-#include "core/version.h"
-
-#if VERSION_MAJOR>=4
-#define	GD_V4			//!< バージョン4.xのgodotが使用されています。
-#elif VERSION_MAJOR>=3
-#define	GD_V3			//!< バージョン3.xのgodotが使用されています。
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+  #include <godot_cpp/core/version.hpp>
+  #define EMPTY(x) ((x).is_empty())
+  #define VARIANT_FLOAT Variant::FLOAT
+  #define NOTIFY_PROPERTY_LIST_CHANGED() notify_property_list_changed()
 #else
-#error not supported godot version.
+  #include "core/version.h"
+  #if VERSION_MAJOR>=4
+    #define	GD_V4			//!< バージョン4.xのgodotが使用されています。
+    #define EMPTY(x) ((x).is_empty())
+    #define VARIANT_FLOAT Variant::FLOAT
+    #define NOTIFY_PROPERTY_LIST_CHANGED() notify_property_list_changed()
+  #elif VERSION_MAJOR>=3
+    #define	GD_V3			//!< バージョン3.xのgodotが使用されています。
+    #define EMPTY(x) ((x).empty())
+    #define VARIANT_FLOAT Variant::REAL
+    #define NOTIFY_PROPERTY_LIST_CHANGED() property_list_changed_notify()
+  #else
+    #error not supported godot version.
+  #endif
 #endif
+
 
 /*!
 * 次の関数はObject派生クラスでオーバーライドできます。

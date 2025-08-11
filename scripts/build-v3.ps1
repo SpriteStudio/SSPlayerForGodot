@@ -1,10 +1,14 @@
-$rootDirectory = Split-Path -Parent $PSCommandPath
-$arch = Get-Item Env:PROCESSOR_ARCHITECTURE
-if ($arch.Value -match "AMD64") {
+#!/usr/bin/env pwsh
+
+$baseDirectory = Split-Path -Parent $PSCommandPath
+$rootDirectory = Split-Path -Parent $baseDirectory
+$arch = (Get-Item Env:PROCESSOR_ARCHITECTURE).Value
+if ($arch -match "AMD64") {
     $HOST_ARCH = "x64"
 } else {
     $HOST_ARCH = "arm64"
 }
+$cpus = (Get-Item Env:NUMBER_OF_PROCESSORS).Value
 
 pushd $rootDirectory/godot
 try {
@@ -22,15 +26,18 @@ popd
 # Godot scons default options
 $scons_default_opts = @{
     arch = $HOST_ARCH
+    platform = "windows"
     vsproj = "no"
+    tools = "yes"
     compiledb = "yes"
     custom_modules = "../gd_spritestudio"
 }
 
 # winbuild default options
 $winbuild_default_opts = @{
+    cpus = $cpus
     ccache = "no"
-    version = "4.3"
+    version = "3.x"
 }
 
 $opts = @{}
@@ -42,6 +49,8 @@ function usage() {
     echo "Usage: $APP [options]"
     echo "$APP options:"
     echo "  arch=<arch>         Target architecture (default: ${HOST_ARCH})"
+    echo "  target=<target>     Target (default: ${scons_default_opts.target})"
+    echo "  cpus=<nums>         number of scons -j option (default: $cpus)"
     # echo "  ccache=<yes|no>     Enable ccache (default: $($winbuild_default_opts.ccache))"
     echo "  version=<version>   Godot version. $APP uses this version at can not getting Godot version from git branch or tag. (default: $($winbuild_default_opts.version))"
     echo "Godot scons options: "
@@ -87,18 +96,7 @@ if (![string]::IsNullOrEmpty($GODOT_BRANCH)) {
 }
 echo "Godot Version: ${VERSION}" 
 
-# set internal parameters for each Godot version
-$internal_opts=@{
-    platform = "windows"
-}
-if ($VERSION -like "3.*") { 
-    # 3.x
-} else {
-    # 4.x
-}
-
 # validate scons command options from winbuild options
-$scons_command_opts = "platform=$($internal_opts.platform)"
 foreach ($key in $opts.Keys) {
     if ($winbuild_default_opts.ContainsKey($key)) {
         # skip winbuild default options
@@ -106,6 +104,10 @@ foreach ($key in $opts.Keys) {
     }
     $scons_command_opts += " $key=$($opts[$key])"
 }
+$j = $opts["cpus"]
+$scons_command_opts += "$scons_command_opts -j $j"
+
+
 echo "scons command options: $scons_command_opts"
 
 pushd $rootDirectory/godot

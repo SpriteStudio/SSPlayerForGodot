@@ -7,11 +7,18 @@
 
 #include "gd_macros.h"
 
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+#include <godot_cpp/core/version.hpp>
+#include <godot_cpp/classes/ref_counted.hpp>
+#include <godot_cpp/variant/string_name.hpp>
+using namespace godot;
+#else
 #ifdef GD_V4
 #include "core/string/ustring.h"
 #endif
 #ifdef GD_V3
 #include "core/ustring.h"
+#endif
 #endif
 
 class GdIO

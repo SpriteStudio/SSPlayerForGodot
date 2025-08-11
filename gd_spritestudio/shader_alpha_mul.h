@@ -1,4 +1,4 @@
-static const String shader_alpha_mul = R"(
+static const char* shader_alpha_mul = R"(
 /*!
 * \file		shader_alpha_mul.gdshader
 * \author	CRI Middleware Co., Ltd.

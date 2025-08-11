@@ -5,8 +5,8 @@
 本プラグインは [OPTPiX SpriteStudio](https://www.webtech.co.jp/spritestudio/index.html) で作成したアニメーションを [Godot Engine](https://godotengine.org/) 上で再生するためのプラグインです。  
 
 実行時パフォーマンスを優先するため C++ モジュールの形態になっています。
-SpriteStudioPlayer for Godot を利用する場合、SpriteStudioPlayer のカスタムモジュールを組み込んだ Godot Engine の Editor を手元でビルドする必要があります。
-このため、後述の[ビルド](#ビルド)が必要になります。  
+SpriteStudioPlayer for Godot を利用する場合、SpriteStudioPlayer の[カスタムモジュール](https://docs.godotengine.org/en/stable/contributing/development/core_and_modules/custom_modules_in_cpp.html) を組み込んだ Godot Engine の Editor を手元でビルドするか、 SpriteStudioPlayer の [GDExtension](https://docs.godotengine.org/en/stable/tutorials/scripting/gdextension/what_is_gdextension.html) をプロジェクトへ入れる必要があります。
+
 
 ## 対応する [OPTPiX SpriteStudio](https://www.webtech.co.jp/spritestudio/index.html) のバージョン
 
@@ -15,146 +15,14 @@ Ver.6 と Ver.7 に対応しています。
 
 ## 対応する [Godot Engine](https://github.com/godotengine/godot) のバージョン
 
-- [4.3 ブランチ](https://github.com/godotengine/godot/tree/4.3)で Windows / macOS でビルド、および実行を確認しています。
+- [4.4 ブランチ](https://github.com/godotengine/godot/tree/4.4)で Windows / macOS でビルド、および実行を確認しています。
 - [3.x ブランチ](https://github.com/godotengine/godot/tree/3.x)で Windows / macOS でビルド、および実行を確認しています。
 
-# ソース取得
-
-本リポジトリをクローンしてください。
-
-```bash
-git clone https://github.com/SpriteStudio/SSPlayerForGodot.git
-```
-
-SSPlayerForGodot ディレクトリから以下のコマンドを実行し、 Godot Engine と SpriteStudio SDK を取得します。
-
-```bash
-git clone https://github.com/godotengine/godot.git
-git submodule update --init --recursive
-```
-
-[setup.bat](./setup.bat) で上記を行っています。
-
 # ビルド
-## ブランチ選択
-SSPlayerForGodot ディレクトリ の `godot` ディレクトリ内でビルドする Godot Engine のブランチを選択してください。
 
-### 4.3
-
-```bash
-pushd godot
-git checkout 4.3
-popd 
-```
-
-### 3.x
-```bash
-pushd godot
-git checkout 3.x
-popd 
-```
-
-## Windows
-
-### ビルド環境のセットアップ
-
-以降でビルド環境の構築手順について説明していきます。  
-
-[Godot公式のコンパイル手順](https://docs.godotengine.org/en/stable/contributing/development/compiling/compiling_for_windows.html)
-
-必要なツール
-* ビルドツール (いずれかを選択)
-    * VisualStudio 2017 or 2019(推奨)
-    * MSYS2 + MinGW + gcc + make
-* Python 3.6 以降
-* scons 3.0 以降
-
-VisualStudio 2019 でのビルド・デバッグを確認しています。
-
-scons は下記でインストールできます。(上記リンクにも記載あり)
-
-```bat
-python -m pip install scons
-```
-
-### ビルド
-
-[winbuild.ps1](./winbuild.ps1) でビルド可能です。
-
-**PowerShell**
-
-```powershell
-$env:PYTHONUTF8=1
-.\winbuild.ps1
-```
-
-**Cmd**
-
-```cmd
-set PYTHONUTF8=1
-PowerShell.exe -ExecutionPolicy Bypass -File .\winbuild.ps1
-```
-
-
-## macOS
-
-### ビルド環境のセットアップ
-
-[Godot公式のコンパイル手順](https://docs.godotengine.org/ja/4.x/contributing/development/compiling/compiling_for_macos.html)
-
-必要なツール
-* Xcode
-* Python 3.6 以降
-* scons 3.0 以降
-* Vulkan SDK for MoltenVK (4 対応用)
-
-Xcode 以外は [Homebrew](https://brew.sh/) でインストールができます。
-
-```sh
-brew install python3 scons 
-```
-
-```sh
-brew install molten-vk
-```
-
-ホストアーキテクチャとは異なるアーキテクチャの Godot Engine をビルドする場合や、Universal Binary な Godot Engine をビルドする場合は、`molten-vk` の代わりに Universal Binary 対応している [Vulkan SDK for MoltenVK](https://vulkan.lunarg.com/sdk/home) をインストールしてください。
-
-### ビルド
-
-[macbuild.sh](./macbuild.sh) でビルド可能です。
-
-```sh
-./macbuild.sh
-```
-
-引数を指定しない場合はホストマシンのアーキテクチャと同じアーキテクチャ向けにビルドします。
-アーキテクチャを明示的に指定する場合は `arch=` に引数を追加してください。
-
-**Universal Binary (supports both arm64 and x86_64)**
-
-```sh
-./macbuild.sh arch=universal
-```
-
-**arm64 (Apple Silicon)**
-
-```sh
-./macbuild.sh arch=arm64
-```
-
-**x86_64 (Intel)**
-
-```sh
-./macbuild.sh arch=x86_64
-```
-
-`godot/Godot.app` を開いて起動を確認します。
-
-ビルド環境の構築については以上です。
+[BUILD.md](BUILD.md) を参照してください。
 
 # 使い方
-
 ## SpriteStudioデータのインポート
 
 SpriteStudioデータのインポート手順について説明します。  
@@ -344,7 +212,7 @@ value：パラメータ名と値のコレクション
 
 [examples フォルダ](./examples/)にサンプルプロジェクトがあります。
 
-**サンプルプロジェクトは 3.x 向けに作っているため、4.3 で利用する際は "Convert Full Project" を実行してから利用してください。**
+**サンプルプロジェクトは 3.x 向けに作っているため、4.4 で利用する際は "Convert Full Project" を実行してから利用してください。**
 
 ## [feature_test](./examples/feature_test)
 
@@ -373,6 +241,13 @@ value：パラメータ名と値のコレクション
 エフェクト機能を利用したサンプルです。  
 シーンに表示されるアニメーションは40種類のうちの一部になります。  
 インスペクタの Anime Pack からその他のアニメーションも確認できます。
+
+## [feature_test_gdextension](./examples/feature_test_gdextension)
+
+gdextension の動作確認用プロジェクトです。
+
+確認できるサンプルは [feature_test](./examples/feature_test) と同じものになります。
+
 
 # お問い合わせ
 

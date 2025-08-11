@@ -1,0 +1,129 @@
+name: release gdextension
+on:
+  workflow_dispatch:
+
+env:
+  LANG: en_US.UTF-8
+  LC_ALL: en_US.UTF-8
+  PYTHONIOENCODING: utf8
+  GODOT_VERSION_4: 4.4
+
+concurrency:
+  group: ci-scons-${{ github.actor }}-${{ github.head_ref || github.run_number }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gdextension:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: 🐧 Linux (GCC)
+            os: ubuntu-latest
+            platform: linux
+
+          - name: 🏁 Windows (x86_64, MSVC)
+            os: windows-latest
+            platform: windows
+
+          - name: 🍎 macOS (universal)
+            os: macos-15
+            platform: macos
+
+          - name: 🤖 Android (arm64)
+            os: ubuntu-latest
+            platform: android
+
+          - name: 🍏 iOS (arm64)
+            os: macos-15
+            platform: ios
+
+          - name: 🌐 Web (wasm32)
+            os: ubuntu-latest
+            platform: web
+
+    defaults:
+      run:
+        shell: zsh {0}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: clone Godot Cpp repository
+        uses: GuillaumeFalourd/clone-github-repo-action@v2.3
+        with:
+          depth: 1
+          branch: ${{ env.GODOT_VERSION_4 }}
+          owner: 'godotengine'
+          repository: 'godot-cpp'
+
+      - name: setup for gdextension
+        uses: ./.github/actions/setup-extension
+        with:
+          platform: ${{ matrix.platform }}
+
+      - name: build Linux
+        if: matrix.platform == 'linux'
+        run: |
+          ./scripts/release-gdextension-linux.sh
+
+      - name: build macOS
+        if: matrix.platform == 'macos'
+        run: |
+          ./scripts/release-gdextension-macos.sh
+
+      - name: build iOS
+        if: matrix.platform == 'ios'
+        run: |
+          ./scripts/release-gdextension-ios.sh
+
+      - name: build Android
+        if: matrix.platform == 'android'
+        run: |
+          ./scripts/release-gdextension-android.sh
+
+      - name: build Windows
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        run: |
+          ./scripts/release-gdextension-windows.ps1
+
+      - name: build Web
+        if: matrix.platform == 'web'
+        run: |
+          ./scripts/release-gdextension-web.sh
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: extension- ${{ inputs.platform }}
+          path: bin/
+          if-no-files-found: error
+
+  package:
+    needs: gdextension
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: libSSGodot
+
+      - name: Display structure of downloaded files
+        run: ls -R libSSGodot
+
+      - name: Zip all artifacts
+        run: |
+          cp misc/ssplayer_godot_extension.gdextension libSSGodot/bin/
+          zip -r libSSGodot.zip libSSGodot/
+
+      - name: Upload final release package
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-package
+          path: libSSGodot.zip

@@ -1,4 +1,4 @@
-static const String shader_color_ss_noise = R"(
+static const char* shader_color_ss_noise = R"(
 /*!
 * \file		shader_color_ss_noise.gdshader
 * \author	CRI Middleware Co., Ltd.

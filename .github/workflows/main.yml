@@ -1,14 +1,35 @@
 name: CI
 
-on: [push]
+on:
+  pull_request:
+    branches:
+      - main
+
+env:
+  GODOT_VERSION_4: 4.4
+  GODOT_VERSION_3: 3.x
+  PYTHONIOENCODING: utf8
 
 jobs:
-  mac_build:
+  godot:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
-        platform: [macos-latest]
-        version: [4.3, 3.x]
-    runs-on: ${{ matrix.platform }}
+        include:
+          - name: Godot 4.x 🏁 Windows (x86_64, MSVC)
+            os: windows-latest
+            platform: windows
+
+          - name: Godot 4.x 🍎 macOS (universal)
+            os: macos-15
+            platform: macos
+
+    defaults:
+      run:
+        shell: zsh {0}
+
     steps:
     - uses: actions/checkout@v4
       with:
@@ -17,61 +38,59 @@ jobs:
       uses: GuillaumeFalourd/clone-github-repo-action@v2.3
       with:
         depth: 1
-        branch: ${{ matrix.version }}
+        branch: ${{ env.GODOT_VERSION_4 }}
         owner: 'godotengine'
         repository: 'godot'
-    - name: prepare scons
-      run: |
-          brew install python3 scons
-    - name: install Vulkan SDK
-      run: |
-          curl -L "https://sdk.lunarg.com/sdk/download/1.4.321.0/mac/vulkansdk-macos-1.4.321.0.zip" -o /tmp/vulkan-sdk.zip
-          unzip /tmp/vulkan-sdk.zip -d /tmp/vulkan-sdk
-          /tmp/vulkan-sdk/vulkansdk-macOS-1.4.321.0.app/Contents/MacOS/vulkansdk-macOS-1.4.321.0 --accept-licenses --default-answer --confirm-command install
-          rm -f /tmp/vulkan-sdk.zip
-          rm -rf /tmp/vulkan-sdk
-      if: ${{ matrix.version == 4.3 }}
-    - name: build godot
-      run: |
-        ./macbuild.sh version=${{ matrix.version }}
-  win_build:
-    strategy:
-      matrix:
-        platform: [windows-latest]
-        version: [4.3, 3.x]
-    runs-on: ${{ matrix.platform }}
-    steps:
-    - uses: actions/checkout@v4
-      with:
-        submodules: 'recursive'
-    - name: clone Godot repository
-      uses: GuillaumeFalourd/clone-github-repo-action@v2.3
-      with:
-        depth: 1
-        branch: ${{ matrix.version }}
-        owner: 'godotengine'
-        repository: 'godot'
-    - name: Setup Python and SCons
-      uses: ./godot/.github/actions/godot-deps
-    - name: Download Direct3D 12 SDK components
-      run: python ./godot/misc/scripts/install_d3d12_sdk_windows.py
-      if: ${{ matrix.version == 4.3 }}
-    - name: Download pre-built ANGLE static libraries
-      uses: dsaltares/fetch-gh-release-asset@1.1.2
-      with:
-        repo: godotengine/godot-angle-static
-        version: tags/chromium/6029
-        file: Windows.6029-1.MSVC_17.x86_64.x86_32.zip
-        target: angle/angle.zip
 
-    - name: Extract pre-built ANGLE static libraries
-      run: Expand-Archive -Force angle/angle.zip ${{github.workspace}}/
-
-    - name: Setup MSVC problem matcher
-      uses: ammaraskar/msvc-problem-matcher@master
+    - name: setup for godot
+      uses: ./.github/actions/setup-godot
+      with:
+        platform: ${{ matrix.platform }}
 
     - name: build godot
+      if: matrix.platform == 'macos'
+      run: |
+        ./scripts/build.sh arch=universal compiledb=no strip=yes
+    - name: build godot
+      if: matrix.platform == 'windows'
       shell: pwsh
       run: |
-        $env:PYTHONUTF8=1
-        .\winbuild.ps1 version=${{ matrix.version }}
+        .\scripts\build.ps1 compiledb=no strip=yes
+
+  godot_v3:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Godot 3.x 🏁 Windows (x86_64, MSVC)
+            os: windows-latest
+            platform: windows
+
+          - name: Godot 3.x 🍎 macOS (universal)
+            os: macos-latest
+            platform: macos
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: 'recursive'
+    - name: clone Godot repository
+      uses: GuillaumeFalourd/clone-github-repo-action@v2.3
+      with:
+        depth: 1
+        branch: ${{ env.GODOT_VERSION_3 }}
+        owner: 'godotengine'
+        repository: 'godot'
+    - name: setup for godot
+      uses: ./.github/actions/setup-scons
+    - name: build godot
+      if: matrix.platform == 'macos'
+      run: |
+        ./scripts/build-v3.sh arch=universal compiledb=no strip=yes
+    - name: build godot
+      if: matrix.platform == 'windows'
+      shell: pwsh
+      run: |
+        .\scripts\build-v3.ps1 compiledb=no strip=yes

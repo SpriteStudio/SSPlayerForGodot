@@ -1,4 +1,4 @@
-static const String shader_color_ss_hsb = R"(
+static const char* shader_color_ss_hsb = R"(
 /*!
 * \file		shader_color_ss_hsb.gdshader
 * \author	CRI Middleware Co., Ltd.

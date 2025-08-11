@@ -1,0 +1,451 @@
+[gd_scene load_steps=21 format=2]
+
+[ext_resource path="res://ssdata/v6_all.sspj" type="GdResourceSsProject" id=1]
+[ext_resource path="res://ssdata/v6_deprecated.sspj" type="GdResourceSsProject" id=2]
+[ext_resource path="res://user_data.gd" type="Script" id=3]
+[ext_resource path="res://signal.gd" type="Script" id=4]
+
+[sub_resource type="Animation" id=3]
+length = 0.001
+loop = true
+tracks/0/type = "value"
+tracks/0/path = NodePath("Basic:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/keys = {
+"times": PackedFloat32Array( 0 ),
+"transitions": PackedFloat32Array( 1 ),
+"update": 0,
+"values": [ 0 ]
+}
+tracks/1/type = "value"
+tracks/1/path = NodePath("Instance:frame")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/keys = {
+"times": PackedFloat32Array( 0 ),
+"transitions": PackedFloat32Array( 1 ),
+"update": 0,
+"values": [ 0 ]
+}
+tracks/2/type = "value"
+tracks/2/path = NodePath("Interpolation:frame")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/keys = {
+"times": PackedFloat32Array( 0 ),
+"transitions": PackedFloat32Array( 1 ),
+"update": 0,
+"values": [ 0 ]
+}
+tracks/3/type = "value"
+tracks/3/path = NodePath("Mesh:frame")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/keys = {
+"times": PackedFloat32Array( 0 ),
+"transitions": PackedFloat32Array( 1 ),
+"update": 0,
+"values": [ 0 ]
+}
+tracks/4/type = "value"
+tracks/4/path = NodePath("Mask:frame")
+tracks/4/interp = 1
+tracks/4/loop_wrap = true
+tracks/4/imported = false
+tracks/4/enabled = true
+tracks/4/keys = {
+"times": PackedFloat32Array( 0 ),
+"transitions": PackedFloat32Array( 1 ),
+"update": 0,
+"values": [ 0 ]
+}
+tracks/5/type = "value"
+tracks/5/path = NodePath("Shader:frame")
+tracks/5/interp = 1
+tracks/5/loop_wrap = true
+tracks/5/imported = false
+tracks/5/enabled = true
+tracks/5/keys = {
+"times": PackedFloat32Array( 0 ),
+"transitions": PackedFloat32Array( 1 ),
+"update": 0,
+"values": [ 0 ]
+}
+tracks/6/type = "value"
+tracks/6/path = NodePath("Signal:frame")
+tracks/6/interp = 1
+tracks/6/loop_wrap = true
+tracks/6/imported = false
+tracks/6/enabled = true
+tracks/6/keys = {
+"times": PackedFloat32Array( 0 ),
+"transitions": PackedFloat32Array( 1 ),
+"update": 0,
+"values": [ 0 ]
+}
+tracks/7/type = "value"
+tracks/7/path = NodePath("UserData:frame")
+tracks/7/interp = 1
+tracks/7/loop_wrap = true
+tracks/7/imported = false
+tracks/7/enabled = true
+tracks/7/keys = {
+"times": PackedFloat32Array( 0 ),
+"transitions": PackedFloat32Array( 1 ),
+"update": 0,
+"values": [ 0 ]
+}
+tracks/8/type = "value"
+tracks/8/path = NodePath("Effect:frame")
+tracks/8/interp = 1
+tracks/8/loop_wrap = true
+tracks/8/imported = false
+tracks/8/enabled = true
+tracks/8/keys = {
+"times": PackedFloat32Array( 0 ),
+"transitions": PackedFloat32Array( 1 ),
+"update": 0,
+"values": [ 0 ]
+}
+
+[sub_resource type="Animation" id=4]
+resource_name = "SsPlayer"
+length = 2.03337
+loop = true
+step = 0.0333333
+tracks/0/type = "value"
+tracks/0/path = NodePath("Basic:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/keys = {
+"times": PackedFloat32Array( 0, 0.666667 ),
+"transitions": PackedFloat32Array( 1, 1 ),
+"update": 0,
+"values": [ 0, 20 ]
+}
+tracks/1/type = "value"
+tracks/1/path = NodePath("Instance:frame")
+tracks/1/interp = 1
+tracks/1/loop_wrap = false
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/keys = {
+"times": PackedFloat32Array( 0, 2.03333 ),
+"transitions": PackedFloat32Array( 1, 1 ),
+"update": 0,
+"values": [ 0, 60 ]
+}
+tracks/2/type = "value"
+tracks/2/path = NodePath("Interpolation:frame")
+tracks/2/interp = 1
+tracks/2/loop_wrap = false
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/keys = {
+"times": PackedFloat32Array( 0, 1 ),
+"transitions": PackedFloat32Array( 1, 1 ),
+"update": 0,
+"values": [ 0, 30 ]
+}
+tracks/3/type = "value"
+tracks/3/path = NodePath("Mesh:frame")
+tracks/3/interp = 1
+tracks/3/loop_wrap = false
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/keys = {
+"times": PackedFloat32Array( 0, 1 ),
+"transitions": PackedFloat32Array( 1, 1 ),
+"update": 0,
+"values": [ 0, 10 ]
+}
+tracks/4/type = "value"
+tracks/4/path = NodePath("Mask:frame")
+tracks/4/interp = 1
+tracks/4/loop_wrap = false
+tracks/4/imported = false
+tracks/4/enabled = true
+tracks/4/keys = {
+"times": PackedFloat32Array( 0, 1 ),
+"transitions": PackedFloat32Array( 1, 1 ),
+"update": 0,
+"values": [ 0, 10 ]
+}
+tracks/5/type = "value"
+tracks/5/path = NodePath("Shader:frame")
+tracks/5/interp = 1
+tracks/5/loop_wrap = false
+tracks/5/imported = false
+tracks/5/enabled = true
+tracks/5/keys = {
+"times": PackedFloat32Array( 0, 1.96667 ),
+"transitions": PackedFloat32Array( 1, 1 ),
+"update": 0,
+"values": [ 0, 49 ]
+}
+tracks/6/type = "value"
+tracks/6/path = NodePath("Signal:frame")
+tracks/6/interp = 1
+tracks/6/loop_wrap = false
+tracks/6/imported = false
+tracks/6/enabled = true
+tracks/6/keys = {
+"times": PackedFloat32Array( 0, 1.96667 ),
+"transitions": PackedFloat32Array( 1, 1 ),
+"update": 0,
+"values": [ 0, 30 ]
+}
+tracks/7/type = "value"
+tracks/7/path = NodePath("UserData:frame")
+tracks/7/interp = 1
+tracks/7/loop_wrap = false
+tracks/7/imported = false
+tracks/7/enabled = true
+tracks/7/keys = {
+"times": PackedFloat32Array( 0, 1 ),
+"transitions": PackedFloat32Array( 1, 1 ),
+"update": 0,
+"values": [ 0, 10 ]
+}
+tracks/8/type = "value"
+tracks/8/path = NodePath("Effect:frame")
+tracks/8/interp = 1
+tracks/8/loop_wrap = false
+tracks/8/imported = false
+tracks/8/enabled = true
+tracks/8/keys = {
+"times": PackedFloat32Array( 0, 1 ),
+"transitions": PackedFloat32Array( 1, 1 ),
+"update": 0,
+"values": [ 0, 30 ]
+}
+
+[sub_resource type="GdResourceSsPlayer" id=6]
+res_project = ExtResource( 1 )
+
+[sub_resource type="GdResourceSsPlayer" id=7]
+res_project = ExtResource( 1 )
+
+[sub_resource type="GdResourceSsPlayer" id=8]
+res_project = ExtResource( 1 )
+
+[sub_resource type="GdResourceSsPlayer" id=19]
+res_project = ExtResource( 1 )
+
+[sub_resource type="GdResourceSsPlayer" id=9]
+res_project = ExtResource( 1 )
+
+[sub_resource type="GdResourceSsPlayer" id=10]
+res_project = ExtResource( 1 )
+
+[sub_resource type="GdResourceSsPlayer" id=11]
+res_project = ExtResource( 1 )
+
+[sub_resource type="GdResourceSsPlayer" id=12]
+res_project = ExtResource( 1 )
+
+[sub_resource type="GdResourceSsPlayer" id=13]
+res_project = ExtResource( 1 )
+
+[sub_resource type="GdResourceSsPlayer" id=14]
+res_project = ExtResource( 1 )
+
+[sub_resource type="GdResourceSsPlayer" id=15]
+res_project = ExtResource( 1 )
+
+[sub_resource type="GdResourceSsPlayer" id=16]
+res_project = ExtResource( 1 )
+
+[sub_resource type="GdResourceSsPlayer" id=17]
+res_project = ExtResource( 1 )
+
+[sub_resource type="GdResourceSsPlayer" id=18]
+res_project = ExtResource( 2 )
+
+[node name="Root" type="Node"]
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+anims/RESET = SubResource( 3 )
+anims/SsPlayer = SubResource( 4 )
+
+[node name="RichTextLabel" type="RichTextLabel" parent="."]
+offset_left = 15.0
+offset_top = -87.0
+offset_right = 458.0
+offset_bottom = -15.0
+text = "Please enable the visibility of the nodes for the feature to check then run.
+確認したい機能のノードの可視性をオンにして実行してください。"
+
+[node name="Basic" type="GdNodeSsPlayer" parent="."]
+position = Vector2( 252, 239 )
+res_player = SubResource( 6 )
+anime_pack = "Basic.ssae"
+animation = "anime_1"
+frame = 0
+loop = true
+playing = true
+texture_interpolate = true
+
+[node name="BlendMode" type="GdNodeSsPlayer" parent="."]
+visible = false
+position = Vector2( 153, 139 )
+res_player = SubResource( 7 )
+anime_pack = "BlendMode.ssae"
+animation = "anime_1"
+frame = 8
+loop = false
+playing = false
+texture_interpolate = true
+
+[node name="Effect" type="GdNodeSsPlayer" parent="."]
+visible = false
+position = Vector2( 290, 260 )
+res_player = SubResource( 8 )
+anime_pack = "Effect.ssae"
+animation = "anime_1"
+frame = 0
+loop = true
+playing = true
+texture_interpolate = true
+
+[node name="effect_test" type="GdNodeSsPlayer" parent="."]
+visible = false
+position = Vector2( 290, 260 )
+res_player = SubResource( 19 )
+anime_pack = "effect_test.ssae"
+animation = "anime_1"
+frame = 0
+loop = true
+playing = true
+texture_interpolate = true
+
+[node name="Instance" type="GdNodeSsPlayer" parent="."]
+visible = false
+position = Vector2( 446, 301 )
+res_player = SubResource( 9 )
+anime_pack = "Instance.ssae"
+animation = "anime_1"
+frame = 0
+loop = true
+playing = true
+texture_interpolate = true
+
+[node name="Interpolation" type="GdNodeSsPlayer" parent="."]
+visible = false
+position = Vector2( 290, 260 )
+res_player = SubResource( 10 )
+anime_pack = "Interpolation.ssae"
+animation = "anime_1"
+frame = 0
+loop = true
+playing = true
+texture_interpolate = true
+
+[node name="Mask" type="GdNodeSsPlayer" parent="."]
+visible = false
+position = Vector2( 290, 260 )
+res_player = SubResource( 11 )
+anime_pack = "Mask.ssae"
+animation = "anime_1"
+frame = 0
+loop = true
+playing = true
+texture_interpolate = true
+__meta__ = {
+"_editor_description_": ""
+}
+
+[node name="Mesh" type="GdNodeSsPlayer" parent="."]
+visible = false
+position = Vector2( 290, 260 )
+res_player = SubResource( 12 )
+anime_pack = "Mesh.ssae"
+animation = "anime_1"
+frame = 0
+loop = true
+playing = true
+texture_interpolate = true
+
+[node name="PartsColor" type="Node" parent="."]
+
+[node name="PartsColor_only" type="GdNodeSsPlayer" parent="PartsColor"]
+visible = false
+position = Vector2( 143, 76 )
+res_player = SubResource( 13 )
+anime_pack = "PartsColor.ssae"
+animation = "PartsColor_only"
+frame = 0
+loop = false
+playing = false
+texture_interpolate = true
+
+[node name="PartsColor_with_transparent" type="GdNodeSsPlayer" parent="PartsColor"]
+visible = false
+position = Vector2( 142, 219 )
+res_player = SubResource( 14 )
+anime_pack = "PartsColor.ssae"
+animation = "PartsColor_with_Transparent"
+frame = 0
+loop = false
+playing = false
+texture_interpolate = true
+
+[node name="Shader" type="GdNodeSsPlayer" parent="."]
+visible = false
+position = Vector2( 517, 323 )
+res_player = SubResource( 15 )
+anime_pack = "Shader.ssae"
+animation = "default"
+frame = 0
+loop = true
+playing = true
+texture_interpolate = true
+
+[node name="Signal" type="GdNodeSsPlayer" parent="."]
+visible = false
+position = Vector2( 517, 323 )
+res_player = SubResource( 16 )
+anime_pack = "Signal.ssae"
+animation = "anime_1"
+frame = 0
+loop = true
+playing = true
+texture_interpolate = true
+script = ExtResource( 4 )
+
+[node name="UserData" type="GdNodeSsPlayer" parent="."]
+visible = false
+position = Vector2( 517, 323 )
+res_player = SubResource( 17 )
+anime_pack = "UserData.ssae"
+animation = "anime_1"
+frame = 0
+loop = true
+playing = true
+texture_interpolate = true
+script = ExtResource( 3 )
+
+[node name="v6_Deprecated" type="GdNodeSsPlayer" parent="."]
+visible = false
+position = Vector2( 159, 96 )
+res_player = SubResource( 18 )
+anime_pack = "DeprecatedFeatures.ssae"
+animation = "anime_1"
+frame = 6
+loop = true
+playing = true
+texture_interpolate = true
+
+[connection signal="signal" from="Signal" to="Signal" method="_on_Signal_signal"]
+[connection signal="user_data" from="UserData" to="UserData" method="_on_UserData_user_data"]
