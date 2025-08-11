@@ -1,3 +1,5 @@
+#!/usr/bin/env pwsh
+
 $baseDirectory = Split-Path -Parent $PSCommandPath
 $rootDirectory = Split-Path -Parent $baseDirectory
 $arch = (Get-Item Env:PROCESSOR_ARCHITECTURE).Value
