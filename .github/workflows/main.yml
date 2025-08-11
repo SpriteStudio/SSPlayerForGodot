@@ -26,6 +26,10 @@ jobs:
             os: macos-15
             platform: macos
 
+    defaults:
+      run:
+        shell: zsh {0}
+
     steps:
     - uses: actions/checkout@v4
       with:
