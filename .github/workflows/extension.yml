@@ -1,12 +1,18 @@
 name: release gdextension
 on:
   workflow_dispatch:
+    inputs:
+      godot_tag:
+        required: true
+        type: string
+        default: "4.4"
+        description: "a branch or a tag of godot-cpp"
 
 env:
   LANG: en_US.UTF-8
   LC_ALL: en_US.UTF-8
   PYTHONIOENCODING: utf8
-  GODOT_VERSION_4: 4.4
+  GODOT_VERSION_4: ${{ inputs.godot_tag }}
 
 concurrency:
   group: ci-scons-${{ github.actor }}-${{ github.head_ref || github.run_number }}-${{ github.ref }}
@@ -20,9 +26,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: 🐧 Linux (GCC)
-            os: ubuntu-latest
-            platform: linux
+#          - name: 🐧 Linux (GCC)
+#            os: ubuntu-latest
+#            platform: linux
 
           - name: 🏁 Windows (x86_64, MSVC)
             os: windows-latest
@@ -65,6 +71,7 @@ jobs:
         uses: ./.github/actions/setup-extension
         with:
           platform: ${{ matrix.platform }}
+          os: ${{ matrix.os }}
 
       - name: build Linux
         if: matrix.platform == 'linux'
@@ -92,15 +99,21 @@ jobs:
         run: |
           ./scripts/release-gdextension-windows.ps1
 
+          Remove-Item -Recurse -Force ./bin/windows/*.exp
+          Remove-Item -Recurse -Force ./bin/windows/*.lib
+
       - name: build Web
         if: matrix.platform == 'web'
         run: |
           ./scripts/release-gdextension-web.sh
 
+      - id: commit
+        uses: pr-mpt/actions-commit-hash@v3
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: extension- ${{ inputs.platform }}
+          name: extension-${{ matrix.platform }}-${{ steps.commit.outputs.short }}
           path: bin/
           if-no-files-found: error
 
@@ -109,21 +122,35 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
-          path: libSSGodot
+          path: artifacts
 
-      - name: Display structure of downloaded files
-        run: ls -R libSSGodot
+      - id: commit
+        uses: pr-mpt/actions-commit-hash@v3
 
       - name: Zip all artifacts
         run: |
-          cp misc/ssplayer_godot_extension.gdextension libSSGodot/bin/
-          zip -r libSSGodot.zip libSSGodot/
+          cd artifacts
+
+          mkdir -p bin
+          cp ../misc/ssplayer_godot_extension.gdextension bin/
+
+          mv extension-android-${{ steps.commit.outputs.short }}/android bin/
+          mv extension-ios-${{ steps.commit.outputs.short }}/ios bin/
+          mv extension-macos-${{ steps.commit.outputs.short }}/macos bin/
+          mv extension-web-${{ steps.commit.outputs.short }}/web bin/
+          mv extension-windows-${{ steps.commit.outputs.short }}/windows bin/
+          # mv extension-linux-${{ steps.commit.outputs.short }}/linux bin/
+
+          zip -r ../ssplayer-godot-extension-${{ steps.commit.outputs.short }}.zip ssplayer_godot_extension.gdextension bin/
 
       - name: Upload final release package
         uses: actions/upload-artifact@v4
         with:
-          name: release-package
-          path: libSSGodot.zip
+          name: ssplayer-godot-extension-${{ steps.commit.outputs.short }}
+          path: ssplayer-godot-extension-${{ steps.commit.outputs.short }}.zip
