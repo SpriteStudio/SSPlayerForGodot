@@ -13,6 +13,7 @@ env:
   LC_ALL: en_US.UTF-8
   PYTHONIOENCODING: utf8
   GODOT_VERSION_4: ${{ inputs.godot_tag }}
+  KEYCHAIN_PATH: app-signing.keychain-db
 
 concurrency:
   group: ci-scons-${{ github.actor }}-${{ github.head_ref || github.run_number }}-${{ github.ref }}
@@ -82,21 +83,19 @@ jobs:
         run: |
           # create variables
           CERTIFICATE_PATH=$RUNNER_TEMP/build_certificate.p12
-          KEYCHAIN_PATH=app-signing.keychain-db
-          echo "KEYCHAIN_PATH=$KEYCHAIN_PATH" >> $GITHUB_ENV
 
           # import certificate and provisioning profile from secrets
           echo -n "$DEV_CERT_APP2" | base64 --decode > $CERTIFICATE_PATH
 
           # create temporary keychain
-          security create-keychain -p "$KC_PASS" $KEYCHAIN_PATH
-          security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
-          security unlock-keychain -p "$KC_PASS" $KEYCHAIN_PATH
+          security create-keychain -p "$KC_PASS" ${{ env.KEYCHAIN_PATH }}
+          security set-keychain-settings -lut 21600 ${{ env.KEYCHAIN_PATH }}
+          security unlock-keychain -p "$KC_PASS" ${{ env.KEYCHAIN_PATH }}
 
           # import certificate to keychain
-          security import $CERTIFICATE_PATH -P "$DEV_CERT_PASS" -f pkcs12 -k $KEYCHAIN_PATH -T /usr/bin/codesign
-          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KC_PASS" $KEYCHAIN_PATH
-          security list-keychain -d user -s $KEYCHAIN_PATH
+          security import $CERTIFICATE_PATH -P "$DEV_CERT_PASS" -f pkcs12 -k ${{ env.KEYCHAIN_PATH }} -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KC_PASS" ${{ env.KEYCHAIN_PATH }}
+          security list-keychain -d user -s ${{ env.KEYCHAIN_PATH }}
 
       - name: build Linux
         if: matrix.platform == 'linux'
