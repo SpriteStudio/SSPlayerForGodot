@@ -151,7 +151,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: extension-${{ matrix.platform }}-${{ steps.commit.outputs.short }}
+          name: extension-${{ env.GODOT_VERSION_4 }}-${{ matrix.platform }}-${{ steps.commit.outputs.short }}
           path: bin/
           if-no-files-found: error
 
@@ -178,17 +178,17 @@ jobs:
           mkdir -p bin
           cp ../misc/ssplayer_godot_extension.gdextension bin/
 
-          mv extension-android-${{ steps.commit.outputs.short }}/android bin/
-          mv extension-ios-${{ steps.commit.outputs.short }}/ios bin/
-          mv extension-macos-${{ steps.commit.outputs.short }}/macos bin/
-          mv extension-web-${{ steps.commit.outputs.short }}/web bin/
-          mv extension-windows-${{ steps.commit.outputs.short }}/windows bin/
-          # mv extension-linux-${{ steps.commit.outputs.short }}/linux bin/
+          mv extension-${{ env.GODOT_VERSION_4 }}-android-${{ steps.commit.outputs.short }}/android bin/
+          mv extension-${{ env.GODOT_VERSION_4 }}-ios-${{ steps.commit.outputs.short }}/ios bin/
+          mv extension-${{ env.GODOT_VERSION_4 }}-macos-${{ steps.commit.outputs.short }}/macos bin/
+          mv extension-${{ env.GODOT_VERSION_4 }}-web-${{ steps.commit.outputs.short }}/web bin/
+          mv extension-${{ env.GODOT_VERSION_4 }}-windows-${{ steps.commit.outputs.short }}/windows bin/
+          # mv extension-${{ env.GODOT_VERSION_4 }}-linux-${{ steps.commit.outputs.short }}/linux bin/
 
-          zip -r ../ssplayer-godot-extension-${{ steps.commit.outputs.short }}.zip ssplayer_godot_extension.gdextension bin/
+          zip -r ../ssplayer-godot-extension-${{ env.GODOT_VERSION_4 }}-${{ steps.commit.outputs.short }}.zip bin/
 
       - name: Upload final release package
         uses: actions/upload-artifact@v4
         with:
-          name: ssplayer-godot-extension-${{ steps.commit.outputs.short }}
-          path: ssplayer-godot-extension-${{ steps.commit.outputs.short }}.zip
+          name: ssplayer-godot-extension-${{ env.GODOT_VERSION_4 }}-${{ steps.commit.outputs.short }}
+          path: ssplayer-godot-extension-${{ env.GODOT_VERSION_4 }}-${{ steps.commit.outputs.short }}.zip
