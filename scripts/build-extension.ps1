@@ -28,7 +28,6 @@ $scons_default_opts = @{
     arch = $HOST_ARCH
     platform = "windows"
     target = "editor"
-    vsproj = "no"
     compiledb = "yes"
 }
 
@@ -87,7 +86,7 @@ echo "scons command options: $scons_command_opts"
 
 pushd $rootDirectory
 
-$BINDIR = "bin/$opts[platform]"
+$BINDIR = "bin/${opts[platform]}"
 mkdir "$BINDIR" -Force
 Invoke-Expression "scons $scons_command_opts"
 
