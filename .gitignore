@@ -5,3 +5,4 @@ gd_spritestudio/__pycache__/
 /godot
 /gd_spritestudio/*.o
 .godot
+examples/feature_test/android

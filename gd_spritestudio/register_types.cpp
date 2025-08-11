@@ -11,7 +11,7 @@
 #include "core/class_db.h"
 #endif
 
-#define GD_SS_BSS_ENABLED 0
+#define GD_SS_BSS_ENABLED 1
 
 #include "gd_node_ssplayer.h"
 #include "gd_resource_ssdocument.h"

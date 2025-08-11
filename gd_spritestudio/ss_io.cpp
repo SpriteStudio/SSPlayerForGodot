@@ -2,6 +2,27 @@
 * \file		ss_io.cpp
 * \author	CRI Middleware Co., Ltd.
 */
+
+#ifdef _DEBUG
+#if 1
+#include "core/error_macros.h"
+void gd_ss_print(const char* p_format)
+{
+	WARN_PRINT(p_format);
+}
+#else
+void gd_ss_print(const char* p_format, ...)
+{
+#	va_list arglist;
+	va_start(arglist, strFormat);
+	char strBuffer[1024];
+	//os::print(p_format, arglist);
+	//vsnprintf(strBuffer, 1024, strFormat, arglist);
+	va_end(arglist);
+}
+#endif
+#endif
+
 #include "ss_io.h"
 
 #include "gd_packet_ssproject.h"
