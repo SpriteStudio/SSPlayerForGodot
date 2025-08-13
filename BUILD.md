@@ -101,6 +101,13 @@ brew install molten-vk
 brew install emscripten
 ```
 
+(Optional) target を Android のビルドをする際は Android NDK をインストールしてください。
+
+
+
+## Linux
+T.B.D
+
 # ビルド
 ## Windows 
 ### 4
