@@ -109,12 +109,7 @@ echo "scons command options: $scons_command_opts"
 
 pushd ${ROOTDIR} > /dev/null
 
-if [[ "$opts[platform]" = "macos" ]] || [[ "$opts[platform]" = "ios" ]]; then
-    BINDIR=./bin/${opts[platform]}/${opts[platform]}.framework
-else
-    BINDIR=./bin/${opts[platform]}
-fi
-
+BINDIR=./bin/${opts[platform]}
 /bin/mkdir -p ${BINDIR}
 alias scons_macro="scons ${scons_command_opts}"
 if [[ ${opts[arch]} == "universal" ]]; then
@@ -134,8 +129,9 @@ for arch in $ARCHES; do
     #     strip ${BINDIR}/libSSGodot.macos.${opts[target]}
     # fi
     if [[ ${opts[platform]} == "ios" ]] && [[ ${opts[ios_simulator]} == "yes" ]]; then
-        echo mv
-        mv ${BINDIR}/libSSGodot.${opts[platform]}.${opts[target]} ${BINDIR}/libSSGodot.${opts[platform]}.${opts[target]}.simulator
+        pushd ${BINDIR} > /dev/null
+        mv libSSGodot.${opts[platform]}.${opts[target]}.framework libSSGodot.${opts[platform]}.${opts[target]}.simulator.framework
+        popd > /dev/null
     fi
 done
 

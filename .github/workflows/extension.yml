@@ -112,7 +112,7 @@ jobs:
         run: |
           ./scripts/release-gdextension-macos.sh
 
-          for f in ./bin/macos/macos.framework/*
+          for f in ./bin/macos/*.framework/lib*
           do
             codesign --force --verify --verbose --keychain ${{ env.KEYCHAIN_PATH }} --sign "${DEV_ID_APPLICATION}" $f --options runtime --timestamp
           done
@@ -121,15 +121,15 @@ jobs:
 
           echo "xcrun notarytool"
 
-          pushd bin/macos/macos.framework
-          zip ../../../ssplayer_godot_extension_mac.zip ./*
+          pushd bin/macos/
+          zip ../../ssplayer_godot_extension_mac.zip ./*
           popd
           xcrun notarytool submit ssplayer_godot_extension_mac.zip --keychain-profile "notarytool-profile" --wait
 
           echo "xcrun stapler"
-          xcrun stapler staple -v "./bin/macos/macos.framework/libSSGodot.macos.editor"
-          xcrun stapler staple -v "./bin/macos/macos.framework/libSSGodot.macos.template_debug"
-          xcrun stapler staple -v "./bin/macos/macos.framework/libSSGodot.macos.template_release"
+          xcrun stapler staple -v "./bin/macos/libSSGodot.macos.editor.framework"
+          xcrun stapler staple -v "./bin/macos/libSSGodot.macos.template_debug.framework"
+          xcrun stapler staple -v "./bin/macos/libSSGodot.macos.template_release.framework"
 
       - name: build iOS
         if: matrix.platform == 'ios'
@@ -138,7 +138,7 @@ jobs:
         run: |
           ./scripts/release-gdextension-ios.sh
 
-          for f in $(find ./bin/ios -name '*.dylib')
+          for f in ./bin/ios/*.framework/lib*
           do
             codesign --force --verify --verbose --keychain ${{ env.KEYCHAIN_PATH }} --sign "${DEV_ID_APPLICATION}" $f --options runtime --timestamp
           done
