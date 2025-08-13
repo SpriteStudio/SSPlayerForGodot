@@ -77,7 +77,7 @@ jobs:
       - name: Retrieve the secret and decode it to a file
         if: matrix.platform == 'macos' || matrix.platform == 'ios'
         env:
-          DEV_CERT_APP2: ${{ secrets.DEV_CERT_APP2 }}
+          DEV_CERT_APPLICATION: ${{ secrets.DEV_CERT_APPLICATION }}
           DEV_CERT_PASS: ${{ secrets.DEV_CERT_PASS }}
           KC_PASS: ${{ secrets.KC_PASS }}
         run: |
@@ -85,7 +85,7 @@ jobs:
           CERTIFICATE_PATH=$RUNNER_TEMP/build_certificate.p12
 
           # import certificate and provisioning profile from secrets
-          echo -n "$DEV_CERT_APP2" | base64 --decode > $CERTIFICATE_PATH
+          echo -n "$DEV_CERT_APPLICATION" | base64 --decode > $CERTIFICATE_PATH
 
           # create temporary keychain
           security create-keychain -p "$KC_PASS" ${{ env.KEYCHAIN_PATH }}
