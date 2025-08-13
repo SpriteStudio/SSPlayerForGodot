@@ -75,7 +75,7 @@ jobs:
           os: ${{ matrix.os }}
 
       - name: Retrieve the secret and decode it to a file
-        if: matrix.platform == 'macOS' || matrix.platform == 'iOS'
+        if: matrix.platform == 'macos' || matrix.platform == 'ios'
         env:
           DEV_CERT_APP2: ${{ secrets.DEV_CERT_APP2 }}
           DEV_CERT_PASS: ${{ secrets.DEV_CERT_PASS }}
