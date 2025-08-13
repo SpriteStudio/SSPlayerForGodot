@@ -106,6 +106,9 @@ jobs:
         if: matrix.platform == 'macos'
         env:
           DEV_ID_APPLICATION: ${{ secrets.DEV_ID_APPLICATION }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          TEAM_ID: ${{ secrets.TEAM_ID }}
+          NOTRIZATION_PWD: ${{ secrets.NOTARIZATION_PWD }}
         run: |
           ./scripts/release-gdextension-macos.sh
 
@@ -113,6 +116,20 @@ jobs:
           do
             codesign --force --verify --verbose --keychain ${{ env.KEYCHAIN_PATH }} --sign "${DEV_ID_APPLICATION}" $f --options runtime --timestamp
           done
+
+          xcrun notarytool store-credentials "notarytool-profile" --apple-id "$APPLE_ID" --team-id "$TEAM_ID" --password "$NOTRIZATION_PWD"
+
+          echo "xcrun notarytool"
+
+          pushd bin/macos/macos.framework
+          zip ../../../ssplayer_godot_extension_mac.zip ./*
+          popd
+          xcrun notarytool submit ssplayer_godot_extension_mac.zip --keychain-profile "notarytool-profile" --wait
+
+          echo "xcrun stapler"
+          xcrun stapler staple -v "./bin/macos/macos.framework/libSSGodot.macos.editor"
+          xcrun stapler staple -v "./bin/macos/macos.framework/libSSGodot.macos.template_debug"
+          xcrun stapler staple -v "./bin/macos/macos.framework/libSSGodot.macos.template_release"
 
       - name: build iOS
         if: matrix.platform == 'ios'
