@@ -121,10 +121,17 @@ jobs:
 
           echo "xcrun notarytool"
 
-          pushd bin/macos/
-          zip ../../ssplayer_godot_extension_mac.zip ./*
-          popd
-          xcrun notarytool submit ssplayer_godot_extension_mac.zip --keychain-profile "notarytool-profile" --wait
+          NOTARIZATION_FILE=libSSGodot.macos.editor.zip
+          ditto -c -k --sequesterRsrc --keepParent "./bin/macos/libSSGodot.macos.editor.framework" "$NOTARIZATION_FILE"
+          xcrun notarytool submit "$NOTARIZATION_FILE" --keychain-profile "notarytool-profile" --wait
+
+          NOTARIZATION_FILE=libSSGodot.macos.template_debugn.zip
+          ditto -c -k --sequesterRsrc --keepParent "./bin/macos/libSSGodot.macos.template_debug.framework" "$NOTARIZATION_FILE"
+          xcrun notarytool submit "$NOTARIZATION_FILE" --keychain-profile "notarytool-profile" --wait
+
+          NOTARIZATION_FILE=libSSGodot.macos.template_release.zip
+          ditto -c -k --sequesterRsrc --keepParent "./bin/macos/libSSGodot.macos.template_release.framework" "$NOTARIZATION_FILE"
+          xcrun notarytool submit "$NOTARIZATION_FILE" --keychain-profile "notarytool-profile" --wait
 
           echo "xcrun stapler"
           xcrun stapler staple -v "./bin/macos/libSSGodot.macos.editor.framework"
