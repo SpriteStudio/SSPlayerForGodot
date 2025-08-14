@@ -112,9 +112,9 @@ jobs:
         run: |
           ./scripts/release-gdextension-macos.sh
 
-          for f in ./bin/macos/*.framework/lib*
+          for f in ./bin/macos/*.framework
           do
-            codesign --force --verify --verbose --keychain ${{ env.KEYCHAIN_PATH }} --sign "${DEV_ID_APPLICATION}" $f --options runtime --timestamp
+            codesign --force --verify --verbose --keychain ${{ env.KEYCHAIN_PATH }} --sign "${DEV_ID_APPLICATION}" $f --deep --options runtime --timestamp
           done
 
           xcrun notarytool store-credentials "notarytool-profile" --apple-id "$APPLE_ID" --team-id "$TEAM_ID" --password "$NOTRIZATION_PWD"
@@ -125,7 +125,7 @@ jobs:
           ditto -c -k --sequesterRsrc --keepParent "./bin/macos/libSSGodot.macos.editor.framework" "$NOTARIZATION_FILE"
           xcrun notarytool submit "$NOTARIZATION_FILE" --keychain-profile "notarytool-profile" --wait
 
-          NOTARIZATION_FILE=libSSGodot.macos.template_debugn.zip
+          NOTARIZATION_FILE=libSSGodot.macos.template_debug.zip
           ditto -c -k --sequesterRsrc --keepParent "./bin/macos/libSSGodot.macos.template_debug.framework" "$NOTARIZATION_FILE"
           xcrun notarytool submit "$NOTARIZATION_FILE" --keychain-profile "notarytool-profile" --wait
 
@@ -145,9 +145,9 @@ jobs:
         run: |
           ./scripts/release-gdextension-ios.sh
 
-          for f in ./bin/ios/*.framework/lib*
+          for f in ./bin/ios/*.framework
           do
-            codesign --force --verify --verbose --keychain ${{ env.KEYCHAIN_PATH }} --sign "${DEV_ID_APPLICATION}" $f --options runtime --timestamp
+            codesign --force --verify --verbose --keychain ${{ env.KEYCHAIN_PATH }} --sign "${DEV_ID_APPLICATION}" $f --deep --options runtime --timestamp
           done
 
       - name: build Android
