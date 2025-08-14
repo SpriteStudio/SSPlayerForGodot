@@ -12,6 +12,6 @@ targets=("editor" "template_release" "template_debug")
 for target in ${targets[@]}; do
     scripts/build-extension.sh platform=macos arch=universal strip=yes target=${target}
 done
-/bin/rmdir bin/macos/macos.framework
+/bin/rm -rf bin/macos/macos.framework
 
 popd > /dev/null # ${ROOTDIR}
