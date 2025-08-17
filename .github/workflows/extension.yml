@@ -135,10 +135,10 @@ jobs:
           ditto -c -k --sequesterRsrc --keepParent "./bin/macos/libSSGodot.macos.template_release.framework" "$NOTARIZATION_FILE"
           xcrun notarytool submit "$NOTARIZATION_FILE" --keychain-profile "notarytool-profile" --wait
 
-          echo "xcrun stapler"
-          xcrun stapler staple -v "./bin/macos/libSSGodot.macos.editor.framework"
-          xcrun stapler staple -v "./bin/macos/libSSGodot.macos.template_debug.framework"
-          xcrun stapler staple -v "./bin/macos/libSSGodot.macos.template_release.framework"
+          #echo "xcrun stapler"
+          #xcrun stapler staple -v "./bin/macos/libSSGodot.macos.editor.framework"
+          #xcrun stapler staple -v "./bin/macos/libSSGodot.macos.template_debug.framework"
+          #xcrun stapler staple -v "./bin/macos/libSSGodot.macos.template_release.framework"
 
       - name: build iOS
         if: matrix.platform == 'ios'
