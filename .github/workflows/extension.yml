@@ -36,7 +36,7 @@ jobs:
             platform: windows
 
           - name: 🍎 macOS (universal)
-            os: macos-15
+            os: macos-latest
             platform: macos
 
           - name: 🤖 Android (arm64)
@@ -44,7 +44,7 @@ jobs:
             platform: android
 
           - name: 🍏 iOS (arm64)
-            os: macos-15
+            os: macos-latest
             platform: ios
 
           - name: 🌐 Web (wasm32)
@@ -114,7 +114,7 @@ jobs:
 
           for f in ./bin/macos/*.framework
           do
-            codesign --force --verify --verbose --keychain ${{ env.KEYCHAIN_PATH }} --sign "${DEV_ID_APPLICATION}" $f --deep --options runtime --timestamp
+            codesign --force --verify --verbose --keychain ${{ env.KEYCHAIN_PATH }} --sign "${DEV_ID_APPLICATION}" --deep --options runtime --timestamp $f/
           done
 
           xcrun notarytool store-credentials "notarytool-profile" --apple-id "$APPLE_ID" --team-id "$TEAM_ID" --password "$NOTRIZATION_PWD"
@@ -147,7 +147,9 @@ jobs:
 
           for f in ./bin/ios/*.framework
           do
-            codesign --force --verify --verbose --keychain ${{ env.KEYCHAIN_PATH }} --sign "${DEV_ID_APPLICATION}" $f --deep --options runtime --timestamp
+            lib=$(basename $f .framework)
+            codesign --force --verify --verbose --keychain ${{ env.KEYCHAIN_PATH }} --sign "${DEV_ID_APPLICATION}" $f/$lib --deep --options runtime --timestamp
+            codesign --force --verify --verbose --keychain ${{ env.KEYCHAIN_PATH }} --sign "${DEV_ID_APPLICATION}" $f/Versions/A --deep --options runtime --timestamp
           done
 
       - name: build Android
