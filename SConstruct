@@ -115,7 +115,7 @@ if env["platform"] == "macos" or env["platform"] == "ios":
     plist_subst = {
         "${BUNDLE_LIBRARY}": file,
         "${BUNDLE_NAME}": "ssplayer-godot",
-        "${BUNDLE_IDENTIFIER}": "jp.co.cri-mw.spritestudio.ssplayer-godot",
+        "${BUNDLE_IDENTIFIER}": "jp.co.cri-mw.spritestudio.ssplayer-godot.{}".format(env["target"]),
         "${BUNDLE_VERSION}": subprocess.check_output(['git', 'rev-parse', '--abbrev-ref', 'HEAD']).decode('utf-8').strip().split('-')[0] + '.0',
         "${MIN_MACOS_VERSION}": "10.12",
         "${MIN_IOS_VERSION}": "12.0"
