@@ -135,24 +135,6 @@ for arch in $ARCHES; do
     fi
 done
 
-# re-structure a macOS framework
-# TODO: migrate to Sconstruct
-if [[ ${opts[platform]} == "macos" ]]; then
-    pushd ${BINDIR}/libSSGodot.${opts[platform]}.${opts[target]}.framework/ > /dev/null
-    /bin/mkdir -p Versions/A
-    mv libSSGodot.${opts[platform]}.${opts[target]} Versions/A/
-    mv Resources Versions/A/
-
-    pushd Versions > /dev/null
-    ln -shf A Current
-    popd > /dev/null
-
-    ln -sf Versions/Current/libSSGodot.${opts[platform]}.${opts[target]} libSSGodot.${opts[platform]}.${opts[target]}
-    ln -sf Versions/Current/Resources Resources
-    popd > /dev/null
-fi
-
-
 /bin/cp misc/ssplayer_godot_extension.gdextension ./examples/feature_test_gdextension/bin
 
 popd > /dev/null # ${ROOTDIR}

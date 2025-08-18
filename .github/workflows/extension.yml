@@ -106,38 +106,13 @@ jobs:
         if: matrix.platform == 'macos'
         env:
           DEV_ID_APPLICATION: ${{ secrets.DEV_ID_APPLICATION }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          TEAM_ID: ${{ secrets.TEAM_ID }}
-          NOTRIZATION_PWD: ${{ secrets.NOTARIZATION_PWD }}
         run: |
           ./scripts/release-gdextension-macos.sh
 
           for f in ./bin/macos/*.framework
           do
             codesign --force --verify --verbose --keychain ${{ env.KEYCHAIN_PATH }} --sign "${DEV_ID_APPLICATION}" $f --deep --options runtime --timestamp
-            codesign --force --verify --verbose --keychain ${{ env.KEYCHAIN_PATH }} --sign "${DEV_ID_APPLICATION}" $f/Versions/A --deep --options runtime --timestamp
           done
-
-          xcrun notarytool store-credentials "notarytool-profile" --apple-id "$APPLE_ID" --team-id "$TEAM_ID" --password "$NOTRIZATION_PWD"
-
-          echo "xcrun notarytool"
-
-          NOTARIZATION_FILE=libSSGodot.macos.editor.zip
-          ditto -c -k --sequesterRsrc --keepParent "./bin/macos/libSSGodot.macos.editor.framework" "$NOTARIZATION_FILE"
-          xcrun notarytool submit "$NOTARIZATION_FILE" --keychain-profile "notarytool-profile" --wait
-
-          NOTARIZATION_FILE=libSSGodot.macos.template_debug.zip
-          ditto -c -k --sequesterRsrc --keepParent "./bin/macos/libSSGodot.macos.template_debug.framework" "$NOTARIZATION_FILE"
-          xcrun notarytool submit "$NOTARIZATION_FILE" --keychain-profile "notarytool-profile" --wait
-
-          NOTARIZATION_FILE=libSSGodot.macos.template_release.zip
-          ditto -c -k --sequesterRsrc --keepParent "./bin/macos/libSSGodot.macos.template_release.framework" "$NOTARIZATION_FILE"
-          xcrun notarytool submit "$NOTARIZATION_FILE" --keychain-profile "notarytool-profile" --wait
-
-          echo "xcrun stapler"
-          xcrun stapler staple -v "./bin/macos/libSSGodot.macos.editor.framework/Versions/A"
-          xcrun stapler staple -v "./bin/macos/libSSGodot.macos.template_debug.framework/Versions/A"
-          xcrun stapler staple -v "./bin/macos/libSSGodot.macos.template_release.framework/Versions/A"
 
       - name: build iOS
         if: matrix.platform == 'ios'
