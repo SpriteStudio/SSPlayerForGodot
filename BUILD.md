@@ -1,6 +1,6 @@
 # ソース取得
 
-本リポジトリをクローンしてください。
+本リポジトリをクローンして、 `SSPlayerForGodot` ディレクトリ内に入ってください。
 
 ```bash
 git clone --recursive https://github.com/SpriteStudio/SSPlayerForGodot.git
@@ -20,10 +20,10 @@ git clone https://github.com/godotengine/godot-cpp.git
 ```
 
 # ブランチ選択
+## Godot
 SSPlayerForGodot ディレクトリの `godot` ディレクトリ内でビルドする Godot Engine のブランチを選択してください。
 
-## Godot
-### 4.4
+### 4
 
 ```bash
 pushd godot
@@ -50,9 +50,10 @@ popd
 ```
 
 # ビルド環境のセットアップ
-## Windows
 
 以降でビルド環境の構築手順について説明していきます。  
+
+## Windows
 
 [Godot公式のコンパイル手順](https://docs.godotengine.org/en/stable/contributing/development/compiling/compiling_for_windows.html)
 
@@ -101,11 +102,20 @@ brew install molten-vk
 brew install emscripten
 ```
 
+(Optional) target を Android のビルドをする際は Android NDK をインストールしてください。
+
+
+## Linux
+T.B.D
+
 # ビルド
 ## Windows 
 ### 4
 
 [build.ps1](./scripts/build.ps1) でビルド可能です。
+
+
+成果物は `godot\bin` に格納されます。
 
 **PowerShell**
 
@@ -124,6 +134,7 @@ PowerShell.exe -ExecutionPolicy Bypass -File .\scripts\build.ps1
 ### 3.x
 
 [build-v3.ps1](./scripts/build-v3.ps1) でビルド可能です。
+成果物は `godot\bin` に格納されます。
 
 **PowerShell**
 
@@ -144,6 +155,7 @@ PowerShell.exe -ExecutionPolicy Bypass -File .\scripts\build-v3.ps1
 ### 4
 
 [build.sh](./scripts/build.sh) でビルド可能です。
+成果物は `godot/bin` に格納されます。
 
 ```sh
 ./scripts/build.sh
@@ -175,6 +187,7 @@ PowerShell.exe -ExecutionPolicy Bypass -File .\scripts\build-v3.ps1
 ### 3.x
 
 [build-v3.sh](./scripts/build-v3.sh) でビルド可能です。
+成果物は `godot/bin` に格納されます。
 
 ```sh
 ./scripts/build-v3.sh
@@ -207,6 +220,8 @@ PowerShell.exe -ExecutionPolicy Bypass -File .\scripts\build-v3.ps1
 # GDExtension
 ## Windows 
 [build-extension.ps1](./scripts/build-extension.ps1) でビルド可能です。
+成果物は `bin` ディレクトリに格納されます。
+
 
 **PowerShell**
 
@@ -227,6 +242,7 @@ PowerShell.exe -ExecutionPolicy Bypass -File .\scripts\build-extension.ps1
 macOS か Linux で実行してください。
 
 [build-extension.sh](./scripts/build-extension.sh) でビルド可能です。
+成果物は `bin` ディレクトリに格納されます。
 
 ```sh
 ./scripts/build-extension.sh
@@ -236,10 +252,40 @@ macOS か Linux で実行してください。
 # リリースビルド
 ## 4
 
-...
+各プラットフォームの godot の `editor`, `template_debug`, `template_release` をまとめてビルドスクリプトは下記の通りです。
+
+windows
+```
+.\scripts\release-windows.ps1
+```
+
+macOS
+```sh
+./scripts/release-macos.sh
+```
+
+Linux
+```sh
+./scripts/release-linux.sh
+```
+
+iOS
+```sh
+./scripts/release-ios.sh
+```
+
+Android
+```sh
+./scripts/release-android.sh
+```
+
+Web
+```sh
+./scripts/release-web.sh
+```
 
 ## GDExtension
-各プラットフォームの gdextension の editor, template_debug, template_release をまとめてビルドスクリプトは下記の通りです。
+各プラットフォームの gdextension の `editor`, `template_debug`, `template_release` をまとめてビルドスクリプトは下記の通りです。
 
 windows
 ```

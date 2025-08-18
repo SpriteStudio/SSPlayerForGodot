@@ -13,6 +13,7 @@ env:
   LC_ALL: en_US.UTF-8
   PYTHONIOENCODING: utf8
   GODOT_VERSION_4: ${{ inputs.godot_tag }}
+  KEYCHAIN_PATH: app-signing.keychain-db
 
 concurrency:
   group: ci-scons-${{ github.actor }}-${{ github.head_ref || github.run_number }}-${{ github.ref }}
@@ -35,7 +36,7 @@ jobs:
             platform: windows
 
           - name: 🍎 macOS (universal)
-            os: macos-15
+            os: macos-latest
             platform: macos
 
           - name: 🤖 Android (arm64)
@@ -43,7 +44,7 @@ jobs:
             platform: android
 
           - name: 🍏 iOS (arm64)
-            os: macos-15
+            os: macos-latest
             platform: ios
 
           - name: 🌐 Web (wasm32)
@@ -73,6 +74,29 @@ jobs:
           platform: ${{ matrix.platform }}
           os: ${{ matrix.os }}
 
+      - name: Retrieve the secret and decode it to a file
+        if: matrix.platform == 'macos' || matrix.platform == 'ios'
+        env:
+          DEV_CERT_APPLICATION: ${{ secrets.DEV_CERT_APPLICATION }}
+          DEV_CERT_PASS: ${{ secrets.DEV_CERT_PASS }}
+          KC_PASS: ${{ secrets.KC_PASS }}
+        run: |
+          # create variables
+          CERTIFICATE_PATH=$RUNNER_TEMP/build_certificate.p12
+
+          # import certificate and provisioning profile from secrets
+          echo -n "$DEV_CERT_APPLICATION" | base64 --decode > $CERTIFICATE_PATH
+
+          # create temporary keychain
+          security create-keychain -p "$KC_PASS" ${{ env.KEYCHAIN_PATH }}
+          security set-keychain-settings -lut 21600 ${{ env.KEYCHAIN_PATH }}
+          security unlock-keychain -p "$KC_PASS" ${{ env.KEYCHAIN_PATH }}
+
+          # import certificate to keychain
+          security import $CERTIFICATE_PATH -P "$DEV_CERT_PASS" -f pkcs12 -k ${{ env.KEYCHAIN_PATH }} -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KC_PASS" ${{ env.KEYCHAIN_PATH }}
+          security list-keychain -d user -s ${{ env.KEYCHAIN_PATH }}
+
       - name: build Linux
         if: matrix.platform == 'linux'
         run: |
@@ -80,13 +104,27 @@ jobs:
 
       - name: build macOS
         if: matrix.platform == 'macos'
+        env:
+          DEV_ID_APPLICATION: ${{ secrets.DEV_ID_APPLICATION }}
         run: |
           ./scripts/release-gdextension-macos.sh
 
+          for f in ./bin/macos/*.framework
+          do
+            codesign --force --verify --verbose --keychain ${{ env.KEYCHAIN_PATH }} --sign "${DEV_ID_APPLICATION}" $f --deep --options runtime --timestamp
+          done
+
       - name: build iOS
         if: matrix.platform == 'ios'
+        env:
+          DEV_ID_APPLICATION: ${{ secrets.DEV_ID_APPLICATION }}
         run: |
           ./scripts/release-gdextension-ios.sh
+
+          for f in ./bin/ios/*.framework
+          do
+            codesign --force --verify --verbose --keychain ${{ env.KEYCHAIN_PATH }} --sign "${DEV_ID_APPLICATION}" $f --deep --options runtime --timestamp
+          done
 
       - name: build Android
         if: matrix.platform == 'android'
@@ -113,7 +151,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: extension-${{ matrix.platform }}-${{ steps.commit.outputs.short }}
+          name: extension-${{ env.GODOT_VERSION_4 }}-${{ matrix.platform }}-${{ steps.commit.outputs.short }}
           path: bin/
           if-no-files-found: error
 
@@ -140,17 +178,17 @@ jobs:
           mkdir -p bin
           cp ../misc/ssplayer_godot_extension.gdextension bin/
 
-          mv extension-android-${{ steps.commit.outputs.short }}/android bin/
-          mv extension-ios-${{ steps.commit.outputs.short }}/ios bin/
-          mv extension-macos-${{ steps.commit.outputs.short }}/macos bin/
-          mv extension-web-${{ steps.commit.outputs.short }}/web bin/
-          mv extension-windows-${{ steps.commit.outputs.short }}/windows bin/
-          # mv extension-linux-${{ steps.commit.outputs.short }}/linux bin/
+          mv extension-${{ env.GODOT_VERSION_4 }}-android-${{ steps.commit.outputs.short }}/android bin/
+          mv extension-${{ env.GODOT_VERSION_4 }}-ios-${{ steps.commit.outputs.short }}/ios bin/
+          mv extension-${{ env.GODOT_VERSION_4 }}-macos-${{ steps.commit.outputs.short }}/macos bin/
+          mv extension-${{ env.GODOT_VERSION_4 }}-web-${{ steps.commit.outputs.short }}/web bin/
+          mv extension-${{ env.GODOT_VERSION_4 }}-windows-${{ steps.commit.outputs.short }}/windows bin/
+          # mv extension-${{ env.GODOT_VERSION_4 }}-linux-${{ steps.commit.outputs.short }}/linux bin/
 
-          zip -r ../ssplayer-godot-extension-${{ steps.commit.outputs.short }}.zip ssplayer_godot_extension.gdextension bin/
+          zip -r ../ssplayer-godot-extension-${{ env.GODOT_VERSION_4 }}-${{ steps.commit.outputs.short }}.zip bin/
 
       - name: Upload final release package
         uses: actions/upload-artifact@v4
         with:
-          name: ssplayer-godot-extension-${{ steps.commit.outputs.short }}
-          path: ssplayer-godot-extension-${{ steps.commit.outputs.short }}.zip
+          name: ssplayer-godot-extension-${{ env.GODOT_VERSION_4 }}-${{ steps.commit.outputs.short }}
+          path: ssplayer-godot-extension-${{ env.GODOT_VERSION_4 }}-${{ steps.commit.outputs.short }}.zip
