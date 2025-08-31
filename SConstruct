@@ -76,6 +76,10 @@ env.Append(
 		"gd_spritestudio/SpriteStudio6-SDK/Common/Helper",
 	]
 )
+
+if env["platform"] == 'macos':
+    env.Append(LINKFLAGS=["-framework", "CoreFoundation"])
+
 # Set iOS minimum deployment target
 if env["platform"] == "ios":
     env.Append(CCFLAGS=["-miphoneos-version-min=12.0"])
@@ -88,7 +92,6 @@ sources.extend(Glob("gd_spritestudio/SpriteStudio6-SDK/Common/Animator/*.cpp"))
 sources.extend(Glob("gd_spritestudio/SpriteStudio6-SDK/Common/Helper/DebugPrint.cpp"))
 sources.extend(Glob("gd_spritestudio/SpriteStudio6-SDK/Common/Helper/IsshTexture.cpp"))
 sources.extend(Glob("gd_spritestudio/SpriteStudio6-SDK/Common/Helper/stb_image.c"))
-
 
 if env["target"] in ["editor", "template_debug"]:
     try:
