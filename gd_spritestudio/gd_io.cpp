@@ -31,23 +31,13 @@ String GdIO::loadStringFromFile( const String& strPath )
 	String				str = String( "" );
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
-	Ref<FileAccess>		resFileAccess = FileAccess::open( strPath, FileAccess::READ);
-	err = resFileAccess->get_error();
-	if ( err != OK ) {
+    str = FileAccess::get_file_as_string(strPath);
+	if (str.length() == 0) {
+		err = ERR_FILE_UNRECOGNIZED;
 		ERR_PRINT( String( "loadStringFromFile error: " ) + String::num( err ) );
-
-		if ( resFileAccess.is_valid() ) {
-			resFileAccess->close();
-		}
 
 		return str;
 	}
-
-	while ( !resFileAccess->eof_reached() ) {
-		str += resFileAccess->get_line();
-	}
-
-	resFileAccess->close();
 
 #endif
 #ifdef GD_V4
@@ -96,13 +86,9 @@ Error GdIO::saveStringToFile( const String& strPath, const String& str )
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
 	Ref<FileAccess>		resFileAccess = FileAccess::open( strPath, FileAccess::WRITE);
-	err = resFileAccess->get_error();
-	if ( err != OK ) {
+	if ( !resFileAccess.is_valid() ) {
+		err = ERR_FILE_CANT_OPEN;
 		ERR_PRINT( String( "saveStringToFile error: " ) + String::num( err ) );
-
-		if ( resFileAccess.is_valid() ) {
-			resFileAccess->close();
-		}
 
 		return err;
 	}
@@ -157,14 +143,9 @@ Variant GdIO::loadVariantFromFile( const String& strPath )
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
 	Ref<FileAccess>		resFileAccess = FileAccess::open( strPath, FileAccess::READ);
-	err = resFileAccess->get_error();
-	if ( err != OK ) {
+	if ( !resFileAccess.is_valid() ) {
+		err = ERR_FILE_CANT_OPEN;
 		ERR_PRINT( String( "loadVariantFromFile error: " ) + String::num( err ) );
-
-		if ( resFileAccess.is_valid() ) {
-			resFileAccess->close();
-		}
-
 		return	val;
 	}
 
@@ -241,13 +222,9 @@ Error GdIO::saveVariantToFile( const String& strPath, const Variant& val )
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
 	Ref<FileAccess>		resFileAccess = FileAccess::open( strPath, FileAccess::WRITE);
-	err = resFileAccess->get_error();
-	if ( err != OK ) {
+	if ( !resFileAccess.is_valid() ) {
+		err =  ERR_FILE_CANT_OPEN;
 		ERR_PRINT( String( "saveVariantToFile error: " ) + String::num( err ) );
-
-		if ( resFileAccess.is_valid() ) {
-			resFileAccess->close();
-		}
 
 		return	err;
 	}
