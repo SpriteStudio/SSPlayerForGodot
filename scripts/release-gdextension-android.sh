@@ -11,9 +11,9 @@ BINDIR=$(pwd)/bin/android
 /bin/rm -rf ${BINDIR}
 targets=("template_release" "template_debug")
 for target in ${targets[@]}; do
-    scripts/build-extension.sh platform=android arch=arm32 strip=yes target=${target}
-    scripts/build-extension.sh platform=android arch=arm64 strip=yes target=${target}
-    scripts/build-extension.sh platform=android arch=x86_64 strip=yes target=${target}
+    scripts/build-extension.sh platform=android arch=arm32 compiledb=no strip=yes target=${target}
+    scripts/build-extension.sh platform=android arch=arm64 compiledb=no strip=yes target=${target}
+    scripts/build-extension.sh platform=android arch=x86_64 compiledb=no strip=yes target=${target}
 done
 
 popd > /dev/null # ${ROOTDIR}

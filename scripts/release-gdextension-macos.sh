@@ -11,7 +11,7 @@ BINDIR=$(pwd)/bin/macos
 /bin/rm -rf ${BINDIR}
 targets=("editor" "template_release" "template_debug")
 for target in ${targets[@]}; do
-    scripts/build-extension.sh platform=macos arch=universal strip=yes target=${target}
+    scripts/build-extension.sh platform=macos arch=universal compiledb=no strip=yes target=${target}
 done
 /bin/rm -rf bin/macos/macos.framework
 

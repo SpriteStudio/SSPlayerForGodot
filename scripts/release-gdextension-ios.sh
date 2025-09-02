@@ -12,8 +12,8 @@ BINDIR=$(pwd)/bin/ios
 /bin/rm -rf ${BINDIR}
 targets=("template_release" "template_debug")
 for target in ${targets[@]}; do
-#   scripts/build-extension.sh platform=ios arch=universal strip=yes target=${target} ios_simulator=yes
-    scripts/build-extension.sh platform=ios arch=universal strip=yes target=${target} ios_simulator=no
+#   scripts/build-extension.sh platform=ios arch=universal compiledb=no strip=yes target=${target} ios_simulator=yes
+    scripts/build-extension.sh platform=ios arch=universal compiledb=no strip=yes target=${target} ios_simulator=no
 done
 
 pushd ${BINDIR}
