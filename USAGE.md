@@ -1,10 +1,15 @@
 # エディタの選択
 下記どちらかの方法で利用してください。
 
-- SpriteStudioPlayer のカスタムモジュールを組み込んだ Godot Engine を用意する。
-    - [BUILD.md](BUILD.md) を参照してください
-- SpriteStudioPlayer の GDExtension を Godot プロジェクトの `bin` ディレクトリへ格納する。
-    - [リリース](https://github.com/SpriteStudio/SSPlayerForGodot/releases)を参照してください。自前でビルドする場合は [BUILD.md](BUILD.md) を参照してください
+## SpriteStudioPlayer のカスタムモジュールを組み込んだ Godot Engine を利用する
+[BUILD.md](BUILD.md) を参照して SpriteStudioPlayer のカスタムモジュールを組み込んだ Godot をビルドしてください。
+
+## SpriteStudioPlayer の GDExtension ファイルを利用する
+1. 本家サイト(https://godotengine.org/download/) より、該当するバージョンの Godot ダウンロードします。
+2. SpriteStudioPlayer の GDExtension ファイルを用意します。
+    - [リリース](https://github.com/SpriteStudio/SSPlayerForGodot/releases) に GDExtension ファイルの成果物を用意しているので、そちらを利用してください。
+    - GDExtension を自前でビルドする場合は [BUILD.md](BUILD.md) を参照してください
+3. SpriteStudioPlayer の GDExtension ファイルをプロジェクトディレクトリの `bin` ディレクトリへ格納します。
 
 
 # SpriteStudioデータのインポート
