@@ -23,7 +23,7 @@ jobs:
             platform: windows
 
           - name: Godot 4.x 🍎 macOS (universal)
-            os: macos-15
+            os: macos-latest
             platform: macos
 
     defaults:
