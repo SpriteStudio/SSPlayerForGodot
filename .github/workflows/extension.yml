@@ -27,9 +27,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-#          - name: 🐧 Linux (GCC)
-#            os: ubuntu-latest
-#            platform: linux
+          - name: 🐧 Linux (GCC)
+            os: ubuntu-latest
+            platform: linux
 
           - name: 🏁 Windows (x86_64, MSVC)
             os: windows-latest
@@ -183,7 +183,7 @@ jobs:
           mv extension-${{ env.GODOT_VERSION_4 }}-macos-${{ steps.commit.outputs.short }}/macos bin/
           mv extension-${{ env.GODOT_VERSION_4 }}-web-${{ steps.commit.outputs.short }}/web bin/
           mv extension-${{ env.GODOT_VERSION_4 }}-windows-${{ steps.commit.outputs.short }}/windows bin/
-          # mv extension-${{ env.GODOT_VERSION_4 }}-linux-${{ steps.commit.outputs.short }}/linux bin/
+          mv extension-${{ env.GODOT_VERSION_4 }}-linux-${{ steps.commit.outputs.short }}/linux bin/
 
           zip -r ../ssplayer-godot-extension-${{ env.GODOT_VERSION_4 }}-${{ steps.commit.outputs.short }}.zip bin/
 
