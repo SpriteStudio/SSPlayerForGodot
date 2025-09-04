@@ -30,3 +30,7 @@ web.release.threads.wasm32 = "web/libSSGodot.web.template_release.wasm32.wasm"
 
 web.debug.wasm32 = "web/libSSGodot.web.template_debug.wasm32.nothreads.wasm"
 web.release.wasm32 = "web/libSSGodot.web.template_release.wasm32.nothreads.wasm"
+
+linux.editor.x86_64 = "linux/libSSGodot.linux.editor.x86_64.so"
+linux.debug.x86_64 = "linux/libSSGodot.linux.template_debug.x86_64.so"
+linux.release.x86_64 = "linux/libSSGodot.linux.template_release.x86_64.so"
