@@ -101,7 +101,7 @@ void GdNodeSsPlayer::setPlayerResource( const Ref<GdResourceSsPlayer>& resPlayer
 {
 	m_ResPlayer = resPlayer;
 
-	m_strAnimationSelected.resize(0);
+	m_strAnimationSelected = "";
 	fetchAnimation();
 
 	NOTIFY_PROPERTY_LIST_CHANGED();
@@ -132,7 +132,7 @@ void GdNodeSsPlayer::setAnimePack( const String& strName )
 
 	postAnimePackChanged( m_strAnimePackSelected );
 
-	m_strAnimationSelected.resize(0);
+	m_strAnimationSelected = "";
 	fetchAnimation();
 
 	NOTIFY_PROPERTY_LIST_CHANGED();

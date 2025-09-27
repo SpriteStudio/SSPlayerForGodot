@@ -86,7 +86,7 @@ SsProject* SsContainer::loadProjectFromFile( const String& strPath, bool bAutoDe
 		auto		c = strXml.utf8();
 
 		if ( c.length() > 0 ) {
-			pProject = ssloader_sspj::Parse_ProjectOnly( c, c.length() );
+			pProject = ssloader_sspj::Parse_ProjectOnly( c.get_data(), c.length() );
 		}
 	}else
 	if ( strExt == "gdsspj" ) {
@@ -131,7 +131,7 @@ SsAnimePack* SsContainer::loadAnimePackFromFile( const String& strPath, bool bAu
 		auto			c = strXml.utf8();
 
 		if ( c.length() > 0 ) {
-			pAnimePack = ssloader_ssae::Parse( c, c.length() );
+			pAnimePack = ssloader_ssae::Parse( c.get_data(), c.length() );
 		}
 	}else
 	if ( strExt == "gdssae" ) {
@@ -176,7 +176,7 @@ SsCellMap* SsContainer::loadCellMapFromFile( const String& strPath, bool bAutoDe
 		auto			c = strXml.utf8();
 
 		if ( c.length() > 0 ) {
-			pCellMap = ssloader_ssce::Parse( c, c.length() );
+			pCellMap = ssloader_ssce::Parse( c.get_data(), c.length() );
 		}
 	}else
 	if ( strExt == "gdssce" ) {
@@ -220,12 +220,12 @@ SsEffectFile* SsContainer::loadEffectFromFile( const String& strPath, bool bAuto
 		String			strXml = GdIO::loadStringFromFile( strPath );
 		auto			c = strXml.utf8();
 
-		pEffect = NULL;//ssloader_ssee::Parse( c, c.length() );
+		pEffect = NULL;//ssloader_ssee::Parse( c.get_data(), c.length() );
 
 		if ( c.length() > 0 ) {
 			libXML::XMLDocument xml;
 
-			libXML::XMLError xmlerr = xml.Parse(c, c.length());
+			libXML::XMLError xmlerr = xml.Parse(c.get_data(), c.length());
 
 			if ( libXML::XML_SUCCESS == xmlerr)
 			{

@@ -1618,7 +1618,7 @@ void SsRendererImpl::makePrimitive( SsPartState* state )
 //		glTranslatef( uvw + uv_trans.x , uvh + uv_trans.y , 0 );
 //		glRotatef( state->uvRotation, 0.0, 0.0, 1.0);
 		TranslationMatrix( transMat, uvw + uv_trans.x, uvh + uv_trans.y, 0 );
-		Matrix4RotationZ( rotateMat, state->uvRotation * Math_PI / 180.0 );
+		Matrix4RotationZ( rotateMat, state->uvRotation * 3.1415926535897932384626433833 / 180.0 );
 
 		float	uvsh = state->uvScale.x;
 		float	uvsv = state->uvScale.y;

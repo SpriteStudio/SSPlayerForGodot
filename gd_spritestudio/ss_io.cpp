@@ -2095,7 +2095,7 @@ bool SsIO::pull( StreamPeerBuffer& st, SsEffectBehavior& behavior )
 
 bool SsIO::pull( StreamPeerBuffer& st, SsString& str )
 {
-	str = st.get_utf8_string().utf8();
+	str = st.get_utf8_string().utf8().get_data();
 
 	return	true;
 }
