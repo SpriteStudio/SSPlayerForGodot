@@ -15,9 +15,7 @@ GdResourceSsProject::GdResourceSsProject()
 	m_pProject = NULL;
 	m_strRoot = "";
 
-	for ( int i = 0; i < m_mapResAnimePack.size(); i++ ) {
-		m_mapResAnimePack.erase( m_mapResAnimePack.getk( i ) );
-	}
+	m_mapResAnimePack.clear();
 	m_vecResCellMap.clear();
 	m_vecResEffect.clear();
 }
@@ -29,9 +27,7 @@ GdResourceSsProject::~GdResourceSsProject()
 		m_pProject = NULL;
 	}
 
-	for ( int i = 0; i < m_mapResAnimePack.size(); i++ ) {
-		m_mapResAnimePack.erase( m_mapResAnimePack.getk( i ) );
-	}
+	m_mapResAnimePack.clear();
 	m_vecResCellMap.clear();
 	m_vecResEffect.clear();
 }

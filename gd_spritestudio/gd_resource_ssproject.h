@@ -10,13 +10,13 @@
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
 #include <godot_cpp/classes/resource.hpp>
 #include <godot_cpp/classes/resource_loader.hpp>
-#include <godot_cpp/templates/vmap.hpp>
+#include <godot_cpp/templates/hash_map.hpp>
 using namespace godot;
 #else
 #ifdef GD_V4
 #include "core/io/resource.h"
 #include "core/io/resource_loader.h"
-#include "core/templates/vmap.h"
+#include "core/templates/hash_map.h"
 #endif
 #ifdef GD_V3
 #include "core/resource.h"
@@ -86,7 +86,7 @@ private :
 	String		m_strImage;
 	String		m_strEffect;
 
-	VMap<String,Ref<GdResourceSsAnimePack>>	m_mapResAnimePack;
+	HashMap<String,Ref<GdResourceSsAnimePack>>	m_mapResAnimePack;
 	Vector<Ref<GdResourceSsCellMap>>		m_vecResCellMap;
 	Vector<Ref<GdResourceSsEffect>>			m_vecResEffect;
 };

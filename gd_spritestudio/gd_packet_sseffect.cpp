@@ -21,7 +21,7 @@ bool GdPacketSsEffect::write( const String& strRaw )
 	if ( c.length() > 0 ) {
 		libXML::XMLDocument		xml;
 
-		if ( libXML::XML_SUCCESS == xml.Parse( c, c.length() ) ) {
+		if ( libXML::XML_SUCCESS == xml.Parse( c.get_data(), c.length() ) ) {
 			SsXmlIArchiver		ar( xml.GetDocument(), "SpriteStudioEffect" );
 			SsEffectFile		effect;
 
