@@ -47,14 +47,17 @@ if ($opts.build -eq "release") {
 popd
 
 $inputDir="SsConverter3/target"
-$outputDir="runtime/libs/$($opts.platform)/$($opts.arch)"
-echo $outputDir
+$outputDir="runtime/libs//$($opts.platform)"
 New-Item "./${outputDir}" -ItemType Directory -ErrorAction SilentlyContinue
+New-Item "./${outputDir}/$($opts.arch)" -ItemType Directory -ErrorAction SilentlyContinue
 
 $targets= "editor", "template_release", "template_debug"
 foreach($target in $targets) {
     Copy-Item ./${inputDir}/$($opts.build)/ssruntime.lib ./${outputDir}/ssruntime.$($opts.platform).${target}.$($opts.arch).lib -Force
     Copy-Item ./${inputDir}/$($opts.build)/ssconverter3.lib ./${outputDir}/ssconverter3.$($opts.platform).${target}.$($opts.arch).lib -Force
 }
+Copy-Item ./${inputDir}/$($opts.build)/ssruntime.lib ./${outputDir}/$($opts.arch)/ssruntime.lib -Force
+Copy-Item ./${inputDir}/$($opts.build)/ssconverter3.lib ./${outputDir}/$($opts.arch)/ssconverter3.lib -Force
+
 
 popd
