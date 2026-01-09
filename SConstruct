@@ -64,18 +64,36 @@ Run the following command to download godot-cpp:
 
 env = SConscript("godot-cpp/SConstruct", {"env": env, "customs": customs})
 
+sources = Glob("gd_spritestudio/*.cpp")
+sources.append("gd_spritestudio/flatbuffers/src/idl_parser.cpp")
+sources.append("gd_spritestudio/flatbuffers/src/idl_gen_text.cpp")
+sources.append("gd_spritestudio/flatbuffers/src/reflection.cpp")
+sources.append("gd_spritestudio/flatbuffers/src/util.cpp")
+
 env.Append(CPPDEFINES = "SPRITESTUDIO_GODOT_EXTENSION")
-env.Append(CPPDEFINES = "_NOTUSE_STBI")
-env.Append(CPPDEFINES = "_NOTUSE_TEXTURE_FULLPATH")
-env.Append(CPPDEFINES = "_NOTUSE_EXCEPTION")
-env.Append(CPPPATH=["src/"])
 env.Append(
 	CPPPATH=[
-		"gd_spritestudio/SpriteStudio6-SDK/Common/Loader",
-		"gd_spritestudio/SpriteStudio6-SDK/Common/Animator",
-		"gd_spritestudio/SpriteStudio6-SDK/Common/Helper",
+        "gd_spritestudio/flatbuffers/src",
+        "gd_spritestudio/flatbuffers/include",
+        "gd_spritestudio/runtime",
 	]
 )
+
+extension_path = env.Dir('.').abspath
+if env['platform'] == 'macos':
+    runtime_libpath = os.path.join(extension_path, "gd_spritestudio", "runtime", "libs", env['platform'])
+else:
+    runtime_libpath = os.path.join(extension_path, "gd_spritestudio", "runtime", "libs", env['platform'], env['arch'])
+
+env.Append(
+    LIBPATH=[
+        runtime_libpath,
+    ])
+
+if env['target'] == 'editor':
+    env.Append(LIBS=["ssconverter3"])
+env.Append(LIBS=["ssruntime"])
+
 
 if env["platform"] == 'macos':
     env.Append(LINKFLAGS=["-framework", "CoreFoundation"])
@@ -84,14 +102,6 @@ if env["platform"] == 'macos':
 if env["platform"] == "ios":
     env.Append(CCFLAGS=["-miphoneos-version-min=12.0"])
     env.Append(LINKFLAGS=["-miphoneos-version-min=12.0"])
-
-sources = Glob("gd_spritestudio/*.cpp")
-sources.extend(Glob("gd_spritestudio/SpriteStudio6-SDK/Common/Loader/tinyxml2/*.cpp"))
-sources.extend(Glob("gd_spritestudio/SpriteStudio6-SDK/Common/Loader/*.cpp"))
-sources.extend(Glob("gd_spritestudio/SpriteStudio6-SDK/Common/Animator/*.cpp"))
-sources.extend(Glob("gd_spritestudio/SpriteStudio6-SDK/Common/Helper/DebugPrint.cpp"))
-sources.extend(Glob("gd_spritestudio/SpriteStudio6-SDK/Common/Helper/IsshTexture.cpp"))
-sources.extend(Glob("gd_spritestudio/SpriteStudio6-SDK/Common/Helper/stb_image.c"))
 
 if env["target"] in ["editor", "template_debug"]:
     try:
