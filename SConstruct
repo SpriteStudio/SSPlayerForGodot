@@ -84,7 +84,7 @@ if env['platform'] == 'macos':
     runtime_libpath = os.path.join(extension_path, "gd_spritestudio", "runtime", "libs", env['platform'])
 else:
     runtime_libpath = os.path.join(extension_path, "gd_spritestudio", "runtime", "libs", env['platform'], env['arch'])
-
+print(runtime_libpath)
 env.Append(
     LIBPATH=[
         runtime_libpath,

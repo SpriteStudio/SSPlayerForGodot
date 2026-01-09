@@ -4,7 +4,7 @@ $baseDirectory = Split-Path -Parent $PSCommandPath
 $rootDirectory = Split-Path -Parent $baseDirectory
 $arch = (Get-Item Env:PROCESSOR_ARCHITECTURE).Value
 if ($arch -match "AMD64") {
-    $HOST_ARCH = "x64"
+    $HOST_ARCH = "x86_64"
 } else {
     $HOST_ARCH = "arm64"
 }
@@ -86,10 +86,10 @@ echo "scons command options: $scons_command_opts"
 
 pushd $rootDirectory
 
-$BINDIR = "bin/${opts[platform]}"
+$BINDIR = "bin/$($opts.platform)"
 mkdir "$BINDIR" -Force
 Invoke-Expression "scons $scons_command_opts"
 
-cp misc\ssplayer_godot_extension.gdextension examples\feature_test_gdextension\bin
+cp misc\ssplayer_godot_extension.gdextension examples\feature_test_gdextension\bin\ssplayer_godot_extension.gdextension
 
 popd

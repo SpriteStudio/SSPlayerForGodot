@@ -2,6 +2,8 @@
 * \file		register_types.cpp
 * \author	CRI Middleware Co., Ltd.
 */
+
+#include "defs.h"
 #include "register_types.h"
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
