@@ -21,7 +21,7 @@ env_gd_spritestudio.Append(
 	])
 
 module_path = env.Dir('.').abspath
-if env['platform'] == 'macos':
+if env['platform'] == 'macos' or env['platform'] == 'windows':
     runtime_libpath = os.path.join(module_path, "runtime", "libs", env['platform'])
 else:
     runtime_libpath = os.path.join(module_path, "runtime", "libs", env['platform'], env['arch'])
