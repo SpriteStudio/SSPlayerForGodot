@@ -1,29 +1,40 @@
-﻿#!/usr/bin/env python
+#!/usr/bin/env python
 
 Import("env")
 Import("env_modules")
+import os
 
 env_gd_spritestudio = env_modules.Clone()
 
 env_gd_spritestudio.add_source_files(env.modules_sources, "*.cpp")
-env_gd_spritestudio.add_source_files(env.modules_sources, "SpriteStudio6-SDK/Common/Loader/tinyxml2/*.cpp")
-env_gd_spritestudio.add_source_files(env.modules_sources, "SpriteStudio6-SDK/Common/Loader/*.cpp")
-# env_gd_spritestudio.add_source_files(env.modules_sources, "SpriteStudio6-SDK/Common/Helper/*.cpp")
-env_gd_spritestudio.add_source_files(env.modules_sources, "SpriteStudio6-SDK/Common/Animator/*.cpp")
-env_gd_spritestudio.add_source_files(env.modules_sources, "SpriteStudio6-SDK/Common/Helper/DebugPrint.cpp")
-env_gd_spritestudio.add_source_files(env.modules_sources, "SpriteStudio6-SDK/Common/Helper/IsshTexture.cpp")
+env_gd_spritestudio.add_source_files(env.modules_sources, "flatbuffers/src/idl_parser.cpp")
+env_gd_spritestudio.add_source_files(env.modules_sources, "flatbuffers/src/idl_gen_text.cpp")
+env_gd_spritestudio.add_source_files(env.modules_sources, "flatbuffers/src/reflection.cpp")
+env_gd_spritestudio.add_source_files(env.modules_sources, "flatbuffers/src/util.cpp")
 
-
-env_gd_spritestudio.Append(CPPDEFINES = '_NOTUSE_STBI')
-env_gd_spritestudio.Append(CPPDEFINES = '_NOTUSE_TEXTURE_FULLPATH')
-env_gd_spritestudio.Append(CPPDEFINES = '_NOTUSE_EXCEPTION')
 
 env_gd_spritestudio.Append(
 	CPPPATH=[
-		"SpriteStudio6-SDK/Common/Loader",
-		"SpriteStudio6-SDK/Common/Helper",
-		"SpriteStudio6-SDK/Common/Animator",
+        "flatbuffers/src",
+        "flatbuffers/include",
+        "runtime",
 	])
+
+module_path = env.Dir('.').abspath
+if env['platform'] == 'macos':
+    runtime_libpath = os.path.join(module_path, "runtime", "libs", env['platform'])
+else:
+    runtime_libpath = os.path.join(module_path, "runtime", "libs", env['platform'], env['arch'])
+
+env.Append(
+    LIBPATH=[
+        runtime_libpath,
+    ])
+
+if env['target'] == 'editor':
+    env.Append(LIBS=["ssconverter3"])
+env.Append(LIBS=["ssruntime"])
+
 
 if not env_gd_spritestudio.msvc:
     env_gd_spritestudio.Append(CXXFLAGS=["-Wno-inconsistent-missing-override"])

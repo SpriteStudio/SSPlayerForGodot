@@ -1,0 +1,18 @@
+#!/bin/bash -e
+
+BASEDIR=$(dirname $0)
+BASEDIR=$(cd $BASEDIR && pwd -P)
+ROOTDIR=${BASEDIR}/..
+ROOTDIR=$(cd $ROOTDIR && pwd -P)
+
+pushd ${ROOTDIR}/gd_spritestudio > /dev/null
+FLATC=flatc
+
+/bin/mkdir -p runtime
+for f in SsConverter3/libs/ssruntime/fbs/*.fbs; do
+    name=$(basename "$f" .fbs)
+    ${FLATC} -c $f    
+    /bin/mv "${name}_generated.h" ./runtime/${name}.h
+done
+
+popd > /dev/null

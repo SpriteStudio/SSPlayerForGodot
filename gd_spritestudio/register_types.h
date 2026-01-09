@@ -1,4 +1,4 @@
-﻿/*!
+/*!
 * \file		register_types.h
 * \author	CRI Middleware Co., Ltd.
 */
