@@ -1,0 +1,60 @@
+#!/usr/bin/env pwsh
+
+$baseDirectory = Split-Path -Parent $PSCommandPath
+$rootDirectory = Split-Path -Parent $baseDirectory
+$arch = (Get-Item Env:PROCESSOR_ARCHITECTURE).Value
+if ($arch -match "AMD64") {
+    $HOST_ARCH = "x86_64"
+} else {
+    $HOST_ARCH = "arm64"
+}
+$cpus = (Get-Item Env:NUMBER_OF_PROCESSORS).Value
+
+# Godot scons default options
+$default_opts = @{
+    arch = $HOST_ARCH
+    platform = "windows"
+    build = "debug"
+}
+
+$opts = @{}
+$opts += $default_opts
+
+$APP = Split-Path -Leaf $PSCommandPath
+function usage() {
+    echo "Usage: $APP [options]"
+}
+
+foreach ($item in $Args) {
+    if ($item -match "=") {
+        $kv = $item -split "="
+        $opts[$kv[0]] = $kv[1].ToLower()
+    } elseif ($item -cmatch "help" -or $item -eq "-h" -or $item -eq "--help") {
+        usage
+        exit 0
+    }
+}
+$opts
+echo ""
+
+pushd $rootDirectory/gd_spritestudio
+pushd SsConverter3
+if ($opts.build -eq "release") {
+    & ./scripts/release-windows.ps1
+} else {
+    & cargo build -p ssconverter3 -p ssruntime
+}
+popd
+
+$inputDir="SsConverter3/target"
+$outputDir="runtime/libs/$($opts.platform)/$($opts.arch)"
+echo $outputDir
+New-Item "./${outputDir}" -ItemType Directory -ErrorAction SilentlyContinue
+
+$targets= "editor", "template_release", "template_debug"
+foreach($target in $targets) {
+    Copy-Item ./${inputDir}/$($opts.build)/ssruntime.lib ./${outputDir}/ssruntime.$($opts.platform).${target}.$($opts.arch).lib -Force
+    Copy-Item ./${inputDir}/$($opts.build)/ssconverter3.lib ./${outputDir}/ssconverter3.$($opts.platform).${target}.$($opts.arch).lib -Force
+}
+
+popd
