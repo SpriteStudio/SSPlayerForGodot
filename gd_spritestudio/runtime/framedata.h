@@ -17,7 +17,6 @@ namespace ss {
 namespace runtime {
 
 struct PartAttributeCell;
-struct PartAttributeCellBuilder;
 
 struct Vec2;
 
@@ -26,7 +25,6 @@ struct U8Rect;
 struct SsAttributePartColorKeyValueColor;
 
 struct PartAttributePartColor;
-struct PartAttributePartColorBuilder;
 
 struct PartAttributeVertex;
 
@@ -34,7 +32,6 @@ struct PartAttributeDeform;
 struct PartAttributeDeformBuilder;
 
 struct PartAttributeShader;
-struct PartAttributeShaderBuilder;
 
 struct PartState;
 struct PartStateBuilder;
@@ -221,6 +218,29 @@ inline const char *EnumNameUpdateAttributeFlags(UpdateAttributeFlags e) {
   }
 }
 
+FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(4) PartAttributeCell FLATBUFFERS_FINAL_CLASS {
+ private:
+  int32_t map_id_;
+  uint32_t name_hash_;
+
+ public:
+  PartAttributeCell()
+      : map_id_(0),
+        name_hash_(0) {
+  }
+  PartAttributeCell(int32_t _map_id, uint32_t _name_hash)
+      : map_id_(::flatbuffers::EndianScalar(_map_id)),
+        name_hash_(::flatbuffers::EndianScalar(_name_hash)) {
+  }
+  int32_t map_id() const {
+    return ::flatbuffers::EndianScalar(map_id_);
+  }
+  uint32_t name_hash() const {
+    return ::flatbuffers::EndianScalar(name_hash_);
+  }
+};
+FLATBUFFERS_STRUCT_END(PartAttributeCell, 8);
+
 FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(4) Vec2 FLATBUFFERS_FINAL_CLASS {
  private:
   float x_;
@@ -302,6 +322,56 @@ FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(4) SsAttributePartColorKeyValueColor FLATBUF
 };
 FLATBUFFERS_STRUCT_END(SsAttributePartColorKeyValueColor, 8);
 
+FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(4) PartAttributePartColor FLATBUFFERS_FINAL_CLASS {
+ private:
+  uint8_t blend_type_;
+  int8_t padding0__;  int16_t padding1__;
+  ss::runtime::SsAttributePartColorKeyValueColor lt_;
+  ss::runtime::SsAttributePartColorKeyValueColor rt_;
+  ss::runtime::SsAttributePartColorKeyValueColor lb_;
+  ss::runtime::SsAttributePartColorKeyValueColor rb_;
+
+ public:
+  PartAttributePartColor()
+      : blend_type_(0),
+        padding0__(0),
+        padding1__(0),
+        lt_(),
+        rt_(),
+        lb_(),
+        rb_() {
+    (void)padding0__;
+    (void)padding1__;
+  }
+  PartAttributePartColor(ss::runtime::BlendType _blend_type, const ss::runtime::SsAttributePartColorKeyValueColor &_lt, const ss::runtime::SsAttributePartColorKeyValueColor &_rt, const ss::runtime::SsAttributePartColorKeyValueColor &_lb, const ss::runtime::SsAttributePartColorKeyValueColor &_rb)
+      : blend_type_(::flatbuffers::EndianScalar(static_cast<uint8_t>(_blend_type))),
+        padding0__(0),
+        padding1__(0),
+        lt_(_lt),
+        rt_(_rt),
+        lb_(_lb),
+        rb_(_rb) {
+    (void)padding0__;
+    (void)padding1__;
+  }
+  ss::runtime::BlendType blend_type() const {
+    return static_cast<ss::runtime::BlendType>(::flatbuffers::EndianScalar(blend_type_));
+  }
+  const ss::runtime::SsAttributePartColorKeyValueColor &lt() const {
+    return lt_;
+  }
+  const ss::runtime::SsAttributePartColorKeyValueColor &rt() const {
+    return rt_;
+  }
+  const ss::runtime::SsAttributePartColorKeyValueColor &lb() const {
+    return lb_;
+  }
+  const ss::runtime::SsAttributePartColorKeyValueColor &rb() const {
+    return rb_;
+  }
+};
+FLATBUFFERS_STRUCT_END(PartAttributePartColor, 36);
+
 FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(4) PartAttributeVertex FLATBUFFERS_FINAL_CLASS {
  private:
   ss::runtime::Vec2 lt_;
@@ -337,151 +407,94 @@ FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(4) PartAttributeVertex FLATBUFFERS_FINAL_CLA
 };
 FLATBUFFERS_STRUCT_END(PartAttributeVertex, 32);
 
-struct PartAttributeCell FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
-  typedef PartAttributeCellBuilder Builder;
-  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
-    VT_MAP_ID = 4,
-    VT_NAME = 6
-  };
-  int32_t map_id() const {
-    return GetField<int32_t>(VT_MAP_ID, 0);
+FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(4) PartAttributeShader FLATBUFFERS_FINAL_CLASS {
+ private:
+  uint32_t id_hash_;
+  float param0_;
+  float param1_;
+  float param2_;
+  float param3_;
+  float param4_;
+  float param5_;
+  float param6_;
+  float param7_;
+  int32_t map0_id_;
+  uint32_t map0_name_hash_;
+  int32_t map1_id_;
+  uint32_t map1_name_hash_;
+
+ public:
+  PartAttributeShader()
+      : id_hash_(0),
+        param0_(0),
+        param1_(0),
+        param2_(0),
+        param3_(0),
+        param4_(0),
+        param5_(0),
+        param6_(0),
+        param7_(0),
+        map0_id_(0),
+        map0_name_hash_(0),
+        map1_id_(0),
+        map1_name_hash_(0) {
   }
-  const ::flatbuffers::String *name() const {
-    return GetPointer<const ::flatbuffers::String *>(VT_NAME);
+  PartAttributeShader(uint32_t _id_hash, float _param0, float _param1, float _param2, float _param3, float _param4, float _param5, float _param6, float _param7, int32_t _map0_id, uint32_t _map0_name_hash, int32_t _map1_id, uint32_t _map1_name_hash)
+      : id_hash_(::flatbuffers::EndianScalar(_id_hash)),
+        param0_(::flatbuffers::EndianScalar(_param0)),
+        param1_(::flatbuffers::EndianScalar(_param1)),
+        param2_(::flatbuffers::EndianScalar(_param2)),
+        param3_(::flatbuffers::EndianScalar(_param3)),
+        param4_(::flatbuffers::EndianScalar(_param4)),
+        param5_(::flatbuffers::EndianScalar(_param5)),
+        param6_(::flatbuffers::EndianScalar(_param6)),
+        param7_(::flatbuffers::EndianScalar(_param7)),
+        map0_id_(::flatbuffers::EndianScalar(_map0_id)),
+        map0_name_hash_(::flatbuffers::EndianScalar(_map0_name_hash)),
+        map1_id_(::flatbuffers::EndianScalar(_map1_id)),
+        map1_name_hash_(::flatbuffers::EndianScalar(_map1_name_hash)) {
   }
-  template <bool B = false>
-  bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
-    return VerifyTableStart(verifier) &&
-           VerifyField<int32_t>(verifier, VT_MAP_ID, 4) &&
-           VerifyOffset(verifier, VT_NAME) &&
-           verifier.VerifyString(name()) &&
-           verifier.EndTable();
+  uint32_t id_hash() const {
+    return ::flatbuffers::EndianScalar(id_hash_);
+  }
+  float param0() const {
+    return ::flatbuffers::EndianScalar(param0_);
+  }
+  float param1() const {
+    return ::flatbuffers::EndianScalar(param1_);
+  }
+  float param2() const {
+    return ::flatbuffers::EndianScalar(param2_);
+  }
+  float param3() const {
+    return ::flatbuffers::EndianScalar(param3_);
+  }
+  float param4() const {
+    return ::flatbuffers::EndianScalar(param4_);
+  }
+  float param5() const {
+    return ::flatbuffers::EndianScalar(param5_);
+  }
+  float param6() const {
+    return ::flatbuffers::EndianScalar(param6_);
+  }
+  float param7() const {
+    return ::flatbuffers::EndianScalar(param7_);
+  }
+  int32_t map0_id() const {
+    return ::flatbuffers::EndianScalar(map0_id_);
+  }
+  uint32_t map0_name_hash() const {
+    return ::flatbuffers::EndianScalar(map0_name_hash_);
+  }
+  int32_t map1_id() const {
+    return ::flatbuffers::EndianScalar(map1_id_);
+  }
+  uint32_t map1_name_hash() const {
+    return ::flatbuffers::EndianScalar(map1_name_hash_);
   }
 };
-
-struct PartAttributeCellBuilder {
-  typedef PartAttributeCell Table;
-  ::flatbuffers::FlatBufferBuilder &fbb_;
-  ::flatbuffers::uoffset_t start_;
-  void add_map_id(int32_t map_id) {
-    fbb_.AddElement<int32_t>(PartAttributeCell::VT_MAP_ID, map_id, 0);
-  }
-  void add_name(::flatbuffers::Offset<::flatbuffers::String> name) {
-    fbb_.AddOffset(PartAttributeCell::VT_NAME, name);
-  }
-  explicit PartAttributeCellBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
-        : fbb_(_fbb) {
-    start_ = fbb_.StartTable();
-  }
-  ::flatbuffers::Offset<PartAttributeCell> Finish() {
-    const auto end = fbb_.EndTable(start_);
-    auto o = ::flatbuffers::Offset<PartAttributeCell>(end);
-    return o;
-  }
-};
-
-inline ::flatbuffers::Offset<PartAttributeCell> CreatePartAttributeCell(
-    ::flatbuffers::FlatBufferBuilder &_fbb,
-    int32_t map_id = 0,
-    ::flatbuffers::Offset<::flatbuffers::String> name = 0) {
-  PartAttributeCellBuilder builder_(_fbb);
-  builder_.add_name(name);
-  builder_.add_map_id(map_id);
-  return builder_.Finish();
-}
-
-inline ::flatbuffers::Offset<PartAttributeCell> CreatePartAttributeCellDirect(
-    ::flatbuffers::FlatBufferBuilder &_fbb,
-    int32_t map_id = 0,
-    const char *name = nullptr) {
-  auto name__ = name ? _fbb.CreateString(name) : 0;
-  return ss::runtime::CreatePartAttributeCell(
-      _fbb,
-      map_id,
-      name__);
-}
-
-struct PartAttributePartColor FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
-  typedef PartAttributePartColorBuilder Builder;
-  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
-    VT_BLEND_TYPE = 4,
-    VT_LT = 6,
-    VT_RT = 8,
-    VT_LB = 10,
-    VT_RB = 12
-  };
-  ss::runtime::BlendType blend_type() const {
-    return static_cast<ss::runtime::BlendType>(GetField<uint8_t>(VT_BLEND_TYPE, 0));
-  }
-  const ss::runtime::SsAttributePartColorKeyValueColor *lt() const {
-    return GetStruct<const ss::runtime::SsAttributePartColorKeyValueColor *>(VT_LT);
-  }
-  const ss::runtime::SsAttributePartColorKeyValueColor *rt() const {
-    return GetStruct<const ss::runtime::SsAttributePartColorKeyValueColor *>(VT_RT);
-  }
-  const ss::runtime::SsAttributePartColorKeyValueColor *lb() const {
-    return GetStruct<const ss::runtime::SsAttributePartColorKeyValueColor *>(VT_LB);
-  }
-  const ss::runtime::SsAttributePartColorKeyValueColor *rb() const {
-    return GetStruct<const ss::runtime::SsAttributePartColorKeyValueColor *>(VT_RB);
-  }
-  template <bool B = false>
-  bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
-    return VerifyTableStart(verifier) &&
-           VerifyField<uint8_t>(verifier, VT_BLEND_TYPE, 1) &&
-           VerifyField<ss::runtime::SsAttributePartColorKeyValueColor>(verifier, VT_LT, 4) &&
-           VerifyField<ss::runtime::SsAttributePartColorKeyValueColor>(verifier, VT_RT, 4) &&
-           VerifyField<ss::runtime::SsAttributePartColorKeyValueColor>(verifier, VT_LB, 4) &&
-           VerifyField<ss::runtime::SsAttributePartColorKeyValueColor>(verifier, VT_RB, 4) &&
-           verifier.EndTable();
-  }
-};
-
-struct PartAttributePartColorBuilder {
-  typedef PartAttributePartColor Table;
-  ::flatbuffers::FlatBufferBuilder &fbb_;
-  ::flatbuffers::uoffset_t start_;
-  void add_blend_type(ss::runtime::BlendType blend_type) {
-    fbb_.AddElement<uint8_t>(PartAttributePartColor::VT_BLEND_TYPE, static_cast<uint8_t>(blend_type), 0);
-  }
-  void add_lt(const ss::runtime::SsAttributePartColorKeyValueColor *lt) {
-    fbb_.AddStruct(PartAttributePartColor::VT_LT, lt);
-  }
-  void add_rt(const ss::runtime::SsAttributePartColorKeyValueColor *rt) {
-    fbb_.AddStruct(PartAttributePartColor::VT_RT, rt);
-  }
-  void add_lb(const ss::runtime::SsAttributePartColorKeyValueColor *lb) {
-    fbb_.AddStruct(PartAttributePartColor::VT_LB, lb);
-  }
-  void add_rb(const ss::runtime::SsAttributePartColorKeyValueColor *rb) {
-    fbb_.AddStruct(PartAttributePartColor::VT_RB, rb);
-  }
-  explicit PartAttributePartColorBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
-        : fbb_(_fbb) {
-    start_ = fbb_.StartTable();
-  }
-  ::flatbuffers::Offset<PartAttributePartColor> Finish() {
-    const auto end = fbb_.EndTable(start_);
-    auto o = ::flatbuffers::Offset<PartAttributePartColor>(end);
-    return o;
-  }
-};
-
-inline ::flatbuffers::Offset<PartAttributePartColor> CreatePartAttributePartColor(
-    ::flatbuffers::FlatBufferBuilder &_fbb,
-    ss::runtime::BlendType blend_type = ss::runtime::BlendType_Mix,
-    const ss::runtime::SsAttributePartColorKeyValueColor *lt = nullptr,
-    const ss::runtime::SsAttributePartColorKeyValueColor *rt = nullptr,
-    const ss::runtime::SsAttributePartColorKeyValueColor *lb = nullptr,
-    const ss::runtime::SsAttributePartColorKeyValueColor *rb = nullptr) {
-  PartAttributePartColorBuilder builder_(_fbb);
-  builder_.add_rb(rb);
-  builder_.add_lb(lb);
-  builder_.add_rt(rt);
-  builder_.add_lt(lt);
-  builder_.add_blend_type(blend_type);
-  return builder_.Finish();
-}
+FLATBUFFERS_STRUCT_END(PartAttributeShader, 52);
 
 struct PartAttributeDeform FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   typedef PartAttributeDeformBuilder Builder;
@@ -549,259 +562,55 @@ inline ::flatbuffers::Offset<PartAttributeDeform> CreatePartAttributeDeformDirec
       index__);
 }
 
-struct PartAttributeShader FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
-  typedef PartAttributeShaderBuilder Builder;
-  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
-    VT_ID = 4,
-    VT_PARAM0 = 6,
-    VT_PARAM1 = 8,
-    VT_PARAM2 = 10,
-    VT_PARAM3 = 12,
-    VT_PARAM4 = 14,
-    VT_PARAM5 = 16,
-    VT_PARAM6 = 18,
-    VT_PARAM7 = 20,
-    VT_MAP0_ID = 22,
-    VT_MAP0_NAME = 24,
-    VT_MAP1_ID = 26,
-    VT_MAP1_NAME = 28
-  };
-  const ::flatbuffers::String *id() const {
-    return GetPointer<const ::flatbuffers::String *>(VT_ID);
-  }
-  float param0() const {
-    return GetField<float>(VT_PARAM0, 0.0f);
-  }
-  float param1() const {
-    return GetField<float>(VT_PARAM1, 0.0f);
-  }
-  float param2() const {
-    return GetField<float>(VT_PARAM2, 0.0f);
-  }
-  float param3() const {
-    return GetField<float>(VT_PARAM3, 0.0f);
-  }
-  float param4() const {
-    return GetField<float>(VT_PARAM4, 0.0f);
-  }
-  float param5() const {
-    return GetField<float>(VT_PARAM5, 0.0f);
-  }
-  float param6() const {
-    return GetField<float>(VT_PARAM6, 0.0f);
-  }
-  float param7() const {
-    return GetField<float>(VT_PARAM7, 0.0f);
-  }
-  int32_t map0_id() const {
-    return GetField<int32_t>(VT_MAP0_ID, 0);
-  }
-  const ::flatbuffers::String *map0_name() const {
-    return GetPointer<const ::flatbuffers::String *>(VT_MAP0_NAME);
-  }
-  int32_t map1_id() const {
-    return GetField<int32_t>(VT_MAP1_ID, 0);
-  }
-  const ::flatbuffers::String *map1_name() const {
-    return GetPointer<const ::flatbuffers::String *>(VT_MAP1_NAME);
-  }
-  template <bool B = false>
-  bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
-    return VerifyTableStart(verifier) &&
-           VerifyOffset(verifier, VT_ID) &&
-           verifier.VerifyString(id()) &&
-           VerifyField<float>(verifier, VT_PARAM0, 4) &&
-           VerifyField<float>(verifier, VT_PARAM1, 4) &&
-           VerifyField<float>(verifier, VT_PARAM2, 4) &&
-           VerifyField<float>(verifier, VT_PARAM3, 4) &&
-           VerifyField<float>(verifier, VT_PARAM4, 4) &&
-           VerifyField<float>(verifier, VT_PARAM5, 4) &&
-           VerifyField<float>(verifier, VT_PARAM6, 4) &&
-           VerifyField<float>(verifier, VT_PARAM7, 4) &&
-           VerifyField<int32_t>(verifier, VT_MAP0_ID, 4) &&
-           VerifyOffset(verifier, VT_MAP0_NAME) &&
-           verifier.VerifyString(map0_name()) &&
-           VerifyField<int32_t>(verifier, VT_MAP1_ID, 4) &&
-           VerifyOffset(verifier, VT_MAP1_NAME) &&
-           verifier.VerifyString(map1_name()) &&
-           verifier.EndTable();
-  }
-};
-
-struct PartAttributeShaderBuilder {
-  typedef PartAttributeShader Table;
-  ::flatbuffers::FlatBufferBuilder &fbb_;
-  ::flatbuffers::uoffset_t start_;
-  void add_id(::flatbuffers::Offset<::flatbuffers::String> id) {
-    fbb_.AddOffset(PartAttributeShader::VT_ID, id);
-  }
-  void add_param0(float param0) {
-    fbb_.AddElement<float>(PartAttributeShader::VT_PARAM0, param0, 0.0f);
-  }
-  void add_param1(float param1) {
-    fbb_.AddElement<float>(PartAttributeShader::VT_PARAM1, param1, 0.0f);
-  }
-  void add_param2(float param2) {
-    fbb_.AddElement<float>(PartAttributeShader::VT_PARAM2, param2, 0.0f);
-  }
-  void add_param3(float param3) {
-    fbb_.AddElement<float>(PartAttributeShader::VT_PARAM3, param3, 0.0f);
-  }
-  void add_param4(float param4) {
-    fbb_.AddElement<float>(PartAttributeShader::VT_PARAM4, param4, 0.0f);
-  }
-  void add_param5(float param5) {
-    fbb_.AddElement<float>(PartAttributeShader::VT_PARAM5, param5, 0.0f);
-  }
-  void add_param6(float param6) {
-    fbb_.AddElement<float>(PartAttributeShader::VT_PARAM6, param6, 0.0f);
-  }
-  void add_param7(float param7) {
-    fbb_.AddElement<float>(PartAttributeShader::VT_PARAM7, param7, 0.0f);
-  }
-  void add_map0_id(int32_t map0_id) {
-    fbb_.AddElement<int32_t>(PartAttributeShader::VT_MAP0_ID, map0_id, 0);
-  }
-  void add_map0_name(::flatbuffers::Offset<::flatbuffers::String> map0_name) {
-    fbb_.AddOffset(PartAttributeShader::VT_MAP0_NAME, map0_name);
-  }
-  void add_map1_id(int32_t map1_id) {
-    fbb_.AddElement<int32_t>(PartAttributeShader::VT_MAP1_ID, map1_id, 0);
-  }
-  void add_map1_name(::flatbuffers::Offset<::flatbuffers::String> map1_name) {
-    fbb_.AddOffset(PartAttributeShader::VT_MAP1_NAME, map1_name);
-  }
-  explicit PartAttributeShaderBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
-        : fbb_(_fbb) {
-    start_ = fbb_.StartTable();
-  }
-  ::flatbuffers::Offset<PartAttributeShader> Finish() {
-    const auto end = fbb_.EndTable(start_);
-    auto o = ::flatbuffers::Offset<PartAttributeShader>(end);
-    return o;
-  }
-};
-
-inline ::flatbuffers::Offset<PartAttributeShader> CreatePartAttributeShader(
-    ::flatbuffers::FlatBufferBuilder &_fbb,
-    ::flatbuffers::Offset<::flatbuffers::String> id = 0,
-    float param0 = 0.0f,
-    float param1 = 0.0f,
-    float param2 = 0.0f,
-    float param3 = 0.0f,
-    float param4 = 0.0f,
-    float param5 = 0.0f,
-    float param6 = 0.0f,
-    float param7 = 0.0f,
-    int32_t map0_id = 0,
-    ::flatbuffers::Offset<::flatbuffers::String> map0_name = 0,
-    int32_t map1_id = 0,
-    ::flatbuffers::Offset<::flatbuffers::String> map1_name = 0) {
-  PartAttributeShaderBuilder builder_(_fbb);
-  builder_.add_map1_name(map1_name);
-  builder_.add_map1_id(map1_id);
-  builder_.add_map0_name(map0_name);
-  builder_.add_map0_id(map0_id);
-  builder_.add_param7(param7);
-  builder_.add_param6(param6);
-  builder_.add_param5(param5);
-  builder_.add_param4(param4);
-  builder_.add_param3(param3);
-  builder_.add_param2(param2);
-  builder_.add_param1(param1);
-  builder_.add_param0(param0);
-  builder_.add_id(id);
-  return builder_.Finish();
-}
-
-inline ::flatbuffers::Offset<PartAttributeShader> CreatePartAttributeShaderDirect(
-    ::flatbuffers::FlatBufferBuilder &_fbb,
-    const char *id = nullptr,
-    float param0 = 0.0f,
-    float param1 = 0.0f,
-    float param2 = 0.0f,
-    float param3 = 0.0f,
-    float param4 = 0.0f,
-    float param5 = 0.0f,
-    float param6 = 0.0f,
-    float param7 = 0.0f,
-    int32_t map0_id = 0,
-    const char *map0_name = nullptr,
-    int32_t map1_id = 0,
-    const char *map1_name = nullptr) {
-  auto id__ = id ? _fbb.CreateString(id) : 0;
-  auto map0_name__ = map0_name ? _fbb.CreateString(map0_name) : 0;
-  auto map1_name__ = map1_name ? _fbb.CreateString(map1_name) : 0;
-  return ss::runtime::CreatePartAttributeShader(
-      _fbb,
-      id__,
-      param0,
-      param1,
-      param2,
-      param3,
-      param4,
-      param5,
-      param6,
-      param7,
-      map0_id,
-      map0_name__,
-      map1_id,
-      map1_name__);
-}
-
 struct PartState FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   typedef PartStateBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
-    VT_PART_INDEX = 4,
-    VT_UPDATE_FLAG = 6,
-    VT_CELL = 8,
-    VT_POSITION_X = 10,
-    VT_POSITION_Y = 12,
-    VT_POSITION_Z = 14,
-    VT_ROTATION_X = 16,
-    VT_ROTATION_Y = 18,
-    VT_ROTATION_Z = 20,
-    VT_SCALE_X = 22,
-    VT_SCALE_Y = 24,
-    VT_LOCAL_SCALE_X = 26,
-    VT_LOCAL_SCALE_Y = 28,
-    VT_OPACITY = 30,
-    VT_LOCALOPACITY = 32,
-    VT_PRIORITY = 34,
-    VT_FLIP_V = 36,
-    VT_FLIP_H = 38,
-    VT_HIDE = 40,
-    VT_PARTS_COLOR = 42,
-    VT_SHADER = 44,
-    VT_VERTEX = 46,
-    VT_PIVOT_X = 48,
-    VT_PIVOT_Y = 50,
-    VT_ANCHOR_X = 52,
-    VT_ANCHOR_Y = 54,
-    VT_SIZE_X = 56,
-    VT_SIZE_Y = 58,
-    VT_IMG_FLIP_H = 60,
-    VT_IMG_FLIP_V = 62,
-    VT_UV_MOVE_X = 64,
-    VT_UV_MOVE_Y = 66,
-    VT_UV_MOVE_Z = 68,
-    VT_UV_SCALE_X = 70,
-    VT_UV_SCALE_Y = 72,
-    VT_BOUNDING_RADIUS = 74,
-    VT_MASK = 76,
-    VT_SKEW_X = 78,
-    VT_SKEW_Y = 80,
-    VT_DEFORM = 82,
-    VT_TEXTURE = 84
+    VT_UPDATE_FLAG = 4,
+    VT_CELL = 6,
+    VT_POSITION_X = 8,
+    VT_POSITION_Y = 10,
+    VT_POSITION_Z = 12,
+    VT_ROTATION_X = 14,
+    VT_ROTATION_Y = 16,
+    VT_ROTATION_Z = 18,
+    VT_SCALE_X = 20,
+    VT_SCALE_Y = 22,
+    VT_LOCAL_SCALE_X = 24,
+    VT_LOCAL_SCALE_Y = 26,
+    VT_OPACITY = 28,
+    VT_LOCALOPACITY = 30,
+    VT_PRIORITY = 32,
+    VT_FLIP_V = 34,
+    VT_FLIP_H = 36,
+    VT_HIDE = 38,
+    VT_PARTS_COLOR = 40,
+    VT_SHADER = 42,
+    VT_VERTEX = 44,
+    VT_PIVOT_X = 46,
+    VT_PIVOT_Y = 48,
+    VT_ANCHOR_X = 50,
+    VT_ANCHOR_Y = 52,
+    VT_SIZE_X = 54,
+    VT_SIZE_Y = 56,
+    VT_IMG_FLIP_H = 58,
+    VT_IMG_FLIP_V = 60,
+    VT_UV_MOVE_X = 62,
+    VT_UV_MOVE_Y = 64,
+    VT_UV_MOVE_Z = 66,
+    VT_UV_SCALE_X = 68,
+    VT_UV_SCALE_Y = 70,
+    VT_BOUNDING_RADIUS = 72,
+    VT_MASK = 74,
+    VT_SKEW_X = 76,
+    VT_SKEW_Y = 78,
+    VT_DEFORM = 80,
+    VT_TEXTURE = 82
   };
-  uint16_t part_index() const {
-    return GetField<uint16_t>(VT_PART_INDEX, 0);
-  }
   ss::runtime::UpdateAttributeFlags update_flag() const {
     return static_cast<ss::runtime::UpdateAttributeFlags>(GetField<uint64_t>(VT_UPDATE_FLAG, 0));
   }
   const ss::runtime::PartAttributeCell *cell() const {
-    return GetPointer<const ss::runtime::PartAttributeCell *>(VT_CELL);
+    return GetStruct<const ss::runtime::PartAttributeCell *>(VT_CELL);
   }
   float position_x() const {
     return GetField<float>(VT_POSITION_X, 0.0f);
@@ -852,10 +661,10 @@ struct PartState FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
     return GetField<uint8_t>(VT_HIDE, 0) != 0;
   }
   const ss::runtime::PartAttributePartColor *parts_color() const {
-    return GetPointer<const ss::runtime::PartAttributePartColor *>(VT_PARTS_COLOR);
+    return GetStruct<const ss::runtime::PartAttributePartColor *>(VT_PARTS_COLOR);
   }
   const ss::runtime::PartAttributeShader *shader() const {
-    return GetPointer<const ss::runtime::PartAttributeShader *>(VT_SHADER);
+    return GetStruct<const ss::runtime::PartAttributeShader *>(VT_SHADER);
   }
   const ss::runtime::PartAttributeVertex *vertex() const {
     return GetStruct<const ss::runtime::PartAttributeVertex *>(VT_VERTEX);
@@ -911,19 +720,17 @@ struct PartState FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   float skew_y() const {
     return GetField<float>(VT_SKEW_Y, 0.0f);
   }
-  const ss::runtime::PartAttributeDeform *deform() const {
-    return GetPointer<const ss::runtime::PartAttributeDeform *>(VT_DEFORM);
+  int32_t deform() const {
+    return GetField<int32_t>(VT_DEFORM, -1);
   }
-  int32_t texture() const {
-    return GetField<int32_t>(VT_TEXTURE, -1);
+  uint32_t texture() const {
+    return GetField<uint32_t>(VT_TEXTURE, 0);
   }
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<uint16_t>(verifier, VT_PART_INDEX, 2) &&
            VerifyField<uint64_t>(verifier, VT_UPDATE_FLAG, 8) &&
-           VerifyOffset(verifier, VT_CELL) &&
-           verifier.VerifyTable(cell()) &&
+           VerifyField<ss::runtime::PartAttributeCell>(verifier, VT_CELL, 4) &&
            VerifyField<float>(verifier, VT_POSITION_X, 4) &&
            VerifyField<float>(verifier, VT_POSITION_Y, 4) &&
            VerifyField<float>(verifier, VT_POSITION_Z, 4) &&
@@ -940,10 +747,8 @@ struct PartState FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyField<uint8_t>(verifier, VT_FLIP_V, 1) &&
            VerifyField<uint8_t>(verifier, VT_FLIP_H, 1) &&
            VerifyField<uint8_t>(verifier, VT_HIDE, 1) &&
-           VerifyOffset(verifier, VT_PARTS_COLOR) &&
-           verifier.VerifyTable(parts_color()) &&
-           VerifyOffset(verifier, VT_SHADER) &&
-           verifier.VerifyTable(shader()) &&
+           VerifyField<ss::runtime::PartAttributePartColor>(verifier, VT_PARTS_COLOR, 4) &&
+           VerifyField<ss::runtime::PartAttributeShader>(verifier, VT_SHADER, 4) &&
            VerifyField<ss::runtime::PartAttributeVertex>(verifier, VT_VERTEX, 4) &&
            VerifyField<float>(verifier, VT_PIVOT_X, 4) &&
            VerifyField<float>(verifier, VT_PIVOT_Y, 4) &&
@@ -962,9 +767,8 @@ struct PartState FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyField<float>(verifier, VT_MASK, 4) &&
            VerifyField<float>(verifier, VT_SKEW_X, 4) &&
            VerifyField<float>(verifier, VT_SKEW_Y, 4) &&
-           VerifyOffset(verifier, VT_DEFORM) &&
-           verifier.VerifyTable(deform()) &&
-           VerifyField<int32_t>(verifier, VT_TEXTURE, 4) &&
+           VerifyField<int32_t>(verifier, VT_DEFORM, 4) &&
+           VerifyField<uint32_t>(verifier, VT_TEXTURE, 4) &&
            verifier.EndTable();
   }
 };
@@ -973,14 +777,11 @@ struct PartStateBuilder {
   typedef PartState Table;
   ::flatbuffers::FlatBufferBuilder &fbb_;
   ::flatbuffers::uoffset_t start_;
-  void add_part_index(uint16_t part_index) {
-    fbb_.AddElement<uint16_t>(PartState::VT_PART_INDEX, part_index, 0);
-  }
   void add_update_flag(ss::runtime::UpdateAttributeFlags update_flag) {
     fbb_.AddElement<uint64_t>(PartState::VT_UPDATE_FLAG, static_cast<uint64_t>(update_flag), 0);
   }
-  void add_cell(::flatbuffers::Offset<ss::runtime::PartAttributeCell> cell) {
-    fbb_.AddOffset(PartState::VT_CELL, cell);
+  void add_cell(const ss::runtime::PartAttributeCell *cell) {
+    fbb_.AddStruct(PartState::VT_CELL, cell);
   }
   void add_position_x(float position_x) {
     fbb_.AddElement<float>(PartState::VT_POSITION_X, position_x, 0.0f);
@@ -1030,11 +831,11 @@ struct PartStateBuilder {
   void add_hide(bool hide) {
     fbb_.AddElement<uint8_t>(PartState::VT_HIDE, static_cast<uint8_t>(hide), 0);
   }
-  void add_parts_color(::flatbuffers::Offset<ss::runtime::PartAttributePartColor> parts_color) {
-    fbb_.AddOffset(PartState::VT_PARTS_COLOR, parts_color);
+  void add_parts_color(const ss::runtime::PartAttributePartColor *parts_color) {
+    fbb_.AddStruct(PartState::VT_PARTS_COLOR, parts_color);
   }
-  void add_shader(::flatbuffers::Offset<ss::runtime::PartAttributeShader> shader) {
-    fbb_.AddOffset(PartState::VT_SHADER, shader);
+  void add_shader(const ss::runtime::PartAttributeShader *shader) {
+    fbb_.AddStruct(PartState::VT_SHADER, shader);
   }
   void add_vertex(const ss::runtime::PartAttributeVertex *vertex) {
     fbb_.AddStruct(PartState::VT_VERTEX, vertex);
@@ -1090,11 +891,11 @@ struct PartStateBuilder {
   void add_skew_y(float skew_y) {
     fbb_.AddElement<float>(PartState::VT_SKEW_Y, skew_y, 0.0f);
   }
-  void add_deform(::flatbuffers::Offset<ss::runtime::PartAttributeDeform> deform) {
-    fbb_.AddOffset(PartState::VT_DEFORM, deform);
+  void add_deform(int32_t deform) {
+    fbb_.AddElement<int32_t>(PartState::VT_DEFORM, deform, -1);
   }
-  void add_texture(int32_t texture) {
-    fbb_.AddElement<int32_t>(PartState::VT_TEXTURE, texture, -1);
+  void add_texture(uint32_t texture) {
+    fbb_.AddElement<uint32_t>(PartState::VT_TEXTURE, texture, 0);
   }
   explicit PartStateBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
@@ -1109,9 +910,8 @@ struct PartStateBuilder {
 
 inline ::flatbuffers::Offset<PartState> CreatePartState(
     ::flatbuffers::FlatBufferBuilder &_fbb,
-    uint16_t part_index = 0,
     ss::runtime::UpdateAttributeFlags update_flag = static_cast<ss::runtime::UpdateAttributeFlags>(0),
-    ::flatbuffers::Offset<ss::runtime::PartAttributeCell> cell = 0,
+    const ss::runtime::PartAttributeCell *cell = nullptr,
     float position_x = 0.0f,
     float position_y = 0.0f,
     float position_z = 0.0f,
@@ -1128,8 +928,8 @@ inline ::flatbuffers::Offset<PartState> CreatePartState(
     bool flip_v = false,
     bool flip_h = false,
     bool hide = false,
-    ::flatbuffers::Offset<ss::runtime::PartAttributePartColor> parts_color = 0,
-    ::flatbuffers::Offset<ss::runtime::PartAttributeShader> shader = 0,
+    const ss::runtime::PartAttributePartColor *parts_color = nullptr,
+    const ss::runtime::PartAttributeShader *shader = nullptr,
     const ss::runtime::PartAttributeVertex *vertex = nullptr,
     float pivot_x = 0.0f,
     float pivot_y = 0.0f,
@@ -1148,8 +948,8 @@ inline ::flatbuffers::Offset<PartState> CreatePartState(
     float mask = 0.0f,
     float skew_x = 0.0f,
     float skew_y = 0.0f,
-    ::flatbuffers::Offset<ss::runtime::PartAttributeDeform> deform = 0,
-    int32_t texture = -1) {
+    int32_t deform = -1,
+    uint32_t texture = 0) {
   PartStateBuilder builder_(_fbb);
   builder_.add_update_flag(update_flag);
   builder_.add_texture(texture);
@@ -1186,7 +986,6 @@ inline ::flatbuffers::Offset<PartState> CreatePartState(
   builder_.add_position_y(position_y);
   builder_.add_position_x(position_x);
   builder_.add_cell(cell);
-  builder_.add_part_index(part_index);
   builder_.add_img_flip_v(img_flip_v);
   builder_.add_img_flip_h(img_flip_h);
   builder_.add_hide(hide);
@@ -1198,10 +997,14 @@ inline ::flatbuffers::Offset<PartState> CreatePartState(
 struct FrameData FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   typedef FrameDataBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
-    VT_PARTS = 4
+    VT_PARTS = 4,
+    VT_DEFORMS = 6
   };
   const ::flatbuffers::Vector<::flatbuffers::Offset<ss::runtime::PartState>> *parts() const {
     return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<ss::runtime::PartState>> *>(VT_PARTS);
+  }
+  const ::flatbuffers::Vector<::flatbuffers::Offset<ss::runtime::PartAttributeDeform>> *deforms() const {
+    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<ss::runtime::PartAttributeDeform>> *>(VT_DEFORMS);
   }
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
@@ -1209,6 +1012,9 @@ struct FrameData FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyOffset(verifier, VT_PARTS) &&
            verifier.VerifyVector(parts()) &&
            verifier.VerifyVectorOfTables(parts()) &&
+           VerifyOffset(verifier, VT_DEFORMS) &&
+           verifier.VerifyVector(deforms()) &&
+           verifier.VerifyVectorOfTables(deforms()) &&
            verifier.EndTable();
   }
 };
@@ -1219,6 +1025,9 @@ struct FrameDataBuilder {
   ::flatbuffers::uoffset_t start_;
   void add_parts(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::runtime::PartState>>> parts) {
     fbb_.AddOffset(FrameData::VT_PARTS, parts);
+  }
+  void add_deforms(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::runtime::PartAttributeDeform>>> deforms) {
+    fbb_.AddOffset(FrameData::VT_DEFORMS, deforms);
   }
   explicit FrameDataBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
@@ -1233,19 +1042,24 @@ struct FrameDataBuilder {
 
 inline ::flatbuffers::Offset<FrameData> CreateFrameData(
     ::flatbuffers::FlatBufferBuilder &_fbb,
-    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::runtime::PartState>>> parts = 0) {
+    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::runtime::PartState>>> parts = 0,
+    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::runtime::PartAttributeDeform>>> deforms = 0) {
   FrameDataBuilder builder_(_fbb);
+  builder_.add_deforms(deforms);
   builder_.add_parts(parts);
   return builder_.Finish();
 }
 
 inline ::flatbuffers::Offset<FrameData> CreateFrameDataDirect(
     ::flatbuffers::FlatBufferBuilder &_fbb,
-    const std::vector<::flatbuffers::Offset<ss::runtime::PartState>> *parts = nullptr) {
+    const std::vector<::flatbuffers::Offset<ss::runtime::PartState>> *parts = nullptr,
+    const std::vector<::flatbuffers::Offset<ss::runtime::PartAttributeDeform>> *deforms = nullptr) {
   auto parts__ = parts ? _fbb.CreateVector<::flatbuffers::Offset<ss::runtime::PartState>>(*parts) : 0;
+  auto deforms__ = deforms ? _fbb.CreateVector<::flatbuffers::Offset<ss::runtime::PartAttributeDeform>>(*deforms) : 0;
   return ss::runtime::CreateFrameData(
       _fbb,
-      parts__);
+      parts__,
+      deforms__);
 }
 
 inline const ss::runtime::FrameData *GetFrameData(const void *buf) {
