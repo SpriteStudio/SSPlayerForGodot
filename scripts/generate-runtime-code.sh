@@ -15,4 +15,10 @@ for f in SsConverter3/libs/ssruntime/fbs/*.fbs; do
     /bin/mv "${name}_generated.h" ./runtime/${name}.h
 done
 
+for f in SsConverter3/libs/ssab/fbs/*.fbs; do
+    name=$(basename "$f" .fbs)
+    ${FLATC} -c $f    
+    /bin/mv "${name}_generated.h" ./runtime/${name}.h
+done
+
 popd > /dev/null
