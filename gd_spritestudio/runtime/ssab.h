@@ -16,9 +16,6 @@ static_assert(FLATBUFFERS_VERSION_MAJOR == 25 &&
 struct Vec2;
 struct Vec2Builder;
 
-struct Vec3;
-struct Vec3Builder;
-
 struct Rect;
 struct RectBuilder;
 
@@ -1007,68 +1004,6 @@ inline ::flatbuffers::Offset<Vec2> CreateVec2(
     float v1 = 0.0f,
     float v2 = 0.0f) {
   Vec2Builder builder_(_fbb);
-  builder_.add_v2(v2);
-  builder_.add_v1(v1);
-  return builder_.Finish();
-}
-
-struct Vec3 FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
-  typedef Vec3Builder Builder;
-  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
-    VT_V1 = 4,
-    VT_V2 = 6,
-    VT_V3 = 8
-  };
-  float v1() const {
-    return GetField<float>(VT_V1, 0.0f);
-  }
-  float v2() const {
-    return GetField<float>(VT_V2, 0.0f);
-  }
-  float v3() const {
-    return GetField<float>(VT_V3, 0.0f);
-  }
-  template <bool B = false>
-  bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
-    return VerifyTableStart(verifier) &&
-           VerifyField<float>(verifier, VT_V1, 4) &&
-           VerifyField<float>(verifier, VT_V2, 4) &&
-           VerifyField<float>(verifier, VT_V3, 4) &&
-           verifier.EndTable();
-  }
-};
-
-struct Vec3Builder {
-  typedef Vec3 Table;
-  ::flatbuffers::FlatBufferBuilder &fbb_;
-  ::flatbuffers::uoffset_t start_;
-  void add_v1(float v1) {
-    fbb_.AddElement<float>(Vec3::VT_V1, v1, 0.0f);
-  }
-  void add_v2(float v2) {
-    fbb_.AddElement<float>(Vec3::VT_V2, v2, 0.0f);
-  }
-  void add_v3(float v3) {
-    fbb_.AddElement<float>(Vec3::VT_V3, v3, 0.0f);
-  }
-  explicit Vec3Builder(::flatbuffers::FlatBufferBuilder &_fbb)
-        : fbb_(_fbb) {
-    start_ = fbb_.StartTable();
-  }
-  ::flatbuffers::Offset<Vec3> Finish() {
-    const auto end = fbb_.EndTable(start_);
-    auto o = ::flatbuffers::Offset<Vec3>(end);
-    return o;
-  }
-};
-
-inline ::flatbuffers::Offset<Vec3> CreateVec3(
-    ::flatbuffers::FlatBufferBuilder &_fbb,
-    float v1 = 0.0f,
-    float v2 = 0.0f,
-    float v3 = 0.0f) {
-  Vec3Builder builder_(_fbb);
-  builder_.add_v3(v3);
   builder_.add_v2(v2);
   builder_.add_v1(v1);
   return builder_.Finish();
@@ -3038,7 +2973,8 @@ struct SoundFile FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_NAME_HASH = 4,
     VT_NAME = 6,
-    VT_TIME_TOTAL = 8
+    VT_FILE_PATH = 8,
+    VT_TIME_TOTAL = 10
   };
   uint32_t name_hash() const {
     return GetField<uint32_t>(VT_NAME_HASH, 0);
@@ -3052,6 +2988,9 @@ struct SoundFile FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   const ::flatbuffers::String *name() const {
     return GetPointer<const ::flatbuffers::String *>(VT_NAME);
   }
+  const ::flatbuffers::String *file_path() const {
+    return GetPointer<const ::flatbuffers::String *>(VT_FILE_PATH);
+  }
   uint32_t time_total() const {
     return GetField<uint32_t>(VT_TIME_TOTAL, 0);
   }
@@ -3061,6 +3000,8 @@ struct SoundFile FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyField<uint32_t>(verifier, VT_NAME_HASH, 4) &&
            VerifyOffset(verifier, VT_NAME) &&
            verifier.VerifyString(name()) &&
+           VerifyOffset(verifier, VT_FILE_PATH) &&
+           verifier.VerifyString(file_path()) &&
            VerifyField<uint32_t>(verifier, VT_TIME_TOTAL, 4) &&
            verifier.EndTable();
   }
@@ -3075,6 +3016,9 @@ struct SoundFileBuilder {
   }
   void add_name(::flatbuffers::Offset<::flatbuffers::String> name) {
     fbb_.AddOffset(SoundFile::VT_NAME, name);
+  }
+  void add_file_path(::flatbuffers::Offset<::flatbuffers::String> file_path) {
+    fbb_.AddOffset(SoundFile::VT_FILE_PATH, file_path);
   }
   void add_time_total(uint32_t time_total) {
     fbb_.AddElement<uint32_t>(SoundFile::VT_TIME_TOTAL, time_total, 0);
@@ -3094,9 +3038,11 @@ inline ::flatbuffers::Offset<SoundFile> CreateSoundFile(
     ::flatbuffers::FlatBufferBuilder &_fbb,
     uint32_t name_hash = 0,
     ::flatbuffers::Offset<::flatbuffers::String> name = 0,
+    ::flatbuffers::Offset<::flatbuffers::String> file_path = 0,
     uint32_t time_total = 0) {
   SoundFileBuilder builder_(_fbb);
   builder_.add_time_total(time_total);
+  builder_.add_file_path(file_path);
   builder_.add_name(name);
   builder_.add_name_hash(name_hash);
   return builder_.Finish();
@@ -3106,12 +3052,15 @@ inline ::flatbuffers::Offset<SoundFile> CreateSoundFileDirect(
     ::flatbuffers::FlatBufferBuilder &_fbb,
     uint32_t name_hash = 0,
     const char *name = nullptr,
+    const char *file_path = nullptr,
     uint32_t time_total = 0) {
   auto name__ = name ? _fbb.CreateString(name) : 0;
+  auto file_path__ = file_path ? _fbb.CreateString(file_path) : 0;
   return CreateSoundFile(
       _fbb,
       name_hash,
       name__,
+      file_path__,
       time_total);
 }
 
@@ -4652,52 +4601,84 @@ struct PartAttributes FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   typedef PartAttributesBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_CELL = 4,
-    VT_POSITION = 6,
-    VT_ROTATION = 8,
-    VT_SCALE = 10,
-    VT_LOCAL_SCALE = 12,
-    VT_OPACITY = 14,
-    VT_LOCALOPACITY = 16,
-    VT_PRIORITY = 18,
-    VT_FLIP_V = 20,
-    VT_FLIP_H = 22,
-    VT_HIDE = 24,
-    VT_PARTS_COLOR = 26,
-    VT_SHADER = 28,
-    VT_VERTEX = 30,
-    VT_PIVOT = 32,
-    VT_SIZE = 34,
-    VT_UV_MOVE = 36,
-    VT_UV_SCALE = 38,
-    VT_BOUNDING_RADIUS = 40,
-    VT_MASK = 42,
-    VT_SKEW = 44,
-    VT_DEFORM = 46,
-    VT_TEXTURE = 48
+    VT_POSITION_X = 6,
+    VT_POSITION_Y = 8,
+    VT_POSITION_Z = 10,
+    VT_ROTATION_X = 12,
+    VT_ROTATION_Y = 14,
+    VT_ROTATION_Z = 16,
+    VT_SCALE_X = 18,
+    VT_SCALE_Y = 20,
+    VT_LOCAL_SCALE_X = 22,
+    VT_LOCAL_SCALE_Y = 24,
+    VT_ALPHA = 26,
+    VT_LOCAL_ALPHA = 28,
+    VT_PRIORITY = 30,
+    VT_FLIP_V = 32,
+    VT_FLIP_H = 34,
+    VT_HIDE = 36,
+    VT_PART_COLOR = 38,
+    VT_SHADER = 40,
+    VT_VERTEX = 42,
+    VT_ANCHOR_X = 44,
+    VT_ANCHOR_Y = 46,
+    VT_PIVOT_X = 48,
+    VT_PIVOT_Y = 50,
+    VT_SIZE_X = 52,
+    VT_SIZE_Y = 54,
+    VT_UV_TRANSLATION_X = 56,
+    VT_UV_TRANSLATION_Y = 58,
+    VT_UV_ROTATION_Z = 60,
+    VT_UV_SCALE_X = 62,
+    VT_UV_SCALE_Y = 64,
+    VT_BOUNDING_RADIUS = 66,
+    VT_MASK = 68,
+    VT_SKEW_X = 70,
+    VT_SKEW_Y = 72,
+    VT_DEFORM = 74,
+    VT_TEXTURE = 76
   };
   const PartAttributeCell *cell() const {
     return GetPointer<const PartAttributeCell *>(VT_CELL);
   }
-  const Vec3 *position() const {
-    return GetPointer<const Vec3 *>(VT_POSITION);
+  float position_x() const {
+    return GetField<float>(VT_POSITION_X, 0.0f);
   }
-  const Vec3 *rotation() const {
-    return GetPointer<const Vec3 *>(VT_ROTATION);
+  float position_y() const {
+    return GetField<float>(VT_POSITION_Y, 0.0f);
   }
-  const Vec2 *scale() const {
-    return GetPointer<const Vec2 *>(VT_SCALE);
+  float position_z() const {
+    return GetField<float>(VT_POSITION_Z, 0.0f);
   }
-  const Vec2 *local_scale() const {
-    return GetPointer<const Vec2 *>(VT_LOCAL_SCALE);
+  float rotation_x() const {
+    return GetField<float>(VT_ROTATION_X, 0.0f);
   }
-  float opacity() const {
-    return GetField<float>(VT_OPACITY, 1.0f);
+  float rotation_y() const {
+    return GetField<float>(VT_ROTATION_Y, 0.0f);
   }
-  float localopacity() const {
-    return GetField<float>(VT_LOCALOPACITY, 1.0f);
+  float rotation_z() const {
+    return GetField<float>(VT_ROTATION_Z, 0.0f);
   }
-  int16_t priority() const {
-    return GetField<int16_t>(VT_PRIORITY, 0);
+  float scale_x() const {
+    return GetField<float>(VT_SCALE_X, 1.0f);
+  }
+  float scale_y() const {
+    return GetField<float>(VT_SCALE_Y, 1.0f);
+  }
+  float local_scale_x() const {
+    return GetField<float>(VT_LOCAL_SCALE_X, 1.0f);
+  }
+  float local_scale_y() const {
+    return GetField<float>(VT_LOCAL_SCALE_Y, 1.0f);
+  }
+  float alpha() const {
+    return GetField<float>(VT_ALPHA, 1.0f);
+  }
+  float local_alpha() const {
+    return GetField<float>(VT_LOCAL_ALPHA, 1.0f);
+  }
+  float priority() const {
+    return GetField<float>(VT_PRIORITY, 0.0f);
   }
   bool flip_v() const {
     return GetField<uint8_t>(VT_FLIP_V, 0) != 0;
@@ -4708,8 +4689,8 @@ struct PartAttributes FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   bool hide() const {
     return GetField<uint8_t>(VT_HIDE, 0) != 0;
   }
-  const PartAttributePartColor *parts_color() const {
-    return GetPointer<const PartAttributePartColor *>(VT_PARTS_COLOR);
+  const PartAttributePartColor *part_color() const {
+    return GetPointer<const PartAttributePartColor *>(VT_PART_COLOR);
   }
   const PartAttributeShader *shader() const {
     return GetPointer<const PartAttributeShader *>(VT_SHADER);
@@ -4717,17 +4698,38 @@ struct PartAttributes FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   const PartAttributeVertex *vertex() const {
     return GetPointer<const PartAttributeVertex *>(VT_VERTEX);
   }
-  const Vec2 *pivot() const {
-    return GetPointer<const Vec2 *>(VT_PIVOT);
+  float anchor_x() const {
+    return GetField<float>(VT_ANCHOR_X, 0.0f);
   }
-  const Vec2 *size() const {
-    return GetPointer<const Vec2 *>(VT_SIZE);
+  float anchor_y() const {
+    return GetField<float>(VT_ANCHOR_Y, 0.0f);
   }
-  const Vec3 *uv_move() const {
-    return GetPointer<const Vec3 *>(VT_UV_MOVE);
+  float pivot_x() const {
+    return GetField<float>(VT_PIVOT_X, 0.0f);
   }
-  const Vec2 *uv_scale() const {
-    return GetPointer<const Vec2 *>(VT_UV_SCALE);
+  float pivot_y() const {
+    return GetField<float>(VT_PIVOT_Y, 0.0f);
+  }
+  float size_x() const {
+    return GetField<float>(VT_SIZE_X, 1.0f);
+  }
+  float size_y() const {
+    return GetField<float>(VT_SIZE_Y, 1.0f);
+  }
+  float uv_translation_x() const {
+    return GetField<float>(VT_UV_TRANSLATION_X, 0.0f);
+  }
+  float uv_translation_y() const {
+    return GetField<float>(VT_UV_TRANSLATION_Y, 0.0f);
+  }
+  float uv_rotation_z() const {
+    return GetField<float>(VT_UV_ROTATION_Z, 0.0f);
+  }
+  float uv_scale_x() const {
+    return GetField<float>(VT_UV_SCALE_X, 1.0f);
+  }
+  float uv_scale_y() const {
+    return GetField<float>(VT_UV_SCALE_Y, 1.0f);
   }
   float bounding_radius() const {
     return GetField<float>(VT_BOUNDING_RADIUS, 0.0f);
@@ -4735,8 +4737,11 @@ struct PartAttributes FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   float mask() const {
     return GetField<float>(VT_MASK, 0.0f);
   }
-  const Vec2 *skew() const {
-    return GetPointer<const Vec2 *>(VT_SKEW);
+  float skew_x() const {
+    return GetField<float>(VT_SKEW_X, 0.0f);
+  }
+  float skew_y() const {
+    return GetField<float>(VT_SKEW_Y, 0.0f);
   }
   const PartAttributeDeform *deform() const {
     return GetPointer<const PartAttributeDeform *>(VT_DEFORM);
@@ -4749,38 +4754,43 @@ struct PartAttributes FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
     return VerifyTableStart(verifier) &&
            VerifyOffset(verifier, VT_CELL) &&
            verifier.VerifyTable(cell()) &&
-           VerifyOffset(verifier, VT_POSITION) &&
-           verifier.VerifyTable(position()) &&
-           VerifyOffset(verifier, VT_ROTATION) &&
-           verifier.VerifyTable(rotation()) &&
-           VerifyOffset(verifier, VT_SCALE) &&
-           verifier.VerifyTable(scale()) &&
-           VerifyOffset(verifier, VT_LOCAL_SCALE) &&
-           verifier.VerifyTable(local_scale()) &&
-           VerifyField<float>(verifier, VT_OPACITY, 4) &&
-           VerifyField<float>(verifier, VT_LOCALOPACITY, 4) &&
-           VerifyField<int16_t>(verifier, VT_PRIORITY, 2) &&
+           VerifyField<float>(verifier, VT_POSITION_X, 4) &&
+           VerifyField<float>(verifier, VT_POSITION_Y, 4) &&
+           VerifyField<float>(verifier, VT_POSITION_Z, 4) &&
+           VerifyField<float>(verifier, VT_ROTATION_X, 4) &&
+           VerifyField<float>(verifier, VT_ROTATION_Y, 4) &&
+           VerifyField<float>(verifier, VT_ROTATION_Z, 4) &&
+           VerifyField<float>(verifier, VT_SCALE_X, 4) &&
+           VerifyField<float>(verifier, VT_SCALE_Y, 4) &&
+           VerifyField<float>(verifier, VT_LOCAL_SCALE_X, 4) &&
+           VerifyField<float>(verifier, VT_LOCAL_SCALE_Y, 4) &&
+           VerifyField<float>(verifier, VT_ALPHA, 4) &&
+           VerifyField<float>(verifier, VT_LOCAL_ALPHA, 4) &&
+           VerifyField<float>(verifier, VT_PRIORITY, 4) &&
            VerifyField<uint8_t>(verifier, VT_FLIP_V, 1) &&
            VerifyField<uint8_t>(verifier, VT_FLIP_H, 1) &&
            VerifyField<uint8_t>(verifier, VT_HIDE, 1) &&
-           VerifyOffset(verifier, VT_PARTS_COLOR) &&
-           verifier.VerifyTable(parts_color()) &&
+           VerifyOffset(verifier, VT_PART_COLOR) &&
+           verifier.VerifyTable(part_color()) &&
            VerifyOffset(verifier, VT_SHADER) &&
            verifier.VerifyTable(shader()) &&
            VerifyOffset(verifier, VT_VERTEX) &&
            verifier.VerifyTable(vertex()) &&
-           VerifyOffset(verifier, VT_PIVOT) &&
-           verifier.VerifyTable(pivot()) &&
-           VerifyOffset(verifier, VT_SIZE) &&
-           verifier.VerifyTable(size()) &&
-           VerifyOffset(verifier, VT_UV_MOVE) &&
-           verifier.VerifyTable(uv_move()) &&
-           VerifyOffset(verifier, VT_UV_SCALE) &&
-           verifier.VerifyTable(uv_scale()) &&
+           VerifyField<float>(verifier, VT_ANCHOR_X, 4) &&
+           VerifyField<float>(verifier, VT_ANCHOR_Y, 4) &&
+           VerifyField<float>(verifier, VT_PIVOT_X, 4) &&
+           VerifyField<float>(verifier, VT_PIVOT_Y, 4) &&
+           VerifyField<float>(verifier, VT_SIZE_X, 4) &&
+           VerifyField<float>(verifier, VT_SIZE_Y, 4) &&
+           VerifyField<float>(verifier, VT_UV_TRANSLATION_X, 4) &&
+           VerifyField<float>(verifier, VT_UV_TRANSLATION_Y, 4) &&
+           VerifyField<float>(verifier, VT_UV_ROTATION_Z, 4) &&
+           VerifyField<float>(verifier, VT_UV_SCALE_X, 4) &&
+           VerifyField<float>(verifier, VT_UV_SCALE_Y, 4) &&
            VerifyField<float>(verifier, VT_BOUNDING_RADIUS, 4) &&
            VerifyField<float>(verifier, VT_MASK, 4) &&
-           VerifyOffset(verifier, VT_SKEW) &&
-           verifier.VerifyTable(skew()) &&
+           VerifyField<float>(verifier, VT_SKEW_X, 4) &&
+           VerifyField<float>(verifier, VT_SKEW_Y, 4) &&
            VerifyOffset(verifier, VT_DEFORM) &&
            verifier.VerifyTable(deform()) &&
            VerifyField<uint32_t>(verifier, VT_TEXTURE, 4) &&
@@ -4795,26 +4805,44 @@ struct PartAttributesBuilder {
   void add_cell(::flatbuffers::Offset<PartAttributeCell> cell) {
     fbb_.AddOffset(PartAttributes::VT_CELL, cell);
   }
-  void add_position(::flatbuffers::Offset<Vec3> position) {
-    fbb_.AddOffset(PartAttributes::VT_POSITION, position);
+  void add_position_x(float position_x) {
+    fbb_.AddElement<float>(PartAttributes::VT_POSITION_X, position_x, 0.0f);
   }
-  void add_rotation(::flatbuffers::Offset<Vec3> rotation) {
-    fbb_.AddOffset(PartAttributes::VT_ROTATION, rotation);
+  void add_position_y(float position_y) {
+    fbb_.AddElement<float>(PartAttributes::VT_POSITION_Y, position_y, 0.0f);
   }
-  void add_scale(::flatbuffers::Offset<Vec2> scale) {
-    fbb_.AddOffset(PartAttributes::VT_SCALE, scale);
+  void add_position_z(float position_z) {
+    fbb_.AddElement<float>(PartAttributes::VT_POSITION_Z, position_z, 0.0f);
   }
-  void add_local_scale(::flatbuffers::Offset<Vec2> local_scale) {
-    fbb_.AddOffset(PartAttributes::VT_LOCAL_SCALE, local_scale);
+  void add_rotation_x(float rotation_x) {
+    fbb_.AddElement<float>(PartAttributes::VT_ROTATION_X, rotation_x, 0.0f);
   }
-  void add_opacity(float opacity) {
-    fbb_.AddElement<float>(PartAttributes::VT_OPACITY, opacity, 1.0f);
+  void add_rotation_y(float rotation_y) {
+    fbb_.AddElement<float>(PartAttributes::VT_ROTATION_Y, rotation_y, 0.0f);
   }
-  void add_localopacity(float localopacity) {
-    fbb_.AddElement<float>(PartAttributes::VT_LOCALOPACITY, localopacity, 1.0f);
+  void add_rotation_z(float rotation_z) {
+    fbb_.AddElement<float>(PartAttributes::VT_ROTATION_Z, rotation_z, 0.0f);
   }
-  void add_priority(int16_t priority) {
-    fbb_.AddElement<int16_t>(PartAttributes::VT_PRIORITY, priority, 0);
+  void add_scale_x(float scale_x) {
+    fbb_.AddElement<float>(PartAttributes::VT_SCALE_X, scale_x, 1.0f);
+  }
+  void add_scale_y(float scale_y) {
+    fbb_.AddElement<float>(PartAttributes::VT_SCALE_Y, scale_y, 1.0f);
+  }
+  void add_local_scale_x(float local_scale_x) {
+    fbb_.AddElement<float>(PartAttributes::VT_LOCAL_SCALE_X, local_scale_x, 1.0f);
+  }
+  void add_local_scale_y(float local_scale_y) {
+    fbb_.AddElement<float>(PartAttributes::VT_LOCAL_SCALE_Y, local_scale_y, 1.0f);
+  }
+  void add_alpha(float alpha) {
+    fbb_.AddElement<float>(PartAttributes::VT_ALPHA, alpha, 1.0f);
+  }
+  void add_local_alpha(float local_alpha) {
+    fbb_.AddElement<float>(PartAttributes::VT_LOCAL_ALPHA, local_alpha, 1.0f);
+  }
+  void add_priority(float priority) {
+    fbb_.AddElement<float>(PartAttributes::VT_PRIORITY, priority, 0.0f);
   }
   void add_flip_v(bool flip_v) {
     fbb_.AddElement<uint8_t>(PartAttributes::VT_FLIP_V, static_cast<uint8_t>(flip_v), 0);
@@ -4825,8 +4853,8 @@ struct PartAttributesBuilder {
   void add_hide(bool hide) {
     fbb_.AddElement<uint8_t>(PartAttributes::VT_HIDE, static_cast<uint8_t>(hide), 0);
   }
-  void add_parts_color(::flatbuffers::Offset<PartAttributePartColor> parts_color) {
-    fbb_.AddOffset(PartAttributes::VT_PARTS_COLOR, parts_color);
+  void add_part_color(::flatbuffers::Offset<PartAttributePartColor> part_color) {
+    fbb_.AddOffset(PartAttributes::VT_PART_COLOR, part_color);
   }
   void add_shader(::flatbuffers::Offset<PartAttributeShader> shader) {
     fbb_.AddOffset(PartAttributes::VT_SHADER, shader);
@@ -4834,17 +4862,38 @@ struct PartAttributesBuilder {
   void add_vertex(::flatbuffers::Offset<PartAttributeVertex> vertex) {
     fbb_.AddOffset(PartAttributes::VT_VERTEX, vertex);
   }
-  void add_pivot(::flatbuffers::Offset<Vec2> pivot) {
-    fbb_.AddOffset(PartAttributes::VT_PIVOT, pivot);
+  void add_anchor_x(float anchor_x) {
+    fbb_.AddElement<float>(PartAttributes::VT_ANCHOR_X, anchor_x, 0.0f);
   }
-  void add_size(::flatbuffers::Offset<Vec2> size) {
-    fbb_.AddOffset(PartAttributes::VT_SIZE, size);
+  void add_anchor_y(float anchor_y) {
+    fbb_.AddElement<float>(PartAttributes::VT_ANCHOR_Y, anchor_y, 0.0f);
   }
-  void add_uv_move(::flatbuffers::Offset<Vec3> uv_move) {
-    fbb_.AddOffset(PartAttributes::VT_UV_MOVE, uv_move);
+  void add_pivot_x(float pivot_x) {
+    fbb_.AddElement<float>(PartAttributes::VT_PIVOT_X, pivot_x, 0.0f);
   }
-  void add_uv_scale(::flatbuffers::Offset<Vec2> uv_scale) {
-    fbb_.AddOffset(PartAttributes::VT_UV_SCALE, uv_scale);
+  void add_pivot_y(float pivot_y) {
+    fbb_.AddElement<float>(PartAttributes::VT_PIVOT_Y, pivot_y, 0.0f);
+  }
+  void add_size_x(float size_x) {
+    fbb_.AddElement<float>(PartAttributes::VT_SIZE_X, size_x, 1.0f);
+  }
+  void add_size_y(float size_y) {
+    fbb_.AddElement<float>(PartAttributes::VT_SIZE_Y, size_y, 1.0f);
+  }
+  void add_uv_translation_x(float uv_translation_x) {
+    fbb_.AddElement<float>(PartAttributes::VT_UV_TRANSLATION_X, uv_translation_x, 0.0f);
+  }
+  void add_uv_translation_y(float uv_translation_y) {
+    fbb_.AddElement<float>(PartAttributes::VT_UV_TRANSLATION_Y, uv_translation_y, 0.0f);
+  }
+  void add_uv_rotation_z(float uv_rotation_z) {
+    fbb_.AddElement<float>(PartAttributes::VT_UV_ROTATION_Z, uv_rotation_z, 0.0f);
+  }
+  void add_uv_scale_x(float uv_scale_x) {
+    fbb_.AddElement<float>(PartAttributes::VT_UV_SCALE_X, uv_scale_x, 1.0f);
+  }
+  void add_uv_scale_y(float uv_scale_y) {
+    fbb_.AddElement<float>(PartAttributes::VT_UV_SCALE_Y, uv_scale_y, 1.0f);
   }
   void add_bounding_radius(float bounding_radius) {
     fbb_.AddElement<float>(PartAttributes::VT_BOUNDING_RADIUS, bounding_radius, 0.0f);
@@ -4852,8 +4901,11 @@ struct PartAttributesBuilder {
   void add_mask(float mask) {
     fbb_.AddElement<float>(PartAttributes::VT_MASK, mask, 0.0f);
   }
-  void add_skew(::flatbuffers::Offset<Vec2> skew) {
-    fbb_.AddOffset(PartAttributes::VT_SKEW, skew);
+  void add_skew_x(float skew_x) {
+    fbb_.AddElement<float>(PartAttributes::VT_SKEW_X, skew_x, 0.0f);
+  }
+  void add_skew_y(float skew_y) {
+    fbb_.AddElement<float>(PartAttributes::VT_SKEW_Y, skew_y, 0.0f);
   }
   void add_deform(::flatbuffers::Offset<PartAttributeDeform> deform) {
     fbb_.AddOffset(PartAttributes::VT_DEFORM, deform);
@@ -4875,49 +4927,77 @@ struct PartAttributesBuilder {
 inline ::flatbuffers::Offset<PartAttributes> CreatePartAttributes(
     ::flatbuffers::FlatBufferBuilder &_fbb,
     ::flatbuffers::Offset<PartAttributeCell> cell = 0,
-    ::flatbuffers::Offset<Vec3> position = 0,
-    ::flatbuffers::Offset<Vec3> rotation = 0,
-    ::flatbuffers::Offset<Vec2> scale = 0,
-    ::flatbuffers::Offset<Vec2> local_scale = 0,
-    float opacity = 1.0f,
-    float localopacity = 1.0f,
-    int16_t priority = 0,
+    float position_x = 0.0f,
+    float position_y = 0.0f,
+    float position_z = 0.0f,
+    float rotation_x = 0.0f,
+    float rotation_y = 0.0f,
+    float rotation_z = 0.0f,
+    float scale_x = 1.0f,
+    float scale_y = 1.0f,
+    float local_scale_x = 1.0f,
+    float local_scale_y = 1.0f,
+    float alpha = 1.0f,
+    float local_alpha = 1.0f,
+    float priority = 0.0f,
     bool flip_v = false,
     bool flip_h = false,
     bool hide = false,
-    ::flatbuffers::Offset<PartAttributePartColor> parts_color = 0,
+    ::flatbuffers::Offset<PartAttributePartColor> part_color = 0,
     ::flatbuffers::Offset<PartAttributeShader> shader = 0,
     ::flatbuffers::Offset<PartAttributeVertex> vertex = 0,
-    ::flatbuffers::Offset<Vec2> pivot = 0,
-    ::flatbuffers::Offset<Vec2> size = 0,
-    ::flatbuffers::Offset<Vec3> uv_move = 0,
-    ::flatbuffers::Offset<Vec2> uv_scale = 0,
+    float anchor_x = 0.0f,
+    float anchor_y = 0.0f,
+    float pivot_x = 0.0f,
+    float pivot_y = 0.0f,
+    float size_x = 1.0f,
+    float size_y = 1.0f,
+    float uv_translation_x = 0.0f,
+    float uv_translation_y = 0.0f,
+    float uv_rotation_z = 0.0f,
+    float uv_scale_x = 1.0f,
+    float uv_scale_y = 1.0f,
     float bounding_radius = 0.0f,
     float mask = 0.0f,
-    ::flatbuffers::Offset<Vec2> skew = 0,
+    float skew_x = 0.0f,
+    float skew_y = 0.0f,
     ::flatbuffers::Offset<PartAttributeDeform> deform = 0,
     uint32_t texture = 0) {
   PartAttributesBuilder builder_(_fbb);
   builder_.add_texture(texture);
   builder_.add_deform(deform);
-  builder_.add_skew(skew);
+  builder_.add_skew_y(skew_y);
+  builder_.add_skew_x(skew_x);
   builder_.add_mask(mask);
   builder_.add_bounding_radius(bounding_radius);
-  builder_.add_uv_scale(uv_scale);
-  builder_.add_uv_move(uv_move);
-  builder_.add_size(size);
-  builder_.add_pivot(pivot);
+  builder_.add_uv_scale_y(uv_scale_y);
+  builder_.add_uv_scale_x(uv_scale_x);
+  builder_.add_uv_rotation_z(uv_rotation_z);
+  builder_.add_uv_translation_y(uv_translation_y);
+  builder_.add_uv_translation_x(uv_translation_x);
+  builder_.add_size_y(size_y);
+  builder_.add_size_x(size_x);
+  builder_.add_pivot_y(pivot_y);
+  builder_.add_pivot_x(pivot_x);
+  builder_.add_anchor_y(anchor_y);
+  builder_.add_anchor_x(anchor_x);
   builder_.add_vertex(vertex);
   builder_.add_shader(shader);
-  builder_.add_parts_color(parts_color);
-  builder_.add_localopacity(localopacity);
-  builder_.add_opacity(opacity);
-  builder_.add_local_scale(local_scale);
-  builder_.add_scale(scale);
-  builder_.add_rotation(rotation);
-  builder_.add_position(position);
-  builder_.add_cell(cell);
+  builder_.add_part_color(part_color);
   builder_.add_priority(priority);
+  builder_.add_local_alpha(local_alpha);
+  builder_.add_alpha(alpha);
+  builder_.add_local_scale_y(local_scale_y);
+  builder_.add_local_scale_x(local_scale_x);
+  builder_.add_scale_y(scale_y);
+  builder_.add_scale_x(scale_x);
+  builder_.add_rotation_z(rotation_z);
+  builder_.add_rotation_y(rotation_y);
+  builder_.add_rotation_x(rotation_x);
+  builder_.add_position_z(position_z);
+  builder_.add_position_y(position_y);
+  builder_.add_position_x(position_x);
+  builder_.add_cell(cell);
   builder_.add_hide(hide);
   builder_.add_flip_h(flip_h);
   builder_.add_flip_v(flip_v);
