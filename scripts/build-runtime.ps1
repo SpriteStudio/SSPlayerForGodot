@@ -38,7 +38,7 @@ $opts
 echo ""
 
 pushd $rootDirectory/gd_spritestudio
-pushd SsConverter3
+pushd SpriteStudio7-SDK
 if ($opts.build -eq "release") {
     & ./scripts/release-windows.ps1
 } else {
@@ -46,7 +46,7 @@ if ($opts.build -eq "release") {
 }
 popd
 
-$inputDir="SsConverter3/target"
+$inputDir="SpriteStudio7-SDK/target"
 $outputDir="runtime/libs//$($opts.platform)"
 New-Item "./${outputDir}" -ItemType Directory -ErrorAction SilentlyContinue
 New-Item "./${outputDir}/$($opts.arch)" -ItemType Directory -ErrorAction SilentlyContinue
