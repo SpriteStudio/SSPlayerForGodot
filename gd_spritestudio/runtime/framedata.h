@@ -48,11 +48,15 @@ enum BlendType : uint8_t {
   BlendType_Screen = 5,
   BlendType_Exclusion = 6,
   BlendType_Invert = 7,
+  BlendType_Mul2 = 8,
+  BlendType_Div2 = 9,
+  BlendType_Screen2 = 10,
+  BlendType_Overlay2 = 11,
   BlendType_MIN = BlendType_Mix,
-  BlendType_MAX = BlendType_Invert
+  BlendType_MAX = BlendType_Overlay2
 };
 
-inline const BlendType (&EnumValuesBlendType())[8] {
+inline const BlendType (&EnumValuesBlendType())[12] {
   static const BlendType values[] = {
     BlendType_Mix,
     BlendType_Mul,
@@ -61,13 +65,17 @@ inline const BlendType (&EnumValuesBlendType())[8] {
     BlendType_Mulalpha,
     BlendType_Screen,
     BlendType_Exclusion,
-    BlendType_Invert
+    BlendType_Invert,
+    BlendType_Mul2,
+    BlendType_Div2,
+    BlendType_Screen2,
+    BlendType_Overlay2
   };
   return values;
 }
 
 inline const char * const *EnumNamesBlendType() {
-  static const char * const names[9] = {
+  static const char * const names[13] = {
     "Mix",
     "Mul",
     "Add",
@@ -76,13 +84,17 @@ inline const char * const *EnumNamesBlendType() {
     "Screen",
     "Exclusion",
     "Invert",
+    "Mul2",
+    "Div2",
+    "Screen2",
+    "Overlay2",
     nullptr
   };
   return names;
 }
 
 inline const char *EnumNameBlendType(BlendType e) {
-  if (::flatbuffers::IsOutRange(e, BlendType_Mix, BlendType_Invert)) return "";
+  if (::flatbuffers::IsOutRange(e, BlendType_Mix, BlendType_Overlay2)) return "";
   const size_t index = static_cast<size_t>(e);
   return EnumNamesBlendType()[index];
 }
@@ -577,13 +589,13 @@ struct PartState FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
     VT_SCALE_Y = 22,
     VT_LOCAL_SCALE_X = 24,
     VT_LOCAL_SCALE_Y = 26,
-    VT_OPACITY = 28,
-    VT_LOCALOPACITY = 30,
+    VT_ALPHA = 28,
+    VT_LOCAL_ALPHA = 30,
     VT_PRIORITY = 32,
     VT_FLIP_V = 34,
     VT_FLIP_H = 36,
     VT_HIDE = 38,
-    VT_PARTS_COLOR = 40,
+    VT_PART_COLOR = 40,
     VT_SHADER = 42,
     VT_VERTEX = 44,
     VT_PIVOT_X = 46,
@@ -594,9 +606,9 @@ struct PartState FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
     VT_SIZE_Y = 56,
     VT_IMG_FLIP_H = 58,
     VT_IMG_FLIP_V = 60,
-    VT_UV_MOVE_X = 62,
-    VT_UV_MOVE_Y = 64,
-    VT_UV_MOVE_Z = 66,
+    VT_UV_TRANSLATION_X = 62,
+    VT_UV_TRANSLATION_Y = 64,
+    VT_UV_ROTATION_Z = 66,
     VT_UV_SCALE_X = 68,
     VT_UV_SCALE_Y = 70,
     VT_BOUNDING_RADIUS = 72,
@@ -642,14 +654,14 @@ struct PartState FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   float local_scale_y() const {
     return GetField<float>(VT_LOCAL_SCALE_Y, 1.0f);
   }
-  float opacity() const {
-    return GetField<float>(VT_OPACITY, 1.0f);
+  float alpha() const {
+    return GetField<float>(VT_ALPHA, 1.0f);
   }
-  float localopacity() const {
-    return GetField<float>(VT_LOCALOPACITY, 1.0f);
+  float local_alpha() const {
+    return GetField<float>(VT_LOCAL_ALPHA, 1.0f);
   }
-  int32_t priority() const {
-    return GetField<int32_t>(VT_PRIORITY, 0);
+  float priority() const {
+    return GetField<float>(VT_PRIORITY, 0.0f);
   }
   bool flip_v() const {
     return GetField<uint8_t>(VT_FLIP_V, 0) != 0;
@@ -660,8 +672,8 @@ struct PartState FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   bool hide() const {
     return GetField<uint8_t>(VT_HIDE, 0) != 0;
   }
-  const ss::runtime::PartAttributePartColor *parts_color() const {
-    return GetStruct<const ss::runtime::PartAttributePartColor *>(VT_PARTS_COLOR);
+  const ss::runtime::PartAttributePartColor *part_color() const {
+    return GetStruct<const ss::runtime::PartAttributePartColor *>(VT_PART_COLOR);
   }
   const ss::runtime::PartAttributeShader *shader() const {
     return GetStruct<const ss::runtime::PartAttributeShader *>(VT_SHADER);
@@ -693,14 +705,14 @@ struct PartState FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   bool img_flip_v() const {
     return GetField<uint8_t>(VT_IMG_FLIP_V, 0) != 0;
   }
-  float uv_move_x() const {
-    return GetField<float>(VT_UV_MOVE_X, 0.0f);
+  float uv_translation_x() const {
+    return GetField<float>(VT_UV_TRANSLATION_X, 0.0f);
   }
-  float uv_move_y() const {
-    return GetField<float>(VT_UV_MOVE_Y, 0.0f);
+  float uv_translation_y() const {
+    return GetField<float>(VT_UV_TRANSLATION_Y, 0.0f);
   }
-  float uv_move_z() const {
-    return GetField<float>(VT_UV_MOVE_Z, 0.0f);
+  float uv_rotation_z() const {
+    return GetField<float>(VT_UV_ROTATION_Z, 0.0f);
   }
   float uv_scale_x() const {
     return GetField<float>(VT_UV_SCALE_X, 1.0f);
@@ -741,13 +753,13 @@ struct PartState FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyField<float>(verifier, VT_SCALE_Y, 4) &&
            VerifyField<float>(verifier, VT_LOCAL_SCALE_X, 4) &&
            VerifyField<float>(verifier, VT_LOCAL_SCALE_Y, 4) &&
-           VerifyField<float>(verifier, VT_OPACITY, 4) &&
-           VerifyField<float>(verifier, VT_LOCALOPACITY, 4) &&
-           VerifyField<int32_t>(verifier, VT_PRIORITY, 4) &&
+           VerifyField<float>(verifier, VT_ALPHA, 4) &&
+           VerifyField<float>(verifier, VT_LOCAL_ALPHA, 4) &&
+           VerifyField<float>(verifier, VT_PRIORITY, 4) &&
            VerifyField<uint8_t>(verifier, VT_FLIP_V, 1) &&
            VerifyField<uint8_t>(verifier, VT_FLIP_H, 1) &&
            VerifyField<uint8_t>(verifier, VT_HIDE, 1) &&
-           VerifyField<ss::runtime::PartAttributePartColor>(verifier, VT_PARTS_COLOR, 4) &&
+           VerifyField<ss::runtime::PartAttributePartColor>(verifier, VT_PART_COLOR, 4) &&
            VerifyField<ss::runtime::PartAttributeShader>(verifier, VT_SHADER, 4) &&
            VerifyField<ss::runtime::PartAttributeVertex>(verifier, VT_VERTEX, 4) &&
            VerifyField<float>(verifier, VT_PIVOT_X, 4) &&
@@ -758,9 +770,9 @@ struct PartState FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyField<float>(verifier, VT_SIZE_Y, 4) &&
            VerifyField<uint8_t>(verifier, VT_IMG_FLIP_H, 1) &&
            VerifyField<uint8_t>(verifier, VT_IMG_FLIP_V, 1) &&
-           VerifyField<float>(verifier, VT_UV_MOVE_X, 4) &&
-           VerifyField<float>(verifier, VT_UV_MOVE_Y, 4) &&
-           VerifyField<float>(verifier, VT_UV_MOVE_Z, 4) &&
+           VerifyField<float>(verifier, VT_UV_TRANSLATION_X, 4) &&
+           VerifyField<float>(verifier, VT_UV_TRANSLATION_Y, 4) &&
+           VerifyField<float>(verifier, VT_UV_ROTATION_Z, 4) &&
            VerifyField<float>(verifier, VT_UV_SCALE_X, 4) &&
            VerifyField<float>(verifier, VT_UV_SCALE_Y, 4) &&
            VerifyField<float>(verifier, VT_BOUNDING_RADIUS, 4) &&
@@ -813,14 +825,14 @@ struct PartStateBuilder {
   void add_local_scale_y(float local_scale_y) {
     fbb_.AddElement<float>(PartState::VT_LOCAL_SCALE_Y, local_scale_y, 1.0f);
   }
-  void add_opacity(float opacity) {
-    fbb_.AddElement<float>(PartState::VT_OPACITY, opacity, 1.0f);
+  void add_alpha(float alpha) {
+    fbb_.AddElement<float>(PartState::VT_ALPHA, alpha, 1.0f);
   }
-  void add_localopacity(float localopacity) {
-    fbb_.AddElement<float>(PartState::VT_LOCALOPACITY, localopacity, 1.0f);
+  void add_local_alpha(float local_alpha) {
+    fbb_.AddElement<float>(PartState::VT_LOCAL_ALPHA, local_alpha, 1.0f);
   }
-  void add_priority(int32_t priority) {
-    fbb_.AddElement<int32_t>(PartState::VT_PRIORITY, priority, 0);
+  void add_priority(float priority) {
+    fbb_.AddElement<float>(PartState::VT_PRIORITY, priority, 0.0f);
   }
   void add_flip_v(bool flip_v) {
     fbb_.AddElement<uint8_t>(PartState::VT_FLIP_V, static_cast<uint8_t>(flip_v), 0);
@@ -831,8 +843,8 @@ struct PartStateBuilder {
   void add_hide(bool hide) {
     fbb_.AddElement<uint8_t>(PartState::VT_HIDE, static_cast<uint8_t>(hide), 0);
   }
-  void add_parts_color(const ss::runtime::PartAttributePartColor *parts_color) {
-    fbb_.AddStruct(PartState::VT_PARTS_COLOR, parts_color);
+  void add_part_color(const ss::runtime::PartAttributePartColor *part_color) {
+    fbb_.AddStruct(PartState::VT_PART_COLOR, part_color);
   }
   void add_shader(const ss::runtime::PartAttributeShader *shader) {
     fbb_.AddStruct(PartState::VT_SHADER, shader);
@@ -864,14 +876,14 @@ struct PartStateBuilder {
   void add_img_flip_v(bool img_flip_v) {
     fbb_.AddElement<uint8_t>(PartState::VT_IMG_FLIP_V, static_cast<uint8_t>(img_flip_v), 0);
   }
-  void add_uv_move_x(float uv_move_x) {
-    fbb_.AddElement<float>(PartState::VT_UV_MOVE_X, uv_move_x, 0.0f);
+  void add_uv_translation_x(float uv_translation_x) {
+    fbb_.AddElement<float>(PartState::VT_UV_TRANSLATION_X, uv_translation_x, 0.0f);
   }
-  void add_uv_move_y(float uv_move_y) {
-    fbb_.AddElement<float>(PartState::VT_UV_MOVE_Y, uv_move_y, 0.0f);
+  void add_uv_translation_y(float uv_translation_y) {
+    fbb_.AddElement<float>(PartState::VT_UV_TRANSLATION_Y, uv_translation_y, 0.0f);
   }
-  void add_uv_move_z(float uv_move_z) {
-    fbb_.AddElement<float>(PartState::VT_UV_MOVE_Z, uv_move_z, 0.0f);
+  void add_uv_rotation_z(float uv_rotation_z) {
+    fbb_.AddElement<float>(PartState::VT_UV_ROTATION_Z, uv_rotation_z, 0.0f);
   }
   void add_uv_scale_x(float uv_scale_x) {
     fbb_.AddElement<float>(PartState::VT_UV_SCALE_X, uv_scale_x, 1.0f);
@@ -922,13 +934,13 @@ inline ::flatbuffers::Offset<PartState> CreatePartState(
     float scale_y = 1.0f,
     float local_scale_x = 1.0f,
     float local_scale_y = 1.0f,
-    float opacity = 1.0f,
-    float localopacity = 1.0f,
-    int32_t priority = 0,
+    float alpha = 1.0f,
+    float local_alpha = 1.0f,
+    float priority = 0.0f,
     bool flip_v = false,
     bool flip_h = false,
     bool hide = false,
-    const ss::runtime::PartAttributePartColor *parts_color = nullptr,
+    const ss::runtime::PartAttributePartColor *part_color = nullptr,
     const ss::runtime::PartAttributeShader *shader = nullptr,
     const ss::runtime::PartAttributeVertex *vertex = nullptr,
     float pivot_x = 0.0f,
@@ -939,9 +951,9 @@ inline ::flatbuffers::Offset<PartState> CreatePartState(
     float size_y = 1.0f,
     bool img_flip_h = false,
     bool img_flip_v = false,
-    float uv_move_x = 0.0f,
-    float uv_move_y = 0.0f,
-    float uv_move_z = 0.0f,
+    float uv_translation_x = 0.0f,
+    float uv_translation_y = 0.0f,
+    float uv_rotation_z = 0.0f,
     float uv_scale_x = 1.0f,
     float uv_scale_y = 1.0f,
     float bounding_radius = 0.0f,
@@ -960,9 +972,9 @@ inline ::flatbuffers::Offset<PartState> CreatePartState(
   builder_.add_bounding_radius(bounding_radius);
   builder_.add_uv_scale_y(uv_scale_y);
   builder_.add_uv_scale_x(uv_scale_x);
-  builder_.add_uv_move_z(uv_move_z);
-  builder_.add_uv_move_y(uv_move_y);
-  builder_.add_uv_move_x(uv_move_x);
+  builder_.add_uv_rotation_z(uv_rotation_z);
+  builder_.add_uv_translation_y(uv_translation_y);
+  builder_.add_uv_translation_x(uv_translation_x);
   builder_.add_size_y(size_y);
   builder_.add_size_x(size_x);
   builder_.add_anchor_y(anchor_y);
@@ -971,10 +983,10 @@ inline ::flatbuffers::Offset<PartState> CreatePartState(
   builder_.add_pivot_x(pivot_x);
   builder_.add_vertex(vertex);
   builder_.add_shader(shader);
-  builder_.add_parts_color(parts_color);
+  builder_.add_part_color(part_color);
   builder_.add_priority(priority);
-  builder_.add_localopacity(localopacity);
-  builder_.add_opacity(opacity);
+  builder_.add_local_alpha(local_alpha);
+  builder_.add_alpha(alpha);
   builder_.add_local_scale_y(local_scale_y);
   builder_.add_local_scale_x(local_scale_x);
   builder_.add_scale_y(scale_y);
