@@ -9,13 +9,13 @@ pushd ${ROOTDIR}/gd_spritestudio > /dev/null
 FLATC=flatc
 
 /bin/mkdir -p runtime
-for f in SsConverter3/libs/ssruntime/fbs/*.fbs; do
+for f in SpriteStudio7-SDK/libs/ssruntime/fbs/*.fbs; do
     name=$(basename "$f" .fbs)
     ${FLATC} -c $f    
     /bin/mv "${name}_generated.h" ./runtime/${name}.h
 done
 
-for f in SsConverter3/libs/ssab/fbs/*.fbs; do
+for f in SpriteStudio7-SDK/libs/ssab/fbs/*.fbs; do
     name=$(basename "$f" .fbs)
     ${FLATC} -c $f    
     /bin/mv "${name}_generated.h" ./runtime/${name}.h

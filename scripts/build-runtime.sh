@@ -52,7 +52,7 @@ done
 echo ""
 
 pushd ${ROOTDIR}/gd_spritestudio > /dev/null
-pushd SsConverter3 > /dev/null
+pushd SpriteStudio7-SDK > /dev/null
 if [[ "${opts[build]}" == "release" ]]; then
     ./scripts/release-${opts[platform]}.sh
 else
@@ -61,7 +61,7 @@ fi
 
 
 popd > /dev/null
-INPUT=SsConverter3/target
+INPUT=SpriteStudio7-SDK/target
 OUTPUT=runtime/libs/${opts[platform]}
 /bin/mkdir -p ${OUTPUT}
 if [[ "${opts[build]}" == "release" ]]; then
