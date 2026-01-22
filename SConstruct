@@ -91,7 +91,7 @@ env.Append(
     ])
 
 if env['target'] == 'editor':
-    env.Append(LIBS=["ssconverter3"])
+    env.Append(LIBS=["ssconverter"])
 env.Append(LIBS=["ssruntime"])
 
 
