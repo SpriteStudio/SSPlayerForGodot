@@ -42,7 +42,7 @@ pushd SpriteStudio7-SDK
 if ($opts.build -eq "release") {
     & ./scripts/release-windows.ps1
 } else {
-    & cargo build -p ssconverter3 -p ssruntime
+    & cargo build -p ssconverter -p ssruntime
 }
 popd
 
@@ -54,10 +54,10 @@ New-Item "./${outputDir}/$($opts.arch)" -ItemType Directory -ErrorAction Silentl
 $targets= "editor", "template_release", "template_debug"
 foreach($target in $targets) {
     Copy-Item ./${inputDir}/$($opts.build)/ssruntime.lib ./${outputDir}/ssruntime.$($opts.platform).${target}.$($opts.arch).lib -Force
-    Copy-Item ./${inputDir}/$($opts.build)/ssconverter3.lib ./${outputDir}/ssconverter3.$($opts.platform).${target}.$($opts.arch).lib -Force
+    Copy-Item ./${inputDir}/$($opts.build)/ssconverter.lib ./${outputDir}/ssconverter.$($opts.platform).${target}.$($opts.arch).lib -Force
 }
 Copy-Item ./${inputDir}/$($opts.build)/ssruntime.lib ./${outputDir}/$($opts.arch)/ssruntime.lib -Force
-Copy-Item ./${inputDir}/$($opts.build)/ssconverter3.lib ./${outputDir}/$($opts.arch)/ssconverter3.lib -Force
+Copy-Item ./${inputDir}/$($opts.build)/ssconverter.lib ./${outputDir}/$($opts.arch)/ssconverter.lib -Force
 
 
 popd

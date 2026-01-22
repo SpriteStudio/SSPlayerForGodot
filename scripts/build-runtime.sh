@@ -56,7 +56,7 @@ pushd SpriteStudio7-SDK > /dev/null
 if [[ "${opts[build]}" == "release" ]]; then
     ./scripts/release-${opts[platform]}.sh
 else
-    cargo build -p ssconverter3 -p ssruntime
+    cargo build -p ssconverter -p ssruntime
 fi
 
 
@@ -67,11 +67,11 @@ OUTPUT=runtime/libs/${opts[platform]}
 if [[ "${opts[build]}" == "release" ]]; then
     if [[ "${opts[platform]}" == "macos" ]]; then
         /bin/cp ${INPUT}/universal-apple-darwin/libssruntime.a ${OUTPUT}/
-        /bin/cp ${INPUT}/universal-apple-darwin/libssconverter3.a ${OUTPUT}/        
+        /bin/cp ${INPUT}/universal-apple-darwin/libssconverter.a ${OUTPUT}/        
     fi
 else
     /bin/cp ${INPUT}/${opts[build]}/libssruntime.a ${OUTPUT}/
-    /bin/cp ${INPUT}/${opts[build]}/libssconverter3.a ${OUTPUT}/
+    /bin/cp ${INPUT}/${opts[build]}/libssconverter.a ${OUTPUT}/
 fi
 
 popd > /dev/null
