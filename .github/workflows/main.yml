@@ -1,9 +1,9 @@
 name: CI
 
 on:
-  pull_request:
-    branches:
-      - main
+  push:
+    branches-ignore:
+      - '**'
 
 env:
   GODOT_VERSION_4: 4.4
