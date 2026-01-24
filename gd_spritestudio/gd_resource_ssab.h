@@ -30,18 +30,18 @@ protected:
 #endif
 
 public:
-	Error load_from_file(const String &path);
-	Error save_to_file(const String &path);
+  Error load_from_file(const String &path);
+  Error save_to_file(const String &path);
   int get_animation_count();
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
   PackedStringArray get_animation_names();
 #else
   Vector<String> get_animation_names();
 #endif
- 
-  const SsAnimeBinary *get_ss_anime_binary();
+
+  const ss::format::SsAnimeBinary *get_ss_anime_binary();
   const uint8_t *get_data_ptr();
-  
+
 #ifndef SPRITESTUDIO_GODOT_EXTENSION
   virtual Error copy_from(const Ref<Resource> &p_resource);
 #endif
@@ -63,7 +63,9 @@ public:
   Variant _load(const String &path, const String &original_path,
                 bool use_sub_threads, int32_t cache_mode);
 #else
-  Ref<Resource> load(const String &path, const String &original_path, Error *error, bool use_sub_threads, float *progress, CacheMode cache_mode) override;
+  Ref<Resource> load(const String &path, const String &original_path,
+                     Error *error, bool use_sub_threads, float *progress,
+                     CacheMode cache_mode) override;
 
   void get_recognized_extensions(List<String> *extensions) const override;
 
@@ -80,15 +82,18 @@ public:
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
   static void _bind_methods() {};
 
-  Error _save(const Ref<Resource> &resource, const String &path, uint32_t flags) override;
+  Error _save(const Ref<Resource> &resource, const String &path,
+              uint32_t flags) override;
 
   bool _recognize(const Ref<Resource> &resource);
 
   PackedStringArray _get_recognized_extensions(const Ref<Resource> &resource);
 #else
-  Error save(const Ref<Resource> &resource, const String &path, uint32_t flags) override;
+  Error save(const Ref<Resource> &resource, const String &path,
+             uint32_t flags) override;
 
-  void get_recognized_extensions(const Ref<Resource> &resource, List<String> *p_extensions) const override;
+  void get_recognized_extensions(const Ref<Resource> &resource,
+                                 List<String> *p_extensions) const override;
 
   bool recognize(const Ref<Resource> &p_resource) const override;
 #endif

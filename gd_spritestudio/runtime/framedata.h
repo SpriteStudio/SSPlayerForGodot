@@ -34,7 +34,6 @@ struct PartAttributeDeformBuilder;
 struct PartAttributeShader;
 
 struct PartState;
-struct PartStateBuilder;
 
 struct FrameData;
 struct FrameDataBuilder;
@@ -508,6 +507,272 @@ FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(4) PartAttributeShader FLATBUFFERS_FINAL_CLA
 };
 FLATBUFFERS_STRUCT_END(PartAttributeShader, 52);
 
+FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(8) PartState FLATBUFFERS_FINAL_CLASS {
+ private:
+  uint64_t update_flag_;
+  float position_x_;
+  float position_y_;
+  float position_z_;
+  float rotation_x_;
+  float rotation_y_;
+  float rotation_z_;
+  float scale_x_;
+  float scale_y_;
+  float local_scale_x_;
+  float local_scale_y_;
+  float alpha_;
+  float local_alpha_;
+  float priority_;
+  float pivot_x_;
+  float pivot_y_;
+  float anchor_x_;
+  float anchor_y_;
+  float size_x_;
+  float size_y_;
+  float uv_translation_x_;
+  float uv_translation_y_;
+  float uv_rotation_z_;
+  float uv_scale_x_;
+  float uv_scale_y_;
+  float bounding_radius_;
+  float mask_;
+  float skew_x_;
+  float skew_y_;
+  uint32_t texture_;
+  int16_t part_index_;
+  int16_t cell_;
+  int16_t part_color_;
+  int16_t shader_;
+  int16_t vertex_;
+  int16_t deform_;
+  uint8_t flip_h_;
+  uint8_t flip_v_;
+  uint8_t hide_;
+  uint8_t img_flip_h_;
+  uint8_t img_flip_v_;
+  int8_t padding0__;  int16_t padding1__;
+
+ public:
+  PartState()
+      : update_flag_(0),
+        position_x_(0),
+        position_y_(0),
+        position_z_(0),
+        rotation_x_(0),
+        rotation_y_(0),
+        rotation_z_(0),
+        scale_x_(0),
+        scale_y_(0),
+        local_scale_x_(0),
+        local_scale_y_(0),
+        alpha_(0),
+        local_alpha_(0),
+        priority_(0),
+        pivot_x_(0),
+        pivot_y_(0),
+        anchor_x_(0),
+        anchor_y_(0),
+        size_x_(0),
+        size_y_(0),
+        uv_translation_x_(0),
+        uv_translation_y_(0),
+        uv_rotation_z_(0),
+        uv_scale_x_(0),
+        uv_scale_y_(0),
+        bounding_radius_(0),
+        mask_(0),
+        skew_x_(0),
+        skew_y_(0),
+        texture_(0),
+        part_index_(0),
+        cell_(0),
+        part_color_(0),
+        shader_(0),
+        vertex_(0),
+        deform_(0),
+        flip_h_(0),
+        flip_v_(0),
+        hide_(0),
+        img_flip_h_(0),
+        img_flip_v_(0),
+        padding0__(0),
+        padding1__(0) {
+    (void)padding0__;
+    (void)padding1__;
+  }
+  PartState(ss::runtime::UpdateAttributeFlags _update_flag, float _position_x, float _position_y, float _position_z, float _rotation_x, float _rotation_y, float _rotation_z, float _scale_x, float _scale_y, float _local_scale_x, float _local_scale_y, float _alpha, float _local_alpha, float _priority, float _pivot_x, float _pivot_y, float _anchor_x, float _anchor_y, float _size_x, float _size_y, float _uv_translation_x, float _uv_translation_y, float _uv_rotation_z, float _uv_scale_x, float _uv_scale_y, float _bounding_radius, float _mask, float _skew_x, float _skew_y, uint32_t _texture, int16_t _part_index, int16_t _cell, int16_t _part_color, int16_t _shader, int16_t _vertex, int16_t _deform, bool _flip_h, bool _flip_v, bool _hide, bool _img_flip_h, bool _img_flip_v)
+      : update_flag_(::flatbuffers::EndianScalar(static_cast<uint64_t>(_update_flag))),
+        position_x_(::flatbuffers::EndianScalar(_position_x)),
+        position_y_(::flatbuffers::EndianScalar(_position_y)),
+        position_z_(::flatbuffers::EndianScalar(_position_z)),
+        rotation_x_(::flatbuffers::EndianScalar(_rotation_x)),
+        rotation_y_(::flatbuffers::EndianScalar(_rotation_y)),
+        rotation_z_(::flatbuffers::EndianScalar(_rotation_z)),
+        scale_x_(::flatbuffers::EndianScalar(_scale_x)),
+        scale_y_(::flatbuffers::EndianScalar(_scale_y)),
+        local_scale_x_(::flatbuffers::EndianScalar(_local_scale_x)),
+        local_scale_y_(::flatbuffers::EndianScalar(_local_scale_y)),
+        alpha_(::flatbuffers::EndianScalar(_alpha)),
+        local_alpha_(::flatbuffers::EndianScalar(_local_alpha)),
+        priority_(::flatbuffers::EndianScalar(_priority)),
+        pivot_x_(::flatbuffers::EndianScalar(_pivot_x)),
+        pivot_y_(::flatbuffers::EndianScalar(_pivot_y)),
+        anchor_x_(::flatbuffers::EndianScalar(_anchor_x)),
+        anchor_y_(::flatbuffers::EndianScalar(_anchor_y)),
+        size_x_(::flatbuffers::EndianScalar(_size_x)),
+        size_y_(::flatbuffers::EndianScalar(_size_y)),
+        uv_translation_x_(::flatbuffers::EndianScalar(_uv_translation_x)),
+        uv_translation_y_(::flatbuffers::EndianScalar(_uv_translation_y)),
+        uv_rotation_z_(::flatbuffers::EndianScalar(_uv_rotation_z)),
+        uv_scale_x_(::flatbuffers::EndianScalar(_uv_scale_x)),
+        uv_scale_y_(::flatbuffers::EndianScalar(_uv_scale_y)),
+        bounding_radius_(::flatbuffers::EndianScalar(_bounding_radius)),
+        mask_(::flatbuffers::EndianScalar(_mask)),
+        skew_x_(::flatbuffers::EndianScalar(_skew_x)),
+        skew_y_(::flatbuffers::EndianScalar(_skew_y)),
+        texture_(::flatbuffers::EndianScalar(_texture)),
+        part_index_(::flatbuffers::EndianScalar(_part_index)),
+        cell_(::flatbuffers::EndianScalar(_cell)),
+        part_color_(::flatbuffers::EndianScalar(_part_color)),
+        shader_(::flatbuffers::EndianScalar(_shader)),
+        vertex_(::flatbuffers::EndianScalar(_vertex)),
+        deform_(::flatbuffers::EndianScalar(_deform)),
+        flip_h_(::flatbuffers::EndianScalar(static_cast<uint8_t>(_flip_h))),
+        flip_v_(::flatbuffers::EndianScalar(static_cast<uint8_t>(_flip_v))),
+        hide_(::flatbuffers::EndianScalar(static_cast<uint8_t>(_hide))),
+        img_flip_h_(::flatbuffers::EndianScalar(static_cast<uint8_t>(_img_flip_h))),
+        img_flip_v_(::flatbuffers::EndianScalar(static_cast<uint8_t>(_img_flip_v))),
+        padding0__(0),
+        padding1__(0) {
+    (void)padding0__;
+    (void)padding1__;
+  }
+  ss::runtime::UpdateAttributeFlags update_flag() const {
+    return static_cast<ss::runtime::UpdateAttributeFlags>(::flatbuffers::EndianScalar(update_flag_));
+  }
+  float position_x() const {
+    return ::flatbuffers::EndianScalar(position_x_);
+  }
+  float position_y() const {
+    return ::flatbuffers::EndianScalar(position_y_);
+  }
+  float position_z() const {
+    return ::flatbuffers::EndianScalar(position_z_);
+  }
+  float rotation_x() const {
+    return ::flatbuffers::EndianScalar(rotation_x_);
+  }
+  float rotation_y() const {
+    return ::flatbuffers::EndianScalar(rotation_y_);
+  }
+  float rotation_z() const {
+    return ::flatbuffers::EndianScalar(rotation_z_);
+  }
+  float scale_x() const {
+    return ::flatbuffers::EndianScalar(scale_x_);
+  }
+  float scale_y() const {
+    return ::flatbuffers::EndianScalar(scale_y_);
+  }
+  float local_scale_x() const {
+    return ::flatbuffers::EndianScalar(local_scale_x_);
+  }
+  float local_scale_y() const {
+    return ::flatbuffers::EndianScalar(local_scale_y_);
+  }
+  float alpha() const {
+    return ::flatbuffers::EndianScalar(alpha_);
+  }
+  float local_alpha() const {
+    return ::flatbuffers::EndianScalar(local_alpha_);
+  }
+  float priority() const {
+    return ::flatbuffers::EndianScalar(priority_);
+  }
+  float pivot_x() const {
+    return ::flatbuffers::EndianScalar(pivot_x_);
+  }
+  float pivot_y() const {
+    return ::flatbuffers::EndianScalar(pivot_y_);
+  }
+  float anchor_x() const {
+    return ::flatbuffers::EndianScalar(anchor_x_);
+  }
+  float anchor_y() const {
+    return ::flatbuffers::EndianScalar(anchor_y_);
+  }
+  float size_x() const {
+    return ::flatbuffers::EndianScalar(size_x_);
+  }
+  float size_y() const {
+    return ::flatbuffers::EndianScalar(size_y_);
+  }
+  float uv_translation_x() const {
+    return ::flatbuffers::EndianScalar(uv_translation_x_);
+  }
+  float uv_translation_y() const {
+    return ::flatbuffers::EndianScalar(uv_translation_y_);
+  }
+  float uv_rotation_z() const {
+    return ::flatbuffers::EndianScalar(uv_rotation_z_);
+  }
+  float uv_scale_x() const {
+    return ::flatbuffers::EndianScalar(uv_scale_x_);
+  }
+  float uv_scale_y() const {
+    return ::flatbuffers::EndianScalar(uv_scale_y_);
+  }
+  float bounding_radius() const {
+    return ::flatbuffers::EndianScalar(bounding_radius_);
+  }
+  float mask() const {
+    return ::flatbuffers::EndianScalar(mask_);
+  }
+  float skew_x() const {
+    return ::flatbuffers::EndianScalar(skew_x_);
+  }
+  float skew_y() const {
+    return ::flatbuffers::EndianScalar(skew_y_);
+  }
+  uint32_t texture() const {
+    return ::flatbuffers::EndianScalar(texture_);
+  }
+  int16_t part_index() const {
+    return ::flatbuffers::EndianScalar(part_index_);
+  }
+  int16_t cell() const {
+    return ::flatbuffers::EndianScalar(cell_);
+  }
+  int16_t part_color() const {
+    return ::flatbuffers::EndianScalar(part_color_);
+  }
+  int16_t shader() const {
+    return ::flatbuffers::EndianScalar(shader_);
+  }
+  int16_t vertex() const {
+    return ::flatbuffers::EndianScalar(vertex_);
+  }
+  int16_t deform() const {
+    return ::flatbuffers::EndianScalar(deform_);
+  }
+  bool flip_h() const {
+    return ::flatbuffers::EndianScalar(flip_h_) != 0;
+  }
+  bool flip_v() const {
+    return ::flatbuffers::EndianScalar(flip_v_) != 0;
+  }
+  bool hide() const {
+    return ::flatbuffers::EndianScalar(hide_) != 0;
+  }
+  bool img_flip_h() const {
+    return ::flatbuffers::EndianScalar(img_flip_h_) != 0;
+  }
+  bool img_flip_v() const {
+    return ::flatbuffers::EndianScalar(img_flip_v_) != 0;
+  }
+};
+FLATBUFFERS_STRUCT_END(PartState, 144);
+
 struct PartAttributeDeform FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   typedef PartAttributeDeformBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
@@ -574,446 +839,30 @@ inline ::flatbuffers::Offset<PartAttributeDeform> CreatePartAttributeDeformDirec
       index__);
 }
 
-struct PartState FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
-  typedef PartStateBuilder Builder;
-  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
-    VT_UPDATE_FLAG = 4,
-    VT_CELL = 6,
-    VT_POSITION_X = 8,
-    VT_POSITION_Y = 10,
-    VT_POSITION_Z = 12,
-    VT_ROTATION_X = 14,
-    VT_ROTATION_Y = 16,
-    VT_ROTATION_Z = 18,
-    VT_SCALE_X = 20,
-    VT_SCALE_Y = 22,
-    VT_LOCAL_SCALE_X = 24,
-    VT_LOCAL_SCALE_Y = 26,
-    VT_ALPHA = 28,
-    VT_LOCAL_ALPHA = 30,
-    VT_PRIORITY = 32,
-    VT_FLIP_V = 34,
-    VT_FLIP_H = 36,
-    VT_HIDE = 38,
-    VT_PART_COLOR = 40,
-    VT_SHADER = 42,
-    VT_VERTEX = 44,
-    VT_PIVOT_X = 46,
-    VT_PIVOT_Y = 48,
-    VT_ANCHOR_X = 50,
-    VT_ANCHOR_Y = 52,
-    VT_SIZE_X = 54,
-    VT_SIZE_Y = 56,
-    VT_IMG_FLIP_H = 58,
-    VT_IMG_FLIP_V = 60,
-    VT_UV_TRANSLATION_X = 62,
-    VT_UV_TRANSLATION_Y = 64,
-    VT_UV_ROTATION_Z = 66,
-    VT_UV_SCALE_X = 68,
-    VT_UV_SCALE_Y = 70,
-    VT_BOUNDING_RADIUS = 72,
-    VT_MASK = 74,
-    VT_SKEW_X = 76,
-    VT_SKEW_Y = 78,
-    VT_DEFORM = 80,
-    VT_TEXTURE = 82
-  };
-  ss::runtime::UpdateAttributeFlags update_flag() const {
-    return static_cast<ss::runtime::UpdateAttributeFlags>(GetField<uint64_t>(VT_UPDATE_FLAG, 0));
-  }
-  const ss::runtime::PartAttributeCell *cell() const {
-    return GetStruct<const ss::runtime::PartAttributeCell *>(VT_CELL);
-  }
-  float position_x() const {
-    return GetField<float>(VT_POSITION_X, 0.0f);
-  }
-  float position_y() const {
-    return GetField<float>(VT_POSITION_Y, 0.0f);
-  }
-  float position_z() const {
-    return GetField<float>(VT_POSITION_Z, 0.0f);
-  }
-  float rotation_x() const {
-    return GetField<float>(VT_ROTATION_X, 0.0f);
-  }
-  float rotation_y() const {
-    return GetField<float>(VT_ROTATION_Y, 0.0f);
-  }
-  float rotation_z() const {
-    return GetField<float>(VT_ROTATION_Z, 0.0f);
-  }
-  float scale_x() const {
-    return GetField<float>(VT_SCALE_X, 1.0f);
-  }
-  float scale_y() const {
-    return GetField<float>(VT_SCALE_Y, 1.0f);
-  }
-  float local_scale_x() const {
-    return GetField<float>(VT_LOCAL_SCALE_X, 1.0f);
-  }
-  float local_scale_y() const {
-    return GetField<float>(VT_LOCAL_SCALE_Y, 1.0f);
-  }
-  float alpha() const {
-    return GetField<float>(VT_ALPHA, 1.0f);
-  }
-  float local_alpha() const {
-    return GetField<float>(VT_LOCAL_ALPHA, 1.0f);
-  }
-  float priority() const {
-    return GetField<float>(VT_PRIORITY, 0.0f);
-  }
-  bool flip_v() const {
-    return GetField<uint8_t>(VT_FLIP_V, 0) != 0;
-  }
-  bool flip_h() const {
-    return GetField<uint8_t>(VT_FLIP_H, 0) != 0;
-  }
-  bool hide() const {
-    return GetField<uint8_t>(VT_HIDE, 0) != 0;
-  }
-  const ss::runtime::PartAttributePartColor *part_color() const {
-    return GetStruct<const ss::runtime::PartAttributePartColor *>(VT_PART_COLOR);
-  }
-  const ss::runtime::PartAttributeShader *shader() const {
-    return GetStruct<const ss::runtime::PartAttributeShader *>(VT_SHADER);
-  }
-  const ss::runtime::PartAttributeVertex *vertex() const {
-    return GetStruct<const ss::runtime::PartAttributeVertex *>(VT_VERTEX);
-  }
-  float pivot_x() const {
-    return GetField<float>(VT_PIVOT_X, 0.0f);
-  }
-  float pivot_y() const {
-    return GetField<float>(VT_PIVOT_Y, 0.0f);
-  }
-  float anchor_x() const {
-    return GetField<float>(VT_ANCHOR_X, 0.0f);
-  }
-  float anchor_y() const {
-    return GetField<float>(VT_ANCHOR_Y, 0.0f);
-  }
-  float size_x() const {
-    return GetField<float>(VT_SIZE_X, 1.0f);
-  }
-  float size_y() const {
-    return GetField<float>(VT_SIZE_Y, 1.0f);
-  }
-  bool img_flip_h() const {
-    return GetField<uint8_t>(VT_IMG_FLIP_H, 0) != 0;
-  }
-  bool img_flip_v() const {
-    return GetField<uint8_t>(VT_IMG_FLIP_V, 0) != 0;
-  }
-  float uv_translation_x() const {
-    return GetField<float>(VT_UV_TRANSLATION_X, 0.0f);
-  }
-  float uv_translation_y() const {
-    return GetField<float>(VT_UV_TRANSLATION_Y, 0.0f);
-  }
-  float uv_rotation_z() const {
-    return GetField<float>(VT_UV_ROTATION_Z, 0.0f);
-  }
-  float uv_scale_x() const {
-    return GetField<float>(VT_UV_SCALE_X, 1.0f);
-  }
-  float uv_scale_y() const {
-    return GetField<float>(VT_UV_SCALE_Y, 1.0f);
-  }
-  float bounding_radius() const {
-    return GetField<float>(VT_BOUNDING_RADIUS, 0.0f);
-  }
-  float mask() const {
-    return GetField<float>(VT_MASK, 0.0f);
-  }
-  float skew_x() const {
-    return GetField<float>(VT_SKEW_X, 0.0f);
-  }
-  float skew_y() const {
-    return GetField<float>(VT_SKEW_Y, 0.0f);
-  }
-  int32_t deform() const {
-    return GetField<int32_t>(VT_DEFORM, -1);
-  }
-  uint32_t texture() const {
-    return GetField<uint32_t>(VT_TEXTURE, 0);
-  }
-  template <bool B = false>
-  bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
-    return VerifyTableStart(verifier) &&
-           VerifyField<uint64_t>(verifier, VT_UPDATE_FLAG, 8) &&
-           VerifyField<ss::runtime::PartAttributeCell>(verifier, VT_CELL, 4) &&
-           VerifyField<float>(verifier, VT_POSITION_X, 4) &&
-           VerifyField<float>(verifier, VT_POSITION_Y, 4) &&
-           VerifyField<float>(verifier, VT_POSITION_Z, 4) &&
-           VerifyField<float>(verifier, VT_ROTATION_X, 4) &&
-           VerifyField<float>(verifier, VT_ROTATION_Y, 4) &&
-           VerifyField<float>(verifier, VT_ROTATION_Z, 4) &&
-           VerifyField<float>(verifier, VT_SCALE_X, 4) &&
-           VerifyField<float>(verifier, VT_SCALE_Y, 4) &&
-           VerifyField<float>(verifier, VT_LOCAL_SCALE_X, 4) &&
-           VerifyField<float>(verifier, VT_LOCAL_SCALE_Y, 4) &&
-           VerifyField<float>(verifier, VT_ALPHA, 4) &&
-           VerifyField<float>(verifier, VT_LOCAL_ALPHA, 4) &&
-           VerifyField<float>(verifier, VT_PRIORITY, 4) &&
-           VerifyField<uint8_t>(verifier, VT_FLIP_V, 1) &&
-           VerifyField<uint8_t>(verifier, VT_FLIP_H, 1) &&
-           VerifyField<uint8_t>(verifier, VT_HIDE, 1) &&
-           VerifyField<ss::runtime::PartAttributePartColor>(verifier, VT_PART_COLOR, 4) &&
-           VerifyField<ss::runtime::PartAttributeShader>(verifier, VT_SHADER, 4) &&
-           VerifyField<ss::runtime::PartAttributeVertex>(verifier, VT_VERTEX, 4) &&
-           VerifyField<float>(verifier, VT_PIVOT_X, 4) &&
-           VerifyField<float>(verifier, VT_PIVOT_Y, 4) &&
-           VerifyField<float>(verifier, VT_ANCHOR_X, 4) &&
-           VerifyField<float>(verifier, VT_ANCHOR_Y, 4) &&
-           VerifyField<float>(verifier, VT_SIZE_X, 4) &&
-           VerifyField<float>(verifier, VT_SIZE_Y, 4) &&
-           VerifyField<uint8_t>(verifier, VT_IMG_FLIP_H, 1) &&
-           VerifyField<uint8_t>(verifier, VT_IMG_FLIP_V, 1) &&
-           VerifyField<float>(verifier, VT_UV_TRANSLATION_X, 4) &&
-           VerifyField<float>(verifier, VT_UV_TRANSLATION_Y, 4) &&
-           VerifyField<float>(verifier, VT_UV_ROTATION_Z, 4) &&
-           VerifyField<float>(verifier, VT_UV_SCALE_X, 4) &&
-           VerifyField<float>(verifier, VT_UV_SCALE_Y, 4) &&
-           VerifyField<float>(verifier, VT_BOUNDING_RADIUS, 4) &&
-           VerifyField<float>(verifier, VT_MASK, 4) &&
-           VerifyField<float>(verifier, VT_SKEW_X, 4) &&
-           VerifyField<float>(verifier, VT_SKEW_Y, 4) &&
-           VerifyField<int32_t>(verifier, VT_DEFORM, 4) &&
-           VerifyField<uint32_t>(verifier, VT_TEXTURE, 4) &&
-           verifier.EndTable();
-  }
-};
-
-struct PartStateBuilder {
-  typedef PartState Table;
-  ::flatbuffers::FlatBufferBuilder &fbb_;
-  ::flatbuffers::uoffset_t start_;
-  void add_update_flag(ss::runtime::UpdateAttributeFlags update_flag) {
-    fbb_.AddElement<uint64_t>(PartState::VT_UPDATE_FLAG, static_cast<uint64_t>(update_flag), 0);
-  }
-  void add_cell(const ss::runtime::PartAttributeCell *cell) {
-    fbb_.AddStruct(PartState::VT_CELL, cell);
-  }
-  void add_position_x(float position_x) {
-    fbb_.AddElement<float>(PartState::VT_POSITION_X, position_x, 0.0f);
-  }
-  void add_position_y(float position_y) {
-    fbb_.AddElement<float>(PartState::VT_POSITION_Y, position_y, 0.0f);
-  }
-  void add_position_z(float position_z) {
-    fbb_.AddElement<float>(PartState::VT_POSITION_Z, position_z, 0.0f);
-  }
-  void add_rotation_x(float rotation_x) {
-    fbb_.AddElement<float>(PartState::VT_ROTATION_X, rotation_x, 0.0f);
-  }
-  void add_rotation_y(float rotation_y) {
-    fbb_.AddElement<float>(PartState::VT_ROTATION_Y, rotation_y, 0.0f);
-  }
-  void add_rotation_z(float rotation_z) {
-    fbb_.AddElement<float>(PartState::VT_ROTATION_Z, rotation_z, 0.0f);
-  }
-  void add_scale_x(float scale_x) {
-    fbb_.AddElement<float>(PartState::VT_SCALE_X, scale_x, 1.0f);
-  }
-  void add_scale_y(float scale_y) {
-    fbb_.AddElement<float>(PartState::VT_SCALE_Y, scale_y, 1.0f);
-  }
-  void add_local_scale_x(float local_scale_x) {
-    fbb_.AddElement<float>(PartState::VT_LOCAL_SCALE_X, local_scale_x, 1.0f);
-  }
-  void add_local_scale_y(float local_scale_y) {
-    fbb_.AddElement<float>(PartState::VT_LOCAL_SCALE_Y, local_scale_y, 1.0f);
-  }
-  void add_alpha(float alpha) {
-    fbb_.AddElement<float>(PartState::VT_ALPHA, alpha, 1.0f);
-  }
-  void add_local_alpha(float local_alpha) {
-    fbb_.AddElement<float>(PartState::VT_LOCAL_ALPHA, local_alpha, 1.0f);
-  }
-  void add_priority(float priority) {
-    fbb_.AddElement<float>(PartState::VT_PRIORITY, priority, 0.0f);
-  }
-  void add_flip_v(bool flip_v) {
-    fbb_.AddElement<uint8_t>(PartState::VT_FLIP_V, static_cast<uint8_t>(flip_v), 0);
-  }
-  void add_flip_h(bool flip_h) {
-    fbb_.AddElement<uint8_t>(PartState::VT_FLIP_H, static_cast<uint8_t>(flip_h), 0);
-  }
-  void add_hide(bool hide) {
-    fbb_.AddElement<uint8_t>(PartState::VT_HIDE, static_cast<uint8_t>(hide), 0);
-  }
-  void add_part_color(const ss::runtime::PartAttributePartColor *part_color) {
-    fbb_.AddStruct(PartState::VT_PART_COLOR, part_color);
-  }
-  void add_shader(const ss::runtime::PartAttributeShader *shader) {
-    fbb_.AddStruct(PartState::VT_SHADER, shader);
-  }
-  void add_vertex(const ss::runtime::PartAttributeVertex *vertex) {
-    fbb_.AddStruct(PartState::VT_VERTEX, vertex);
-  }
-  void add_pivot_x(float pivot_x) {
-    fbb_.AddElement<float>(PartState::VT_PIVOT_X, pivot_x, 0.0f);
-  }
-  void add_pivot_y(float pivot_y) {
-    fbb_.AddElement<float>(PartState::VT_PIVOT_Y, pivot_y, 0.0f);
-  }
-  void add_anchor_x(float anchor_x) {
-    fbb_.AddElement<float>(PartState::VT_ANCHOR_X, anchor_x, 0.0f);
-  }
-  void add_anchor_y(float anchor_y) {
-    fbb_.AddElement<float>(PartState::VT_ANCHOR_Y, anchor_y, 0.0f);
-  }
-  void add_size_x(float size_x) {
-    fbb_.AddElement<float>(PartState::VT_SIZE_X, size_x, 1.0f);
-  }
-  void add_size_y(float size_y) {
-    fbb_.AddElement<float>(PartState::VT_SIZE_Y, size_y, 1.0f);
-  }
-  void add_img_flip_h(bool img_flip_h) {
-    fbb_.AddElement<uint8_t>(PartState::VT_IMG_FLIP_H, static_cast<uint8_t>(img_flip_h), 0);
-  }
-  void add_img_flip_v(bool img_flip_v) {
-    fbb_.AddElement<uint8_t>(PartState::VT_IMG_FLIP_V, static_cast<uint8_t>(img_flip_v), 0);
-  }
-  void add_uv_translation_x(float uv_translation_x) {
-    fbb_.AddElement<float>(PartState::VT_UV_TRANSLATION_X, uv_translation_x, 0.0f);
-  }
-  void add_uv_translation_y(float uv_translation_y) {
-    fbb_.AddElement<float>(PartState::VT_UV_TRANSLATION_Y, uv_translation_y, 0.0f);
-  }
-  void add_uv_rotation_z(float uv_rotation_z) {
-    fbb_.AddElement<float>(PartState::VT_UV_ROTATION_Z, uv_rotation_z, 0.0f);
-  }
-  void add_uv_scale_x(float uv_scale_x) {
-    fbb_.AddElement<float>(PartState::VT_UV_SCALE_X, uv_scale_x, 1.0f);
-  }
-  void add_uv_scale_y(float uv_scale_y) {
-    fbb_.AddElement<float>(PartState::VT_UV_SCALE_Y, uv_scale_y, 1.0f);
-  }
-  void add_bounding_radius(float bounding_radius) {
-    fbb_.AddElement<float>(PartState::VT_BOUNDING_RADIUS, bounding_radius, 0.0f);
-  }
-  void add_mask(float mask) {
-    fbb_.AddElement<float>(PartState::VT_MASK, mask, 0.0f);
-  }
-  void add_skew_x(float skew_x) {
-    fbb_.AddElement<float>(PartState::VT_SKEW_X, skew_x, 0.0f);
-  }
-  void add_skew_y(float skew_y) {
-    fbb_.AddElement<float>(PartState::VT_SKEW_Y, skew_y, 0.0f);
-  }
-  void add_deform(int32_t deform) {
-    fbb_.AddElement<int32_t>(PartState::VT_DEFORM, deform, -1);
-  }
-  void add_texture(uint32_t texture) {
-    fbb_.AddElement<uint32_t>(PartState::VT_TEXTURE, texture, 0);
-  }
-  explicit PartStateBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
-        : fbb_(_fbb) {
-    start_ = fbb_.StartTable();
-  }
-  ::flatbuffers::Offset<PartState> Finish() {
-    const auto end = fbb_.EndTable(start_);
-    auto o = ::flatbuffers::Offset<PartState>(end);
-    return o;
-  }
-};
-
-inline ::flatbuffers::Offset<PartState> CreatePartState(
-    ::flatbuffers::FlatBufferBuilder &_fbb,
-    ss::runtime::UpdateAttributeFlags update_flag = static_cast<ss::runtime::UpdateAttributeFlags>(0),
-    const ss::runtime::PartAttributeCell *cell = nullptr,
-    float position_x = 0.0f,
-    float position_y = 0.0f,
-    float position_z = 0.0f,
-    float rotation_x = 0.0f,
-    float rotation_y = 0.0f,
-    float rotation_z = 0.0f,
-    float scale_x = 1.0f,
-    float scale_y = 1.0f,
-    float local_scale_x = 1.0f,
-    float local_scale_y = 1.0f,
-    float alpha = 1.0f,
-    float local_alpha = 1.0f,
-    float priority = 0.0f,
-    bool flip_v = false,
-    bool flip_h = false,
-    bool hide = false,
-    const ss::runtime::PartAttributePartColor *part_color = nullptr,
-    const ss::runtime::PartAttributeShader *shader = nullptr,
-    const ss::runtime::PartAttributeVertex *vertex = nullptr,
-    float pivot_x = 0.0f,
-    float pivot_y = 0.0f,
-    float anchor_x = 0.0f,
-    float anchor_y = 0.0f,
-    float size_x = 1.0f,
-    float size_y = 1.0f,
-    bool img_flip_h = false,
-    bool img_flip_v = false,
-    float uv_translation_x = 0.0f,
-    float uv_translation_y = 0.0f,
-    float uv_rotation_z = 0.0f,
-    float uv_scale_x = 1.0f,
-    float uv_scale_y = 1.0f,
-    float bounding_radius = 0.0f,
-    float mask = 0.0f,
-    float skew_x = 0.0f,
-    float skew_y = 0.0f,
-    int32_t deform = -1,
-    uint32_t texture = 0) {
-  PartStateBuilder builder_(_fbb);
-  builder_.add_update_flag(update_flag);
-  builder_.add_texture(texture);
-  builder_.add_deform(deform);
-  builder_.add_skew_y(skew_y);
-  builder_.add_skew_x(skew_x);
-  builder_.add_mask(mask);
-  builder_.add_bounding_radius(bounding_radius);
-  builder_.add_uv_scale_y(uv_scale_y);
-  builder_.add_uv_scale_x(uv_scale_x);
-  builder_.add_uv_rotation_z(uv_rotation_z);
-  builder_.add_uv_translation_y(uv_translation_y);
-  builder_.add_uv_translation_x(uv_translation_x);
-  builder_.add_size_y(size_y);
-  builder_.add_size_x(size_x);
-  builder_.add_anchor_y(anchor_y);
-  builder_.add_anchor_x(anchor_x);
-  builder_.add_pivot_y(pivot_y);
-  builder_.add_pivot_x(pivot_x);
-  builder_.add_vertex(vertex);
-  builder_.add_shader(shader);
-  builder_.add_part_color(part_color);
-  builder_.add_priority(priority);
-  builder_.add_local_alpha(local_alpha);
-  builder_.add_alpha(alpha);
-  builder_.add_local_scale_y(local_scale_y);
-  builder_.add_local_scale_x(local_scale_x);
-  builder_.add_scale_y(scale_y);
-  builder_.add_scale_x(scale_x);
-  builder_.add_rotation_z(rotation_z);
-  builder_.add_rotation_y(rotation_y);
-  builder_.add_rotation_x(rotation_x);
-  builder_.add_position_z(position_z);
-  builder_.add_position_y(position_y);
-  builder_.add_position_x(position_x);
-  builder_.add_cell(cell);
-  builder_.add_img_flip_v(img_flip_v);
-  builder_.add_img_flip_h(img_flip_h);
-  builder_.add_hide(hide);
-  builder_.add_flip_h(flip_h);
-  builder_.add_flip_v(flip_v);
-  return builder_.Finish();
-}
-
 struct FrameData FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   typedef FrameDataBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_PARTS = 4,
-    VT_DEFORMS = 6
+    VT_CELLS = 6,
+    VT_PARTS_COLOR = 8,
+    VT_SHADERS = 10,
+    VT_VERTICES = 12,
+    VT_DEFORMS = 14
   };
-  const ::flatbuffers::Vector<::flatbuffers::Offset<ss::runtime::PartState>> *parts() const {
-    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<ss::runtime::PartState>> *>(VT_PARTS);
+  const ::flatbuffers::Vector<const ss::runtime::PartState *> *parts() const {
+    return GetPointer<const ::flatbuffers::Vector<const ss::runtime::PartState *> *>(VT_PARTS);
+  }
+  const ::flatbuffers::Vector<const ss::runtime::PartAttributeCell *> *cells() const {
+    return GetPointer<const ::flatbuffers::Vector<const ss::runtime::PartAttributeCell *> *>(VT_CELLS);
+  }
+  const ::flatbuffers::Vector<const ss::runtime::PartAttributePartColor *> *parts_color() const {
+    return GetPointer<const ::flatbuffers::Vector<const ss::runtime::PartAttributePartColor *> *>(VT_PARTS_COLOR);
+  }
+  const ::flatbuffers::Vector<const ss::runtime::PartAttributeShader *> *shaders() const {
+    return GetPointer<const ::flatbuffers::Vector<const ss::runtime::PartAttributeShader *> *>(VT_SHADERS);
+  }
+  const ::flatbuffers::Vector<const ss::runtime::PartAttributeVertex *> *vertices() const {
+    return GetPointer<const ::flatbuffers::Vector<const ss::runtime::PartAttributeVertex *> *>(VT_VERTICES);
   }
   const ::flatbuffers::Vector<::flatbuffers::Offset<ss::runtime::PartAttributeDeform>> *deforms() const {
     return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<ss::runtime::PartAttributeDeform>> *>(VT_DEFORMS);
@@ -1023,7 +872,14 @@ struct FrameData FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
     return VerifyTableStart(verifier) &&
            VerifyOffset(verifier, VT_PARTS) &&
            verifier.VerifyVector(parts()) &&
-           verifier.VerifyVectorOfTables(parts()) &&
+           VerifyOffset(verifier, VT_CELLS) &&
+           verifier.VerifyVector(cells()) &&
+           VerifyOffset(verifier, VT_PARTS_COLOR) &&
+           verifier.VerifyVector(parts_color()) &&
+           VerifyOffset(verifier, VT_SHADERS) &&
+           verifier.VerifyVector(shaders()) &&
+           VerifyOffset(verifier, VT_VERTICES) &&
+           verifier.VerifyVector(vertices()) &&
            VerifyOffset(verifier, VT_DEFORMS) &&
            verifier.VerifyVector(deforms()) &&
            verifier.VerifyVectorOfTables(deforms()) &&
@@ -1035,8 +891,20 @@ struct FrameDataBuilder {
   typedef FrameData Table;
   ::flatbuffers::FlatBufferBuilder &fbb_;
   ::flatbuffers::uoffset_t start_;
-  void add_parts(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::runtime::PartState>>> parts) {
+  void add_parts(::flatbuffers::Offset<::flatbuffers::Vector<const ss::runtime::PartState *>> parts) {
     fbb_.AddOffset(FrameData::VT_PARTS, parts);
+  }
+  void add_cells(::flatbuffers::Offset<::flatbuffers::Vector<const ss::runtime::PartAttributeCell *>> cells) {
+    fbb_.AddOffset(FrameData::VT_CELLS, cells);
+  }
+  void add_parts_color(::flatbuffers::Offset<::flatbuffers::Vector<const ss::runtime::PartAttributePartColor *>> parts_color) {
+    fbb_.AddOffset(FrameData::VT_PARTS_COLOR, parts_color);
+  }
+  void add_shaders(::flatbuffers::Offset<::flatbuffers::Vector<const ss::runtime::PartAttributeShader *>> shaders) {
+    fbb_.AddOffset(FrameData::VT_SHADERS, shaders);
+  }
+  void add_vertices(::flatbuffers::Offset<::flatbuffers::Vector<const ss::runtime::PartAttributeVertex *>> vertices) {
+    fbb_.AddOffset(FrameData::VT_VERTICES, vertices);
   }
   void add_deforms(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::runtime::PartAttributeDeform>>> deforms) {
     fbb_.AddOffset(FrameData::VT_DEFORMS, deforms);
@@ -1054,23 +922,43 @@ struct FrameDataBuilder {
 
 inline ::flatbuffers::Offset<FrameData> CreateFrameData(
     ::flatbuffers::FlatBufferBuilder &_fbb,
-    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::runtime::PartState>>> parts = 0,
+    ::flatbuffers::Offset<::flatbuffers::Vector<const ss::runtime::PartState *>> parts = 0,
+    ::flatbuffers::Offset<::flatbuffers::Vector<const ss::runtime::PartAttributeCell *>> cells = 0,
+    ::flatbuffers::Offset<::flatbuffers::Vector<const ss::runtime::PartAttributePartColor *>> parts_color = 0,
+    ::flatbuffers::Offset<::flatbuffers::Vector<const ss::runtime::PartAttributeShader *>> shaders = 0,
+    ::flatbuffers::Offset<::flatbuffers::Vector<const ss::runtime::PartAttributeVertex *>> vertices = 0,
     ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::runtime::PartAttributeDeform>>> deforms = 0) {
   FrameDataBuilder builder_(_fbb);
   builder_.add_deforms(deforms);
+  builder_.add_vertices(vertices);
+  builder_.add_shaders(shaders);
+  builder_.add_parts_color(parts_color);
+  builder_.add_cells(cells);
   builder_.add_parts(parts);
   return builder_.Finish();
 }
 
 inline ::flatbuffers::Offset<FrameData> CreateFrameDataDirect(
     ::flatbuffers::FlatBufferBuilder &_fbb,
-    const std::vector<::flatbuffers::Offset<ss::runtime::PartState>> *parts = nullptr,
+    const std::vector<ss::runtime::PartState> *parts = nullptr,
+    const std::vector<ss::runtime::PartAttributeCell> *cells = nullptr,
+    const std::vector<ss::runtime::PartAttributePartColor> *parts_color = nullptr,
+    const std::vector<ss::runtime::PartAttributeShader> *shaders = nullptr,
+    const std::vector<ss::runtime::PartAttributeVertex> *vertices = nullptr,
     const std::vector<::flatbuffers::Offset<ss::runtime::PartAttributeDeform>> *deforms = nullptr) {
-  auto parts__ = parts ? _fbb.CreateVector<::flatbuffers::Offset<ss::runtime::PartState>>(*parts) : 0;
+  auto parts__ = parts ? _fbb.CreateVectorOfStructs<ss::runtime::PartState>(*parts) : 0;
+  auto cells__ = cells ? _fbb.CreateVectorOfStructs<ss::runtime::PartAttributeCell>(*cells) : 0;
+  auto parts_color__ = parts_color ? _fbb.CreateVectorOfStructs<ss::runtime::PartAttributePartColor>(*parts_color) : 0;
+  auto shaders__ = shaders ? _fbb.CreateVectorOfStructs<ss::runtime::PartAttributeShader>(*shaders) : 0;
+  auto vertices__ = vertices ? _fbb.CreateVectorOfStructs<ss::runtime::PartAttributeVertex>(*vertices) : 0;
   auto deforms__ = deforms ? _fbb.CreateVector<::flatbuffers::Offset<ss::runtime::PartAttributeDeform>>(*deforms) : 0;
   return ss::runtime::CreateFrameData(
       _fbb,
       parts__,
+      cells__,
+      parts_color__,
+      shaders__,
+      vertices__,
       deforms__);
 }
 

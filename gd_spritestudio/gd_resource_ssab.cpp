@@ -72,8 +72,8 @@ Vector<String> GdResourceSsabResource::get_animation_names() {
 }
 
 
-const SsAnimeBinary *GdResourceSsabResource::get_ss_anime_binary() {
-  return GetSsAnimeBinary(this->binary.ptr());
+const ss::format::SsAnimeBinary *GdResourceSsabResource::get_ss_anime_binary() {
+  return ss::format::GetSsAnimeBinary(this->binary.ptr());
 }
 
 const uint8_t *GdResourceSsabResource::get_data_ptr() {
