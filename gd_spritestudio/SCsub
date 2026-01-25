@@ -33,6 +33,8 @@ env.Append(
 
 if env['target'] == 'editor':
     env.Append(LIBS=["ssconverter"])
+    if env["platform"] == "windows":
+        env.Append(LINKFLAGS=["Userenv.lib", "Bcrypt.lib", "Ntdll.lib", "Ws2_32.lib"])
 env.Append(LIBS=["ssruntime"])
 
 
