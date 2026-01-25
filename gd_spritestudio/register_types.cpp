@@ -15,6 +15,7 @@ using namespace godot;
 #endif
 
 #ifdef TOOLS_ENABLED
+#include "gd_clickable_label.h"
 #include "gd_ss_editor_plugin.h"
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
@@ -37,6 +38,7 @@ static GdResourceSsabResourceFormatSaver *ssab_saver = nullptr;
 void register_gd_spritestudio_types() {
 #ifdef TOOLS_ENABLED
     GDREGISTER_CLASS(GdSsImportControl);
+    GDREGISTER_CLASS(GdClickableLabel);
 #endif
 
 #ifndef SPRITESTUDIO_GODOT_EXTENSION

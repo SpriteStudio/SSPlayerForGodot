@@ -18,6 +18,7 @@ using namespace godot;
 #include "scene/main/window.h"
 #endif
 
+#include "gd_clickable_label.h"
 #include "gd_ss_import_dock.h"
 #include "ssconverter.h"
 
@@ -32,8 +33,22 @@ GdSsImportControl::GdSsImportControl() {
 
     HBoxContainer *hbox = memnew(HBoxContainer);
     add_child(hbox);
-
     Label *label = memnew(Label);
+    label->set_text("version:");
+    hbox->add_child(label);
+
+    GdClickableLabel *clickable_label = memnew(GdClickableLabel);
+    const char *v = ss_converter_version();
+    String version = String(v);
+    clickable_label->set_text(version);
+    ss_converter_version_free((char*)v);
+    v = nullptr;
+    hbox->add_child(clickable_label);
+    
+    hbox = memnew(HBoxContainer);
+    add_child(hbox);    
+    
+    label = memnew(Label);
     label->set_text("Output Dir:");
     hbox->add_child(label);
 
@@ -188,12 +203,6 @@ void GdSsImportControl::_on_window_files_dropped(const Vector<String> &p_files) 
             //UtilityFunctions::printerr("Output directory does not exist, using default: " + output_dir);
             da->make_dir_recursive(output_dir);
         }
-
-        const char *v = ss_converter_version();
-        String hash = String(v);
-        print_line("GdSsImportControl: libssconverter version: " + hash);
-        ss_converter_version_free((char*)v);
-        v = nullptr;
 
         Vector<void*> contexts;
         for (int i = 0; i < sspj_files.size(); i++) {
