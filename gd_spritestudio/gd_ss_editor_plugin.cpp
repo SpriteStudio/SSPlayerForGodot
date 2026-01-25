@@ -1,3 +1,5 @@
+#ifdef TOOLS_ENABLED
+
 #include "gd_ss_editor_plugin.h"
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
@@ -29,3 +31,4 @@ void GdSsEditorPlugin::_notification(int what) {
 
 #endif
 
+#endif // #ifdef TOOLS_ENABLED

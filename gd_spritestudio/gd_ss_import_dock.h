@@ -1,5 +1,7 @@
 #pragma once
 
+#ifdef TOOLS_ENABLED
+
 #include "gd_macros.h"
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
@@ -70,3 +72,4 @@ private:
   void _load_settings();
   void _save_settings();
 };
+#endif // #ifdef TOOLS_ENABLED

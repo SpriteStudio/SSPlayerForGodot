@@ -1,3 +1,5 @@
+#ifdef TOOLS_ENABLED
+
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
 #include <godot_cpp/classes/dir_access.hpp>
 #include <godot_cpp/classes/editor_interface.hpp>
@@ -281,3 +283,5 @@ void GdSsImportControl::_save_settings() {
     ps->set_setting(SETTING_KEY, path_line_edit->get_text());
     ps->save();
 }
+
+#endif // #ifdef TOOLS_ENABLED
