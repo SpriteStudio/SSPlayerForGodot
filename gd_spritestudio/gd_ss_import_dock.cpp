@@ -189,6 +189,12 @@ void GdSsImportControl::_on_window_files_dropped(const Vector<String> &p_files) 
             da->make_dir_recursive(output_dir);
         }
 
+        const char *v = ss_converter_version();
+        String hash = String(v);
+        print_line("GdSsImportControl: libssconverter version: " + hash);
+        ss_converter_version_free((char*)v);
+        v = nullptr;
+
         Vector<void*> contexts;
         for (int i = 0; i < sspj_files.size(); i++) {
             String src_file_path = sspj_files[i];
