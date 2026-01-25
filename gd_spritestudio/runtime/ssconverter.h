@@ -17,6 +17,10 @@ struct Context;
 
 extern "C" {
 
+const char *ss_converter_version();
+
+void ss_converter_version_free(char *s);
+
 Context *ss_converter_create();
 
 void ss_converter_destroy(Context *context);
