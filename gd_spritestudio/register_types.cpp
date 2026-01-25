@@ -35,11 +35,9 @@ static GdResourceSsabResourceFormatLoader *ssab_loader = nullptr;
 static GdResourceSsabResourceFormatSaver *ssab_saver = nullptr;
 
 void register_gd_spritestudio_types() {
-//#ifdef TOOLS_ENABLED
-//		EditorNode::add_init_callback(editor_init_callback);
-//#endif
-
+#ifdef TOOLS_ENABLED
     GDREGISTER_CLASS(GdSsImportControl);
+#endif
 
 #ifndef SPRITESTUDIO_GODOT_EXTENSION
     GDREGISTER_CLASS(GdResourceSsabResourceFormatLoader);
