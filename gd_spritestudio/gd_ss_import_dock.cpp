@@ -7,9 +7,14 @@
 #include <godot_cpp/classes/window.hpp>
 using namespace godot;
 #else
+#include "core/version.h"
 #include "core/io/dir_access.h"
 #include "editor/editor_interface.h"
+#if (VERSION_MAJOR >= 4 && VERSION_MINOR >= 5)
 #include "editor/file_system/editor_file_system.h"
+#else
+#include "editor/editor_file_system.h"
+#endif
 #include "scene/main/window.h"
 #endif
 
