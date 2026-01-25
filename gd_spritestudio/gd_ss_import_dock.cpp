@@ -1,9 +1,11 @@
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
+#include <godot_cpp/classes/dir_access.hpp>
 #include <godot_cpp/classes/editor_interface.hpp>
 #include <godot_cpp/classes/editor_file_system.hpp>
 #include <godot_cpp/classes/window.hpp>
 using namespace godot;
 #else
+#include "core/io/dir_access.h"
 #include "editor/editor_interface.h"
 #include "editor/file_system/editor_file_system.h"
 #include "scene/main/window.h"
@@ -18,7 +20,31 @@ void GdSsImportControl::_bind_methods() {
 
 
 GdSsImportControl::GdSsImportControl() {
-    this->Ctx = ss_converter_create();
+    set_h_size_flags(Control::SIZE_EXPAND_FILL);
+    set_v_size_flags(Control::SIZE_EXPAND_FILL);
+
+    HBoxContainer *hbox = memnew(HBoxContainer);
+    add_child(hbox);
+
+    Label *label = memnew(Label);
+    label->set_text("Output Dir:");
+    hbox->add_child(label);
+
+    path_line_edit = memnew(LineEdit);
+    path_line_edit->set_h_size_flags(SIZE_EXPAND_FILL);
+    path_line_edit->set_editable(true);
+    hbox->add_child(path_line_edit);
+
+    browse_button = memnew(Button);
+    browse_button->set_text("...");
+    browse_button->connect("pressed", Callable(this, "_on_browse_button_pressed"));
+    hbox->add_child(browse_button);
+
+    file_dialog = memnew(EditorFileDialog);
+    file_dialog->set_access(EditorFileDialog::ACCESS_RESOURCES);
+    file_dialog->set_file_mode(EditorFileDialog::FILE_MODE_OPEN_DIR);
+    file_dialog->connect("dir_selected", Callable(this, "_on_dir_selected"));
+    add_child(file_dialog);
 
     background_panel = memnew(Panel);
     background_panel->set_anchors_preset(Control::PRESET_FULL_RECT);
@@ -32,19 +58,13 @@ GdSsImportControl::GdSsImportControl() {
     instruction_label->set_anchors_preset(Control::PRESET_FULL_RECT);
     instruction_label->set_mouse_filter(Control::MOUSE_FILTER_IGNORE);
     add_child(instruction_label);
-        
-    set_h_size_flags(Control::SIZE_EXPAND_FILL);
-    set_v_size_flags(Control::SIZE_EXPAND_FILL);
-    set_custom_minimum_size(Vector2(200, 100));
-    set_mouse_filter(MOUSE_FILTER_STOP);
-    set_focus_mode(FOCUS_CLICK);
+      
+    _load_settings();
 }
 
 GdSsImportControl::~GdSsImportControl() {
     stop_intercepting();
 
-    ss_converter_destroy((Context *)this->Ctx);
-    this->Ctx = nullptr;
 }
 
 void GdSsImportControl::_notification(int p_what) {
@@ -58,8 +78,10 @@ void GdSsImportControl::_notification(int p_what) {
     }
 }
 
-void GdSsImportControl::process_file(const String &source_path) {
-    ss_converter_convert((Context *)this->Ctx, source_path.utf8().get_data(), nullptr);
+void* GdSsImportControl::process_file(const String &source_sspj_path, const String &dst_dir_path) {
+    auto ctx = ss_converter_create();
+    ss_converter_convert(ctx, source_sspj_path.utf8().get_data(), dst_dir_path.utf8().get_data());
+    return ctx;
 }
 
 void GdSsImportControl::start_intercepting() {
@@ -97,7 +119,6 @@ void GdSsImportControl::start_intercepting() {
     }
 
     is_intercepting = true;
-    print_line("DropInterceptor: Hijacked files_dropped signal.");
 }
 
 void GdSsImportControl::stop_intercepting() {
@@ -117,7 +138,6 @@ void GdSsImportControl::stop_intercepting() {
     }
 
     is_intercepting = false;
-    print_line("GdSsImportControl: Restored original files_dropped signal.");
 }
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
@@ -134,13 +154,62 @@ void GdSsImportControl::_on_window_files_dropped(const Vector<String> &p_files) 
 
     if (get_global_rect().has_point(get_global_mouse_position())) {
         
-        print_line("GdSsImportControl: Processing custom file drop...");
+        // print_line("GdSsImportControl: Processing custom file drop...");
 
         // validate sspj file
-
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+        PackedStringArray sspj_files;
+#else
+        Vector<String> sspj_files;
+#endif
         for (int i = 0; i < p_files.size(); i++) {
-            print_line("Converting: " + p_files[i]);
-        }        
+            String file_path = p_files[i];
+            String ext = file_path.get_extension();
+            if (ext == "sspj") {
+                sspj_files.push_back(file_path);
+            }
+        }
+        if (sspj_files.is_empty()) {
+            print_line("GdSsImportControl: sspj files not found.");
+            return;
+        }
+
+        String output_dir = path_line_edit->get_text();
+        
+        Ref<DirAccess> da = DirAccess::open("res://");
+        if (!da->dir_exists(output_dir)) {
+            //UtilityFunctions::printerr("Output directory does not exist, using default: " + output_dir);
+            da->make_dir_recursive(output_dir);
+        }
+
+        Vector<void*> contexts;
+        for (int i = 0; i < sspj_files.size(); i++) {
+            String src_file_path = sspj_files[i];
+            String src_file = src_file_path.get_file();
+            String src_stem = src_file.get_basename();
+            String dst_dir = output_dir.path_join(src_stem);
+            String global_dst_dir = ProjectSettings::get_singleton()->globalize_path(dst_dir);
+            void *ctx = process_file(src_file_path, global_dst_dir);
+            print_line("GdSsImportControl: convert sspj file: " + src_file_path + ", to ssab files: " + dst_dir);
+            contexts.push_back(ctx);
+        }
+
+        bool wait_for_finish = true;
+        while(wait_for_finish) {
+            wait_for_finish = false;
+            for (size_t i = 0; i < contexts.size(); ++i) {
+                void* ctx = contexts[i];
+                bool ret = ss_converter_is_finished((Context *)ctx);
+                if (!ret) {
+                    wait_for_finish = true;
+                }
+            }
+        }
+        for (size_t i = 0; i < contexts.size(); ++i) {
+            void* ctx = contexts[i];
+            ss_converter_destroy((Context*)ctx);
+        }
+        
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
         EditorInterface::get_singleton()->get_resource_filesystem()->scan();
 #else
@@ -173,4 +242,42 @@ void GdSsImportControl::_perform_default_drop_logic(const Vector<String> &p_file
     }
 
     is_reemitting = false;
+}
+
+void GdSsImportControl::_on_browse_button_pressed() {
+    auto p = path_line_edit->get_text();
+    Ref<DirAccess> da = DirAccess::open("res://");
+    String dir;
+    if (da->dir_exists(p)) {
+        dir = p;
+    } else {
+        dir = "res://";
+    }
+
+    file_dialog->set_current_dir(dir);
+    file_dialog->popup_file_dialog();
+}
+
+void GdSsImportControl::_on_dir_selected(const String &p_path) {
+    path_line_edit->set_text(p_path);
+    _save_settings();
+}
+
+void GdSsImportControl::_load_settings() {
+    ProjectSettings *ps = ProjectSettings::get_singleton();
+    String path = DEFAULT_PATH;
+
+    if (ps->has_setting(SETTING_KEY)) {
+        path = ps->get_setting(SETTING_KEY);
+    } else {
+        ps->set_setting(SETTING_KEY, DEFAULT_PATH);
+    }
+    
+    path_line_edit->set_text(path);
+}
+
+void GdSsImportControl::_save_settings() {
+    ProjectSettings *ps = ProjectSettings::get_singleton();
+    ps->set_setting(SETTING_KEY, path_line_edit->get_text());
+    ps->save();
 }
