@@ -1,5 +1,7 @@
 #pragma once
 
+#ifdef TOOLS_ENABLED
+
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
 #include <godot_cpp/classes/editor_plugin.hpp>
 using namespace godot;
@@ -42,3 +44,5 @@ public:
 #endif
 #endif
 };
+
+#endif // #ifdef TOOLS_ENABLED
