@@ -31,8 +31,8 @@ static void editor_init_callback() {
 
 
 #include "gd_resource_ssab.h"
-static GdResourceSsabResourceFormatLoader *ssab_loader;
-static GdResourceSsabResourceFormatSaver *ssab_saver;
+static GdResourceSsabResourceFormatLoader *ssab_loader = nullptr;
+static GdResourceSsabResourceFormatSaver *ssab_saver = nullptr;
 
 void register_gd_spritestudio_types() {
 //#ifdef TOOLS_ENABLED
@@ -64,11 +64,23 @@ void register_gd_spritestudio_types() {
 
 void unregister_gd_spritestudio_types() {
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
-    ResourceLoader::get_singleton()->remove_resource_format_loader(ssab_loader);
-    ResourceSaver::get_singleton()->remove_resource_format_saver(ssab_saver);
+    if (ssab_loader) {
+        ResourceLoader::get_singleton()->remove_resource_format_loader(ssab_loader);
+        ssab_loader = nullptr;
+    }
+    if (ssab_saver) {
+        ResourceSaver::get_singleton()->remove_resource_format_saver(ssab_saver);
+        ssab_saver = nullptr;
+    }
 #else
-    ResourceLoader::remove_resource_format_loader(ssab_loader);
-    ResourceSaver::remove_resource_format_saver(ssab_saver);
+    if (ssab_loader) {
+        ResourceLoader::remove_resource_format_loader(ssab_loader);
+        ssab_loader = nullptr;
+    }
+    if (ssab_saver) {
+        ResourceSaver::remove_resource_format_saver(ssab_saver);
+        ssab_saver = nullptr;
+    }
 #endif
 }
 
