@@ -14,15 +14,36 @@ using namespace godot;
 #include "core/object/class_db.h"
 #endif
 
+#ifdef TOOLS_ENABLED
+#include "gd_clickable_label.h"
+#include "gd_ss_editor_plugin.h"
+
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+#include <godot_cpp/classes/editor_plugin_registration.hpp>
+using namespace godot;
+#else
+#include "editor/editor_node.h"
+
+static void editor_init_callback() {
+	EditorNode::get_singleton()->add_editor_plugin(memnew(GdSsEditorPlugin(EditorNode::get_singleton())));
+}
+#endif
+#endif
+
+
 #include "gd_resource_ssab.h"
-static GdResourceSsabResourceFormatLoader *ssab_loader;
-static GdResourceSsabResourceFormatSaver *ssab_saver;
+static GdResourceSsabResourceFormatLoader *ssab_loader = nullptr;
+static GdResourceSsabResourceFormatSaver *ssab_saver = nullptr;
 
 void register_gd_spritestudio_types() {
+#ifdef TOOLS_ENABLED
+    GDREGISTER_CLASS(GdSsImportControl);
+    GDREGISTER_CLASS(GdClickableLabel);
+#endif
 
 #ifndef SPRITESTUDIO_GODOT_EXTENSION
-    ClassDB::register_class<GdResourceSsabResourceFormatLoader>();
-    ClassDB::register_class<GdResourceSsabResourceFormatSaver>();
+    GDREGISTER_CLASS(GdResourceSsabResourceFormatLoader);
+    GDREGISTER_CLASS(GdResourceSsabResourceFormatSaver);
 #endif
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
@@ -43,18 +64,44 @@ void register_gd_spritestudio_types() {
 
 void unregister_gd_spritestudio_types() {
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
-    ResourceLoader::get_singleton()->remove_resource_format_loader(ssab_loader);
-    ResourceSaver::get_singleton()->remove_resource_format_saver(ssab_saver);
+    if (ssab_loader) {
+        ResourceLoader::get_singleton()->remove_resource_format_loader(ssab_loader);
+        ssab_loader = nullptr;
+    }
+    if (ssab_saver) {
+        ResourceSaver::get_singleton()->remove_resource_format_saver(ssab_saver);
+        ssab_saver = nullptr;
+    }
 #else
-    ResourceLoader::remove_resource_format_loader(ssab_loader);
-    ResourceSaver::remove_resource_format_saver(ssab_saver);
+    if (ssab_loader) {
+        ResourceLoader::remove_resource_format_loader(ssab_loader);
+        ssab_loader = nullptr;
+    }
+    if (ssab_saver) {
+        ResourceSaver::remove_resource_format_saver(ssab_saver);
+        ssab_saver = nullptr;
+    }
 #endif
 }
 
 void initialize_gd_spritestudio_module(ModuleInitializationLevel level) {
-	if (level == MODULE_INITIALIZATION_LEVEL_CORE) {
-        ClassDB::register_class<GdResourceSsabResourceFormatLoader>();
-        ClassDB::register_class<GdResourceSsabResourceFormatSaver>();
+#ifdef TOOLS_ENABLED		
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+    if (level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
+        GDREGISTER_CLASS(GdSsEditorPlugin);
+        EditorPlugins::add_plugin_class(StringName("SpriteStudioEditorPlugin"));
+		return;
+    }
+#else
+    if (level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
+        EditorNode::add_init_callback(editor_init_callback);
+        return;
+    }    
+#endif
+#endif
+    if (level == MODULE_INITIALIZATION_LEVEL_CORE) {
+        GDREGISTER_CLASS(GdResourceSsabResourceFormatLoader);
+        GDREGISTER_CLASS(GdResourceSsabResourceFormatSaver);
 	    return;        
     }
     if (level != MODULE_INITIALIZATION_LEVEL_SCENE) return;
