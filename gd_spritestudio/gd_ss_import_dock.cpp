@@ -34,7 +34,7 @@ GdSsImportControl::GdSsImportControl() {
     HBoxContainer *hbox = memnew(HBoxContainer);
     add_child(hbox);
     Label *label = memnew(Label);
-    label->set_text("version:");
+    label->set_text("converter version:");
     hbox->add_child(label);
 
     GdClickableLabel *clickable_label = memnew(GdClickableLabel);
