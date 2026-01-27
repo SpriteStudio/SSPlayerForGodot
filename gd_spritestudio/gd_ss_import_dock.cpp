@@ -24,6 +24,10 @@ using namespace godot;
 
 void GdSsImportControl::_bind_methods() {
     ClassDB::bind_method(D_METHOD("_on_window_files_dropped", "files"), &GdSsImportControl::_on_window_files_dropped);
+    ClassDB::bind_method(D_METHOD("_on_line_edit_submitted", "text"), &GdSsImportControl::_on_line_edit_submitted);
+    ClassDB::bind_method(D_METHOD("_on_browse_button_pressed"), &GdSsImportControl::_on_browse_button_pressed);
+    ClassDB::bind_method(D_METHOD("_on_reset_button_pressed"), &GdSsImportControl::_on_reset_button_pressed);
+    ClassDB::bind_method(D_METHOD("_on_dir_selected"), &GdSsImportControl::_on_dir_selected);
 }
 
 
@@ -55,12 +59,20 @@ GdSsImportControl::GdSsImportControl() {
     path_line_edit = memnew(LineEdit);
     path_line_edit->set_h_size_flags(SIZE_EXPAND_FILL);
     path_line_edit->set_editable(true);
+    path_line_edit->connect("text_submitted", Callable(this, "_on_line_edit_submitted"));
     hbox->add_child(path_line_edit);
 
     browse_button = memnew(Button);
     browse_button->set_text("...");
+    browse_button->set_tooltip_text("open EditorFileDialog"); 
     browse_button->connect("pressed", Callable(this, "_on_browse_button_pressed"));
-    hbox->add_child(browse_button);
+    hbox->add_child(browse_button);    
+
+    reset_button = memnew(Button);
+    reset_button->set_text(L"⟲"); // "Default" や "Reset" でもOK
+    reset_button->set_tooltip_text("Reset to default directory"); 
+    reset_button->connect("pressed", callable_mp(this, &GdSsImportControl::_on_reset_button_pressed));
+    hbox->add_child(reset_button);
 
     file_dialog = memnew(EditorFileDialog);
     file_dialog->set_access(EditorFileDialog::ACCESS_RESOURCES);
@@ -266,6 +278,10 @@ void GdSsImportControl::_perform_default_drop_logic(const Vector<String> &p_file
     is_reemitting = false;
 }
 
+void GdSsImportControl::_on_line_edit_submitted(const String& p_path) {
+    _save_settings();
+}
+
 void GdSsImportControl::_on_browse_button_pressed() {
     auto p = path_line_edit->get_text();
     Ref<DirAccess> da = DirAccess::open("res://");
@@ -278,6 +294,11 @@ void GdSsImportControl::_on_browse_button_pressed() {
 
     file_dialog->set_current_dir(dir);
     file_dialog->popup_file_dialog();
+}
+
+void GdSsImportControl::_on_reset_button_pressed() {
+    path_line_edit->set_text(DEFAULT_PATH);
+    _save_settings();
 }
 
 void GdSsImportControl::_on_dir_selected(const String &p_path) {

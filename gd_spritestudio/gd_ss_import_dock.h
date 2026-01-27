@@ -62,12 +62,15 @@ private:
 
   LineEdit *path_line_edit = nullptr;
   Button *browse_button = nullptr;
+  Button *reset_button = nullptr;
   EditorFileDialog *file_dialog = nullptr;
 
   const String SETTING_KEY = "spritestudio/output_directory";
   const String DEFAULT_PATH = "res://ssab_generated";
 
+  void _on_line_edit_submitted(const String& p_path);
   void _on_browse_button_pressed();
+  void _on_reset_button_pressed();
   void _on_dir_selected(const String &p_path);
   void _load_settings();
   void _save_settings();
