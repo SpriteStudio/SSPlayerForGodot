@@ -32,8 +32,8 @@ static void editor_init_callback() {
 
 
 #include "gd_resource_ssab.h"
-static GdResourceSsabResourceFormatLoader *ssab_loader = nullptr;
-static GdResourceSsabResourceFormatSaver *ssab_saver = nullptr;
+static GdSsabResourceFormatLoader *ssab_loader = nullptr;
+static GdSsabResourceFormatSaver *ssab_saver = nullptr;
 
 void register_gd_spritestudio_types() {
 #ifdef TOOLS_ENABLED
@@ -42,21 +42,21 @@ void register_gd_spritestudio_types() {
 #endif
 
 #ifndef SPRITESTUDIO_GODOT_EXTENSION
-    GDREGISTER_CLASS(GdResourceSsabResourceFormatLoader);
-    GDREGISTER_CLASS(GdResourceSsabResourceFormatSaver);
+    GDREGISTER_CLASS(GdSsabResourceFormatLoader);
+    GDREGISTER_CLASS(GdSsabResourceFormatSaver);
 #endif
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
-    ssab_loader = memnew(GdResourceSsabResourceFormatLoader);
+    ssab_loader = memnew(GdSsabResourceFormatLoader);
     ResourceLoader::get_singleton()->add_resource_format_loader(ssab_loader);
 
-    ssab_saver = memnew(GdResourceSsabResourceFormatSaver);
+    ssab_saver = memnew(GdSsabResourceFormatSaver);
     ResourceSaver::get_singleton()->add_resource_format_saver(ssab_saver);
 #else
-    ssab_loader = memnew(GdResourceSsabResourceFormatLoader);
+    ssab_loader = memnew(GdSsabResourceFormatLoader);
     ResourceLoader::add_resource_format_loader(ssab_loader);
 
-    ssab_saver = memnew(GdResourceSsabResourceFormatSaver);
+    ssab_saver = memnew(GdSsabResourceFormatSaver);
     ResourceSaver::add_resource_format_saver(ssab_saver);
 #endif
 
@@ -100,8 +100,8 @@ void initialize_gd_spritestudio_module(ModuleInitializationLevel level) {
 #endif
 #endif
     if (level == MODULE_INITIALIZATION_LEVEL_CORE) {
-        GDREGISTER_CLASS(GdResourceSsabResourceFormatLoader);
-        GDREGISTER_CLASS(GdResourceSsabResourceFormatSaver);
+        GDREGISTER_CLASS(GdSsabResourceFormatLoader);
+        GDREGISTER_CLASS(GdSsabResourceFormatSaver);
 	    return;        
     }
     if (level != MODULE_INITIALIZATION_LEVEL_SCENE) return;
