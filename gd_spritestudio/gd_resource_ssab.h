@@ -17,8 +17,8 @@ using namespace godot;
 
 #include "runtime/ssab.h"
 
-class GdResourceSsabResource : public Resource {
-  GDCLASS(GdResourceSsabResource, Resource);
+class GdSsabResource : public Resource {
+  GDCLASS(GdSsabResource, Resource);
 
 protected:
   static void _bind_methods();
@@ -47,8 +47,8 @@ public:
 #endif
 };
 
-class GdResourceSsabResourceFormatLoader : public ResourceFormatLoader {
-  GDCLASS(GdResourceSsabResourceFormatLoader, ResourceFormatLoader);
+class GdSsabResourceFormatLoader : public ResourceFormatLoader {
+  GDCLASS(GdSsabResourceFormatLoader, ResourceFormatLoader);
 
 public:
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
@@ -75,8 +75,8 @@ public:
 #endif
 };
 
-class GdResourceSsabResourceFormatSaver : public ResourceFormatSaver {
-  GDCLASS(GdResourceSsabResourceFormatSaver, ResourceFormatSaver);
+class GdSsabResourceFormatSaver : public ResourceFormatSaver {
+  GDCLASS(GdSsabResourceFormatSaver, ResourceFormatSaver);
 
 public:
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
