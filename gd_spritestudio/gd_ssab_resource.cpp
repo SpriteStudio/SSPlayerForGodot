@@ -1,5 +1,5 @@
 
-#include "gd_resource_ssab.h"
+#include "gd_ssab_resource.h"
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
 #include <godot_cpp/classes/file_access.hpp>
 #include <godot_cpp/core/error_macros.hpp>
