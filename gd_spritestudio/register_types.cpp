@@ -31,7 +31,7 @@ static void editor_init_callback() {
 #endif
 
 
-#include "gd_resource_ssab.h"
+#include "gd_ssab_resource.h"
 static GdSsabResourceFormatLoader *ssab_loader = nullptr;
 static GdSsabResourceFormatSaver *ssab_saver = nullptr;
 
