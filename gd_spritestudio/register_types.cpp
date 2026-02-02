@@ -32,6 +32,9 @@ static void editor_init_callback() {
 
 
 #include "gd_ssab_resource.h"
+#include "gd_ssplayer_resource.h"
+#include "gd_ssplayer_node.h"
+
 static GdSsabResourceFormatLoader *ssab_loader = nullptr;
 static GdSsabResourceFormatSaver *ssab_saver = nullptr;
 
@@ -60,6 +63,8 @@ void register_gd_spritestudio_types() {
     ResourceSaver::add_resource_format_saver(ssab_saver);
 #endif
 
+    GDREGISTER_CLASS(GdSsPlayerResource);
+    GDREGISTER_CLASS(GdSsPlayerNode);
 }
 
 void unregister_gd_spritestudio_types() {
