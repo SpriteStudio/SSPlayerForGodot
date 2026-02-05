@@ -1,27 +1,46 @@
+#ifdef TOOLS_ENABLED
+
 #include "gd_progress_dialog.h"
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
     #include <godot_cpp/classes/display_server.hpp>
     #include <godot_cpp/classes/time.hpp>
-    
+    #include <godot_cpp/classes/panel.hpp>
+    #include <godot_cpp/classes/rendering_server.hpp>
+
     using namespace godot;
 #else
     #include "servers/display_server.h"
     #include "core/os/time.h"
+    #include "scene/gui/panel.h"
+    #include "servers/rendering_server.h"
+    #include "core/object/message_queue.h"
 #endif
 
 void GdProgressDialog::_bind_methods() {
-    ClassDB::bind_method(D_METHOD("_on_cancel_pressed"), &GdProgressDialog::_on_cancel_pressed);
+    // ClassDB::bind_method(D_METHOD("_on_cancel_pressed"), &GdProgressDialog::_on_cancel_pressed);
 }
 
 GdProgressDialog::GdProgressDialog() {
-set_exclusive(true);
-    set_flag(Window::FLAG_ALWAYS_ON_TOP, true);
+    set_wrap_controls(true);
+    set_visible(false);
+    set_transient(true);
+    set_exclusive(true);
+    set_clamp_to_embedder(true);
+    set_keep_title_visible(true);
+
+    set_flag(FLAG_MINIMIZE_DISABLED, true);
+    set_flag(FLAG_MAXIMIZE_DISABLED, true);
     set_title("Processing...");
 
+    Panel *background = memnew(Panel);
+    background->set_anchors_and_offsets_preset(Control::PRESET_FULL_RECT);
+    add_child(background);
+
     vbox = memnew(VBoxContainer);
-    vbox->set_anchors_preset(Control::PRESET_FULL_RECT);
-    add_child(vbox);
+    background->add_child(vbox);
+    vbox->set_anchors_and_offsets_preset(Control::PRESET_FULL_RECT, Control::PRESET_MODE_KEEP_SIZE, 10);
+    // add_child(vbox);
 
     status_label = memnew(Label);
     status_label->set_text("Please wait...");
@@ -31,49 +50,51 @@ set_exclusive(true);
     progress_bar = memnew(ProgressBar);
     vbox->add_child(progress_bar);
 
-    cancel_button = memnew(Button);
-    cancel_button->set_text("Cancel");
-    vbox->add_child(cancel_button);
-
-    cancel_button->connect("pressed", Callable(this, "_on_cancel_pressed"));
+    // cancel_button = memnew(Button);
+    // cancel_button->set_text("Cancel");
+    // vbox->add_child(cancel_button);
+    // cancel_button->connect("pressed", Callable(this, "_on_cancel_pressed"));
 
     set_size(Size2(300, 130));
 }
 
 
 void GdProgressDialog::show_progress(const String &title, int total_steps) {
-    canceled = false;
-    cancel_button->set_disabled(false);
+    // canceled = false;
+    // cancel_button->set_disabled(false);
     set_title(title);
     progress_bar->set_max(total_steps);
     progress_bar->set_value(0);
     
     popup_centered();
-    DisplayServer::get_singleton()->process_events();
+
+    DisplayServer::get_singleton()->process_events(); // 1. 入力処理
+    MessageQueue::get_singleton()->flush();          // 2. レイアウト計算・シグナル処理の実行
+    RenderingServer::get_singleton()->draw(true, 0.0);  // 3. 描画
 }
 
 void GdProgressDialog::step(const String &message, int step_value) {
-    status_label->set_text(message);
+status_label->set_text(message);
     progress_bar->set_value(step_value);
 
-    // これにより、ユーザーがボタンをクリックしたイベントが処理され、
-    // _on_cancel_pressed() が呼び出される
     DisplayServer::get_singleton()->process_events();
-    // オプショナル: 処理が速すぎてバーが見えない場合は少しウェイトを入れる
-    // OS::get_singleton()->delay_usec(1000); 
+    MessageQueue::get_singleton()->flush();
+    RenderingServer::get_singleton()->draw(true, 0.0);
 }
 
-void GdProgressDialog::_on_cancel_pressed() {
-    canceled = true;
-    status_label->set_text("Canceling...");
-    cancel_button->set_disabled(true); // 二重押し防止
-}
+// void GdProgressDialog::_on_cancel_pressed() {
+//     canceled = true;
+//     status_label->set_text("Canceling...");
+//     cancel_button->set_disabled(true); // 二重押し防止
+// }
 
-bool GdProgressDialog::is_canceled() const {
-    return canceled;
-}
+// bool GdProgressDialog::is_canceled() const {
+//     return canceled;
+// }
 
 void GdProgressDialog::finish() {
     hide();
     queue_free();
 }
+
+#endif // #ifdef TOOLS_ENABLED
