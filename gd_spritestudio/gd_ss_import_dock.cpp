@@ -70,7 +70,7 @@ GdSsImportControl::GdSsImportControl() {
     hbox->add_child(browse_button);    
 
     reset_button = memnew(Button);
-    reset_button->set_text(L"⟲"); // "Default" や "Reset" でもOK
+    reset_button->set_text(L"⟲");
     reset_button->set_tooltip_text("Reset to default directory"); 
     reset_button->connect("pressed", callable_mp(this, &GdSsImportControl::_on_reset_button_pressed));
     hbox->add_child(reset_button);
@@ -254,7 +254,7 @@ void GdSsImportControl::_on_window_files_dropped(const Vector<String> &p_files) 
                     finished_num++;
                 }
             }
-            dialog->step("", finished_num);
+            dialog->step(vformat("Importing SSPJ: %d/%d", finished_num, finished_contexts.size()), finished_num);
         }
         dialog->finish();
         for (size_t i = 0; i < contexts.size(); ++i) {
