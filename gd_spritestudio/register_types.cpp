@@ -17,6 +17,7 @@ using namespace godot;
 #ifdef TOOLS_ENABLED
 #include "gd_clickable_label.h"
 #include "gd_ss_editor_plugin.h"
+#include "gd_progress_dialog.h"
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
 #include <godot_cpp/classes/editor_plugin_registration.hpp>
@@ -42,6 +43,7 @@ void register_gd_spritestudio_types() {
 #ifdef TOOLS_ENABLED
     GDREGISTER_CLASS(GdSsImportControl);
     GDREGISTER_CLASS(GdClickableLabel);
+    GDREGISTER_CLASS(GdProgressDialog);
 #endif
 
 #ifndef SPRITESTUDIO_GODOT_EXTENSION
