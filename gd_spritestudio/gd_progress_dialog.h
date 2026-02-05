@@ -1,5 +1,7 @@
 #pragma once
 
+#ifdef TOOLS_ENABLED
+
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
     #include <godot_cpp/classes/window.hpp>
     #include <godot_cpp/classes/button.hpp>
@@ -14,7 +16,6 @@
     #include "scene/gui/box_container.h"
     #include "scene/gui/label.h"
     #include "scene/gui/progress_bar.h"
-
 #endif
 
 
@@ -25,14 +26,14 @@ private:
     VBoxContainer *vbox = nullptr;
     Label *status_label = nullptr;
     ProgressBar *progress_bar = nullptr;
-    Button *cancel_button = nullptr;
 
-    bool canceled = false;
+    // Button *cancel_button = nullptr;
+    // bool canceled = false;
 
 protected:
     static void _bind_methods();
 
-    void _on_cancel_pressed();
+    // void _on_cancel_pressed();
 
     public:
     GdProgressDialog();
@@ -41,5 +42,6 @@ protected:
     void step(const String &message, int step_value);    
     void finish();
 
-    bool is_canceled() const;
+    // bool is_canceled() const;
 };
+#endif // #ifdef TOOLS_ENABLED
