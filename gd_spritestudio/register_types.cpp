@@ -17,6 +17,7 @@ using namespace godot;
 #ifdef TOOLS_ENABLED
 #include "gd_clickable_label.h"
 #include "gd_ss_editor_plugin.h"
+#include "gd_progress_dialog.h"
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
 #include <godot_cpp/classes/editor_plugin_registration.hpp>
@@ -31,35 +32,41 @@ static void editor_init_callback() {
 #endif
 
 
-#include "gd_resource_ssab.h"
-static GdResourceSsabResourceFormatLoader *ssab_loader = nullptr;
-static GdResourceSsabResourceFormatSaver *ssab_saver = nullptr;
+#include "gd_ssab_resource.h"
+#include "gd_ssplayer_resource.h"
+#include "gd_ssplayer_node.h"
+
+static GdSsabResourceFormatLoader *ssab_loader = nullptr;
+static GdSsabResourceFormatSaver *ssab_saver = nullptr;
 
 void register_gd_spritestudio_types() {
 #ifdef TOOLS_ENABLED
     GDREGISTER_CLASS(GdSsImportControl);
     GDREGISTER_CLASS(GdClickableLabel);
+    GDREGISTER_CLASS(GdProgressDialog);
 #endif
 
 #ifndef SPRITESTUDIO_GODOT_EXTENSION
-    GDREGISTER_CLASS(GdResourceSsabResourceFormatLoader);
-    GDREGISTER_CLASS(GdResourceSsabResourceFormatSaver);
+    GDREGISTER_CLASS(GdSsabResourceFormatLoader);
+    GDREGISTER_CLASS(GdSsabResourceFormatSaver);
 #endif
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
-    ssab_loader = memnew(GdResourceSsabResourceFormatLoader);
+    ssab_loader = memnew(GdSsabResourceFormatLoader);
     ResourceLoader::get_singleton()->add_resource_format_loader(ssab_loader);
 
-    ssab_saver = memnew(GdResourceSsabResourceFormatSaver);
+    ssab_saver = memnew(GdSsabResourceFormatSaver);
     ResourceSaver::get_singleton()->add_resource_format_saver(ssab_saver);
 #else
-    ssab_loader = memnew(GdResourceSsabResourceFormatLoader);
+    ssab_loader = memnew(GdSsabResourceFormatLoader);
     ResourceLoader::add_resource_format_loader(ssab_loader);
 
-    ssab_saver = memnew(GdResourceSsabResourceFormatSaver);
+    ssab_saver = memnew(GdSsabResourceFormatSaver);
     ResourceSaver::add_resource_format_saver(ssab_saver);
 #endif
 
+    GDREGISTER_CLASS(GdSsPlayerResource);
+    GDREGISTER_CLASS(GdSsPlayerNode);
 }
 
 void unregister_gd_spritestudio_types() {
@@ -100,8 +107,8 @@ void initialize_gd_spritestudio_module(ModuleInitializationLevel level) {
 #endif
 #endif
     if (level == MODULE_INITIALIZATION_LEVEL_CORE) {
-        GDREGISTER_CLASS(GdResourceSsabResourceFormatLoader);
-        GDREGISTER_CLASS(GdResourceSsabResourceFormatSaver);
+        GDREGISTER_CLASS(GdSsabResourceFormatLoader);
+        GDREGISTER_CLASS(GdSsabResourceFormatSaver);
 	    return;        
     }
     if (level != MODULE_INITIALIZATION_LEVEL_SCENE) return;

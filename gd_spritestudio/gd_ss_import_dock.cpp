@@ -20,6 +20,7 @@ using namespace godot;
 
 #include "gd_clickable_label.h"
 #include "gd_ss_import_dock.h"
+#include "gd_progress_dialog.h"
 #include "ssconverter.h"
 
 void GdSsImportControl::_bind_methods() {
@@ -228,17 +229,34 @@ void GdSsImportControl::_on_window_files_dropped(const Vector<String> &p_files) 
             contexts.push_back(ctx);
         }
 
+        auto dialog = memnew(GdProgressDialog);
+        EditorInterface::get_singleton()->get_base_control()->add_child(dialog);
+        dialog->show_progress("Importing SSPJ...", contexts.size());
+
+        Vector<bool> finished_contexts;
+        finished_contexts.resize(contexts.size());
         bool wait_for_finish = true;
         while(wait_for_finish) {
             wait_for_finish = false;
+
             for (size_t i = 0; i < contexts.size(); ++i) {
                 void* ctx = contexts[i];
                 bool ret = ss_converter_is_finished((Context *)ctx);
                 if (!ret) {
                     wait_for_finish = true;
+                } else {
+                    finished_contexts.set(i, true);
                 }
             }
+            int finished_num = 0;
+            for (size_t i = 0; i < finished_contexts.size(); ++i) {
+                if (finished_contexts[i]) {
+                    finished_num++;
+                }
+            }
+            dialog->step("", finished_num);
         }
+        dialog->finish();
         for (size_t i = 0; i < contexts.size(); ++i) {
             void* ctx = contexts[i];
             ss_converter_destroy((Context*)ctx);
