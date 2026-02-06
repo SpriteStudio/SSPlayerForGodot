@@ -26,7 +26,6 @@ GdProgressDialog::GdProgressDialog() {
     set_visible(false);
     set_transient(true);
     set_exclusive(true);
-    set_clamp_to_embedder(true);
     set_keep_title_visible(true);
 
     set_flag(FLAG_MINIMIZE_DISABLED, true);
@@ -71,8 +70,8 @@ void GdProgressDialog::show_progress(const String &title, int total_steps) {
     DisplayServer::get_singleton()->process_events(); // 1. 入力処理
 #ifndef SPRITESTUDIO_GODOT_EXTENSION
     MessageQueue::get_singleton()->flush();          // 2. レイアウト計算・シグナル処理の実行
-#endif
     RenderingServer::get_singleton()->draw(true, 0.0);  // 3. 描画
+#endif
 }
 
 void GdProgressDialog::step(const String &message, int step_value) {
@@ -82,8 +81,8 @@ void GdProgressDialog::step(const String &message, int step_value) {
     DisplayServer::get_singleton()->process_events();
 #ifndef SPRITESTUDIO_GODOT_EXTENSION
     MessageQueue::get_singleton()->flush();
-#endif
     RenderingServer::get_singleton()->draw(true, 0.0);
+#endif
 }
 
 // void GdProgressDialog::_on_cancel_pressed() {
