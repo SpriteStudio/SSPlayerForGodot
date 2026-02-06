@@ -1,8 +1,3 @@
-/*!
-* \file		register_types.cpp
-* \author	CRI Middleware Co., Ltd.
-*/
-
 #include "defs.h"
 #include "register_types.h"
 
@@ -21,12 +16,11 @@ using namespace godot;
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
 #include <godot_cpp/classes/editor_plugin_registration.hpp>
-using namespace godot;
 #else
 #include "editor/editor_node.h"
 
 static void editor_init_callback() {
-	EditorNode::get_singleton()->add_editor_plugin(memnew(GdSsEditorPlugin(EditorNode::get_singleton())));
+    EditorNode::get_singleton()->add_editor_plugin(memnew(GdSsEditorPlugin(EditorNode::get_singleton())));
 }
 #endif
 #endif
@@ -40,16 +34,9 @@ static GdSsabResourceFormatLoader *ssab_loader = nullptr;
 static GdSsabResourceFormatSaver *ssab_saver = nullptr;
 
 void register_gd_spritestudio_types() {
-#ifdef TOOLS_ENABLED
-    GDREGISTER_CLASS(GdSsImportControl);
-    GDREGISTER_CLASS(GdClickableLabel);
-    GDREGISTER_CLASS(GdProgressDialog);
-#endif
 
-#ifndef SPRITESTUDIO_GODOT_EXTENSION
     GDREGISTER_CLASS(GdSsabResourceFormatLoader);
     GDREGISTER_CLASS(GdSsabResourceFormatSaver);
-#endif
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
     ssab_loader = memnew(GdSsabResourceFormatLoader);
@@ -92,41 +79,42 @@ void unregister_gd_spritestudio_types() {
 }
 
 void initialize_gd_spritestudio_module(ModuleInitializationLevel level) {
-#ifdef TOOLS_ENABLED		
+    if (level == MODULE_INITIALIZATION_LEVEL_SCENE) {
+        register_gd_spritestudio_types();
+    }
+
+#ifdef TOOLS_ENABLED
+    if (level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
+
+    GDREGISTER_CLASS(GdSsImportControl);
+    GDREGISTER_CLASS(GdClickableLabel);
+    GDREGISTER_CLASS(GdProgressDialog);
+
+
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
-    if (level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
         GDREGISTER_CLASS(GdSsEditorPlugin);
-        EditorPlugins::add_plugin_class(StringName("SpriteStudioEditorPlugin"));
-		return;
-    }
+        EditorPlugins::add_by_type<GdSsEditorPlugin>();
 #else
-    if (level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
         EditorNode::add_init_callback(editor_init_callback);
-        return;
-    }    
 #endif
-#endif
-    if (level == MODULE_INITIALIZATION_LEVEL_CORE) {
-        GDREGISTER_CLASS(GdSsabResourceFormatLoader);
-        GDREGISTER_CLASS(GdSsabResourceFormatSaver);
-	    return;        
     }
-    if (level != MODULE_INITIALIZATION_LEVEL_SCENE) return;
-	register_gd_spritestudio_types();
+#endif
 }
 
 void uninitialize_gd_spritestudio_module(ModuleInitializationLevel level) {
-	unregister_gd_spritestudio_types();
-
-	if (level != MODULE_INITIALIZATION_LEVEL_CORE) return;
+    if (level == MODULE_INITIALIZATION_LEVEL_SCENE) {
+        unregister_gd_spritestudio_types();
+    }
 }
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
 extern "C" GDExtensionBool GDE_EXPORT spritestudio_godot_library_init(GDExtensionInterfaceGetProcAddress p_get_proc_address, GDExtensionClassLibraryPtr p_library, GDExtensionInitialization *r_initialization) {
-	godot::GDExtensionBinding::InitObject init_obj(p_get_proc_address, p_library, r_initialization);
-	init_obj.register_initializer(initialize_gd_spritestudio_module);
-	init_obj.register_terminator(uninitialize_gd_spritestudio_module);
-	init_obj.set_minimum_library_initialization_level(MODULE_INITIALIZATION_LEVEL_SCENE);
-	return init_obj.init();
+    godot::GDExtensionBinding::InitObject init_obj(p_get_proc_address, p_library, r_initialization);
+    init_obj.register_initializer(initialize_gd_spritestudio_module);
+    init_obj.register_terminator(uninitialize_gd_spritestudio_module);
+    
+    init_obj.set_minimum_library_initialization_level(MODULE_INITIALIZATION_LEVEL_SCENE);
+    
+    return init_obj.init();
 }
 #endif

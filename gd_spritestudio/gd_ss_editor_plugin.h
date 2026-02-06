@@ -19,28 +19,28 @@ class GdSsEditorPlugin : public EditorPlugin {
 
 protected:
     static void _bind_methods() {}
+    void _notification(int what);
 
 public:
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
-	explicit GdSsEditorPlugin();
+    explicit GdSsEditorPlugin();
 #else
-    void _notification(int what);
-	explicit GdSsEditorPlugin(EditorNode *node);
+    explicit GdSsEditorPlugin(EditorNode *node);
 #endif
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
-	String _get_plugin_name() const override {
-		return "SpriteStudioEditorPlugin";
-	}
+    String _get_plugin_name() const override {
+        return "SpriteStudioEditorPlugin";
+    }
 #else
 #if VERSION_MAJOR > 3 && VERSION_MINOR > 3
-	String get_plugin_name() const override {
-		return "SpriteStudioEditorPlugin";
-	}
+    String get_plugin_name() const override {
+        return "SpriteStudioEditorPlugin";
+    }
 #else
-	String get_name() const override {
-		return "SpriteStudioEditorPlugin";
-	}
+    String get_name() const override {
+        return "SpriteStudioEditorPlugin";
+    }
 #endif
 #endif
 };
