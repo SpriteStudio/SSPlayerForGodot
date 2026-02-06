@@ -115,7 +115,11 @@ void GdSsImportControl::_notification(int p_what) {
 
 void* GdSsImportControl::process_file(const String &source_sspj_path, const String &dst_dir_path) {
     auto ctx = ss_converter_create();
-    ss_converter_convert(ctx, source_sspj_path.utf8().get_data(), dst_dir_path.utf8().get_data());
+    auto src = source_sspj_path.utf8().get_data();
+    ss_converter_convert(ctx, src, dst_dir_path.utf8().get_data(), [](const char *msg){
+        print_line("%s", msg);
+    });
+
     return ctx;
 }
 
