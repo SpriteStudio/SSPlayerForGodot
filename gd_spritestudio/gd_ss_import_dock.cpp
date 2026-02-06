@@ -236,6 +236,9 @@ void GdSsImportControl::_on_window_files_dropped(const Vector<String> &p_files) 
         Vector<bool> finished_contexts;
         finished_contexts.resize(contexts.size());
         bool wait_for_finish = true;
+        int prev_num = 0;
+        dialog->step(vformat("Importing SSPJ: %d/%d", 0, finished_contexts.size()), 0);
+
         while(wait_for_finish) {
             wait_for_finish = false;
 
@@ -254,7 +257,10 @@ void GdSsImportControl::_on_window_files_dropped(const Vector<String> &p_files) 
                     finished_num++;
                 }
             }
-            dialog->step(vformat("Importing SSPJ: %d/%d", finished_num, finished_contexts.size()), finished_num);
+            if (finished_num != prev_num) {
+                dialog->step(vformat("Importing SSPJ: %d/%d", finished_num, finished_contexts.size()), finished_num);
+                prev_num = finished_num;
+            }
         }
         dialog->finish();
         for (size_t i = 0; i < contexts.size(); ++i) {
