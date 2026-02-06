@@ -28,8 +28,11 @@ GdProgressDialog::GdProgressDialog() {
     set_exclusive(true);
     set_keep_title_visible(true);
 
+#ifndef SPRITESTUDIO_GODOT_EXTENSION
+    set_clamp_to_embedder(true);
     set_flag(FLAG_MINIMIZE_DISABLED, true);
     set_flag(FLAG_MAXIMIZE_DISABLED, true);
+#endif
     set_title("Processing...");
 
     Panel *background = memnew(Panel);
