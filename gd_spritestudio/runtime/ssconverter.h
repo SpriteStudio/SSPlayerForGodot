@@ -15,6 +15,8 @@ enum class CConverterError {
 
 struct Context;
 
+using LogCallback = void(*)(const char*);
+
 extern "C" {
 
 const char *ss_converter_version();
@@ -25,7 +27,10 @@ Context *ss_converter_create();
 
 void ss_converter_destroy(Context *context);
 
-void ss_converter_convert(Context *ctx, const char *sspj, const char *output_dir);
+void ss_converter_convert(Context *ctx,
+                          const char *sspj,
+                          const char *output_dir,
+                          LogCallback callback);
 
 bool ss_converter_is_finished(Context *context);
 
