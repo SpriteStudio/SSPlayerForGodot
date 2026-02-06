@@ -2,95 +2,66 @@
 
 # SpriteStudioPlayer for Godot
 
-## Introduction
+**The branch is in experimental and unstable phase.**
 
-This plugin enables playback of animations created with  
-[OPTPiX SpriteStudio](https://www.webtech.co.jp/spritestudio/index.html)  
-within the [Godot Engine](https://godotengine.org/).
+**No guarantee, No support and can't reply any requests and any bug reports regarding the branch.**
 
-To prioritize runtime performance, the plugin is implemented as a C++ module.
+# For Develoeprs
 
-To use SpriteStudioPlayer for Godot, you must either:
+## prepare development environment of SpriteStudio7-SDK
+Reference [For Develoeprs of SpriteStudio7-SDK](https://github.com/SpriteStudio/SpriteStudio7-SDK?tab=readme-ov-file#for-sdk-developers) and prepare environment.
 
-- Build the Godot Engine editor with the SpriteStudioPlayer [custom module](https://docs.godotengine.org/en/stable/contributing/development/core_and_modules/custom_modules_in_cpp.html), **or**
-- Add the SpriteStudioPlayer [GDExtension](https://docs.godotengine.org/en/stable/tutorials/scripting/gdextension/what_is_gdextension.html) to your project.
+## prepare development environment of Godot
+Reference the official documents
 
-## Supported Versions of OPTPiX SpriteStudio
+- windows
+    - https://docs.godotengine.org/en/stable/engine_details/development/compiling/compiling_for_windows.html
+- macOS
+    - https://docs.godotengine.org/en/stable/engine_details/development/compiling/compiling_for_macos.html
 
-Supports SpriteStudio **Ver.6** and **Ver.7**.  
-*Note: New features added in Ver. 7.1 (text, sound, etc.) are not supported.*
+## clone the repository
 
-## Supported Versions of Godot Engine
+```bash
+git clone --recursive git@github.com:SpriteStudio/SSPlayerForGodot.git
+cd SSPlayerForGodot
+```
 
-- [4.5 branch](https://github.com/godotengine/godot/tree/4.5):  
-  Verified build and execution on Windows / macOS  
-- [3.x branch](https://github.com/godotengine/godot/tree/3.x):  
-  Verified build and execution on Windows / macOS
+## build and deploy libssruntime
 
-## Build
+Build ssruntime binary for your platform and archtecture and deploy the binary to [the runtime directory](./gd_spritestudio/runtime)
 
-See **[BUILD.md](BUILD.md)**.
+```bash
+./scripts/build-runtime.sh
+```
+or
+```powershell
+./scripts/build-runtime.ps1
+```
 
-## Usage
+## clone godot and godot-cpp in the repository
 
-See **[USAGE.md](USAGE.md)**.
+```bash
+git clone https://github.com/godotengine/godot.git
+git clone https://github.com/godotengine/godot-cpp.git
+```
 
-## Samples
+## build custom godot or gdextension
+### custom godot
 
-Sample projects are available in the **[examples folder](./examples/)**.
+```bash
+./scripts/build.sh
+```
+or
+```powershell
+./scripts/build.ps1
+```
 
-**Note:**  
-These samples were created for **Godot 3.x**.  
-For use with **Godot 4.4**, please run **“Convert Full Project”** first.
+### gdextension
 
-### [feature_test](./examples/feature_test)
-
-Basic functional test project with the following scenes:
-
-- **v6_feature.tscn**  
-  - Verify features supported from SpriteStudio v6.0 to v7.0  
-  - Enable visibility of nodes you want to inspect  
-  - `Signal` & `UserData` trigger Godot signals when reaching their keys  
-  - Parameters appear in the console  
-  - Original project (`v6_all.sspj`) is located under `ssdata/`
-
-- **sspj_load.tscn**  
-  - Loads SS projects via GDScript and plays selected animations  
-  - Automatically switches to another SS project when playback finishes
-
-- **texture_change.tscn**  
-  - Demonstrates dynamic texture replacement  
-  - Toggle “Change” in Inspector to switch textures
-
-### [mesh_bone](./examples/mesh_bone)
-
-Sample using mesh, bone, and effect features for character animation.
-
-### [particle_effect](./examples/particle_effect)
-
-Sample demonstrating effect animation features.  
-Displays one of 40 possible animations.  
-More animations can be tested through the Anime Pack.
-
-### [feature_test_gdextension](./examples/feature_test_gdextension)
-
-Test project for GDExtension operation.  
-Provides the same samples as `feature_test`.
-
-## Contact
-
-For questions, feature requests, or bug reports, please post to **[Issues](../../issues)**.
-
-For private inquiries, contact us via the  
-[Help Center](https://www.webtech.co.jp/help/ja/spritestudio7/inquiries/ssplayer_tool/).
-
-=========================================================  
-
-CRI Middleware Co., Ltd.  
-https://www.cri-mw.co.jp/  
-Copyright © CRI Middleware Co., Ltd.  
-
-=========================================================  
-
-* SpriteStudio and Web Technology are registered trademarks of Web Technology Corp.
-* Other product names are registered trademarks or trademarks of their respective companies.
+```bash
+./scripts/build-extension.sh
+```
+or
+```powershell
+./scripts/build-extension.ps1
+```
