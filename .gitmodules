@@ -1,6 +1,6 @@
 [submodule "gd_spritestudio/SpriteStudio7-SDK"]
 	path = gd_spritestudio/SpriteStudio7-SDK
-	url = https://github.com/SpriteStudio/SpriteStudio7-SDK.git
+	url = git@github.com:SpriteStudio/SpriteStudio7-SDK.git
 [submodule "gd_spritestudio/flatbuffers"]
 	path = gd_spritestudio/flatbuffers
-	url = https://github.com/google/flatbuffers.git
+	url = git@github.com:SpriteStudio/SpriteStudio7-SDK.git
