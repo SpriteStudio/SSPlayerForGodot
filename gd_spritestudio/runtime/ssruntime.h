@@ -4,37 +4,23 @@
 #include <ostream>
 #include <new>
 
-constexpr static const uint8_t ENUM_MIN_BLEND_TYPE = 0;
-
-constexpr static const uint8_t ENUM_MAX_BLEND_TYPE = 11;
-
-constexpr static const VOffsetT PartAttributeDeform_VT_COORDINATE = 4;
-
-constexpr static const VOffsetT PartAttributeDeform_VT_INDEX = 6;
-
-constexpr static const VOffsetT FrameData_VT_PARTS = 4;
-
-constexpr static const VOffsetT FrameData_VT_CELLS = 6;
-
-constexpr static const VOffsetT FrameData_VT_PARTS_COLOR = 8;
-
-constexpr static const VOffsetT FrameData_VT_SHADERS = 10;
-
-constexpr static const VOffsetT FrameData_VT_VERTICES = 12;
-
-constexpr static const VOffsetT FrameData_VT_DEFORMS = 14;
-
 extern "C" {
 
-void *ss_runtime_create(unsigned char *ptr, uintptr_t len);
+void *ss_runtime_create();
 
 void ss_runtime_destroy(void *context);
 
-unsigned char *ss_runtime_get_ssab_buf(void *context);
+bool ss_runtime_load_ssab_copy(void *context, const unsigned char *ptr, uintptr_t len);
 
-uintptr_t ss_runtime_get_ssab_buf_len(void *context);
+bool ss_runtime_load_ssab_borrow(void *context, const unsigned char *ptr, uintptr_t len);
 
-bool ss_runtime_setup_animation(void *context, char *name);
+void ss_runtime_get_ssab(void *context, unsigned char **out_data, uintptr_t *out_len);
+
+const unsigned char *ss_runtime_get_ssab_buf(void *context);
+
+uintptr_t ss_runtime_get_ssab_len(void *context);
+
+bool ss_runtime_setup_animation(void *context, const char *name);
 
 void ss_runtime_get_frame_data(void *context,
                                int frame_no,
@@ -48,6 +34,8 @@ float ss_runtime_get_frame_no_decimal(void *context);
 bool ss_runtime_is_end_frame_reached(void *context);
 
 bool ss_runtime_is_playing(void *context);
+
+bool ss_runtime_is_pausing(void *context);
 
 bool ss_runtime_get_skip_frames(void *context);
 

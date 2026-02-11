@@ -41,6 +41,8 @@ public:
 
   const ss::format::SsAnimeBinary *get_ss_anime_binary();
   const uint8_t *get_data_ptr();
+  int64_t get_data_size();
+  ss::format::AnimationData *find_animation(const String &name);
 
 #ifndef SPRITESTUDIO_GODOT_EXTENSION
   virtual Error copy_from(const Ref<Resource> &p_resource);
