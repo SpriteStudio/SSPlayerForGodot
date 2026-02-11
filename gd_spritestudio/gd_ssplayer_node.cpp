@@ -1,7 +1,73 @@
 #include "gd_ssplayer_node.h"
+#include "runtime/ssab.h"
+#include "runtime/ssruntime.h"
+
+GdSsPlayerNode::GdSsPlayerNode() {
+    rutime_ctx = ss_runtime_create();
+}
+
+GdSsPlayerNode::~GdSsPlayerNode() {
+    ss_runtime_destroy(rutime_ctx);
+    rutime_ctx = nullptr;
+}
+
+void GdSsPlayerNode::setSsabResource( const Ref<GdSsabResource>& ssabRes ) {
+	_ssabRes = ssabRes;
+    _strAnimationSelected = "";
+    if ( !_ssabRes.is_null() ) {
+        auto vecAnimeName = _ssabRes->get_animation_names();
+        if ( vecAnimeName.size() > 0 )
+            _strAnimationSelected = vecAnimeName[0];
+    }
+
+    fetchAnimation();
+	NOTIFY_PROPERTY_LIST_CHANGED();
+
+	// GdNotifier::getInstance().notifyResourcePlayerChanged( this );
+}
+
+Ref<GdSsabResource> GdSsPlayerNode::getSsabResource() const {
+	return	_ssabRes;
+}
+
+void GdSsPlayerNode::setAnimation( const String& strName ) {
+    _strAnimationSelected = strName;
+
+    // postAnimationChanged( _strAnimationSelected );
+
+	fetchAnimation();
+	NOTIFY_PROPERTY_LIST_CHANGED();
+}
+
+String GdSsPlayerNode::getAnimation() const {
+    return	_strAnimationSelected;
+}
+
+bool GdSsPlayerNode::isPlaying() const {
+    return ss_runtime_is_playing(rutime_ctx);
+}
+
+void GdSsPlayerNode::play() {
+    ss_runtime_play(rutime_ctx);
+}
+
+void GdSsPlayerNode::pause( bool b ) {
+    ss_runtime_pause(rutime_ctx);
+}
+
+void GdSsPlayerNode::stop() {
+    ss_runtime_stop(rutime_ctx);
+}
+
 
 void GdSsPlayerNode::_bind_methods() {
-    ADD_SIGNAL(
+    ClassDB::bind_method( D_METHOD( "set_ssab_resource", "res_ssab" ), &GdSsPlayerNode::setSsabResource );
+    ClassDB::bind_method( D_METHOD( "get_ssab_resource" ), &GdSsPlayerNode::getSsabResource );
+    ClassDB::bind_method( D_METHOD( "set_animation", "name" ), &GdSsPlayerNode::setAnimation );
+    ClassDB::bind_method( D_METHOD( "get_animation" ), &GdSsPlayerNode::getAnimation );
+
+
+	ADD_SIGNAL(
 		MethodInfo(
 			"user_data",
 			PropertyInfo(
@@ -43,13 +109,261 @@ void GdSsPlayerNode::_bind_methods() {
 	ADD_PROPERTY(
 		PropertyInfo(
 			Variant::OBJECT,
-			"res_player",
+			"ssab",
 			PropertyHint::PROPERTY_HINT_RESOURCE_TYPE,
 			"GdSsabResource"
 		),
-		"set_player_resource",
-		"get_player_resource"
+		"set_ssab_resource",
+		"get_ssab_resource"
 	);
 
 	ADD_GROUP( "Animation Settings", "" );
+}
+
+bool GdSsPlayerNode::_set( const StringName& p_name, const Variant& p_property ) {
+	if ( p_name == StringName("animation")) {
+		setAnimation( p_property );
+
+		return	true;
+	} else if ( p_name == StringName("frame")) {
+		//setFrame( p_property );
+
+		return	true;
+	} else if ( p_name == StringName("loop")) {
+		//setLoop( p_property );
+
+		return	true;
+	} else if ( p_name == StringName("playing")) {
+		//setPlay( p_property );
+
+		return	true;
+	}
+
+	if ( p_name == StringName("texture_interpolate") ) {
+		//setTextureInterpolate( p_property );
+
+		return	true;
+	}
+
+	return	false;
+}
+
+bool GdSsPlayerNode::_get( const StringName& p_name, Variant& r_property ) const {
+    if ( p_name == StringName("animation")) {
+        r_property = getAnimation();
+
+        return	true;
+    } else if ( p_name == StringName("frame") ) {
+        // r_property = getFrame();
+
+        return	true;
+    } else if ( p_name == StringName("loop") ) {
+        // r_property = getLoop();
+
+        return	true;
+    } else if ( p_name == StringName("playing") ) {
+        // r_property = getPlay();
+
+        return	true;
+    }
+
+    if ( p_name == StringName("texture_interpolate") ) {
+        // r_property = getTextureInterpolate();
+
+        return	true;
+    }
+
+    return	false;
+}
+
+void GdSsPlayerNode::_get_property_list( List<PropertyInfo>* p_list ) const {
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+	PackedStringArray vecAnimeName;
+#else
+	Vector<String>	vecAnimeName;
+#endif
+
+	vecAnimeName.insert(0, "-- Empty --");
+
+	if (!_ssabRes.is_null()) {
+		vecAnimeName = _ssabRes->get_animation_names();
+	}
+
+	PropertyInfo animasPropertyInfo;
+	animasPropertyInfo.name = "animation";
+	animasPropertyInfo.type = Variant::STRING;
+	animasPropertyInfo.usage = PROPERTY_USAGE_EDITOR | PROPERTY_USAGE_STORAGE;
+	animasPropertyInfo.hint_string = String( "," ).join( vecAnimeName );
+	animasPropertyInfo.hint = PROPERTY_HINT_ENUM;
+    p_list->push_back( animasPropertyInfo );
+
+
+}
+
+void GdSsPlayerNode::_notification( int p_notification ) {
+    switch ( p_notification ) {
+ 	case NOTIFICATION_READY:
+        set_process_internal( true );
+
+        break;
+    case NOTIFICATION_INTERNAL_PROCESS:
+		updateAnimation( (float)get_process_delta_time() );
+
+        break;
+    case NOTIFICATION_DRAW:
+        // drawAnimation();
+
+        break;
+    default:
+        break;
+	}
+}
+
+void GdSsPlayerNode::updateAnimation( float delta ) {
+    if (ss_runtime_is_playing(rutime_ctx)) {
+        auto d = delta * 1000.0f;
+        auto frame_no = ss_runtime_update(rutime_ctx, d);
+
+        if (previous_frame_no == frame_no) {
+            print_line("skip");
+            return;
+        }
+        print_line("delta: " + String::num(d) + "Current Frame: " + String::num(frame_no));
+
+        if (_currentAnimationData->events() != nullptr && _currentAnimationData->events()->size() > 0) {
+            if (previous_frame_no == -1) {
+                previous_frame_no = ss_runtime_get_start_frame(rutime_ctx);
+            }
+
+            // check Events
+            for (int i=previous_frame_no; i<=frame_no; i++) {
+                auto eventsPerFrame = _currentAnimationData->events()->LookupByKey(i);
+                if (eventsPerFrame == nullptr) continue;
+                auto users = eventsPerFrame->users();
+                if (users) {
+                    // TODO: impl
+                }
+                auto singals = eventsPerFrame->signals();
+                if (singals) {
+                    // TODO: impl
+                }
+                auto instances = eventsPerFrame->instances();
+                if (instances) {
+                    // TODO: impl
+                }
+                auto effects = eventsPerFrame->effects();
+                if (effects) {
+                    // TODO: impl
+                }
+                auto audios = eventsPerFrame->audios();
+                if (audios) {
+                    // TODO: impl
+                }
+            }
+        }
+
+        previous_frame_no = frame_no;
+    }
+}
+
+
+void GdSsPlayerNode::fetchAnimation() {
+	if ( !_strAnimationSelected.is_empty() ) {
+        if ( _ssabRes.is_null() ) {
+            return;
+        }
+
+        bool loaded = ss_runtime_load_ssab_borrow(rutime_ctx, _ssabRes->get_data_ptr(), _ssabRes->get_data_size());
+        if ( !loaded ) {
+            ERR_PRINT( "SSAB Load Failed" );
+            return;
+        }
+
+		auto c = _strAnimationSelected.utf8();
+        auto animation = _ssabRes->find_animation( _strAnimationSelected );
+		if ( !animation ) {
+			ERR_PRINT( "Select Anime is Null" );
+            return;
+		}
+        _currentAnimationData = animation;
+        bool setup = ss_runtime_setup_animation(rutime_ctx, c.get_data());
+        if ( !setup ) {
+            ERR_PRINT( "SSAB Setup Animation Failed" );
+            return;
+        }
+
+        previous_frame_no = -1;
+        ss_runtime_play(rutime_ctx);
+
+    /*
+		m_CellMapList->clear();
+
+		int		idx = 0;
+
+		for ( int i = 0; i < pAnimePack->cellmapNames.size(); i++ ) {
+			Ref<GdResourceSsCellMap>	resCellMap = resProject->getCellMapResource( pAnimePack->cellmapNames[i] );
+
+			if ( resCellMap.is_null() ) {
+				continue;
+			}
+
+			SsCellMap*		pCellMap = resCellMap->getCellMap();
+
+			if ( pCellMap ) {
+				m_CellMapList->addIndex( pCellMap );
+				m_CellMapList->addMap( pCellMap );
+
+				( (SsTextureImpl*)m_CellMapList->getCellMapLink( idx++ )->tex )->setTexture( resCellMap->getTexture() );
+			}
+		}
+		for ( int i = 0; i < pProject->cellmapNames.size(); i++ ) {
+			Ref<GdResourceSsCellMap>	resCellMap = resProject->getCellMapResource( pProject->cellmapNames[i] );
+
+			if ( resCellMap.is_null() ) {
+				continue;
+			}
+
+			SsCellMap*		pCellMap = resCellMap->getCellMap();
+
+			if ( pCellMap ) {
+				m_CellMapList->addIndex( pCellMap );
+				m_CellMapList->addMap( pCellMap );
+
+				( (SsTextureImpl*)m_CellMapList->getCellMapLink( idx++ )->tex )->setTexture( resCellMap->getTexture() );
+			}
+		}
+
+		if ( m_AnimeDecoder ) {
+			m_Renderer.m_iSetup = 0;
+			SsCurrentRenderer::SetCurrentRender( &m_Renderer );
+
+			if ( pAnimation ) {
+				float	fW = pAnimation->settings.canvasSize.x;
+				float	fH = pAnimation->settings.canvasSize.y;
+				float	fX = ( pAnimation->settings.pivot.x + 0.5f ) * fW;
+				float	fY = ( pAnimation->settings.pivot.y + 0.5f ) * fH;
+				int		iFps = pAnimation->settings.fps;
+
+				m_Renderer.setCanvasItem( get_canvas_item() );
+				m_Renderer.setCanvasSize( fW, fH );
+				m_Renderer.setCanvasCenter( fX, fY );
+				m_Renderer.setFps( iFps );
+//				m_Renderer.setTextureInterpolate( m_bTextureInterpolate );	// Updated in drawAnimation()
+			}
+
+			m_Renderer.createPartSprites( &pAnimePack->Model, pProject );
+
+			m_bAnimeDecoder = true;
+			m_AnimeDecoder->setAnimation(
+				&pAnimePack->Model,
+				pAnimation,
+				m_CellMapList.get(),
+				pProject
+			);
+
+			setFrame( m_iFrame );
+		}
+    */
+	}
+
 }
