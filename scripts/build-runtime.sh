@@ -58,16 +58,20 @@ if [[ "${opts[build]}" == "release" ]]; then
 else
     cargo build -p ssconverter -p ssruntime
 fi
-
-
 popd > /dev/null
+
+INPUT=SpriteStudio7-SDK
+OUTPUT=runtime
+/bin/cp ${INPUT}/libs/ssconverter/target/ssconverter.h ${OUTPUT}/
+/bin/cp ${INPUT}/libs/ssruntime/target/ssruntime.h ${OUTPUT}/
+
 INPUT=SpriteStudio7-SDK/target
 OUTPUT=runtime/libs/${opts[platform]}
 /bin/mkdir -p ${OUTPUT}
 if [[ "${opts[build]}" == "release" ]]; then
     if [[ "${opts[platform]}" == "macos" ]]; then
         /bin/cp ${INPUT}/universal-apple-darwin/libssruntime.a ${OUTPUT}/
-        /bin/cp ${INPUT}/universal-apple-darwin/libssconverter.a ${OUTPUT}/        
+        /bin/cp ${INPUT}/universal-apple-darwin/libssconverter.a ${OUTPUT}/
     fi
 else
     /bin/cp ${INPUT}/${opts[build]}/libssruntime.a ${OUTPUT}/

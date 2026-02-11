@@ -46,6 +46,11 @@ if ($opts.build -eq "release") {
 }
 popd
 
+$inputDir="SpriteStudio7-SDK"
+$outputDir="runtime"
+Copy-Item ./${inputDir}/libs/ssconverter/target/ssconverter.h ./${outputDir}/ -Force
+Copy-Item ./${inputDir}/libs/ssruntime/target/ssruntime.h ./${outputDir}/ -Force
+
 $inputDir="SpriteStudio7-SDK/target"
 $outputDir="runtime/libs//$($opts.platform)"
 New-Item "./${outputDir}" -ItemType Directory -ErrorAction SilentlyContinue
