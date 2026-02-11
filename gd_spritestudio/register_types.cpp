@@ -37,8 +37,10 @@ static GdSsqbResourceFormatSaver *ssqb_saver = nullptr;
 
 void register_gd_spritestudio_types() {
 
+  GDREGISTER_CLASS(GdSsabResource);
   GDREGISTER_CLASS(GdSsabResourceFormatLoader);
   GDREGISTER_CLASS(GdSsabResourceFormatSaver);
+  GDREGISTER_CLASS(GdSsqbResource);
   GDREGISTER_CLASS(GdSsqbResourceFormatLoader);
   GDREGISTER_CLASS(GdSsqbResourceFormatSaver);
 

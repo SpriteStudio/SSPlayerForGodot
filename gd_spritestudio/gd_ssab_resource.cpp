@@ -148,7 +148,7 @@ String GdSsabResourceFormatLoader::_get_resource_type(const String &path) {
 #else
 String GdSsabResourceFormatLoader::get_resource_type(const String &path) const {
 #endif
-  return path.ends_with(".ssba") ? "GdSsabResource" : "";
+  return path.ends_with(".ssab") ? "GdSsabResource" : "";
 }
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
