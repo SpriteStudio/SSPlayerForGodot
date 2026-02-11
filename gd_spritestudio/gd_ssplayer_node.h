@@ -30,7 +30,8 @@ public:
 
     bool isPlaying() const;
     void play();
-    void pause( bool b );
+    bool isPausing() const;
+    void pause();
     void stop();
 
 
