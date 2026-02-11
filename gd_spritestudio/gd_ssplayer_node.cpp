@@ -51,7 +51,11 @@ void GdSsPlayerNode::play() {
     ss_runtime_play(rutime_ctx);
 }
 
-void GdSsPlayerNode::pause( bool b ) {
+bool GdSsPlayerNode::isPausing() const {
+    return ss_runtime_is_pausing(rutime_ctx);
+}
+
+void GdSsPlayerNode::pause() {
     ss_runtime_pause(rutime_ctx);
 }
 
@@ -65,7 +69,9 @@ void GdSsPlayerNode::_bind_methods() {
     ClassDB::bind_method( D_METHOD( "get_ssab_resource" ), &GdSsPlayerNode::getSsabResource );
     ClassDB::bind_method( D_METHOD( "set_animation", "name" ), &GdSsPlayerNode::setAnimation );
     ClassDB::bind_method( D_METHOD( "get_animation" ), &GdSsPlayerNode::getAnimation );
-
+    ClassDB::bind_method( D_METHOD( "play" ), &GdSsPlayerNode::play );
+    ClassDB::bind_method( D_METHOD( "pause" ), &GdSsPlayerNode::pause );
+    ClassDB::bind_method( D_METHOD( "stop" ), &GdSsPlayerNode::stop );
 
 	ADD_SIGNAL(
 		MethodInfo(
