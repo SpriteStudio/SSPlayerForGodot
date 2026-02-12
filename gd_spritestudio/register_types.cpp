@@ -27,7 +27,7 @@ static void editor_init_callback() {
 #endif
 
 #include "gd_ssab_resource.h"
-#include "gd_ssplayer_node.h"
+#include "gd_ssplayer_node2d.h"
 #include "gd_ssqb_resource.h"
 
 static GdSsabResourceFormatLoader *ssab_loader = nullptr;
@@ -72,7 +72,7 @@ void register_gd_spritestudio_types() {
 
 #endif
 
-  GDREGISTER_CLASS(GdSsPlayerNode);
+  GDREGISTER_CLASS(GdSsPlayerNode2D);
 }
 
 void unregister_gd_spritestudio_types() {
