@@ -1,5 +1,7 @@
 #ifdef TOOLS_ENABLED
 
+#include "gd_macros.h"
+
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
 #include <godot_cpp/classes/dir_access.hpp>
 #include <godot_cpp/classes/editor_interface.hpp>
@@ -7,13 +9,14 @@
 #include <godot_cpp/classes/window.hpp>
 using namespace godot;
 #else
-#include "core/version.h"
 #include "core/io/dir_access.h"
 #include "editor/editor_interface.h"
-#if (VERSION_MAJOR >= 4 && VERSION_MINOR >= 5)
-#include "editor/file_system/editor_file_system.h"
-#else
-#include "editor/editor_file_system.h"
+#if VERSION_MAJOR >= 4
+    #if VERSION_MINOR >= 5
+    #include "editor/file_system/editor_file_system.h"
+    #else
+    #include "editor/editor_file_system.h"
+    #endif
 #endif
 #include "scene/main/window.h"
 #endif
@@ -49,10 +52,10 @@ GdSsImportControl::GdSsImportControl() {
     ss_converter_version_free((char*)v);
     v = nullptr;
     hbox->add_child(clickable_label);
-    
+
     hbox = memnew(HBoxContainer);
-    add_child(hbox);    
-    
+    add_child(hbox);
+
     label = memnew(Label);
     label->set_text("Output Dir:");
     hbox->add_child(label);
@@ -65,13 +68,13 @@ GdSsImportControl::GdSsImportControl() {
 
     browse_button = memnew(Button);
     browse_button->set_text("...");
-    browse_button->set_tooltip_text("open EditorFileDialog"); 
+    browse_button->set_tooltip_text("open EditorFileDialog");
     browse_button->connect("pressed", Callable(this, "_on_browse_button_pressed"));
-    hbox->add_child(browse_button);    
+    hbox->add_child(browse_button);
 
     reset_button = memnew(Button);
     reset_button->set_text(L"⟲");
-    reset_button->set_tooltip_text("Reset to default directory"); 
+    reset_button->set_tooltip_text("Reset to default directory");
     reset_button->connect("pressed", callable_mp(this, &GdSsImportControl::_on_reset_button_pressed));
     hbox->add_child(reset_button);
 
@@ -83,7 +86,7 @@ GdSsImportControl::GdSsImportControl() {
 
     background_panel = memnew(Panel);
     background_panel->set_anchors_preset(Control::PRESET_FULL_RECT);
-    background_panel->set_mouse_filter(Control::MOUSE_FILTER_IGNORE); 
+    background_panel->set_mouse_filter(Control::MOUSE_FILTER_IGNORE);
     add_child(background_panel);
 
     instruction_label = memnew(Label);
@@ -93,7 +96,7 @@ GdSsImportControl::GdSsImportControl() {
     instruction_label->set_anchors_preset(Control::PRESET_FULL_RECT);
     instruction_label->set_mouse_filter(Control::MOUSE_FILTER_IGNORE);
     add_child(instruction_label);
-      
+
     _load_settings();
 }
 
@@ -125,14 +128,14 @@ void GdSsImportControl::start_intercepting() {
     auto window = get_window();
     if (!window) return;
 
-#ifdef SPRITESTUDIO_GODOT_EXTENSION 
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
     TypedArray<Dictionary> connections = window->get_signal_connection_list("files_dropped");
 #else
     List<Connection> connections;
     window->get_signal_connection_list("files_dropped", &connections);
 #endif
 
-#ifdef SPRITESTUDIO_GODOT_EXTENSION 
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
     for (int i = 0; i < connections.size(); i++) {
         Dictionary conn = connections[i];
         Callable target = conn["callable"];
@@ -145,7 +148,7 @@ void GdSsImportControl::start_intercepting() {
 
         original_drop_handler = target;
         window->disconnect("files_dropped", original_drop_handler);
-        
+
         break;
     }
 
@@ -188,7 +191,7 @@ void GdSsImportControl::_on_window_files_dropped(const Vector<String> &p_files) 
     }
 
     if (get_global_rect().has_point(get_global_mouse_position())) {
-        
+
         // print_line("GdSsImportControl: Processing custom file drop...");
 
         // validate sspj file
@@ -210,7 +213,7 @@ void GdSsImportControl::_on_window_files_dropped(const Vector<String> &p_files) 
         }
 
         String output_dir = path_line_edit->get_text();
-        
+
         Ref<DirAccess> da = DirAccess::open("res://");
         if (!da->dir_exists(output_dir)) {
             //UtilityFunctions::printerr("Output directory does not exist, using default: " + output_dir);
@@ -267,8 +270,8 @@ void GdSsImportControl::_on_window_files_dropped(const Vector<String> &p_files) 
             void* ctx = contexts[i];
             ss_converter_destroy((Context*)ctx);
         }
-        
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
+
+#if defined(SPRITESTUDIO_GODOT_EXTENSION) || (VERSION_MAJOR >= 4 && VERSION_MINOR >= 6)
         EditorInterface::get_singleton()->get_resource_filesystem()->scan();
 #else
         EditorInterface::get_singleton()->get_resource_file_system()->scan();
@@ -339,7 +342,7 @@ void GdSsImportControl::_load_settings() {
     } else {
         ps->set_setting(SETTING_KEY, DEFAULT_PATH);
     }
-    
+
     path_line_edit->set_text(path);
 }
 
