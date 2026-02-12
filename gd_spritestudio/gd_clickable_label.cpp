@@ -1,5 +1,6 @@
 #ifdef TOOLS_ENABLED
 
+#include "gd_macros.h"
 #include "gd_clickable_label.h"
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
@@ -8,7 +9,13 @@
 #include <godot_cpp/core/class_db.hpp>
 using namespace godot;
 #else
-#include "servers/display_server.h"
+#if VERSION_MAJOR >= 4
+    #if VERSION_MINOR >= 6
+    #include "servers/display/display_server.h"
+    #else
+    #include "servers/display_server.h"
+    #endif
+#endif
 
 #endif
 
@@ -18,7 +25,7 @@ void GdClickableLabel::_bind_methods() {
 
 GdClickableLabel::GdClickableLabel() {
     set_mouse_filter(MOUSE_FILTER_STOP);
-    
+
     set_default_cursor_shape(CURSOR_POINTING_HAND);
 }
 
