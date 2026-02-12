@@ -22,8 +22,8 @@ Reference the official documents
 git clone --recursive git@github.com:SpriteStudio/SSPlayerForGodot.git
 
 cd SSPlayerForGodot
-git clone https://github.com/godotengine/godot.git -b 4.5
-git clone https://github.com/godotengine/godot-cpp.git -b 4.5
+git clone https://github.com/godotengine/godot.git -b 4.6
+git clone https://github.com/godotengine/godot-cpp.git -b 4.6
 ```
 
 ## get libssruntime binaries
