@@ -13,7 +13,7 @@ def validate_parent_dir(key, val, env):
 
 
 libname = "SSGodot"
-projectdir = os.path.join("examples", "feature_test_gdextension")
+projectdir = os.path.join("examples", "new_gdextension")
 
 localEnv = Environment(tools=["default"], PLATFORM="")
 
