@@ -1,17 +1,17 @@
-#include "gd_ssplayer_node.h"
+#include "gd_ssplayer_node2d.h"
 #include "runtime/ssab.h"
 #include "runtime/ssruntime.h"
 
-GdSsPlayerNode::GdSsPlayerNode() {
+GdSsPlayerNode2D::GdSsPlayerNode2D() {
     rutime_ctx = ss_runtime_create();
 }
 
-GdSsPlayerNode::~GdSsPlayerNode() {
+GdSsPlayerNode2D::~GdSsPlayerNode2D() {
     ss_runtime_destroy(rutime_ctx);
     rutime_ctx = nullptr;
 }
 
-void GdSsPlayerNode::setSsabResource( const Ref<GdSsabResource>& ssabRes ) {
+void GdSsPlayerNode2D::setSsabResource( const Ref<GdSsabResource>& ssabRes ) {
 	_ssabRes = ssabRes;
     _strAnimationSelected = "";
     if ( !_ssabRes.is_null() ) {
@@ -26,11 +26,11 @@ void GdSsPlayerNode::setSsabResource( const Ref<GdSsabResource>& ssabRes ) {
 	// GdNotifier::getInstance().notifyResourcePlayerChanged( this );
 }
 
-Ref<GdSsabResource> GdSsPlayerNode::getSsabResource() const {
+Ref<GdSsabResource> GdSsPlayerNode2D::getSsabResource() const {
 	return	_ssabRes;
 }
 
-void GdSsPlayerNode::setAnimation( const String& strName ) {
+void GdSsPlayerNode2D::setAnimation( const String& strName ) {
     _strAnimationSelected = strName;
 
     // postAnimationChanged( _strAnimationSelected );
@@ -39,39 +39,39 @@ void GdSsPlayerNode::setAnimation( const String& strName ) {
 	NOTIFY_PROPERTY_LIST_CHANGED();
 }
 
-String GdSsPlayerNode::getAnimation() const {
+String GdSsPlayerNode2D::getAnimation() const {
     return	_strAnimationSelected;
 }
 
-bool GdSsPlayerNode::isPlaying() const {
+bool GdSsPlayerNode2D::isPlaying() const {
     return ss_runtime_is_playing(rutime_ctx);
 }
 
-void GdSsPlayerNode::play() {
+void GdSsPlayerNode2D::play() {
     ss_runtime_play(rutime_ctx);
 }
 
-bool GdSsPlayerNode::isPausing() const {
+bool GdSsPlayerNode2D::isPausing() const {
     return ss_runtime_is_pausing(rutime_ctx);
 }
 
-void GdSsPlayerNode::pause() {
+void GdSsPlayerNode2D::pause() {
     ss_runtime_pause(rutime_ctx);
 }
 
-void GdSsPlayerNode::stop() {
+void GdSsPlayerNode2D::stop() {
     ss_runtime_stop(rutime_ctx);
 }
 
 
-void GdSsPlayerNode::_bind_methods() {
-    ClassDB::bind_method( D_METHOD( "set_ssab_resource", "res_ssab" ), &GdSsPlayerNode::setSsabResource );
-    ClassDB::bind_method( D_METHOD( "get_ssab_resource" ), &GdSsPlayerNode::getSsabResource );
-    ClassDB::bind_method( D_METHOD( "set_animation", "name" ), &GdSsPlayerNode::setAnimation );
-    ClassDB::bind_method( D_METHOD( "get_animation" ), &GdSsPlayerNode::getAnimation );
-    ClassDB::bind_method( D_METHOD( "play" ), &GdSsPlayerNode::play );
-    ClassDB::bind_method( D_METHOD( "pause" ), &GdSsPlayerNode::pause );
-    ClassDB::bind_method( D_METHOD( "stop" ), &GdSsPlayerNode::stop );
+void GdSsPlayerNode2D::_bind_methods() {
+    ClassDB::bind_method( D_METHOD( "set_ssab_resource", "res_ssab" ), &GdSsPlayerNode2D::setSsabResource );
+    ClassDB::bind_method( D_METHOD( "get_ssab_resource" ), &GdSsPlayerNode2D::getSsabResource );
+    ClassDB::bind_method( D_METHOD( "set_animation", "name" ), &GdSsPlayerNode2D::setAnimation );
+    ClassDB::bind_method( D_METHOD( "get_animation" ), &GdSsPlayerNode2D::getAnimation );
+    ClassDB::bind_method( D_METHOD( "play" ), &GdSsPlayerNode2D::play );
+    ClassDB::bind_method( D_METHOD( "pause" ), &GdSsPlayerNode2D::pause );
+    ClassDB::bind_method( D_METHOD( "stop" ), &GdSsPlayerNode2D::stop );
 
 	ADD_SIGNAL(
 		MethodInfo(
@@ -126,7 +126,7 @@ void GdSsPlayerNode::_bind_methods() {
 	ADD_GROUP( "Animation Settings", "" );
 }
 
-bool GdSsPlayerNode::_set( const StringName& p_name, const Variant& p_property ) {
+bool GdSsPlayerNode2D::_set( const StringName& p_name, const Variant& p_property ) {
 	if ( p_name == StringName("animation")) {
 		setAnimation( p_property );
 
@@ -151,7 +151,7 @@ bool GdSsPlayerNode::_set( const StringName& p_name, const Variant& p_property )
 	return	false;
 }
 
-bool GdSsPlayerNode::_get( const StringName& p_name, Variant& r_property ) const {
+bool GdSsPlayerNode2D::_get( const StringName& p_name, Variant& r_property ) const {
     if ( p_name == StringName("animation")) {
         r_property = getAnimation();
 
@@ -173,7 +173,7 @@ bool GdSsPlayerNode::_get( const StringName& p_name, Variant& r_property ) const
     return	false;
 }
 
-void GdSsPlayerNode::_get_property_list( List<PropertyInfo>* p_list ) const {
+void GdSsPlayerNode2D::_get_property_list( List<PropertyInfo>* p_list ) const {
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
 	PackedStringArray vecAnimeName;
 #else
@@ -202,7 +202,7 @@ void GdSsPlayerNode::_get_property_list( List<PropertyInfo>* p_list ) const {
 
 }
 
-void GdSsPlayerNode::_notification( int p_notification ) {
+void GdSsPlayerNode2D::_notification( int p_notification ) {
     switch ( p_notification ) {
  	case NOTIFICATION_READY:
         set_process_internal( true );
@@ -221,7 +221,7 @@ void GdSsPlayerNode::_notification( int p_notification ) {
 	}
 }
 
-void GdSsPlayerNode::updateAnimation( float delta ) {
+void GdSsPlayerNode2D::updateAnimation( float delta ) {
     if (ss_runtime_is_playing(rutime_ctx)) {
         auto d = delta * 1000.0f;
         auto frame_no = ss_runtime_update(rutime_ctx, d);
@@ -230,7 +230,8 @@ void GdSsPlayerNode::updateAnimation( float delta ) {
             // print_line("skip");
             return;
         }
-        print_line("delta: " + String::num(d) + " Current Frame: " + String::num(frame_no));
+
+        // print_line("delta: " + String::num(d) + " Current Frame: " + String::num(frame_no));
 
         if (_currentAnimationData->events() != nullptr && _currentAnimationData->events()->size() > 0) {
             int min_frame;
@@ -277,7 +278,7 @@ void GdSsPlayerNode::updateAnimation( float delta ) {
 }
 
 
-void GdSsPlayerNode::fetchAnimation() {
+void GdSsPlayerNode2D::fetchAnimation() {
 	if ( !_strAnimationSelected.is_empty() ) {
         if ( _ssabRes.is_null() ) {
             return;

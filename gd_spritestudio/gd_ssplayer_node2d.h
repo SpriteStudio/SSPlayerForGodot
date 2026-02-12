@@ -10,12 +10,12 @@ using namespace godot;
 // #include "gd_ssplayer_resource.h"
 #include "gd_ssab_resource.h"
 
-class GdSsPlayerNode : public Node2D {
-    GDCLASS( GdSsPlayerNode, Node2D );
+class GdSsPlayerNode2D : public Node2D {
+    GDCLASS( GdSsPlayerNode2D, Node2D );
 
 protected:
-    GdSsPlayerNode();
-    ~GdSsPlayerNode();
+    GdSsPlayerNode2D();
+    ~GdSsPlayerNode2D();
     static void _bind_methods();
     bool _set( const StringName& p_name, const Variant& p_property );
     bool _get( const StringName& p_name, Variant& r_property ) const;
