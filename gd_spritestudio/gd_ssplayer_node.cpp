@@ -140,14 +140,11 @@ bool GdSsPlayerNode::_set( const StringName& p_name, const Variant& p_property )
 
 		return	true;
 	} else if ( p_name == StringName("playing")) {
-		//setPlay( p_property );
-
-		return	true;
-	}
-
-	if ( p_name == StringName("texture_interpolate") ) {
-		//setTextureInterpolate( p_property );
-
+        if (p_property) {
+            play();
+        } else {
+            stop();
+        }
 		return	true;
 	}
 
@@ -168,13 +165,7 @@ bool GdSsPlayerNode::_get( const StringName& p_name, Variant& r_property ) const
 
         return	true;
     } else if ( p_name == StringName("playing") ) {
-        // r_property = getPlay();
-
-        return	true;
-    }
-
-    if ( p_name == StringName("texture_interpolate") ) {
-        // r_property = getTextureInterpolate();
+        r_property = isPlaying();
 
         return	true;
     }
@@ -203,6 +194,11 @@ void GdSsPlayerNode::_get_property_list( List<PropertyInfo>* p_list ) const {
 	animasPropertyInfo.hint = PROPERTY_HINT_ENUM;
     p_list->push_back( animasPropertyInfo );
 
+    animasPropertyInfo.name = "playing";
+    animasPropertyInfo.type = Variant::BOOL;
+    animasPropertyInfo.usage = PROPERTY_USAGE_EDITOR | PROPERTY_USAGE_STORAGE;
+    animasPropertyInfo.hint = PROPERTY_HINT_NONE;
+	p_list->push_back( animasPropertyInfo );
 
 }
 
@@ -231,18 +227,26 @@ void GdSsPlayerNode::updateAnimation( float delta ) {
         auto frame_no = ss_runtime_update(rutime_ctx, d);
 
         if (previous_frame_no == frame_no) {
-            print_line("skip");
+            // print_line("skip");
             return;
         }
-        print_line("delta: " + String::num(d) + "Current Frame: " + String::num(frame_no));
+        print_line("delta: " + String::num(d) + " Current Frame: " + String::num(frame_no));
 
         if (_currentAnimationData->events() != nullptr && _currentAnimationData->events()->size() > 0) {
-            if (previous_frame_no == -1) {
-                previous_frame_no = ss_runtime_get_start_frame(rutime_ctx);
+            int min_frame;
+            int max_frame;
+
+            int prev = previous_frame_no == -1 ? ss_runtime_get_start_frame(rutime_ctx) : previous_frame_no;
+            if (prev < frame_no) {
+                min_frame = prev;
+                max_frame = frame_no;
+            } else {
+                min_frame = frame_no;
+                max_frame = prev;
             }
 
             // check Events
-            for (int i=previous_frame_no; i<=frame_no; i++) {
+            for (int i=min_frame; i<=max_frame; i++) {
                 auto eventsPerFrame = _currentAnimationData->events()->LookupByKey(i);
                 if (eventsPerFrame == nullptr) continue;
                 auto users = eventsPerFrame->users();
@@ -299,7 +303,6 @@ void GdSsPlayerNode::fetchAnimation() {
         }
 
         previous_frame_no = -1;
-        ss_runtime_play(rutime_ctx);
 
     /*
 		m_CellMapList->clear();
