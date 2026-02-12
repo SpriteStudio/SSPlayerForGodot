@@ -3,4 +3,4 @@
 	url = git@github.com:SpriteStudio/SpriteStudio7-SDK.git
 [submodule "gd_spritestudio/flatbuffers"]
 	path = gd_spritestudio/flatbuffers
-	url = git@github.com:SpriteStudio/SpriteStudio7-SDK.git
+	url = git@github.com:google/flatbuffers.git
