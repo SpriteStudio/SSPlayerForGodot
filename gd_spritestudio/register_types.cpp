@@ -28,7 +28,6 @@ static void editor_init_callback() {
 
 #include "gd_ssab_resource.h"
 #include "gd_ssplayer_node.h"
-#include "gd_ssplayer_resource.h"
 #include "gd_ssqb_resource.h"
 
 static GdSsabResourceFormatLoader *ssab_loader = nullptr;
@@ -38,8 +37,10 @@ static GdSsqbResourceFormatSaver *ssqb_saver = nullptr;
 
 void register_gd_spritestudio_types() {
 
+  GDREGISTER_CLASS(GdSsabResource);
   GDREGISTER_CLASS(GdSsabResourceFormatLoader);
   GDREGISTER_CLASS(GdSsabResourceFormatSaver);
+  GDREGISTER_CLASS(GdSsqbResource);
   GDREGISTER_CLASS(GdSsqbResourceFormatLoader);
   GDREGISTER_CLASS(GdSsqbResourceFormatSaver);
 
@@ -71,7 +72,6 @@ void register_gd_spritestudio_types() {
 
 #endif
 
-  GDREGISTER_CLASS(GdSsPlayerResource);
   GDREGISTER_CLASS(GdSsPlayerNode);
 }
 

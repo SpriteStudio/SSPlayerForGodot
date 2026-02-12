@@ -14,7 +14,7 @@ void GdSsabResource::_bind_methods() {
   ClassDB::bind_method(D_METHOD("save_to_file", "path"), &GdSsabResource::save_to_file);
   ClassDB::bind_method(D_METHOD("get_animation_count"), &GdSsabResource::get_animation_count);
   ClassDB::bind_method(D_METHOD("get_animation_names"), &GdSsabResource::get_animation_names);
-} 
+}
 
 Error GdSsabResource::load_from_file(const String &path) {
   Error error = OK;
@@ -71,13 +71,29 @@ Vector<String> GdSsabResource::get_animation_names() {
     return vec;
 }
 
-
 const ss::format::SsAnimeBinary *GdSsabResource::get_ss_anime_binary() {
-  return ss::format::GetSsAnimeBinary(this->binary.ptr());
+    return ss::format::GetSsAnimeBinary(this->binary.ptr());
 }
 
 const uint8_t *GdSsabResource::get_data_ptr() {
-  return this->binary.ptr();
+    return this->binary.ptr();
+}
+
+int64_t GdSsabResource::get_data_size() {
+    return this->binary.size();
+}
+
+ss::format::AnimationData *GdSsabResource::find_animation(const String &name) {
+    auto ss_anime_binary = this->get_ss_anime_binary();
+    auto num  = ss_anime_binary->animations()->size();
+    for (int i=0; i < num; i++) {
+        auto animation = ss_anime_binary->animations()->Get(i);
+        auto anim_name = animation->name();
+        if (name == String(anim_name->c_str())) {
+            return (ss::format::AnimationData *)animation;
+        }
+    }
+    return nullptr;
 }
 
 #ifndef SPRITESTUDIO_GODOT_EXTENSION
@@ -132,7 +148,7 @@ String GdSsabResourceFormatLoader::_get_resource_type(const String &path) {
 #else
 String GdSsabResourceFormatLoader::get_resource_type(const String &path) const {
 #endif
-  return path.ends_with(".ssba") ? "GdSsabResource" : "";
+  return path.ends_with(".ssab") ? "GdSsabResource" : "";
 }
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
