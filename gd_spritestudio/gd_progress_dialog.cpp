@@ -1,5 +1,6 @@
 #ifdef TOOLS_ENABLED
 
+#include "gd_macros.h"
 #include "gd_progress_dialog.h"
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
@@ -10,10 +11,17 @@
 
     using namespace godot;
 #else
+#if VERSION_MAJOR >= 4
+    #if VERSION_MINOR >= 6
+    #include "servers/display/display_server.h"
+    #include "servers/rendering/rendering_server.h"
+    #else
     #include "servers/display_server.h"
+    #include "servers/rendering_server.h"
+    #endif
+#endif
     #include "core/os/time.h"
     #include "scene/gui/panel.h"
-    #include "servers/rendering_server.h"
     #include "core/object/message_queue.h"
 #endif
 
@@ -30,8 +38,14 @@ GdProgressDialog::GdProgressDialog() {
 
 #ifndef SPRITESTUDIO_GODOT_EXTENSION
     set_clamp_to_embedder(true);
+#if VERSION_MAJOR >= 4
+    #if VERSION_MINOR >= 5
     set_flag(FLAG_MINIMIZE_DISABLED, true);
     set_flag(FLAG_MAXIMIZE_DISABLED, true);
+    #else
+    set_flag(FLAG_RESIZE_DISABLED, true);
+    #endif
+#endif
 #endif
     set_title("Processing...");
 
@@ -67,7 +81,7 @@ void GdProgressDialog::show_progress(const String &title, int total_steps) {
     set_title(title);
     progress_bar->set_max(total_steps);
     progress_bar->set_value(0);
-    
+
     popup_centered();
 
     DisplayServer::get_singleton()->process_events(); // 1. 入力処理
