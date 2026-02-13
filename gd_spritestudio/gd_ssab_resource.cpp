@@ -18,6 +18,7 @@ void GdSsabResource::_bind_methods() {
 
 Error GdSsabResource::load_from_file(const String &path) {
   Error error = OK;
+  _parent_dir = path.get_base_dir();
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
   binary = FileAccess::get_file_as_bytes(path);
   if (binary.size() == 0)
@@ -94,6 +95,10 @@ ss::format::AnimationData *GdSsabResource::find_animation(const String &name) {
         }
     }
     return nullptr;
+}
+
+String GdSsabResource::get_parent_dir() const {
+    return this->_parent_dir;
 }
 
 #ifndef SPRITESTUDIO_GODOT_EXTENSION

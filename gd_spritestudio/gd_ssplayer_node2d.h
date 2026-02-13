@@ -34,14 +34,15 @@ public:
     void pause();
     void stop();
 
-
 private:
     Ref<GdSsabResource> _ssabRes;
+    HashMap<uint32_t, Ref<Texture2D>> _textures;
     String _strAnimationSelected;
     ss::format::AnimationData* _currentAnimationData = nullptr;
     void *rutime_ctx = nullptr;
     int previous_frame_no = -1;
 
+    void loadTextures(const Ref<GdSsabResource>& ssabRes);
 	void updateAnimation(float delta);
     void fetchAnimation();
 };
