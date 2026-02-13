@@ -43,10 +43,13 @@ public:
   const uint8_t *get_data_ptr();
   int64_t get_data_size();
   ss::format::AnimationData *find_animation(const String &name);
+  String get_parent_dir() const;
 
 #ifndef SPRITESTUDIO_GODOT_EXTENSION
   virtual Error copy_from(const Ref<Resource> &p_resource);
 #endif
+private:
+    String _parent_dir;
 };
 
 class GdSsabResourceFormatLoader : public ResourceFormatLoader {
