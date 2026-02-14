@@ -312,7 +312,9 @@ void GdSsPlayerNode2D::updateAnimation( float delta ) {
 
 
 void GdSsPlayerNode2D::fetchAnimation() {
-	if ( !_strAnimationSelected.is_empty() ) {
+	if ( _strAnimationSelected.is_empty() ) {
+        ss_runtime_reset(rutime_ctx);
+    } else {
         if ( _ssabRes.is_null() ) {
             return;
         }
