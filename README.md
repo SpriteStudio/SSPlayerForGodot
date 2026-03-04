@@ -12,10 +12,8 @@ To prioritize runtime performance, the plugin is implemented as a C++ module.
 
 To use SpriteStudioPlayer for Godot, you must either:
 
-- Build the Godot Engine editor with the SpriteStudioPlayer custom module  
-  (https://docs.godotengine.org/en/stable/contributing/development/core_and_modules/custom_modules_in_cpp.html), **or**
-- Add the SpriteStudioPlayer GDExtension to your project  
-  (https://docs.godotengine.org/en/stable/tutorials/scripting/gdextension/what_is_gdextension.html).
+- Build the Godot Engine editor with the SpriteStudioPlayer [custom module](https://docs.godotengine.org/en/stable/contributing/development/core_and_modules/custom_modules_in_cpp.html), **or**
+- Add the SpriteStudioPlayer [GDExtension](https://docs.godotengine.org/en/stable/tutorials/scripting/gdextension/what_is_gdextension.html) to your project.
 
 ## Supported Versions of OPTPiX SpriteStudio
 
