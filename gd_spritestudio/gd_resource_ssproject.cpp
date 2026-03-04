@@ -148,22 +148,22 @@ Error GdResourceSsProject::loadFromFile( const String& strPath, const String& st
 	}
 
 	m_strAnimePack = m_strRoot + String::utf8( m_pProject->settings.animeBaseDirectory.c_str() );
-	if ( EMPTY(m_strAnimePack) && !m_strAnimePack.ends_with( "/" ) )
+	if ( !EMPTY(m_strAnimePack) && !m_strAnimePack.ends_with( "/" ) )
 	{
 		m_strAnimePack += "/";
 	}
 	m_strCellMap = m_strRoot + String::utf8( m_pProject->settings.cellMapBaseDirectory.c_str() );
-	if ( EMPTY(m_strCellMap) && !m_strCellMap.ends_with( "/" ) )
+	if ( !EMPTY(m_strCellMap) && !m_strCellMap.ends_with( "/" ) )
 	{
 		m_strCellMap += "/";
 	}
 	m_strImage = m_strRoot + String::utf8( m_pProject->settings.imageBaseDirectory.c_str() );
-	if ( EMPTY(m_strImage) && !m_strImage.ends_with( "/" ) )
+	if ( !EMPTY(m_strImage) && !m_strImage.ends_with( "/" ) )
 	{
 		m_strImage += "/";
 	}
 	m_strEffect = m_strRoot + String::utf8( m_pProject->settings.effectBaseDirectory.c_str() );
-	if ( EMPTY(m_strEffect) && !m_strEffect.ends_with( "/" ) )
+	if ( !EMPTY(m_strEffect) && !m_strEffect.ends_with( "/" ) )
 	{
 		m_strEffect += "/";
 	}
