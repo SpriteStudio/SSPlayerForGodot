@@ -1,34 +1,38 @@
-# ソース取得
+[**日本語**](./BUILD.ja.md) | [**English**](./BUILD.md)
 
-本リポジトリをクローンして、 `SSPlayerForGodot` ディレクトリ内に入ってください。
+# Source Retrieval
+
+Clone this repository and place it inside a directory named `SSPlayerForGodot`.
 
 ```bash
 git clone --recursive https://github.com/SpriteStudio/SSPlayerForGodot.git
 cd SSPlayerForGodot
 ```
 
-SSPlayerForGodot ディレクトリから以下のコマンドを実行し、 Godot を取得します。
+From the SSPlayerForGodot directory, run the following command to obtain Godot:
 
 ```bash
 git clone https://github.com/godotengine/godot.git
 ```
 
-gdextension をビルドする場合は godot-cpp を取得します。
+If you will build the GDExtension, retrieve `godot-cpp` as well:
 
 ```bash
 git clone https://github.com/godotengine/godot-cpp.git
 ```
 
-# ブランチ選択
+# Selecting Branches
+
 ## Godot
-SSPlayerForGodot ディレクトリの `godot` ディレクトリ内でビルドする Godot Engine のブランチを選択してください。
+
+In the `godot` directory under SSPlayerForGodot, select the branch of the Godot Engine you want to build.
 
 ### 4
 
 ```bash
 pushd godot
 git checkout 4.4
-popd 
+popd
 ```
 
 ### 3.x
@@ -36,37 +40,38 @@ popd
 ```bash
 pushd godot
 git checkout 3.x
-popd 
+popd
 ```
 
 ## GDExtension
-gdextension をビルドする場合は `godot-cpp` ディレクトリで対照する Godot Engine バージョンと同じブランチ名を選択してください。
 
+When building a GDExtension, select the same branch name in the `godot-cpp` directory that matches the Godot Engine version.
 
 ```bash
 pushd godot-cpp
 git checkout 4.4
-popd 
+popd
 ```
 
-# ビルド環境のセットアップ
+# Setting Up the Build Environment
 
-以降でビルド環境の構築手順について説明していきます。  
+The following describes the setup steps for each platform.
 
 ## Windows
 
-[Godot公式のコンパイル手順](https://docs.godotengine.org/en/stable/contributing/development/compiling/compiling_for_windows.html)
+[Godot official compilation instructions](https://docs.godotengine.org/en/stable/contributing/development/compiling/compiling_for_windows.html)
 
-必要なツール
-* ビルドツール (いずれかを選択)
-    * VisualStudio 2019(推奨) or 2022
-    * MSYS2 + MinGW + gcc + make
-* Python 3.6 以降
-* scons 3.0 以降
+Required tools:
 
-VisualStudio 2019 でのビルド・デバッグを確認しています。
+* Build tools (choose one):
+  * Visual Studio 2019 (recommended) or Visual Studio 2022  
+  * MSYS2 + MinGW + gcc + make  
+* Python 3.6 or later  
+* scons 3.0 or later  
 
-scons は下記でインストールできます。(上記リンクにも記載あり)
+Build/debug has been verified with Visual Studio 2019.
+
+You can install scons using the following command (also listed in the official documentation):
 
 ```bat
 python -m pip install scons
@@ -74,48 +79,49 @@ python -m pip install scons
 
 ## macOS
 
-[Godot公式のコンパイル手順](https://docs.godotengine.org/ja/4.x/contributing/development/compiling/compiling_for_macos.html)
+[Godot official compilation instructions](https://docs.godotengine.org/ja/4.x/contributing/development/compiling/compiling_for_macos.html)
 
-必要なツール
-* Xcode
-* Python 3.6 以降
-* scons 3.0 以降
-* Vulkan SDK for MoltenVK (4 対応用)
-* emscripten (optional)
-* Android SDK / Android NDK (optional)
+Required tools:
 
-Xcode 以外は [Homebrew](https://brew.sh/) でインストールができます。
+* Xcode  
+* Python 3.6 or later  
+* scons 3.0 or later  
+* Vulkan SDK for MoltenVK (required for Godot 4)  
+* emscripten (optional)  
+* Android SDK / Android NDK (optional)  
+
+Except for Xcode, you can install the necessary tools with [Homebrew](https://brew.sh/):
 
 ```sh
-brew install python3 scons 
+brew install python3 scons
 ```
 
 ```sh
 brew install molten-vk
 ```
 
-ホストアーキテクチャとは異なるアーキテクチャの Godot Engine をビルドする場合や Universal Binary 対応 Godot Engine をビルドする場合は `molten-vk` の代わりに Universal Binary 対応している [Vulkan SDK for MoltenVK](https://vulkan.lunarg.com/sdk/home) をインストールしてください。
+When building Godot Engine for an architecture different from the host, or for Universal Binary support, install the Universal Binary–compatible version of the [Vulkan SDK for MoltenVK](https://vulkan.lunarg.com/sdk/home) instead of `molten-vk` from Homebrew.
 
-(Optional) target を Web のビルドをする際は emscripten をインストールしてください。
+(Optional) When building for Web targets, install emscripten:
 
 ```sh
 brew install emscripten
 ```
 
-(Optional) target を Android のビルドをする際は Android NDK をインストールしてください。
-
+(Optional) When building for Android targets, install the Android NDK.
 
 ## Linux
-T.B.D
 
-# ビルド
-## Windows 
+T.B.D.
+
+# Build
+
+## Windows
+
 ### 4
 
-[build.ps1](./scripts/build.ps1) でビルド可能です。
-
-
-成果物は `godot\bin` に格納されます。
+You can build using [build.ps1](./scripts/build.ps1).  
+Outputs are stored in `godot\bin`.
 
 **PowerShell**
 
@@ -133,8 +139,8 @@ PowerShell.exe -ExecutionPolicy Bypass -File .\scripts\build.ps1
 
 ### 3.x
 
-[build-v3.ps1](./scripts/build-v3.ps1) でビルド可能です。
-成果物は `godot\bin` に格納されます。
+You can build using [build-v3.ps1](./scripts/build-v3.ps1).  
+Outputs are stored in `godot\bin`.
 
 **PowerShell**
 
@@ -150,19 +156,19 @@ set PYTHONUTF8=1
 PowerShell.exe -ExecutionPolicy Bypass -File .\scripts\build-v3.ps1
 ```
 
-## macOS ビルド
+## macOS Build
 
 ### 4
 
-[build.sh](./scripts/build.sh) でビルド可能です。
-成果物は `godot/bin` に格納されます。
+You can build using [build.sh](./scripts/build.sh).  
+Outputs are stored in `godot/bin`.
 
 ```sh
 ./scripts/build.sh
 ```
 
-引数を指定しない場合はホストマシンのアーキテクチャと同じアーキテクチャ向けにビルドします。
-アーキテクチャを明示的に指定する場合は `arch=` に引数を追加してください。
+If no architecture argument is provided, the build will target the same architecture as the host machine.  
+To explicitly specify an architecture, add an argument to `arch=`.
 
 **Universal Binary (supports both arm64 and x86_64)**
 
@@ -182,19 +188,19 @@ PowerShell.exe -ExecutionPolicy Bypass -File .\scripts\build-v3.ps1
 ./scripts/build.sh arch=x86_64
 ```
 
-`godot/Godot.app` を開いて起動を確認します。
+Open `godot/Godot.app` to verify the build runs.
 
 ### 3.x
 
-[build-v3.sh](./scripts/build-v3.sh) でビルド可能です。
-成果物は `godot/bin` に格納されます。
+You can build using [build-v3.sh](./scripts/build-v3.sh).  
+Outputs are stored in `godot/bin`.
 
 ```sh
 ./scripts/build-v3.sh
 ```
 
-引数を指定しない場合はホストマシンのアーキテクチャと同じアーキテクチャ向けにビルドします。
-アーキテクチャを明示的に指定する場合は `arch=` に引数を追加してください。
+If no architecture argument is provided, the build will target the same architecture as the host machine.  
+To explicitly specify an architecture, add an argument to `arch=`.
 
 **Universal Binary (supports both arm64 and x86_64)**
 
@@ -214,14 +220,14 @@ PowerShell.exe -ExecutionPolicy Bypass -File .\scripts\build-v3.ps1
 ./scripts/build-v3.sh arch=x86_64
 ```
 
-`godot/Godot.app` を開いて起動を確認します。
-
+Open `godot/Godot.app` to verify it launches properly.
 
 # GDExtension
-## Windows 
-[build-extension.ps1](./scripts/build-extension.ps1) でビルド可能です。
-成果物は `bin` ディレクトリに格納されます。
 
+## Windows
+
+You can build using [build-extension.ps1](./scripts/build-extension.ps1).  
+Outputs are placed in the `bin` directory.
 
 **PowerShell**
 
@@ -237,82 +243,94 @@ set PYTHONUTF8=1
 PowerShell.exe -ExecutionPolicy Bypass -File .\scripts\build-extension.ps1
 ```
 
-## macOS, linux, iOS, Android, Web ビルド
+## macOS, Linux, iOS, Android, Web Builds
 
-macOS か Linux で実行してください。
-
-[build-extension.sh](./scripts/build-extension.sh) でビルド可能です。
-成果物は `bin` ディレクトリに格納されます。
+Run on macOS or Linux.   
+You can build using [build-extension.sh](./scripts/build-extension.sh).  
+Outputs are stored in the `bin` directory.
 
 ```sh
 ./scripts/build-extension.sh
 ```
 
+# Release Build
 
-# リリースビルド
 ## 4
 
-各プラットフォームの godot の `editor`, `template_debug`, `template_release` をまとめてビルドスクリプトは下記の通りです。
+Below are the scripts that build all Godot platform binaries (`editor`, `template_debug`, `template_release`).
 
-windows
+Windows
+
 ```
 .\scripts\release-windows.ps1
 ```
 
 macOS
+
 ```sh
 ./scripts/release-macos.sh
 ```
 
 Linux
+
 ```sh
 ./scripts/release-linux.sh
 ```
 
 iOS
+
 ```sh
 ./scripts/release-ios.sh
 ```
 
 Android
+
 ```sh
 ./scripts/release-android.sh
 ```
 
 Web
+
 ```sh
 ./scripts/release-web.sh
 ```
 
 ## GDExtension
-各プラットフォームの gdextension の `editor`, `template_debug`, `template_release` をまとめてビルドスクリプトは下記の通りです。
 
-windows
+Below are the scripts that build all GDExtension platform binaries (`editor`, `template_debug`, `template_release`).
+
+Windows
+
 ```
 .\scripts\release-gdextension-windows.ps1
 ```
 
 macOS
+
 ```sh
 ./scripts/release-gdextension-macos.sh
 ```
 
 Linux
+
 ```sh
 ./scripts/release-gdextension-linux.sh
 ```
 
 iOS
+
 ```sh
 ./scripts/release-gdextension-ios.sh
 ```
 
 Android
+
 ```sh
 ./scripts/release-gdextension-android.sh
 ```
 
 Web
+
 ```sh
 ./scripts/release-gdextension-web.sh
 ```
