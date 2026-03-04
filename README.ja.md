@@ -1,3 +1,5 @@
+[**日本語**](./README.ja.md) | [**English**](./README.md)
+
 # SpriteStudioPlayer for Godot
 
 # はじめに

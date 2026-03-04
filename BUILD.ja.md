@@ -1,3 +1,5 @@
+[**日本語**](./BUILD.ja.md) | [**English**](./BUILD.md)
+
 # ソース取得
 
 本リポジトリをクローンして、 `SSPlayerForGodot` ディレクトリ内に入ってください。
