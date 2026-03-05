@@ -1,198 +1,207 @@
-# エディタの選択
-下記どちらかの方法で利用してください。
+[**日本語**](./USAGE.ja.md) | [**English**](./USAGE.md)
 
-## SpriteStudioPlayer のカスタムモジュールを組み込んだ Godot Engine を利用する
-[BUILD.md](BUILD.md) を参照して SpriteStudioPlayer のカスタムモジュールを組み込んだ Godot をビルドしてください。
+# Choosing the Editor
 
-## SpriteStudioPlayer の GDExtension ファイルを利用する
-1. 本家サイト(https://godotengine.org/download/) より、該当するバージョンの Godot ダウンロードします。
-2. SpriteStudioPlayer の GDExtension ファイルを用意します。
-    - [リリース](https://github.com/SpriteStudio/SSPlayerForGodot/releases) に GDExtension ファイルの成果物を用意しているので、そちらを利用してください。
-    - GDExtension を自前でビルドする場合は [BUILD.md](BUILD.md) を参照してください
-3. SpriteStudioPlayer の GDExtension ファイルをプロジェクトディレクトリの `bin` ディレクトリへ格納します。
+Use one of the following methods:
 
+## Using Godot Engine with the SpriteStudioPlayer Custom Module
 
-# SpriteStudioデータのインポート
+Build Godot with the SpriteStudioPlayer custom module included.  
+See [BUILD.md](BUILD.md) for instructions.
 
-SpriteStudioデータのインポート手順について説明します。  
-現在の SpriteStudio for Godot プラグインでは sspj ファイルを直接指定する形態になっています。  
-ご利用のプロジェクト下のフォルダに sspj、ssae、ssce と画像ファイルなどの一式を配置します。  
+## Using the SpriteStudioPlayer GDExtension Files
 
-# SpriteStudioノードの作成と sspj ファイルの指定
+1. Download the appropriate version of Godot from the official website:  
+   https://godotengine.org/download/
+2. Prepare the SpriteStudioPlayer GDExtension files:  
+   - Prebuilt binaries are available under [Releases](https://github.com/SpriteStudio/SSPlayerForGodot/releases).  
+   - To build the GDExtension yourself, see [BUILD.md](BUILD.md).
+3. Place the SpriteStudioPlayer GDExtension files into your project’s `bin` directory.
 
-1. 「Node を新規作成」から「GdNodeSsPlayer」を選択し、「作成」ボタンを押します。
-2. インスペクターの「Res Player」から「新規 GdResourceSsPlayer」を選択します。
-3. GdResourceSsPlayer の「Res Project」から「読み込み」を選択します。
-4. 「ファイルを開く」ダイアログから「*.sspj」ファイルを選択して開きます。
+# Importing SpriteStudio Data
 
-# アニメーションの指定
+This section explains how to import SpriteStudio data.  
+With the current SpriteStudio for Godot plugin, `.sspj` files are specified directly.  
+Place the `.sspj`, `.ssae`, `.ssce`, and related image files in a folder under your project.
 
-1. 「Animation Settings」を展開「Anime Pack」から再生させる「*.ssae」ファイルを選択します。
-2. 続いて「Animation」から再生させるアニメーションを選択します。
-3. Frame をドラッグしたり、Play フラグをオンにすることでプレビューできます。
+# Creating a SpriteStudio Node and Specifying the SSPJ File
 
-## インスペクターの各プロパティの意味
+1. Create a new node and select **GdNodeSsPlayer**, then click **Create**.  
+2. In the Inspector, select **New GdResourceSsPlayer** under **Res Player**.  
+3. Under **Res Project**, select **Load**.  
+4. Choose the `*.sspj` file from the file dialog.
+
+# Selecting an Animation
+
+1. Expand **Animation Settings**, then select the `*.ssae` file you want to play from **Anime Pack**.  
+2. Next, choose the animation you want to play under **Animation**.  
+3. You can preview the animation by dragging the **Frame** slider or enabling the **Play** flag.
+
+## Meaning of Inspector Properties
 
 ![image](./doc_images/ssnode_inspector.png)
 
 ```
-GdNodeSsPlayer               - SsPlayer を扱うノード
-├── Res Player               - SsPlayer が使用するリソース
-│   └── Res Project          - sspj ファイル
-│      └── CellMap Settings  - セルマップの設定
-│         ├── ssce File 01   - セルマップ
-│         └── ssce File 02   - セルマップ
+GdNodeSsPlayer               - Node that handles the SsPlayer
+├── Res Player               - Resource used by the SsPlayer
+│   └── Res Project          - SSPJ file
+│      └── CellMap Settings  - Cellmap settings
+│         ├── ssce File 01   - Cellmap
+│         └── ssce File 02   - Cellmap
 │
-└── Animation Settings       - アニメーションの設定
-    ├── Anime Pack           - アニメパック
-    ├── Animation            - アニメーション
-    ├── Frame                - 現在のフレーム
-    ├── Loop                 - ループ再生フラグ
-    ├── Playing              - 再生フラグ
-    └── Texture Interpolate  - テクスチャ補間フラグ
+└── Animation Settings       - Animation settings
+    ├── Anime Pack           - Animation pack
+    ├── Animation            - Animation
+    ├── Frame                - Current frame
+    ├── Loop                 - Loop playback flag
+    ├── Playing              - Playback flag
+    └── Texture Interpolate  - Texture interpolation flag
 ```
 
-## テクスチャ補間フラグについて
+## About the Texture Interpolation Flag
 
-SSPlayer for Godot の実装(v1.2.0時点)では、一度アニメーションをテクスチャにレンダリングした後、Godot のレンダラーによってスクリーンバッファに描画されます。  
-このテクスチャにレンダリングする際にバイリニア補間をかける場合はフラグをオンに設定します。  
-この状態では回転して斜めになったパーツのエッジにアンチエイリアスがかかりますが、この動作が好ましくない場合はオフにしてください。  
-このフラグをオフに設定し、CanvasItem の Texture の FilterMode も Nearest にしておくとスクリーンバッファに描画する際にも補間がかからずピクセルのエッジが明確になります。  
-例えばピクセルアート系のゲームで利用する場合は、この設定を試してみて下さい。  
+In the current implementation of SSPlayer for Godot (as of v1.2.0), the animation is first rendered into a texture and then drawn to the screen buffer by Godot’s renderer.  
+Enable this flag if you want bilinear interpolation applied when rendering to the texture.  
+When enabled, anti-aliasing is applied to the edges of parts that have been rotated or angled. If this is undesirable, disable the flag.  
+If you turn this flag off and also set the CanvasItem’s **Texture → FilterMode** to **Nearest**, interpolation will not be applied when drawing to the screen buffer, resulting in crisp pixel edges.  
+This is especially useful for pixel‑art style games, so consider trying this configuration.
 
-### レンダリングするテクスチャのサイズ
-レンダリングするテクスチャのサイズはSpriteStudio上でアニメーションに設定した「基準枠」のサイズが採用されます。(v1.2.0時点)
+### Texture Size Used for Rendering
 
-# クラス
+The texture size used during rendering is based on the **“Base Frame”** size configured for the animation in SpriteStudio. (As of v1.2.0)
 
-GDScript からコントロールできるクラスの役割と主要なメソッドについて説明します。  
-各クラスが持っている全てのメソッド、プロパティ、シグナルについては Godot の Script 画面で確認してみてください。  
+# Classes
 
-## リソース管理クラス
+This section describes the roles and primary methods of the classes that can be controlled via GDScript.  
+For the full list of methods, properties, and signals for each class, refer to the Script view in Godot.
 
-SpriteStudio の各種 .ss** ファイルに相当するリソースを管理するクラスがあります。
+## Resource Management Classes
 
-### [GdResourceSsProject](./gd_spritestudio/gd_resource_ssproject.h) クラス
+These classes correspond to the various `.ss**` files of SpriteStudio.
 
-１つの sspj ファイルに相当するリソースを取り扱うクラスです。
-sspj に登録された ssae, ssce, ssee 各々のリソースの取得と設定を行います。
+### [GdResourceSsProject](./gd_spritestudio/gd_resource_ssproject.h)
 
-### [GdResourceSsCellMap](./gd_spritestudio/gd_resource_sscellmap.h) クラス
+Manages a single `sspj` file.  
+Handles retrieving and setting the resources registered in the sspj: `ssae`, `ssce`, and `ssee`.
 
-１つの ssce ファイルに相当するリソースを取り扱うクラスです。
-現在テクスチャの取得と設定を行うメンバーのみ対応しています。
+### [GdResourceSsCellMap](./gd_spritestudio/gd_resource_sscellmap.h)
 
-### [GdResourceSsAnimePack](./gd_spritestudio/gd_resource_ssanimepack.h) クラス
+Manages a single `ssce` file.  
+Currently supports only retrieving and setting the texture.
 
-１つの ssae ファイルに相当するリソースを取り扱うクラスです。
-内包しているアニメーションの数、とアニメーション名の取得を行えます。
+### [GdResourceSsAnimePack](./gd_spritestudio/gd_resource_ssanimepack.h)
 
-### [GdResourceSsPlayer](./gd_spritestudio/gd_resource_ssplayer.h) クラス
+Manages a single `ssae` file.  
+Allows retrieving the number of animations and the animation names.
 
-現在 GdResourceSsProject リソースを設定、取得するアクセサのみです。
+### [GdResourceSsPlayer](./gd_spritestudio/gd_resource_ssplayer.h)
 
-## 再生のためのクラス
+Provides accessors for setting and retrieving the current `GdResourceSsProject`.
 
-GdNodeSsPlayer に前述のリソースを指定することで再生を行います。  
-以下はファイルの読み込みから再生開始までのシンプルなサンプルコードです。  
+## Classes for Playback
+
+Assign the described resources to `GdNodeSsPlayer` to play animations.  
+Below is a simple example showing file loading and playback:
 
 ```python
-# GdNodeSsPlayerノードを指します。
+# Reference to the GdNodeSsPlayer node.
 ## Godot 4
-@onread var ssnode = $target
+@onready var ssnode = $target
 ## Godot 3.x
 # onready var ssnode = $target
 
 func _ready():
-  # sspj ファイルを読み込みます。
-  ssnode.res_player.res_project = ResourceLoader.load("Sample.sspj")
+    # Load the sspj file.
+    ssnode.res_player.res_project = ResourceLoader.load("Sample.sspj")
 
-  # ssaeファイルとアニメーションを指定します。
-  ssnode.set_anime_pack("Sample.ssae")
-  ssnode.set_animation("anime_1")
-    
-  # アニメーション終了時コールバックの設定
-  ## Godot 4
-  ssnode.connect("animation_finished", Callable(self, "_on_animation_finished"))
-  ## Godot 3.x
-  # ssnode.connect("animation_finished", self, "_on_animation_finished")
+    # Specify the ssae file and animation.
+    ssnode.set_anime_pack("Sample.ssae")
+    ssnode.set_animation("anime_1")
 
-  # ループを指定して再生を開始します。
-  ssnode.set_loop(true)
-  ssnode.play()
+    # Set the callback for animation completion.
+    ## Godot 4
+    ssnode.connect("animation_finished", Callable(self, "_on_animation_finished"))
+    ## Godot 3.x
+    # ssnode.connect("animation_finished", self, "_on_animation_finished")
 
-# アニメ終了時のコールバック関数です
+    # Enable looping and start playback.
+    ssnode.set_loop(true)
+    ssnode.play()
+
+# Callback function for when the animation finishes.
 func _on_animation_finished(name):
-	print("SIGNAL _on_animation_finished from " + name)
+    print("SIGNAL _on_animation_finished from " + name)
 ```
 
-他にもカレントフレームの指定、一時停止、開始、終了フレーム、FPSの取得など一般的なメソッドがあります。  
-一覧は Godot の Script 画面で確認してみてください。  
+Other standard methods include selecting the current frame, pausing, playing, setting the end frame, retrieving FPS, and more.  
+The full list can be checked in Godot's Script view.
 
-### シグナル
+### Signals
 
-GdNodeSsPlayer が発行するシグナルについて説明します。
+The signals emitted by `GdNodeSsPlayer` are described below.
 
 ### on_animation_changed(name: String)
 
-アニメーション変更時に発行されます。  
-name：変更したアニメーション名
+Emitted when the animation changes.  
+`name`: Name of the new animation
 
 ### on_animation_finished(name: String)
 
-再生中のアニメーションが終了フレームに到達した時に発行されます。  
-ループ再生オンでも毎周発行されます。  
-name：変更したアニメーション名
+Emitted when the animation reaches its final frame.  
+This is emitted each loop when looping is enabled.  
+`name`: Name of the animation that finished
 
 ### on_animepack_changed(name: String)
 
-アニメパック変更時に発行されます。  
-name：変更したアニメパック名  
+Emitted when the anime pack changes.  
+`name`: Name of the new anime pack
 
 ### on_frame_changed(frame: int)
 
-フレーム位置変更時に発行されます。  
-frame：変更したフレーム位置  
+Emitted when the frame position changes.  
+`frame`: Updated frame index
 
 ### on_signal(command: String, value: Dictionary)
 
-SpriteStudioのシグナルアトリビュートのキーフレーム到達時に発行されます。  
-command：コマンド名  
-value：パラメータ名と値のコレクション  
+Emitted when reaching a keyframe containing a SpriteStudio signal attribute.  
+`command`: Command name  
+`value`: Dictionary of parameter names and values
 
 ### on_user_data(flag: int, intValue: int, rectValue: Rect2, pointValue: Vector2, stringValue: String)
 
-ユーザーデータのキーフレーム到達時に発行されます。
+Emitted when reaching a keyframe with user data.
 
-- flag：後続の引数が有効かどうかの論理値
-   - 1：整数が有効
-   - 2：範囲が有効
-   - 4：位置が有効
-   - 8：文字列が有効
-- intValue：整数
-- rectValue：範囲
-- pointValue：位置
-- stringValue：文字列
+- `flag`: Bitmask indicating which values are valid  
+  - `1`: Integer is valid  
+  - `2`: Rect is valid  
+  - `4`: Position is valid  
+  - `8`: String is valid  
+- `intValue`: Integer  
+- `rectValue`: Rect  
+- `pointValue`: Position  
+- `stringValue`: String
 
-# 制限事項
+# Limitations
 
-## 動作しないもの
+## Not Supported
 
-- マスク機能
-- 描画モード：ミックス以外もミックス相当になります。
-- SpriteStudio Ver.7.1 で追加された新機能(テキスト・サウンド・9スライス・シェイプ)
+- Mask functionality  
+- Drawing modes: all modes behave like Mix  
+- New features added in SpriteStudio Ver. 7.1  
+  (Text, Sound, 9‑slice, Shape)
 
-## 表示が異なるもの
+## Differences in Display
 
-- パーツカラー
-  - [x] v1.1.1 で修正済：ミックスの頂点単位の時にX状(三角形の辺部分)の輝度が高くなっています。
-  - [x] v1.1 で修正済：乗算でテクスチャカラーの割合がエディタより大きくなります。
+- Parts Color  
+  - [x] Fixed in v1.1.1: Brightness of X‑shaped (triangle edge) portions was too high when using vertex‑level Mix mode  
+  - [x] Fixed in v1.1: Texture color ratio differed from the editor when using Multiply mode
 
-## その他の制限
+## Other Limitations
 
-- インスタンスの独立動作がOnのパーツの再生について
-  - シーン上で Frame プロパティが 0 以外の状態で Play プロパティを On にして再生開始した場合、独立動作がOnに設定されたインスタンスパーツを再生させた場合、インスタンスパーツの再生フレームがずれることがあります。
-  - この場合、一旦 Frame プロパティの値を 0 以外に変更後、0 に戻してから再生開始することで一致させられます。
-- シェーダー
-  - SpriteStudio公式の一部のみ対応しています。
-  - カスタムシェーダーは独自に追加・対応する必要があります。
+- Independent Instance Behavior  
+  - If **Frame** is set to a non‑zero value when **Play** is turned on, and an instance part with independent playback is used, the instance animation may become misaligned.  
+  - Workaround: Change **Frame** to a non‑zero value, then change it back to 0 before starting playback.
+
+- Shaders  
+  - Only some of the official SpriteStudio shaders are supported.  
+  - Custom shaders must be implemented manually.

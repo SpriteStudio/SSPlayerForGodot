@@ -1,83 +1,96 @@
+[**日本語**](./README.ja.md) | [**English**](./README.md)
+
 # SpriteStudioPlayer for Godot
 
-# はじめに
+## Introduction
 
-本プラグインは [OPTPiX SpriteStudio](https://www.webtech.co.jp/spritestudio/index.html) で作成したアニメーションを [Godot Engine](https://godotengine.org/) 上で再生するためのプラグインです。  
+This plugin enables playback of animations created with  
+[OPTPiX SpriteStudio](https://www.webtech.co.jp/spritestudio/index.html)  
+within the [Godot Engine](https://godotengine.org/).
 
-実行時パフォーマンスを優先するため C++ モジュールの形態になっています。
-SpriteStudioPlayer for Godot を利用する場合、SpriteStudioPlayer の[カスタムモジュール](https://docs.godotengine.org/en/stable/contributing/development/core_and_modules/custom_modules_in_cpp.html) を組み込んだ Godot Engine の Editor を手元でビルドするか、 SpriteStudioPlayer の [GDExtension](https://docs.godotengine.org/en/stable/tutorials/scripting/gdextension/what_is_gdextension.html) をプロジェクトへ入れる必要があります。
+To prioritize runtime performance, the plugin is implemented as a C++ module.
 
-## 対応する [OPTPiX SpriteStudio](https://www.webtech.co.jp/spritestudio/index.html) のバージョン
+To use SpriteStudioPlayer for Godot, you must either:
 
-Ver.6 と Ver.7 に対応しています。  
-ただし、Ver.7.1 で追加された新機能(テキスト、サウンド等)には未対応です。  
+- Build the Godot Engine editor with the SpriteStudioPlayer [custom module](https://docs.godotengine.org/en/stable/contributing/development/core_and_modules/custom_modules_in_cpp.html), **or**
+- Add the SpriteStudioPlayer [GDExtension](https://docs.godotengine.org/en/stable/tutorials/scripting/gdextension/what_is_gdextension.html) to your project.
 
-## 対応する [Godot Engine](https://github.com/godotengine/godot) のバージョン
+## Supported Versions of OPTPiX SpriteStudio
 
-- [4.4 ブランチ](https://github.com/godotengine/godot/tree/4.4)で Windows / macOS でビルド、および実行を確認しています。
-- [3.x ブランチ](https://github.com/godotengine/godot/tree/3.x)で Windows / macOS でビルド、および実行を確認しています。
+Supports SpriteStudio **Ver.6** and **Ver.7**.  
+*Note: New features added in Ver. 7.1 (text, sound, etc.) are not supported.*
 
-# ビルド
+## Supported Versions of Godot Engine
 
-[BUILD.md](BUILD.md) を参照してください。
+- [4.4 branch](https://github.com/godotengine/godot/tree/4.4):  
+  Verified build and execution on Windows / macOS  
+- [3.x branch](https://github.com/godotengine/godot/tree/3.x):  
+  Verified build and execution on Windows / macOS
 
-# 使い方
+## Build
 
-[USAGE.md](USAGE.md) を参照してください。
+See **[BUILD.md](BUILD.md)**.
 
-# サンプル
+## Usage
 
-[examples フォルダ](./examples/)にサンプルプロジェクトがあります。
+See **[USAGE.md](USAGE.md)**.
 
-**サンプルプロジェクトは 3.x 向けに作っているため、4.4 で利用する際は "Convert Full Project" を実行してから利用してください。**
+## Samples
 
-## [feature_test](./examples/feature_test)
+Sample projects are available in the **[examples folder](./examples/)**.
 
-基本機能のテストプロジェクトです。  
-以下のシーンがあります。  
+**Note:**  
+These samples were created for **Godot 3.x**.  
+For use with **Godot 4.4**, please run **“Convert Full Project”** first.
 
-- [v6_feature.tscn](./examples/feature_test/v6_feature.tscn)
-  - SpriteStudio v6.0~v7.0 までの各機能の再生状態を確認できます。
-  - 確認したい機能ノードの可視性を有効にしてください。
-  - Signal、UserData はそれぞれシグナル、ユーザーデータのキーに到達したタイミングでGodotのシグナルを発行するようになっています。
-  - シーンを実行するとコンソールに受信したパラメータが出力されます。
-  - ssdata サブフォルダにインポート元のプロジェクトファイル(v6_all.sspj)があります。
-- [sspj_load.tscn](./examples/feature_test/sspj_load.tscn)
-  - GDスクリプトからSSプロジェクトをロードしアニメーションを指定して再生するサンプルです。
-  - アニメーション終了時に別のSSプロジェクトに読み替えるようになっています。
-- [texture_change.tscn](./examples/feature_test/texture_change.tscn)
-  - 再生中にセルマップリソースのテクスチャを変更するサンプルです。
-  - インスペクタにある Change のチェックをOn/Offすると切り替わります。
+### [feature_test](./examples/feature_test)
 
-## [mesh_bone](./examples/mesh_bone)
+Basic functional test project with the following scenes:
 
-メッシュ、ボーン、エフェクトなどを利用したキャラクターアニメのサンプルです。
+- **v6_feature.tscn**  
+  - Verify features supported from SpriteStudio v6.0 to v7.0  
+  - Enable visibility of nodes you want to inspect  
+  - `Signal` & `UserData` trigger Godot signals when reaching their keys  
+  - Parameters appear in the console  
+  - Original project (`v6_all.sspj`) is located under `ssdata/`
 
-## [particle_effect](./examples/particle_effect)
+- **sspj_load.tscn**  
+  - Loads SS projects via GDScript and plays selected animations  
+  - Automatically switches to another SS project when playback finishes
 
-エフェクト機能を利用したサンプルです。  
-シーンに表示されるアニメーションは40種類のうちの一部になります。  
-インスペクタの Anime Pack からその他のアニメーションも確認できます。
+- **texture_change.tscn**  
+  - Demonstrates dynamic texture replacement  
+  - Toggle “Change” in Inspector to switch textures
 
-## [feature_test_gdextension](./examples/feature_test_gdextension)
+### [mesh_bone](./examples/mesh_bone)
 
-gdextension の動作確認用プロジェクトです。
+Sample using mesh, bone, and effect features for character animation.
 
-確認できるサンプルは [feature_test](./examples/feature_test) と同じものになります。
+### [particle_effect](./examples/particle_effect)
 
-# お問い合わせ
+Sample demonstrating effect animation features.  
+Displays one of 40 possible animations.  
+More animations can be tested through the Anime Pack.
 
-ご質問、ご要望、不具合のご報告は [Issues](../../issues) に投稿してください。  
-非公開でのお問い合わせを希望される場合は、[ヘルプセンター](https://www.webtech.co.jp/help/ja/spritestudio7/inquiries/ssplayer_tool/) よりお寄せください。  
-再現データなどの送付が必要な場合も、上記ヘルプセンター経由でファイルを送信してください。  
+### [feature_test_gdextension](./examples/feature_test_gdextension)
+
+Test project for GDExtension operation.  
+Provides the same samples as `feature_test`.
+
+## Contact
+
+For questions, feature requests, or bug reports, please post to **[Issues](../../issues)**.
+
+For private inquiries, contact us via the  
+[Help Center](https://www.webtech.co.jp/help/ja/spritestudio7/inquiries/ssplayer_tool/).
 
 =========================================================  
 
-株式会社ＣＲＩ・ミドルウェア  
-​https://www.cri-mw.co.jp/  
+CRI Middleware Co., Ltd.  
+https://www.cri-mw.co.jp/  
 Copyright © CRI Middleware Co., Ltd.  
 
 =========================================================  
 
-* SpriteStudio, Web Technologyは、株式会社ウェブテクノロジの登録商標です。
-* その他の商品名は各社の登録商標または商標です。  
+* SpriteStudio and Web Technology are registered trademarks of Web Technology Corp.
+* Other product names are registered trademarks or trademarks of their respective companies.
