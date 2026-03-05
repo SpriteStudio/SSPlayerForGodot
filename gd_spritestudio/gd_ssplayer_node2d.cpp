@@ -18,9 +18,10 @@ void GdSsPlayerNode2D::setSsabResource( const Ref<GdSsabResource>& ssabRes ) {
         auto vecAnimeName = _ssabRes->get_animation_names();
         if ( vecAnimeName.size() > 0 )
             _strAnimationSelected = vecAnimeName[0];
+        loadTextures(_ssabRes);
     }
 
-    fetchAnimation();
+	fetchAnimation();
 	NOTIFY_PROPERTY_LIST_CHANGED();
 
 	// GdNotifier::getInstance().notifyResourcePlayerChanged( this );
@@ -221,6 +222,38 @@ void GdSsPlayerNode2D::_notification( int p_notification ) {
 	}
 }
 
+void GdSsPlayerNode2D::loadTextures(const Ref<GdSsabResource>& ssabRes) {
+    auto a = ssabRes->get_ss_anime_binary();
+    _textures.clear();
+    if (a->cellmaps() != nullptr) {
+        for (int i = 0; i < a->cellmaps()->size(); i++) {
+            auto cellmap = a->cellmaps()->Get(i);
+            String strImage = _ssabRes->get_parent_dir().path_join(String::utf8(cellmap->image_path()->c_str()));
+            Ref<Texture2D> texture =
+            #ifdef SPRITESTUDIO_GODOT_EXTENSION
+            ResourceLoader::get_singleton()->load( strImage, "", ResourceLoader::CACHE_MODE_REUSE);
+            #else
+            ResourceLoader::load( strImage, "", ResourceFormatLoader::CACHE_MODE_REUSE, nullptr );
+            #endif
+            _textures[cellmap->name_hash()] = texture;
+        }
+    }
+    if (a->external_textures() != nullptr) {
+        for (int i = 0; i < a->external_textures()->size(); i++) {
+            auto etexture = a->external_textures()->Get(i);
+            String strImage = _ssabRes->get_parent_dir().path_join(String::utf8(etexture->name()->c_str()));
+            Ref<Texture2D> texture =
+            #ifdef SPRITESTUDIO_GODOT_EXTENSION
+            ResourceLoader::get_singleton()->load( strImage, "", ResourceLoader::CACHE_MODE_REUSE);
+            #else
+            ResourceLoader::load( strImage, "", ResourceFormatLoader::CACHE_MODE_REUSE, nullptr );
+         	#endif
+            _textures[etexture->name_hash()] = texture;
+		}
+	}
+}
+
+
 void GdSsPlayerNode2D::updateAnimation( float delta ) {
     if (ss_runtime_is_playing(rutime_ctx)) {
         auto d = delta * 1000.0f;
@@ -279,7 +312,9 @@ void GdSsPlayerNode2D::updateAnimation( float delta ) {
 
 
 void GdSsPlayerNode2D::fetchAnimation() {
-	if ( !_strAnimationSelected.is_empty() ) {
+	if ( _strAnimationSelected.is_empty() ) {
+        ss_runtime_reset(rutime_ctx);
+    } else {
         if ( _ssabRes.is_null() ) {
             return;
         }
