@@ -22,7 +22,7 @@ Supports SpriteStudio **Ver.6** and **Ver.7**.
 
 ## Supported Versions of Godot Engine
 
-- [4.4 branch](https://github.com/godotengine/godot/tree/4.4):  
+- [4.5 branch](https://github.com/godotengine/godot/tree/4.5):  
   Verified build and execution on Windows / macOS  
 - [3.x branch](https://github.com/godotengine/godot/tree/3.x):  
   Verified build and execution on Windows / macOS
