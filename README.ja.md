@@ -16,7 +16,7 @@ Ver.6 と Ver.7 に対応しています。
 
 ## 対応する [Godot Engine](https://github.com/godotengine/godot) のバージョン
 
-- [4.4 ブランチ](https://github.com/godotengine/godot/tree/4.4)で Windows / macOS でビルド、および実行を確認しています。
+- [4.5 ブランチ](https://github.com/godotengine/godot/tree/4.5)で Windows / macOS でビルド、および実行を確認しています。
 - [3.x ブランチ](https://github.com/godotengine/godot/tree/3.x)で Windows / macOS でビルド、および実行を確認しています。
 
 # ビルド
