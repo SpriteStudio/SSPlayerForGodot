@@ -12,6 +12,8 @@ void ss_runtime_destroy(void *context);
 
 void ss_runtime_reset(void *context);
 
+int32_t ss_runtime_get_last_error(void *context);
+
 bool ss_runtime_load_ssab_copy(void *context, const unsigned char *ptr, uintptr_t len);
 
 bool ss_runtime_load_ssab_borrow(void *context, const unsigned char *ptr, uintptr_t len);
