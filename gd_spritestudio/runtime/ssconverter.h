@@ -36,9 +36,9 @@ void ss_converter_watch(Context *ctx, const char *sspj, const char *output_dir);
 
 bool ss_converter_is_running(Context *ctx);
 
-void ss_converter_abort(Context *context);
-
 bool ss_converter_is_finished(Context *context);
+
+void ss_converter_abort(Context *context);
 
 CConverterError ss_converter_get_result(Context *context);
 

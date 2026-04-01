@@ -118,9 +118,13 @@ void GdSsImportControl::_notification(int p_what) {
 
 void* GdSsImportControl::process_file(const String &source_sspj_path, const String &dst_dir_path) {
     auto ctx = ss_converter_create();
-    auto src = source_sspj_path.utf8().get_data();
-    ss_converter_convert(ctx, src, dst_dir_path.utf8().get_data(), [](const char *msg){
-        print_line("%s", msg);
+    
+    // Keep CharString alive until the end of this function call
+    CharString src_utf8 = source_sspj_path.utf8();
+    CharString dst_utf8 = dst_dir_path.utf8();
+    
+    ss_converter_convert(ctx, src_utf8.get_data(), dst_utf8.get_data(), [](const char *msg){
+        print_line(String::utf8(msg));
     });
 
     return ctx;
@@ -231,7 +235,8 @@ void GdSsImportControl::_on_window_files_dropped(const Vector<String> &p_files) 
             String src_stem = src_file.get_basename();
             String dst_dir = output_dir.path_join(src_stem);
             String global_dst_dir = ProjectSettings::get_singleton()->globalize_path(dst_dir);
-            void *ctx = process_file(src_file_path, global_dst_dir);
+            String global_src_file_path = ProjectSettings::get_singleton()->globalize_path(src_file_path);
+            void *ctx = process_file(global_src_file_path, global_dst_dir);
             print_line("GdSsImportControl: convert sspj file: " + src_file_path + ", to ssab files: " + dst_dir);
             contexts.push_back(ctx);
         }
