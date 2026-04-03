@@ -1,6 +1,7 @@
 #include "gd_ssplayer_node2d.h"
 #include "runtime/ssab.h"
 #include "runtime/ssruntime.h"
+#include "runtime/framedata.h"
 
 GdSsPlayerNode2D::GdSsPlayerNode2D() {
     rutime_ctx = ss_runtime_create();
@@ -214,7 +215,7 @@ void GdSsPlayerNode2D::_notification( int p_notification ) {
 
         break;
     case NOTIFICATION_DRAW:
-        // drawAnimation();
+        drawAnimation();
 
         break;
     default:
@@ -225,6 +226,7 @@ void GdSsPlayerNode2D::_notification( int p_notification ) {
 void GdSsPlayerNode2D::loadTextures(const Ref<GdSsabResource>& ssabRes) {
     auto a = ssabRes->get_ss_anime_binary();
     _textures.clear();
+    _allCells.clear();
     if (a->cellmaps() != nullptr) {
         for (int i = 0; i < a->cellmaps()->size(); i++) {
             auto cellmap = a->cellmaps()->Get(i);
@@ -236,6 +238,12 @@ void GdSsPlayerNode2D::loadTextures(const Ref<GdSsabResource>& ssabRes) {
             ResourceLoader::load( strImage, "", ResourceFormatLoader::CACHE_MODE_REUSE, nullptr );
             #endif
             _textures[cellmap->name_hash()] = texture;
+
+            if (cellmap->cells() != nullptr) {
+                for (int j = 0; j < cellmap->cells()->size(); j++) {
+                    _allCells.push_back(cellmap->cells()->Get(j));
+                }
+            }
         }
     }
     if (a->external_textures() != nullptr) {
@@ -307,9 +315,75 @@ void GdSsPlayerNode2D::updateAnimation( float delta ) {
         }
 
         previous_frame_no = frame_no;
+
+        queue_redraw();
     }
 }
 
+void GdSsPlayerNode2D::drawAnimation() {
+    if (_ssabRes.is_null() || !rutime_ctx) {
+        return;
+    }
+
+    unsigned char *data = nullptr;
+    uintptr_t len = 0;
+    ss_runtime_get_frame_data(rutime_ctx, ss_runtime_get_frame_no(rutime_ctx), &data, &len);
+    if (!data) {
+        return;
+    }
+
+    auto frameData = ss::runtime::GetFrameData(data);
+    auto parts = frameData->parts();
+    if (!parts) {
+        return;
+    }
+
+    for (uint32_t i = 0; i < parts->size(); i++) {
+        auto part = parts->Get(i);
+        if (part->hide()) {
+            continue;
+        }
+
+        // テクスチャの取得
+        uint32_t texHash = part->texture();
+        if (!_textures.has(texHash)) {
+            continue;
+        }
+        Ref<Texture2D> tex = _textures[texHash];
+
+        // セル情報の取得
+        int16_t cellIdx = part->cell();
+        if (cellIdx < 0 || cellIdx >= (int16_t)_allCells.size()) {
+            continue;
+        }
+        auto cell = _allCells[cellIdx];
+        auto rect = cell->rectangle();
+        auto pivot = cell->pivot();
+
+        // --- 描画準備 ---
+        // 1. パーツの Transform を計算
+        Transform2D t;
+        t.set_origin(Vector2(part->position_x(), part->position_y()));
+        t.set_rotation(part->rotation_z());
+        t.set_scale(Vector2(part->scale_x(), part->scale_y()));
+
+        // Node2D 自体の Transform も考慮して描画座標系を設定
+        draw_set_transform_matrix(get_transform() * t);
+
+        // 2. セルの矩形 (Source Rect)
+        Rect2 src_rect(rect->x1(), rect->y1(), rect->x2() - rect->x1(), rect->y2() - rect->y1());
+
+        // 3. 描画位置のオフセット (Pivot反映)
+        Vector2 draw_pos = Vector2(-src_rect.size.x * (pivot->v1() + 0.5f),
+                                   -src_rect.size.y * (0.5f - pivot->v2()));
+
+        // 4. 描画
+        draw_texture_rect_region(tex, Rect2(draw_pos, src_rect.size), src_rect, Color(1, 1, 1, part->alpha()));
+    }
+
+    // 描画後は座標系をリセット
+    draw_set_transform_matrix(Transform2D());
+}
 
 void GdSsPlayerNode2D::fetchAnimation() {
 	if ( _strAnimationSelected.is_empty() ) {
@@ -339,76 +413,5 @@ void GdSsPlayerNode2D::fetchAnimation() {
         }
 
         previous_frame_no = -1;
-
-    /*
-		m_CellMapList->clear();
-
-		int		idx = 0;
-
-		for ( int i = 0; i < pAnimePack->cellmapNames.size(); i++ ) {
-			Ref<GdResourceSsCellMap>	resCellMap = resProject->getCellMapResource( pAnimePack->cellmapNames[i] );
-
-			if ( resCellMap.is_null() ) {
-				continue;
-			}
-
-			SsCellMap*		pCellMap = resCellMap->getCellMap();
-
-			if ( pCellMap ) {
-				m_CellMapList->addIndex( pCellMap );
-				m_CellMapList->addMap( pCellMap );
-
-				( (SsTextureImpl*)m_CellMapList->getCellMapLink( idx++ )->tex )->setTexture( resCellMap->getTexture() );
-			}
-		}
-		for ( int i = 0; i < pProject->cellmapNames.size(); i++ ) {
-			Ref<GdResourceSsCellMap>	resCellMap = resProject->getCellMapResource( pProject->cellmapNames[i] );
-
-			if ( resCellMap.is_null() ) {
-				continue;
-			}
-
-			SsCellMap*		pCellMap = resCellMap->getCellMap();
-
-			if ( pCellMap ) {
-				m_CellMapList->addIndex( pCellMap );
-				m_CellMapList->addMap( pCellMap );
-
-				( (SsTextureImpl*)m_CellMapList->getCellMapLink( idx++ )->tex )->setTexture( resCellMap->getTexture() );
-			}
-		}
-
-		if ( m_AnimeDecoder ) {
-			m_Renderer.m_iSetup = 0;
-			SsCurrentRenderer::SetCurrentRender( &m_Renderer );
-
-			if ( pAnimation ) {
-				float	fW = pAnimation->settings.canvasSize.x;
-				float	fH = pAnimation->settings.canvasSize.y;
-				float	fX = ( pAnimation->settings.pivot.x + 0.5f ) * fW;
-				float	fY = ( pAnimation->settings.pivot.y + 0.5f ) * fH;
-				int		iFps = pAnimation->settings.fps;
-
-				m_Renderer.setCanvasItem( get_canvas_item() );
-				m_Renderer.setCanvasSize( fW, fH );
-				m_Renderer.setCanvasCenter( fX, fY );
-				m_Renderer.setFps( iFps );
-//				m_Renderer.setTextureInterpolate( m_bTextureInterpolate );	// Updated in drawAnimation()
-			}
-
-			m_Renderer.createPartSprites( &pAnimePack->Model, pProject );
-
-			m_bAnimeDecoder = true;
-			m_AnimeDecoder->setAnimation(
-				&pAnimePack->Model,
-				pAnimation,
-				m_CellMapList.get(),
-				pProject
-			);
-
-			setFrame( m_iFrame );
-		}
-    */
 	}
-
 }
