@@ -98,7 +98,7 @@ env.Append(LIBS=["ssruntime"])
 
 
 if env["platform"] == 'macos':
-    env.Append(LINKFLAGS=["-framework", "CoreFoundation"])
+    env.Append(LINKFLAGS=["-framework", "CoreFoundation", "-framework", "CoreServices"])
 
 # Set iOS minimum deployment target
 if env["platform"] == "ios":
