@@ -27,7 +27,10 @@ git clone https://github.com/godotengine/godot-cpp.git -b 4.5
 ```
 
 ## get libssruntime binaries
-T.B.D
+
+- get sdk binary file collections from SS7-SDK Release pase
+- build a runtime by yourself.
+
 
 ## build custom godot or gdextension
 ### gdextension
