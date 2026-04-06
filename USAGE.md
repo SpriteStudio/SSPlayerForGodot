@@ -77,7 +77,8 @@ For the full list of methods, properties, and signals for each class, refer to t
 
 ## Resource Management Classes
 
-These classes correspond to the various `.ss**` files of SpriteStudio.
+These classes correspond to the various `.ss**` files of SpriteStudio.  
+Since these classes inherit from the GdResource class, if you want to reference the same resource from multiple GdNodeSsPlayer classes and modify its settings individually, set the Local To Scene flag to True so that the changes are not shared.
 
 ### [GdResourceSsProject](./gd_spritestudio/gd_resource_ssproject.h)
 
