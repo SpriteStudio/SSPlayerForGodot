@@ -72,7 +72,8 @@ GDScript からコントロールできるクラスの役割と主要なメソ�
 
 ## リソース管理クラス
 
-SpriteStudio の各種 .ss** ファイルに相当するリソースを管理するクラスがあります。
+SpriteStudio の各種 .ss** ファイルに相当するリソースを管理するクラスがあります。  
+これらのクラスは GdResouce クラスを継承しているため、複数の GdNodeSsPlayer クラスから同じリソースを参照し、設定を個別に変更する場合は、変更が共有されないよう Local To Scene フラグを True に設定してください。
 
 ### [GdResourceSsProject](./gd_spritestudio/gd_resource_ssproject.h) クラス
 
