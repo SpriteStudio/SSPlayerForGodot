@@ -6,11 +6,19 @@
 
 extern "C" {
 
+void *ss_resource_create_copy(const unsigned char *ptr, uintptr_t len);
+
+void *ss_resource_create_borrow(const unsigned char *ptr, uintptr_t len);
+
+void ss_resource_destroy(void *resource);
+
 void *ss_runtime_create();
 
 void ss_runtime_destroy(void *context);
 
 void ss_runtime_reset(void *context);
+
+bool ss_runtime_bind_resource(void *context, void *resource);
 
 int32_t ss_runtime_get_last_error(void *context);
 

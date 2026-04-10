@@ -41,6 +41,7 @@ private:
     String _strAnimationSelected;
     ss::format::AnimationData* _currentAnimationData = nullptr;
     void *rutime_ctx = nullptr;
+    void *rutime_res = nullptr;
     int previous_frame_no = -1;
 
     void loadTextures(const Ref<GdSsabResource>& ssabRes);

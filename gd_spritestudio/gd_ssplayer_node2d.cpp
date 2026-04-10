@@ -386,16 +386,28 @@ void GdSsPlayerNode2D::drawAnimation() {
 }
 
 void GdSsPlayerNode2D::fetchAnimation() {
-	if ( _strAnimationSelected.is_empty() ) {
+	if ( _strAnimationSelected.is_empty() || _ssabRes.is_null() ) {
         ss_runtime_reset(rutime_ctx);
+        if (rutime_res != nullptr) {
+            ss_resource_destroy(rutime_res);
+            rutime_res = nullptr;
+        }
+        _currentAnimationData = nullptr;
     } else {
-        if ( _ssabRes.is_null() ) {
+        if (rutime_res != nullptr) {
+            ss_resource_destroy(rutime_res);
+            rutime_res = nullptr;
+        }
+
+        rutime_res = ss_resource_create_borrow(_ssabRes->get_data_ptr(), _ssabRes->get_data_size());
+        if (rutime_res == nullptr) {
+            ERR_PRINT( "SSAB Resource Create Failed" );
             return;
         }
 
-        bool loaded = ss_runtime_load_ssab_borrow(rutime_ctx, _ssabRes->get_data_ptr(), _ssabRes->get_data_size());
-        if ( !loaded ) {
-            ERR_PRINT( "SSAB Load Failed" );
+        bool binded = ss_runtime_bind_resource(rutime_ctx, rutime_res);
+        if ( !binded ) {
+            ERR_PRINT( "SSAB Resource Bind Failed" );
             return;
         }
 
