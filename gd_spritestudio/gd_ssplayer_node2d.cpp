@@ -49,8 +49,12 @@ bool GdSsPlayerNode2D::isPlaying() const {
     return ss_runtime_is_playing(rutime_ctx);
 }
 
-void GdSsPlayerNode2D::play() {
-    ss_runtime_play(rutime_ctx);
+void GdSsPlayerNode2D::play( int p_start_frame ) {
+    if ( p_start_frame >= 0 ) {
+        ss_runtime_play_with_start_frame(rutime_ctx, p_start_frame);
+    } else {
+        ss_runtime_play(rutime_ctx);
+    }
 }
 
 bool GdSsPlayerNode2D::isPausing() const {
@@ -65,15 +69,116 @@ void GdSsPlayerNode2D::stop() {
     ss_runtime_stop(rutime_ctx);
 }
 
+void GdSsPlayerNode2D::setSpeed( float p_speed ) {
+    _speed_rate = p_speed;
+    ss_runtime_set_animation_speed(rutime_ctx, p_speed);
+}
+
+float GdSsPlayerNode2D::getSpeed() const {
+    return _speed_rate;
+}
+
+void GdSsPlayerNode2D::setFrame( int p_frame ) {
+    ss_runtime_set_frame_no(rutime_ctx, p_frame);
+}
+
+int GdSsPlayerNode2D::getFrame() const {
+    return ss_runtime_get_frame_no(rutime_ctx);
+}
+
+float GdSsPlayerNode2D::getFrameDecimal() const {
+    return ss_runtime_get_frame_no_decimal(rutime_ctx);
+}
+
+int GdSsPlayerNode2D::getTotalFrames() const {
+    return ss_runtime_get_end_frame(rutime_ctx) - ss_runtime_get_start_frame(rutime_ctx) + 1;
+}
+
+void GdSsPlayerNode2D::setFrameRate( int p_fps ) {
+    ss_runtime_set_frame_rate(rutime_ctx, p_fps);
+}
+
+int GdSsPlayerNode2D::getFrameRate() const {
+    return ss_runtime_get_fps(rutime_ctx);
+}
+
+void GdSsPlayerNode2D::setAnimationSection( int p_start, int p_end ) {
+    ss_runtime_set_animation_section(rutime_ctx, p_start, p_end);
+}
+
+int GdSsPlayerNode2D::getAnimationSectionStart() const {
+    return ss_runtime_get_start_frame(rutime_ctx);
+}
+
+int GdSsPlayerNode2D::getAnimationSectionEnd() const {
+    return ss_runtime_get_end_frame(rutime_ctx);
+}
+
+void GdSsPlayerNode2D::setPlaybackDirection( int p_direction, int p_style ) {
+    ss_runtime_set_playback_direction(rutime_ctx, p_direction, p_style);
+}
+
+int GdSsPlayerNode2D::getPlaybackDirection() const {
+    return ss_runtime_get_playback_direction(rutime_ctx);
+}
+
+int GdSsPlayerNode2D::getPlaybackStyle() const {
+    return ss_runtime_get_playback_style(rutime_ctx);
+}
+
+void GdSsPlayerNode2D::setLoop( int p_count ) {
+    ss_runtime_set_loop(rutime_ctx, p_count);
+}
+
+int GdSsPlayerNode2D::getLoop() const {
+    return ss_runtime_get_loops(rutime_ctx);
+}
+
+void GdSsPlayerNode2D::setSkipFrames( bool p_skip ) {
+    ss_runtime_set_skip_frames(rutime_ctx, p_skip);
+}
+
+bool GdSsPlayerNode2D::isSkipFrames() const {
+    return ss_runtime_get_skip_frames(rutime_ctx);
+}
+
 
 void GdSsPlayerNode2D::_bind_methods() {
     ClassDB::bind_method( D_METHOD( "set_ssab_resource", "res_ssab" ), &GdSsPlayerNode2D::setSsabResource );
     ClassDB::bind_method( D_METHOD( "get_ssab_resource" ), &GdSsPlayerNode2D::getSsabResource );
     ClassDB::bind_method( D_METHOD( "set_animation", "name" ), &GdSsPlayerNode2D::setAnimation );
     ClassDB::bind_method( D_METHOD( "get_animation" ), &GdSsPlayerNode2D::getAnimation );
-    ClassDB::bind_method( D_METHOD( "play" ), &GdSsPlayerNode2D::play );
+
+    ClassDB::bind_method( D_METHOD( "is_playing" ), &GdSsPlayerNode2D::isPlaying );
+    ClassDB::bind_method( D_METHOD( "play", "start_frame" ), &GdSsPlayerNode2D::play, DEFVAL(-1) );
+    ClassDB::bind_method( D_METHOD( "is_pausing" ), &GdSsPlayerNode2D::isPausing );
     ClassDB::bind_method( D_METHOD( "pause" ), &GdSsPlayerNode2D::pause );
     ClassDB::bind_method( D_METHOD( "stop" ), &GdSsPlayerNode2D::stop );
+
+    ClassDB::bind_method( D_METHOD( "set_speed", "speed" ), &GdSsPlayerNode2D::setSpeed );
+    ClassDB::bind_method( D_METHOD( "get_speed" ), &GdSsPlayerNode2D::getSpeed );
+    ClassDB::bind_method( D_METHOD( "set_frame", "frame" ), &GdSsPlayerNode2D::setFrame );
+    ClassDB::bind_method( D_METHOD( "get_frame" ), &GdSsPlayerNode2D::getFrame );
+    ClassDB::bind_method( D_METHOD( "get_frame_decimal" ), &GdSsPlayerNode2D::getFrameDecimal );
+
+    ClassDB::bind_method( D_METHOD( "get_total_frames" ), &GdSsPlayerNode2D::getTotalFrames );
+
+    ClassDB::bind_method( D_METHOD( "set_frame_rate", "fps" ), &GdSsPlayerNode2D::setFrameRate );
+    ClassDB::bind_method( D_METHOD( "get_frame_rate" ), &GdSsPlayerNode2D::getFrameRate );
+
+    ClassDB::bind_method( D_METHOD( "set_animation_section", "start", "end" ), &GdSsPlayerNode2D::setAnimationSection );
+    ClassDB::bind_method( D_METHOD( "get_animation_section_start" ), &GdSsPlayerNode2D::getAnimationSectionStart );
+    ClassDB::bind_method( D_METHOD( "get_animation_section_end" ), &GdSsPlayerNode2D::getAnimationSectionEnd );
+
+    ClassDB::bind_method( D_METHOD( "set_playback_direction", "direction", "style" ), &GdSsPlayerNode2D::setPlaybackDirection );
+    ClassDB::bind_method( D_METHOD( "get_playback_direction" ), &GdSsPlayerNode2D::getPlaybackDirection );
+    ClassDB::bind_method( D_METHOD( "get_playback_style" ), &GdSsPlayerNode2D::getPlaybackStyle );
+
+    ClassDB::bind_method( D_METHOD( "set_loop", "count" ), &GdSsPlayerNode2D::setLoop );
+    ClassDB::bind_method( D_METHOD( "get_loop" ), &GdSsPlayerNode2D::getLoop );
+
+    ClassDB::bind_method( D_METHOD( "set_skip_frames", "skip" ), &GdSsPlayerNode2D::setSkipFrames );
+    ClassDB::bind_method( D_METHOD( "is_skip_frames" ), &GdSsPlayerNode2D::isSkipFrames );
 
 	ADD_SIGNAL(
 		MethodInfo(
@@ -125,6 +230,33 @@ void GdSsPlayerNode2D::_bind_methods() {
 		"get_ssab_resource"
 	);
 
+	ADD_PROPERTY(
+		PropertyInfo(
+			Variant::FLOAT,
+			"speed"
+		),
+		"set_speed",
+		"get_speed"
+	);
+
+	ADD_PROPERTY(
+		PropertyInfo(
+			Variant::INT,
+			"loop"
+		),
+		"set_loop",
+		"get_loop"
+	);
+
+    ADD_PROPERTY(
+        PropertyInfo(
+            Variant::BOOL,
+            "skip_frames"
+        ),
+        "set_skip_frames",
+        "is_skip_frames"
+    );
+
 	ADD_GROUP( "Animation Settings", "" );
 }
 
@@ -134,11 +266,19 @@ bool GdSsPlayerNode2D::_set( const StringName& p_name, const Variant& p_property
 
 		return	true;
 	} else if ( p_name == StringName("frame")) {
-		//setFrame( p_property );
+		setFrame( p_property );
 
 		return	true;
 	} else if ( p_name == StringName("loop")) {
-		//setLoop( p_property );
+		setLoop( p_property );
+
+		return	true;
+	} else if ( p_name == StringName("speed")) {
+		setSpeed( p_property );
+
+		return	true;
+	} else if ( p_name == StringName("skip_frames")) {
+		setSkipFrames( p_property );
 
 		return	true;
 	} else if ( p_name == StringName("playing")) {
@@ -159,11 +299,19 @@ bool GdSsPlayerNode2D::_get( const StringName& p_name, Variant& r_property ) con
 
         return	true;
     } else if ( p_name == StringName("frame") ) {
-        // r_property = getFrame();
+        r_property = getFrame();
 
         return	true;
     } else if ( p_name == StringName("loop") ) {
-        // r_property = getLoop();
+        r_property = getLoop();
+
+        return	true;
+    } else if ( p_name == StringName("speed") ) {
+        r_property = getSpeed();
+
+        return	true;
+    } else if ( p_name == StringName("skip_frames") ) {
+        r_property = isSkipFrames();
 
         return	true;
     } else if ( p_name == StringName("playing") ) {
@@ -201,6 +349,13 @@ void GdSsPlayerNode2D::_get_property_list( List<PropertyInfo>* p_list ) const {
     animasPropertyInfo.usage = PROPERTY_USAGE_EDITOR | PROPERTY_USAGE_STORAGE;
     animasPropertyInfo.hint = PROPERTY_HINT_NONE;
 	p_list->push_back( animasPropertyInfo );
+
+    animasPropertyInfo.name = "frame";
+    animasPropertyInfo.type = Variant::INT;
+    animasPropertyInfo.usage = PROPERTY_USAGE_EDITOR;
+    animasPropertyInfo.hint = PROPERTY_HINT_RANGE;
+    animasPropertyInfo.hint_string = "0," + String::num(getTotalFrames()-1) + ",1";
+    p_list->push_back( animasPropertyInfo );
 
 }
 
@@ -268,7 +423,7 @@ void GdSsPlayerNode2D::updateAnimation( float delta ) {
         auto frame_no = ss_runtime_update(rutime_ctx, d);
 
         if (previous_frame_no == frame_no) {
-            // print_line("skip");
+            // print_line("skip: " + String::num(frame_no));
             return;
         }
 

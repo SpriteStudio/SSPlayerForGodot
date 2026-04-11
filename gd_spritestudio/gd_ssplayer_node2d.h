@@ -29,10 +29,35 @@ public:
     String getAnimation() const;
 
     bool isPlaying() const;
-    void play();
+    void play( int p_start_frame = -1 );
     bool isPausing() const;
     void pause();
     void stop();
+
+    void setSpeed( float p_speed );
+    float getSpeed() const;
+    void setFrame( int p_frame );
+    int getFrame() const;
+    float getFrameDecimal() const;
+
+    int getTotalFrames() const;
+
+    void setFrameRate( int p_fps );
+    int getFrameRate() const;
+
+    void setAnimationSection( int p_start, int p_end );
+    int getAnimationSectionStart() const;
+    int getAnimationSectionEnd() const;
+
+    void setPlaybackDirection( int p_direction, int p_style );
+    int getPlaybackDirection() const;
+    int getPlaybackStyle() const;
+
+    void setLoop( int p_count );
+    int getLoop() const;
+
+    void setSkipFrames( bool p_skip );
+    bool isSkipFrames() const;
 
 private:
     Ref<GdSsabResource> _ssabRes;
@@ -43,6 +68,7 @@ private:
     void *rutime_ctx = nullptr;
     void *rutime_res = nullptr;
     int previous_frame_no = -1;
+    float _speed_rate = 1.0f;
 
     void loadTextures(const Ref<GdSsabResource>& ssabRes);
 	void updateAnimation(float delta);
