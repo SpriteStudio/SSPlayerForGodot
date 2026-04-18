@@ -37,7 +37,7 @@ $scons_default_opts = @{
 $winbuild_default_opts = @{
     cpus = $cpus
     ccache = "no"
-    version = "4.4"
+    version = "4.6"
 }
 
 $opts = @{}
@@ -72,7 +72,7 @@ $opts
 echo ""
 
 # # ccache
-# if ($opts.ccache -eq "yes") 
+# if ($opts.ccache -eq "yes")
 # {
 #     if ($env:CCACHE -ne $null) {
 #         $CCACHE = $env:CCACHE
@@ -94,7 +94,7 @@ if (![string]::IsNullOrEmpty($GODOT_BRANCH)) {
 } else {
     $VERSION = $opts.version
 }
-echo "Godot Version: ${VERSION}" 
+echo "Godot Version: ${VERSION}"
 
 # validate scons command options from winbuild options
 $scons_command_opts = "platform=$($internal_opts.platform)"
