@@ -4,11 +4,42 @@
 #include <ostream>
 #include <new>
 
+using SsLogCallback = void(*)(int level, const char *message);
+
 extern "C" {
 
-void *ss_resource_create_copy(const unsigned char *ptr, uintptr_t len);
+void rust_eh_personality();
 
-void *ss_resource_create_borrow(const unsigned char *ptr, uintptr_t len);
+void ss_runtime_set_log_callback(SsLogCallback callback);
+
+/// Creates an AnimationResource by copying the provided data.
+///
+/// # Security and Validation
+/// To maximize performance and minimize binary size, `libssruntime` **does not validate** the input `.ssab` data.
+/// Passing corrupted or maliciously crafted data will cause undefined behavior (e.g., out-of-bounds reads).
+/// The caller MUST ensure the data is trusted or validated before passing it to this function.
+///
+/// # Safety
+///
+/// This function is unsafe because it dereferences a raw pointer.
+/// The caller must ensure the pointer is valid and points to a valid memory block.
+void *ss_resource_create_copy(const unsigned char *ptr,
+                              uintptr_t len);
+
+/// Creates an AnimationResource by borrowing the provided data.
+///
+/// # Security and Validation
+/// To maximize performance and minimize binary size, `libssruntime` **does not validate** the input `.ssab` data.
+/// Passing corrupted or maliciously crafted data will cause undefined behavior (e.g., out-of-bounds reads).
+/// The caller MUST ensure the data is trusted or validated before passing it to this function.
+///
+/// # Safety
+///
+/// This function is unsafe because it dereferences a raw pointer.
+/// The caller must ensure the pointer is valid and points to a valid memory block of at least `len` bytes,
+/// AND the memory must remain valid and unmodified until this resource is destroyed.
+void *ss_resource_create_borrow(const unsigned char *ptr,
+                                uintptr_t len);
 
 void ss_resource_destroy(void *resource);
 
@@ -18,22 +49,48 @@ void ss_runtime_destroy(void *context);
 
 void ss_runtime_reset(void *context);
 
-bool ss_runtime_bind_resource(void *context, void *resource);
+/// Binds an AnimationResource to a Context.
+///
+/// # Safety and Lifetimes
+/// - To save memory, a single Resource can be bound to multiple Contexts.
+/// - **Lifetime Safety:** This implementation uses `Arc` for internal reference counting.
+///   It is safe to destroy the `resource` (via `ss_resource_destroy`) even if it is still bound
+///   to contexts; the memory will be kept alive until all bound contexts are also destroyed or reset.
+bool ss_runtime_bind_resource(void *context,
+                              void *resource);
 
-int32_t ss_runtime_get_last_error(void *context);
-
+/// # Safety
+///
+/// This function is unsafe because it dereferences a raw pointer.
+/// The caller must ensure the pointer is valid and points to a valid memory block.
 bool ss_runtime_load_ssab_copy(void *context, const unsigned char *ptr, uintptr_t len);
 
+/// # Safety
+///
+/// This function is unsafe because it dereferences a raw pointer.
+/// The caller must ensure the pointer is valid and points to a valid memory block.
 bool ss_runtime_load_ssab_borrow(void *context, const unsigned char *ptr, uintptr_t len);
 
+/// # Safety
+///
+/// This function is unsafe because it dereferences raw pointers for output.
+/// The caller must ensure `out_data` and `out_len` are valid if they are not null.
 void ss_runtime_get_ssab(void *context, unsigned char **out_data, uintptr_t *out_len);
 
 const unsigned char *ss_runtime_get_ssab_buf(void *context);
 
 uintptr_t ss_runtime_get_ssab_len(void *context);
 
+/// # Safety
+///
+/// This function is unsafe because it dereferences a raw pointer.
+/// The caller must ensure the pointer is valid and points to a valid null-terminated string.
 bool ss_runtime_setup_animation(void *context, const char *name);
 
+/// # Safety
+///
+/// This function is unsafe because it dereferences raw pointers for output.
+/// The caller must ensure `out_data` and `out_len` are valid if they are not null.
 void ss_runtime_get_frame_data(void *context,
                                int frame_no,
                                unsigned char **out_data,

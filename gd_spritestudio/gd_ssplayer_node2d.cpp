@@ -575,7 +575,7 @@ void GdSsPlayerNode2D::fetchAnimation() {
         _currentAnimationData = animation;
         bool setup = ss_runtime_setup_animation(rutime_ctx, c.get_data());
         if ( !setup ) {
-            ERR_PRINT( "SSAB Setup Animation Failed" );
+            ERR_PRINT( "SSAB Setup Animation Failed: " + _strAnimationSelected );
             return;
         }
 
