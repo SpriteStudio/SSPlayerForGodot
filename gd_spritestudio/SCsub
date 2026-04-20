@@ -1,45 +1,55 @@
 #!/usr/bin/env python
-
+import os
 Import("env")
 Import("env_modules")
-import os
 
-env_gd_spritestudio = env_modules.Clone()
+env_ss = env_modules.Clone()
 
-env_gd_spritestudio.add_source_files(env.modules_sources, "*.cpp")
-env_gd_spritestudio.add_source_files(env.modules_sources, "flatbuffers/src/idl_parser.cpp")
-env_gd_spritestudio.add_source_files(env.modules_sources, "flatbuffers/src/idl_gen_text.cpp")
-env_gd_spritestudio.add_source_files(env.modules_sources, "flatbuffers/src/reflection.cpp")
-env_gd_spritestudio.add_source_files(env.modules_sources, "flatbuffers/src/util.cpp")
+# --- Source Files ---
+# Extension sources
+env_ss.add_source_files(env.modules_sources, "*.cpp")
 
+# FlatBuffers sources
+fb_src_dir = "flatbuffers/src"
+fb_sources = [
+    "idl_parser.cpp",
+    "idl_gen_text.cpp",
+    "reflection.cpp",
+    "util.cpp",
+]
+for f in fb_sources:
+    env_ss.add_source_files(env.modules_sources, os.path.join(fb_src_dir, f))
 
-env_gd_spritestudio.Append(
-	CPPPATH=[
+# --- Includes ---
+env_ss.Append(
+    CPPPATH=[
         "flatbuffers/src",
         "flatbuffers/include",
         "runtime",
-	])
+    ]
+)
 
+# --- Libraries & Library Paths ---
 module_path = env.Dir('.').abspath
-if env['platform'] == 'macos' or env['platform'] == 'windows':
-    runtime_libpath = os.path.join(module_path, "runtime", "libs", env['platform'])
-else:
-    runtime_libpath = os.path.join(module_path, "runtime", "libs", env['platform'], env['arch'])
+platform = env['platform']
 
-env.Append(
-    LIBPATH=[
-        runtime_libpath,
-    ])
+if platform in ['macos', 'windows']:
+    runtime_libpath = os.path.join(module_path, "runtime", "libs", platform)
+else:
+    runtime_libpath = os.path.join(module_path, "runtime", "libs", platform, env['arch'])
+
+env.Append(LIBPATH=[runtime_libpath])
 
 if env['target'] == 'editor':
     env.Append(LIBS=["ssconverter"])
-    if env["platform"] == "windows":
+    if platform == "windows":
         env.Append(LINKFLAGS=["Userenv.lib", "Bcrypt.lib", "Ntdll.lib", "Ws2_32.lib"])
+
 env.Append(LIBS=["ssruntime"])
 
+# --- Compilation Flags ---
+if not env_ss.msvc:
+    env_ss.Append(CXXFLAGS=["-Wno-inconsistent-missing-override"])
 
-if not env_gd_spritestudio.msvc:
-    env_gd_spritestudio.Append(CXXFLAGS=["-Wno-inconsistent-missing-override"])
-
-if env['platform'] == 'macos':
-    env_gd_spritestudio.Append(LINKFLAGS=['-framework', 'Metal'])
+if platform == 'macos':
+    env_ss.Append(LINKFLAGS=['-framework', 'Metal'])

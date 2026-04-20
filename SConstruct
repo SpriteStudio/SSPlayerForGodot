@@ -3,18 +3,19 @@ import os
 import sys
 import subprocess
 
+# --- Configuration & Constants ---
+LIB_NAME = "SSGodot"
+DEFAULT_PROJECT_DIR = os.path.join("examples", "new_gdextension")
+
+# --- Helper Functions ---
 def normalize_path(val, env):
     return val if os.path.isabs(val) else os.path.join(env.Dir("#").abspath, val)
-
 
 def validate_parent_dir(key, val, env):
     if not os.path.isdir(normalize_path(os.path.dirname(val), env)):
         raise UserError("'%s' is not a directory: %s" % (key, os.path.dirname(val)))
 
-
-libname = "SSGodot"
-projectdir = os.path.join("examples", "new_gdextension")
-
+# --- Environment Setup ---
 localEnv = Environment(tools=["default"], PLATFORM="")
 
 customs = ["custom.py"]
@@ -36,6 +37,13 @@ opts.Add(
         validator=validate_parent_dir,
     )
 )
+opts.Add(
+    PathVariable(
+        key="target_path",
+        help="Path to the Godot project where the extension will be installed",
+        default=DEFAULT_PROJECT_DIR,
+    )
+)
 opts.Update(localEnv)
 
 Help(opts.GenerateHelpText(localEnv))
@@ -43,17 +51,18 @@ Help(opts.GenerateHelpText(localEnv))
 env = localEnv.Clone()
 env["compiledb"] = False
 
+# --- Compilation Database ---
 env.Tool("compilation_db")
 compilation_db = env.CompilationDatabase(
     normalize_path(localEnv["compiledb_file"], localEnv)
 )
 env.Alias("compiledb", compilation_db)
 
+# --- Submodule Validation ---
 submodule_initialized = False
 dir_name = 'godot-cpp'
-if os.path.isdir(dir_name):
-    if os.listdir(dir_name):
-        submodule_initialized = True
+if os.path.isdir(dir_name) and os.listdir(dir_name):
+    submodule_initialized = True
 
 if not submodule_initialized:
     print("""godot-cpp is not available within this folder, as Git submodules haven't been initialized.
@@ -62,104 +71,126 @@ Run the following command to download godot-cpp:
     git submodule update --init --recursive""")
     sys.exit(1)
 
+# --- Initialize godot-cpp ---
 env = SConscript("godot-cpp/SConstruct", {"env": env, "customs": customs})
 
+# --- Source Files ---
+# Extension sources
 sources = Glob("gd_spritestudio/*.cpp")
-sources.append("gd_spritestudio/flatbuffers/src/idl_parser.cpp")
-sources.append("gd_spritestudio/flatbuffers/src/idl_gen_text.cpp")
-sources.append("gd_spritestudio/flatbuffers/src/reflection.cpp")
-sources.append("gd_spritestudio/flatbuffers/src/util.cpp")
 
+# FlatBuffers sources
+fb_src_dir = "gd_spritestudio/flatbuffers/src"
+fb_sources = [
+    "idl_parser.cpp",
+    "idl_gen_text.cpp",
+    "reflection.cpp",
+    "util.cpp",
+]
+sources.extend([os.path.join(fb_src_dir, f) for f in fb_sources])
+
+# --- Compilation Flags & Includes ---
 env.Append(CPPDEFINES = "SPRITESTUDIO_GODOT_EXTENSION")
 env.Append(
-	CPPPATH=[
+    CPPPATH=[
         "gd_spritestudio/flatbuffers/src",
         "gd_spritestudio/flatbuffers/include",
         "gd_spritestudio/runtime",
-	]
+    ]
 )
 
+# --- Libraries & Library Paths ---
 extension_path = env.Dir('.').abspath
-if env['platform'] == 'macos':
-    runtime_libpath = os.path.join(extension_path, "gd_spritestudio", "runtime", "libs", env['platform'])
+platform = env['platform']
+arch = env['arch']
+
+if platform == 'macos':
+    runtime_libpath = os.path.join(extension_path, "gd_spritestudio", "runtime", "libs", platform)
 else:
-    runtime_libpath = os.path.join(extension_path, "gd_spritestudio", "runtime", "libs", env['platform'], env['arch'])
-print(runtime_libpath)
-env.Append(
-    LIBPATH=[
-        runtime_libpath,
-    ])
+    runtime_libpath = os.path.join(extension_path, "gd_spritestudio", "runtime", "libs", platform, arch)
+
+env.Append(LIBPATH=[runtime_libpath])
 
 if env['target'] == 'editor':
     env.Append(LIBS=["ssconverter"])
-    if env["platform"] == "windows":
+    if platform == "windows":
         env.Append(LINKFLAGS=["Userenv.lib", "Bcrypt.lib", "Ntdll.lib", "Ws2_32.lib"])
+
 env.Append(LIBS=["ssruntime"])
 
-
-if env["platform"] == 'macos':
+# Platform specific frameworks
+if platform == 'macos':
     env.Append(LINKFLAGS=["-framework", "CoreFoundation", "-framework", "CoreServices"])
 
-# Set iOS minimum deployment target
-if env["platform"] == "ios":
-    env.Append(CCFLAGS=["-miphoneos-version-min=12.0"])
-    env.Append(LINKFLAGS=["-miphoneos-version-min=12.0"])
+if platform == "ios":
+    ios_flags = ["-miphoneos-version-min=12.0"]
+    env.Append(CCFLAGS=ios_flags)
+    env.Append(LINKFLAGS=ios_flags)
 
+# --- DocData Generation ---
 if env["target"] in ["editor", "template_debug"]:
     try:
-        doc_data = env.GodotCPPDocData("src/gen/doc_data.gen.cpp", source=Glob("doc_classes/*.xml"))
+        # Output to gd_spritestudio/gen instead of src/gen
+        doc_data = env.GodotCPPDocData("gd_spritestudio/gen/doc_data.gen.cpp", source=Glob("doc_classes/*.xml"))
         sources.append(doc_data)
     except AttributeError:
         print("Not including class reference as we're targeting a pre-4.3 baseline.")
 
-file = "lib{}{}{}".format(libname, env["suffix"], env["SHLIBSUFFIX"])
-filepath = ""
+# --- Shared Library Target ---
+target_suffix = env["suffix"]
+lib_suffix = env["SHLIBSUFFIX"]
+file_name = "lib{}{}{}".format(LIB_NAME, target_suffix, lib_suffix)
+framework_path = ""
 
-if env["platform"] == "macos" or env["platform"] == "ios":
-    filepath = "lib{}.{}.{}.framework/".format(libname, env["platform"], env["target"])
-    file = "lib{}.{}.{}".format(libname, env["platform"], env["target"])
-    env.Append(LINKFLAGS=["-Wl,-install_name,@rpath/{}{}".format(filepath, file)])
+if platform in ["macos", "ios"]:
+    framework_path = "lib{}.{}.{}.framework/".format(LIB_NAME, platform, env["target"])
+    file_name = "lib{}.{}.{}".format(LIB_NAME, platform, env["target"])
+    env.Append(LINKFLAGS=["-Wl,-install_name,@rpath/{}{}".format(framework_path, file_name)])
 
-libraryfile = "bin/{}/{}{}".format(env["platform"], filepath, file)
-library = env.SharedLibrary(
-    libraryfile,
-    source=sources,
-)
+library_output = "bin/{}/{}{}".format(platform, framework_path, file_name)
+library = env.SharedLibrary(library_output, source=sources)
 
-if env["platform"] == "macos" or env["platform"] == "ios":
+# --- macOS / iOS Framework Bundles ---
+plist_target = None
+if platform in ["macos", "ios"]:
+    try:
+        git_branch = subprocess.check_output(['git', 'rev-parse', '--abbrev-ref', 'HEAD']).decode('utf-8').strip()
+        version = git_branch.split('-')[0] + '.0'
+    except:
+        version = "1.0.0"
+
     plist_subst = {
-        "${BUNDLE_LIBRARY}": file,
+        "${BUNDLE_LIBRARY}": file_name,
         "${BUNDLE_NAME}": "ssplayer-godot",
         "${BUNDLE_IDENTIFIER}": "jp.co.cri-mw.spritestudio.ssplayer-godot.{}".format(env["target"]),
-        "${BUNDLE_VERSION}": subprocess.check_output(['git', 'rev-parse', '--abbrev-ref', 'HEAD']).decode('utf-8').strip().split('-')[0] + '.0',
+        "${BUNDLE_VERSION}": version,
         "${MIN_MACOS_VERSION}": "10.12",
         "${MIN_IOS_VERSION}": "12.0"
     }
 
-    if env["platform"] == "macos":
-        plist_file = "bin/macos/{}Resources/Info.plist".format(filepath)
-        plist = env.Substfile(
-            target=plist_file,
-            source="misc/Info.macos.plist",
-            SUBST_DICT=plist_subst
-        )
-    elif env["platform"] == "ios":
-        plist_file = "bin/ios/{}Info.plist".format(filepath)
-        plist = env.Substfile(
-            target=plist_file,
-            source="misc/Info.ios.plist",
-            SUBST_DICT=plist_subst
-        )
+    if platform == "macos":
+        plist_src = "misc/Info.macos.plist"
+        plist_file = "bin/macos/{}Resources/Info.plist".format(framework_path)
+    else: # ios
+        plist_src = "misc/Info.ios.plist"
+        plist_file = "bin/ios/{}Info.plist".format(framework_path)
 
-    env.Depends(library, plist)
+    plist_target = env.Substfile(target=plist_file, source=plist_src, SUBST_DICT=plist_subst)
+    env.Depends(library, plist_target)
 
-copy = env.InstallAs("{}/{}".format(projectdir, libraryfile), library)
-default_args = [library, copy]
+# --- Installation & Default Target ---
+project_dir = env["target_path"]
+install_targets = [library]
 
-if env["platform"] == "macos" or env["platform"] == "ios":
-    copy_plist = env.InstallAs("{}/{}".format(projectdir, plist_file), plist_file)
-    default_args.append(copy_plist)
+# Copy library to project
+copy_lib = env.InstallAs("{}/{}".format(project_dir, library_output), library)
+install_targets.append(copy_lib)
+
+# Copy Plist if applicable
+if plist_target:
+    copy_plist = env.InstallAs("{}/{}".format(project_dir, plist_file), plist_target)
+    install_targets.append(copy_plist)
 
 if localEnv.get("compiledb", False):
-    default_args += [compilation_db]
-Default(*default_args)
+    install_targets.append(compilation_db)
+
+Default(*install_targets)
