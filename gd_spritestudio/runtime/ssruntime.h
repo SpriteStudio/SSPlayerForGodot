@@ -4,6 +4,12 @@
 #include <ostream>
 #include <new>
 
+constexpr static const int32_t SEED_MAGIC = 7573;
+
+constexpr static const int32_t LIFE_EXTEND_SCALE = 8;
+
+constexpr static const int32_t LIFE_EXTEND_MIN = 64;
+
 using SsLogCallback = void(*)(int level, const char *message);
 
 extern "C" {
@@ -136,6 +142,8 @@ void ss_runtime_set_animation_section(void *context, int start_frame, int end_fr
 
 int32_t ss_runtime_update(void *context, float delta);
 
+int32_t ss_runtime_update_animation(void *context, float delta);
+
 void ss_runtime_play(void *context);
 
 void ss_runtime_play_with_start_frame(void *context, int32_t frame_no);
@@ -149,5 +157,120 @@ void ss_runtime_set_frame_no(void *context, int frame);
 void ss_runtime_next_frame(void *context);
 
 void ss_runtime_prev_frame(void *context);
+
+void *ss_effect_create(const void *resource, uint32_t effect_name_hash, uint32_t seed);
+
+void ss_effect_update(void *effect_ctx, float frame);
+
+void ss_effect_reset(void *effect_ctx);
+
+int32_t ss_effect_get_lifetime(void *effect_ctx);
+
+bool ss_effect_is_infinite(void *effect_ctx);
+
+void ss_effect_get_state(void *effect_ctx, unsigned char **out_data, uintptr_t *out_len);
+
+void ss_effect_destroy(void *effect_ctx);
+
+/// Calculate the target frame for a child instance animation.
+float ss_util_calculate_instance_frame(float parent_frame,
+                                       int32_t key_frame,
+                                       int32_t start_offset,
+                                       float speed,
+                                       bool independent,
+                                       float accumulated_time);
+
+/// Compute world matrix for a specific part by traversing its ancestors.
+/// out_m: pointer to float array of size 16.
+bool ss_util_get_part_world_matrix(void *context,
+                                   uint16_t part_index,
+                                   int32_t frame_no,
+                                   float *out_m);
+
+/// Transform multiple particle positions by a matrix.
+/// matrix_ptr: pointer to float array of size 16.
+/// particles_ptr: pointer to ParticleState array from ss_effect_get_state.
+/// count: number of particles.
+/// out_pos_ptr: pointer to float array (x, y, x, y, ...) to store transformed 2D coordinates.
+void ss_effect_transform_particles(const float *matrix_ptr,
+                                   const void *particles_ptr,
+                                   int32_t count,
+                                   float *out_pos_ptr);
+
+/// out_m must be a pointer to a float array of size 16.
+/// # Safety
+/// This function is unsafe because it dereferences a raw pointer.
+void ss_matrix_identity(float *out_m);
+
+/// out_m, lhs, rhs must be pointers to float arrays of size 16.
+/// # Safety
+/// This function is unsafe because it dereferences raw pointers.
+void ss_matrix_multiply(float *out_m, const float *lhs, const float *rhs);
+
+/// out_m, in_m must be pointers to float arrays of size 16.
+/// # Safety
+/// This function is unsafe because it dereferences raw pointers.
+void ss_matrix_inverse(float *out_m, const float *in_m);
+
+/// out_x, out_y, out_z: output pointers for transformed vector.
+/// mat: pointer to a float array of size 16.
+/// x, y, z: input vector components.
+/// # Safety
+/// This function is unsafe because it dereferences raw pointers.
+void ss_matrix_transform_vector3(float *out_x,
+                                 float *out_y,
+                                 float *out_z,
+                                 const float *mat,
+                                 float x,
+                                 float y,
+                                 float z);
+
+/// out_m: pointer to a float array of size 16.
+/// # Safety
+/// This function is unsafe because it dereferences a raw pointer.
+void ss_matrix_create_scale(float *out_m, float x, float y, float z);
+
+/// out_m: pointer to a float array of size 16.
+/// # Safety
+/// This function is unsafe because it dereferences a raw pointer.
+void ss_matrix_create_translation(float *out_m, float x, float y, float z);
+
+/// out_m: pointer to a float array of size 16.
+/// # Safety
+/// This function is unsafe because it dereferences a raw pointer.
+void ss_matrix_create_rotation_x(float *out_m, float radians);
+
+/// out_m: pointer to a float array of size 16.
+/// # Safety
+/// This function is unsafe because it dereferences a raw pointer.
+void ss_matrix_create_rotation_y(float *out_m, float radians);
+
+/// out_m: pointer to a float array of size 16.
+/// # Safety
+/// This function is unsafe because it dereferences a raw pointer.
+void ss_matrix_create_rotation_z(float *out_m, float radians);
+
+/// out_inheritance_m, out_drawing_m: pointers to float arrays of size 16.
+/// state: pointer to PartState
+/// parent_matrix: pointer to a float array of size 16, or null.
+/// # Safety
+/// This function is unsafe because it dereferences raw pointers.
+void ss_matrix_compute_world(float *out_inheritance_m,
+                             float *out_drawing_m,
+                             const void *state,
+                             const float *parent_matrix,
+                             bool has_parent_size,
+                             float parent_size_x,
+                             float parent_size_y);
+
+int32_t ss_runtime_get_passed_event_count(void *context);
+
+int32_t ss_runtime_get_passed_event_type(void *context, int32_t index);
+
+int32_t ss_runtime_get_passed_event_frame_no(void *context, int32_t index);
+
+int32_t ss_runtime_get_passed_event_part_index(void *context, int32_t index);
+
+int32_t ss_runtime_get_passed_event_index(void *context, int32_t index);
 
 }  // extern "C"
