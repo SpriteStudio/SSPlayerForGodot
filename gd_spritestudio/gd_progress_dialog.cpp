@@ -83,23 +83,11 @@ void GdProgressDialog::show_progress(const String &title, int total_steps) {
     progress_bar->set_value(0);
 
     popup_centered();
-
-    DisplayServer::get_singleton()->process_events(); // 1. 入力処理
-#ifndef SPRITESTUDIO_GODOT_EXTENSION
-    MessageQueue::get_singleton()->flush();          // 2. レイアウト計算・シグナル処理の実行
-    RenderingServer::get_singleton()->draw(true, 0.0);  // 3. 描画
-#endif
 }
 
 void GdProgressDialog::step(const String &message, int step_value) {
     status_label->set_text(message);
     progress_bar->set_value(step_value);
-
-    DisplayServer::get_singleton()->process_events();
-#ifndef SPRITESTUDIO_GODOT_EXTENSION
-    MessageQueue::get_singleton()->flush();
-    RenderingServer::get_singleton()->draw(true, 0.0);
-#endif
 }
 
 // void GdProgressDialog::_on_cancel_pressed() {

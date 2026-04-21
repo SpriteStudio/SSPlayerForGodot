@@ -85,8 +85,21 @@ GdSsImportControl::GdSsImportControl() {
     add_child(file_dialog);
 
     background_panel = memnew(Panel);
-    background_panel->set_anchors_preset(Control::PRESET_FULL_RECT);
+    background_panel->set_v_size_flags(Control::SIZE_EXPAND_FILL);
+    background_panel->set_h_size_flags(Control::SIZE_EXPAND_FILL);
     background_panel->set_mouse_filter(Control::MOUSE_FILTER_IGNORE);
+    
+    Ref<StyleBoxFlat> panel_style = memnew(StyleBoxFlat);
+    panel_style->set_bg_color(Color(0.2, 0.2, 0.25, 0.6));
+    panel_style->set_border_width_all(2);
+    panel_style->set_border_color(Color(0.4, 0.4, 0.5, 0.8));
+    panel_style->set_corner_radius_all(6);
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+    background_panel->add_theme_stylebox_override("panel", panel_style);
+#else
+    background_panel->add_theme_style_override("panel", panel_style);
+#endif
+    
     add_child(background_panel);
 
     instruction_label = memnew(Label);
@@ -95,7 +108,7 @@ GdSsImportControl::GdSsImportControl() {
     instruction_label->set_vertical_alignment(VERTICAL_ALIGNMENT_CENTER);
     instruction_label->set_anchors_preset(Control::PRESET_FULL_RECT);
     instruction_label->set_mouse_filter(Control::MOUSE_FILTER_IGNORE);
-    add_child(instruction_label);
+    background_panel->add_child(instruction_label);
 
     _load_settings();
 }
@@ -112,6 +125,52 @@ void GdSsImportControl::_notification(int p_what) {
         } break;
         case NOTIFICATION_EXIT_TREE: {
             stop_intercepting();
+        } break;
+        case NOTIFICATION_PROCESS: {
+            if (is_importing) {
+                bool wait_for_finish = false;
+
+                for (size_t i = 0; i < import_contexts.size(); ++i) {
+                    void* ctx = import_contexts[i];
+                    bool ret = ss_converter_is_finished((Context *)ctx);
+                    if (!ret) {
+                        wait_for_finish = true;
+                    } else {
+                        import_finished_contexts.set(i, true);
+                    }
+                }
+                
+                int finished_num = 0;
+                for (size_t i = 0; i < import_finished_contexts.size(); ++i) {
+                    if (import_finished_contexts[i]) {
+                        finished_num++;
+                    }
+                }
+                
+                if (finished_num != import_prev_num) {
+                    import_dialog->step(vformat("Importing SSPJ: %d/%d", finished_num, import_finished_contexts.size()), finished_num);
+                    import_prev_num = finished_num;
+                }
+
+                if (!wait_for_finish) {
+                    import_dialog->finish();
+                    for (size_t i = 0; i < import_contexts.size(); ++i) {
+                        void* ctx = import_contexts[i];
+                        ss_converter_destroy((Context*)ctx);
+                    }
+                    import_contexts.clear();
+                    import_finished_contexts.clear();
+                    import_dialog = nullptr;
+                    is_importing = false;
+                    set_process(false);
+
+#if defined(SPRITESTUDIO_GODOT_EXTENSION) || (VERSION_MAJOR >= 4 && VERSION_MINOR >= 6)
+                    EditorInterface::get_singleton()->get_resource_filesystem()->scan();
+#else
+                    EditorInterface::get_singleton()->get_resource_file_system()->scan();
+#endif
+                }
+            }
         } break;
     }
 }
@@ -200,6 +259,11 @@ void GdSsImportControl::_on_window_files_dropped(const Vector<String> &p_files) 
 
     if (get_global_rect().has_point(get_global_mouse_position())) {
 
+        if (is_importing) {
+            print_line("GdSsImportControl: Already importing. Please wait.");
+            return;
+        }
+
         // print_line("GdSsImportControl: Processing custom file drop...");
 
         // validate sspj file
@@ -228,7 +292,6 @@ void GdSsImportControl::_on_window_files_dropped(const Vector<String> &p_files) 
             da->make_dir_recursive(output_dir);
         }
 
-        Vector<void*> contexts;
         for (int i = 0; i < sspj_files.size(); i++) {
             String src_file_path = sspj_files[i];
             String src_file = src_file_path.get_file();
@@ -238,53 +301,19 @@ void GdSsImportControl::_on_window_files_dropped(const Vector<String> &p_files) 
             String global_src_file_path = ProjectSettings::get_singleton()->globalize_path(src_file_path);
             void *ctx = process_file(global_src_file_path, global_dst_dir);
             print_line("GdSsImportControl: convert sspj file: " + src_file_path + ", to ssab files: " + dst_dir);
-            contexts.push_back(ctx);
+            import_contexts.push_back(ctx);
         }
 
-        auto dialog = memnew(GdProgressDialog);
-        EditorInterface::get_singleton()->get_base_control()->add_child(dialog);
-        dialog->show_progress("Importing SSPJ...", contexts.size());
+        import_dialog = memnew(GdProgressDialog);
+        EditorInterface::get_singleton()->get_base_control()->add_child(import_dialog);
+        import_dialog->show_progress("Importing SSPJ...", import_contexts.size());
 
-        Vector<bool> finished_contexts;
-        finished_contexts.resize(contexts.size());
-        bool wait_for_finish = true;
-        int prev_num = 0;
-        dialog->step(vformat("Importing SSPJ: %d/%d", 0, finished_contexts.size()), 0);
+        import_finished_contexts.resize(import_contexts.size());
+        import_prev_num = 0;
+        is_importing = true;
+        import_dialog->step(vformat("Importing SSPJ: %d/%d", 0, import_finished_contexts.size()), 0);
 
-        while(wait_for_finish) {
-            wait_for_finish = false;
-
-            for (size_t i = 0; i < contexts.size(); ++i) {
-                void* ctx = contexts[i];
-                bool ret = ss_converter_is_finished((Context *)ctx);
-                if (!ret) {
-                    wait_for_finish = true;
-                } else {
-                    finished_contexts.set(i, true);
-                }
-            }
-            int finished_num = 0;
-            for (size_t i = 0; i < finished_contexts.size(); ++i) {
-                if (finished_contexts[i]) {
-                    finished_num++;
-                }
-            }
-            if (finished_num != prev_num) {
-                dialog->step(vformat("Importing SSPJ: %d/%d", finished_num, finished_contexts.size()), finished_num);
-                prev_num = finished_num;
-            }
-        }
-        dialog->finish();
-        for (size_t i = 0; i < contexts.size(); ++i) {
-            void* ctx = contexts[i];
-            ss_converter_destroy((Context*)ctx);
-        }
-
-#if defined(SPRITESTUDIO_GODOT_EXTENSION) || (VERSION_MAJOR >= 4 && VERSION_MINOR >= 6)
-        EditorInterface::get_singleton()->get_resource_filesystem()->scan();
-#else
-        EditorInterface::get_singleton()->get_resource_file_system()->scan();
-#endif
+        set_process(true);
     } else {
         _perform_default_drop_logic(p_files);
     }

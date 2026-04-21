@@ -8,6 +8,7 @@
 #include <godot_cpp/classes/control.hpp>
 #include <godot_cpp/classes/panel.hpp>
 #include <godot_cpp/classes/label.hpp>
+#include <godot_cpp/classes/style_box_flat.hpp>
 
 #include <godot_cpp/classes/v_box_container.hpp> 
 #include <godot_cpp/classes/h_box_container.hpp>
@@ -20,6 +21,7 @@ using namespace godot;
 #include "scene/gui/control.h"
 #include "scene/gui/panel.h"
 #include "scene/gui/label.h"
+#include "scene/resources/style_box_flat.h"
 
 #include "scene/gui/box_container.h"
 #include "scene/gui/line_edit.h"
@@ -49,6 +51,13 @@ private:
   Callable original_drop_handler;
   bool is_intercepting = false;
   bool is_reemitting = false;
+
+  Vector<void*> import_contexts;
+  class GdProgressDialog* import_dialog = nullptr;
+  Vector<bool> import_finished_contexts;
+  int import_prev_num = 0;
+  bool is_importing = false;
+
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
   void _on_window_files_dropped(const PackedStringArray &p_files);
   void _perform_default_drop_logic(const PackedStringArray &p_files);
