@@ -265,12 +265,6 @@ void ss_matrix_compute_world(float *out_inheritance_m,
 
 int32_t ss_runtime_get_passed_event_count(void *context);
 
-int32_t ss_runtime_get_passed_event_type(void *context, int32_t index);
-
 int32_t ss_runtime_get_passed_event_frame_no(void *context, int32_t index);
-
-int32_t ss_runtime_get_passed_event_part_index(void *context, int32_t index);
-
-int32_t ss_runtime_get_passed_event_index(void *context, int32_t index);
 
 }  // extern "C"

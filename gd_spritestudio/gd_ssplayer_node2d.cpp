@@ -427,50 +427,45 @@ void GdSsPlayerNode2D::updateAnimation( float delta ) {
             return;
         }
 
-        // print_line("delta: " + String::num(d) + " Current Frame: " + String::num(frame_no));
-
         if (_currentAnimationData->events() != nullptr && _currentAnimationData->events()->size() > 0) {
-            int min_frame;
-            int max_frame;
+            int event_count = ss_runtime_get_passed_event_count(rutime_ctx);
+            for (int i = 0; i < event_count; i++) {
+               int frame = ss_runtime_get_passed_event_frame_no(rutime_ctx, i);
+                auto events_per_frame = _currentAnimationData->events()->LookupByKey(frame);
+                if (!events_per_frame) continue;
 
-            int prev = previous_frame_no == -1 ? ss_runtime_get_start_frame(rutime_ctx) : previous_frame_no;
-            if (prev < frame_no) {
-                min_frame = prev;
-                max_frame = frame_no;
-            } else {
-                min_frame = frame_no;
-                max_frame = prev;
-            }
+                if (auto users = events_per_frame->users()) {
+                    for (auto user : *users) {
+                        // TODO: impl
+                    }
+                }
 
-            // check Events
-            for (int i=min_frame; i<=max_frame; i++) {
-                auto eventsPerFrame = _currentAnimationData->events()->LookupByKey(i);
-                if (eventsPerFrame == nullptr) continue;
-                auto users = eventsPerFrame->users();
-                if (users) {
-                    // TODO: impl
+                if (auto signals = events_per_frame->signals()) {
+                    for (auto signal : *signals) {
+                        // TODO: impl
+                    }
                 }
-                auto singals = eventsPerFrame->signals();
-                if (singals) {
-                    // TODO: impl
+
+                if (auto audios = events_per_frame->audios()) {
+                    for (auto audio : *audios) {
+                        // TODO: impl
+                    }
                 }
-                auto instances = eventsPerFrame->instances();
-                if (instances) {
-                    // TODO: impl
+
+                if (auto instances = events_per_frame->instances()) {
+                    for (auto instance : *instances) {
+                        // TODO: impl
+                    }
                 }
-                auto effects = eventsPerFrame->effects();
-                if (effects) {
-                    // TODO: impl
-                }
-                auto audios = eventsPerFrame->audios();
-                if (audios) {
-                    // TODO: impl
+
+                if (auto effects = events_per_frame->effects()) {
+                    for (auto effect : *effects) {
+                        // TODO: impl
+                    }
                 }
             }
         }
-
         previous_frame_no = frame_no;
-
         queue_redraw();
     }
 }
