@@ -8,8 +8,23 @@ GdSsPlayerNode2D::GdSsPlayerNode2D() {
 }
 
 GdSsPlayerNode2D::~GdSsPlayerNode2D() {
-    ss_runtime_destroy(runtime_ctx);
-    runtime_ctx = nullptr;
+    _clear_canvas_items();
+    if (runtime_ctx != nullptr) {
+        ss_runtime_destroy(runtime_ctx);
+        runtime_ctx = nullptr;
+    }
+    if (rutime_res != nullptr) {
+        ss_resource_destroy(rutime_res);
+        rutime_res = nullptr;
+    }
+}
+
+void GdSsPlayerNode2D::_clear_canvas_items() {
+    RenderingServer *rs = RenderingServer::get_singleton();
+    for (int i = 0; i < _canvas_items.size(); i++) {
+        rs->free_rid(_canvas_items[i]);
+    }
+    _canvas_items.clear();
 }
 
 void GdSsPlayerNode2D::setSsabResource( const Ref<GdSsabResource>& ssabRes ) {
@@ -369,10 +384,6 @@ void GdSsPlayerNode2D::_notification( int p_notification ) {
 		updateAnimation( (float)get_process_delta_time() );
 
         break;
-    case NOTIFICATION_DRAW:
-        drawAnimation();
-
-        break;
     default:
         break;
 	}
@@ -461,7 +472,7 @@ void GdSsPlayerNode2D::updateAnimation( float delta ) {
         }
         */
         previous_frame_no = frame_no;
-        queue_redraw();
+        drawAnimation();
     }
 }
 
@@ -484,11 +495,23 @@ void GdSsPlayerNode2D::drawAnimation() {
     }
 
     auto binary = _ssabRes->get_ss_anime_binary();
-    // print_line("draw frame: " + String::num(ss_runtime_get_frame_no(runtime_ctx)) + " parts: " + String::num(parts->size()));
+    RenderingServer *rs = RenderingServer::get_singleton();
+
     for (uint32_t i = 0; i < parts->size(); i++) {
         auto part = parts->Get(i);
-        auto updateFlag = part->update_flag();
-        if (updateFlag == 0) {
+        if (i >= (uint32_t)_canvas_items.size()) {
+            break;
+        }
+
+        if (part->update_flag() == 0) {
+            // RenderingServer retains state, so we don't need to redraw if nothing changed
+            continue;
+        }
+
+        RID ci = _canvas_items[i];
+        rs->canvas_item_clear(ci);
+
+        if (part->hide()) {
             continue;
         }
 
@@ -505,7 +528,6 @@ void GdSsPlayerNode2D::drawAnimation() {
         // 2. テクスチャの取得 (CellMap のハッシュを使用)
         uint32_t texHash = cellmap->name_hash();
         if (!_textures.has(texHash)) {
-             ERR_PRINT("Texture not found for hash: " + String::num(texHash));
              continue;
         }
         Ref<Texture2D> tex = _textures[texHash];
@@ -525,28 +547,21 @@ void GdSsPlayerNode2D::drawAnimation() {
         auto pivot = cell->pivot();
 
          // --- 描画準備 ---
-        // 1. パーツの Transform を計算
         Transform2D t;
         t.set_origin(Vector2(part->position_x(), part->position_y()));
         t.set_rotation(part->rotation_z());
         t.set_scale(Vector2(part->scale_x(), part->scale_y()));
 
-        // Node2D 自体の Transform も考慮して描画座標系を設定
-        draw_set_transform_matrix(get_transform() * t);
+        rs->canvas_item_set_transform(ci, t);
 
-        // 2. セルの矩形 (Source Rect)
         Rect2 src_rect(rect->x1(), rect->y1(), rect->x2() - rect->x1(), rect->y2() - rect->y1());
-
-        // 3. 描画位置のオフセット (Pivot反映)
         Vector2 draw_pos = Vector2(-src_rect.size.x * (pivot->v1() + 0.5f),
                                    -src_rect.size.y * (0.5f - pivot->v2()));
 
-        // 4. 描画
-        draw_texture_rect_region(tex, Rect2(draw_pos, src_rect.size), src_rect, Color(1, 1, 1, part->alpha()));
+        rs->canvas_item_add_texture_rect_region(ci, Rect2(draw_pos, src_rect.size), tex->get_rid(), src_rect, Color(1, 1, 1, part->alpha()));
     }
 
-    // 描画後は座標系をリセット
-    draw_set_transform_matrix(Transform2D());
+    // draw_set_transform_matrix(Transform2D()); // No longer needed for RenderingServer
 }
 
 void GdSsPlayerNode2D::fetchAnimation() {
@@ -575,6 +590,18 @@ void GdSsPlayerNode2D::fetchAnimation() {
             return;
         }
 
+        // Initialize RenderingServer CanvasItems
+        _clear_canvas_items();
+        auto binary = _ssabRes->get_ss_anime_binary();
+        if (binary->parts() != nullptr) {
+            RenderingServer *rs = RenderingServer::get_singleton();
+            for (int i = 0; i < binary->parts()->size(); i++) {
+                RID ci = rs->canvas_item_create();
+                rs->canvas_item_set_parent(ci, get_canvas_item());
+                _canvas_items.push_back(ci);
+            }
+        }
+
 		auto c = _strAnimationSelected.utf8();
         auto animation = _ssabRes->find_animation( _strAnimationSelected );
 		if ( !animation ) {
@@ -589,5 +616,6 @@ void GdSsPlayerNode2D::fetchAnimation() {
         }
 
         previous_frame_no = -1;
+        drawAnimation();
 	}
 }

@@ -2,9 +2,17 @@
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
 #include <godot_cpp/classes/node2d.hpp>
+#include <godot_cpp/classes/rendering_server.hpp>
+#include <godot_cpp/variant/rid.hpp>
 using namespace godot;
 #else
 #include "scene/2d/node_2d.h"
+#include "core/version.h"
+#if VERSION_MAJOR >= 4 && VERSION_MINOR >= 6
+#include "servers/rendering/rendering_server.h"
+#else
+#include "servers/rendering_server.h"
+#endif
 #endif
 
 // #include "gd_ssplayer_resource.h"
@@ -62,6 +70,7 @@ public:
 private:
     Ref<GdSsabResource> _ssabRes;
     HashMap<uint32_t, Ref<Texture2D>> _textures;
+    Vector<RID> _canvas_items;
     String _strAnimationSelected;
     ss::format::AnimationData* _currentAnimationData = nullptr;
     void *runtime_ctx = nullptr;
@@ -73,4 +82,6 @@ private:
 	void updateAnimation(float delta);
     void fetchAnimation();
     void drawAnimation();
+
+    void _clear_canvas_items();
 };
