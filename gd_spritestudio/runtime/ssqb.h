@@ -62,14 +62,22 @@ struct SequenceItem FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   typedef SequenceItemBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_REF_ANIME_PACK = 4,
-    VT_REF_ANIME = 6,
-    VT_REPEAT_COUNT = 8
+    VT_REF_ANIME_PACK_HASH = 6,
+    VT_REF_ANIME = 8,
+    VT_REF_ANIME_HASH = 10,
+    VT_REPEAT_COUNT = 12
   };
   const ::flatbuffers::String *ref_anime_pack() const {
     return GetPointer<const ::flatbuffers::String *>(VT_REF_ANIME_PACK);
   }
+  uint32_t ref_anime_pack_hash() const {
+    return GetField<uint32_t>(VT_REF_ANIME_PACK_HASH, 0);
+  }
   const ::flatbuffers::String *ref_anime() const {
     return GetPointer<const ::flatbuffers::String *>(VT_REF_ANIME);
+  }
+  uint32_t ref_anime_hash() const {
+    return GetField<uint32_t>(VT_REF_ANIME_HASH, 0);
   }
   int32_t repeat_count() const {
     return GetField<int32_t>(VT_REPEAT_COUNT, 0);
@@ -79,8 +87,10 @@ struct SequenceItem FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
     return VerifyTableStart(verifier) &&
            VerifyOffset(verifier, VT_REF_ANIME_PACK) &&
            verifier.VerifyString(ref_anime_pack()) &&
+           VerifyField<uint32_t>(verifier, VT_REF_ANIME_PACK_HASH, 4) &&
            VerifyOffset(verifier, VT_REF_ANIME) &&
            verifier.VerifyString(ref_anime()) &&
+           VerifyField<uint32_t>(verifier, VT_REF_ANIME_HASH, 4) &&
            VerifyField<int32_t>(verifier, VT_REPEAT_COUNT, 4) &&
            verifier.EndTable();
   }
@@ -93,8 +103,14 @@ struct SequenceItemBuilder {
   void add_ref_anime_pack(::flatbuffers::Offset<::flatbuffers::String> ref_anime_pack) {
     fbb_.AddOffset(SequenceItem::VT_REF_ANIME_PACK, ref_anime_pack);
   }
+  void add_ref_anime_pack_hash(uint32_t ref_anime_pack_hash) {
+    fbb_.AddElement<uint32_t>(SequenceItem::VT_REF_ANIME_PACK_HASH, ref_anime_pack_hash, 0);
+  }
   void add_ref_anime(::flatbuffers::Offset<::flatbuffers::String> ref_anime) {
     fbb_.AddOffset(SequenceItem::VT_REF_ANIME, ref_anime);
+  }
+  void add_ref_anime_hash(uint32_t ref_anime_hash) {
+    fbb_.AddElement<uint32_t>(SequenceItem::VT_REF_ANIME_HASH, ref_anime_hash, 0);
   }
   void add_repeat_count(int32_t repeat_count) {
     fbb_.AddElement<int32_t>(SequenceItem::VT_REPEAT_COUNT, repeat_count, 0);
@@ -113,11 +129,15 @@ struct SequenceItemBuilder {
 inline ::flatbuffers::Offset<SequenceItem> CreateSequenceItem(
     ::flatbuffers::FlatBufferBuilder &_fbb,
     ::flatbuffers::Offset<::flatbuffers::String> ref_anime_pack = 0,
+    uint32_t ref_anime_pack_hash = 0,
     ::flatbuffers::Offset<::flatbuffers::String> ref_anime = 0,
+    uint32_t ref_anime_hash = 0,
     int32_t repeat_count = 0) {
   SequenceItemBuilder builder_(_fbb);
   builder_.add_repeat_count(repeat_count);
+  builder_.add_ref_anime_hash(ref_anime_hash);
   builder_.add_ref_anime(ref_anime);
+  builder_.add_ref_anime_pack_hash(ref_anime_pack_hash);
   builder_.add_ref_anime_pack(ref_anime_pack);
   return builder_.Finish();
 }
@@ -125,14 +145,18 @@ inline ::flatbuffers::Offset<SequenceItem> CreateSequenceItem(
 inline ::flatbuffers::Offset<SequenceItem> CreateSequenceItemDirect(
     ::flatbuffers::FlatBufferBuilder &_fbb,
     const char *ref_anime_pack = nullptr,
+    uint32_t ref_anime_pack_hash = 0,
     const char *ref_anime = nullptr,
+    uint32_t ref_anime_hash = 0,
     int32_t repeat_count = 0) {
   auto ref_anime_pack__ = ref_anime_pack ? _fbb.CreateString(ref_anime_pack) : 0;
   auto ref_anime__ = ref_anime ? _fbb.CreateString(ref_anime) : 0;
   return ss::format::CreateSequenceItem(
       _fbb,
       ref_anime_pack__,
+      ref_anime_pack_hash,
       ref_anime__,
+      ref_anime_hash,
       repeat_count);
 }
 
@@ -140,9 +164,10 @@ struct Sequence FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   typedef SequenceBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_NAME = 4,
-    VT_INDEX = 6,
-    VT_TYPE = 8,
-    VT_LIST = 10
+    VT_NAME_HASH = 6,
+    VT_INDEX = 8,
+    VT_TYPE = 10,
+    VT_LIST = 12
   };
   const ::flatbuffers::String *name() const {
     return GetPointer<const ::flatbuffers::String *>(VT_NAME);
@@ -159,6 +184,9 @@ struct Sequence FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
     if (_name < name()->c_str()) return 1;
     return 0;
   }
+  uint32_t name_hash() const {
+    return GetField<uint32_t>(VT_NAME_HASH, 0);
+  }
   int32_t index() const {
     return GetField<int32_t>(VT_INDEX, 0);
   }
@@ -173,6 +201,7 @@ struct Sequence FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
     return VerifyTableStart(verifier) &&
            VerifyOffsetRequired(verifier, VT_NAME) &&
            verifier.VerifyString(name()) &&
+           VerifyField<uint32_t>(verifier, VT_NAME_HASH, 4) &&
            VerifyField<int32_t>(verifier, VT_INDEX, 4) &&
            VerifyField<uint8_t>(verifier, VT_TYPE, 1) &&
            VerifyOffset(verifier, VT_LIST) &&
@@ -188,6 +217,9 @@ struct SequenceBuilder {
   ::flatbuffers::uoffset_t start_;
   void add_name(::flatbuffers::Offset<::flatbuffers::String> name) {
     fbb_.AddOffset(Sequence::VT_NAME, name);
+  }
+  void add_name_hash(uint32_t name_hash) {
+    fbb_.AddElement<uint32_t>(Sequence::VT_NAME_HASH, name_hash, 0);
   }
   void add_index(int32_t index) {
     fbb_.AddElement<int32_t>(Sequence::VT_INDEX, index, 0);
@@ -213,12 +245,14 @@ struct SequenceBuilder {
 inline ::flatbuffers::Offset<Sequence> CreateSequence(
     ::flatbuffers::FlatBufferBuilder &_fbb,
     ::flatbuffers::Offset<::flatbuffers::String> name = 0,
+    uint32_t name_hash = 0,
     int32_t index = 0,
     ss::format::SequenceType type = ss::format::SequenceType_Last,
     ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::SequenceItem>>> list = 0) {
   SequenceBuilder builder_(_fbb);
   builder_.add_list(list);
   builder_.add_index(index);
+  builder_.add_name_hash(name_hash);
   builder_.add_name(name);
   builder_.add_type(type);
   return builder_.Finish();
@@ -227,6 +261,7 @@ inline ::flatbuffers::Offset<Sequence> CreateSequence(
 inline ::flatbuffers::Offset<Sequence> CreateSequenceDirect(
     ::flatbuffers::FlatBufferBuilder &_fbb,
     const char *name = nullptr,
+    uint32_t name_hash = 0,
     int32_t index = 0,
     ss::format::SequenceType type = ss::format::SequenceType_Last,
     const std::vector<::flatbuffers::Offset<ss::format::SequenceItem>> *list = nullptr) {
@@ -235,6 +270,7 @@ inline ::flatbuffers::Offset<Sequence> CreateSequenceDirect(
   return ss::format::CreateSequence(
       _fbb,
       name__,
+      name_hash,
       index,
       type,
       list__);

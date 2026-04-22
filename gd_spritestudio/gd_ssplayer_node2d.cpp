@@ -427,12 +427,11 @@ void GdSsPlayerNode2D::updateAnimation( float delta ) {
             return;
         }
 
-        if (_currentAnimationData->events() != nullptr && _currentAnimationData->events()->size() > 0) {
+        if (_currentAnimationData->events() != nullptr) {
             int event_count = ss_runtime_get_passed_event_count(rutime_ctx);
             for (int i = 0; i < event_count; i++) {
-               int frame = ss_runtime_get_passed_event_frame_no(rutime_ctx, i);
-                auto events_per_frame = _currentAnimationData->events()->LookupByKey(frame);
-                if (!events_per_frame) continue;
+                int event_idx = ss_runtime_get_passed_event_index(rutime_ctx, i);
+                auto events_per_frame = _currentAnimationData->events()->Get(event_idx);
 
                 if (auto users = events_per_frame->users()) {
                     for (auto user : *users) {

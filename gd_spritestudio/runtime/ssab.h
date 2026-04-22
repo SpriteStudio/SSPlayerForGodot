@@ -148,11 +148,11 @@ struct PartAttributeSignalBuilder;
 struct PartAttributeAudio;
 struct PartAttributeAudioBuilder;
 
-struct PartAttributes;
-struct PartAttributesBuilder;
+struct InitialPartAttributes;
+struct InitialPartAttributesBuilder;
 
-struct PartTypeNone;
-struct PartTypeNoneBuilder;
+struct InitialEvents;
+struct InitialEventsBuilder;
 
 struct PartTypeShape;
 struct PartTypeShapeBuilder;
@@ -790,6 +790,137 @@ template <bool B = false>
 bool VerifySignalCommandParamValue(::flatbuffers::VerifierTemplate<B> &verifier, const void *obj, SignalCommandParamValue type);
 template <bool B = false>
 bool VerifySignalCommandParamValueVector(::flatbuffers::VerifierTemplate<B> &verifier, const ::flatbuffers::Vector<::flatbuffers::Offset<void>> *values, const ::flatbuffers::Vector<uint8_t> *types);
+
+enum PartAttributesUpdateFlags : uint64_t {
+  PartAttributesUpdateFlags_AttributeCell = 1ULL,
+  PartAttributesUpdateFlags_AttributePosX = 2ULL,
+  PartAttributesUpdateFlags_AttributePosY = 4ULL,
+  PartAttributesUpdateFlags_AttributePosZ = 8ULL,
+  PartAttributesUpdateFlags_AttributeRotX = 16ULL,
+  PartAttributesUpdateFlags_AttributeRotY = 32ULL,
+  PartAttributesUpdateFlags_AttributeRotZ = 64ULL,
+  PartAttributesUpdateFlags_AttributeSclX = 128ULL,
+  PartAttributesUpdateFlags_AttributeSclY = 256ULL,
+  PartAttributesUpdateFlags_AttributeLosclX = 512ULL,
+  PartAttributesUpdateFlags_AttributeLosclY = 1024ULL,
+  PartAttributesUpdateFlags_AttributeAlpha = 2048ULL,
+  PartAttributesUpdateFlags_AttributeLoAlpha = 4096ULL,
+  PartAttributesUpdateFlags_AttributePrio = 8192ULL,
+  PartAttributesUpdateFlags_AttributeFlipH = 16384ULL,
+  PartAttributesUpdateFlags_AttributeFlipV = 32768ULL,
+  PartAttributesUpdateFlags_AttributeHide = 65536ULL,
+  PartAttributesUpdateFlags_AttributePartColor = 131072ULL,
+  PartAttributesUpdateFlags_AttributeShader = 262144ULL,
+  PartAttributesUpdateFlags_AttributeVertex = 524288ULL,
+  PartAttributesUpdateFlags_AttributePivotX = 1048576ULL,
+  PartAttributesUpdateFlags_AttributePivotY = 2097152ULL,
+  PartAttributesUpdateFlags_AttributeAnchorX = 4194304ULL,
+  PartAttributesUpdateFlags_AttributeAnchorY = 8388608ULL,
+  PartAttributesUpdateFlags_AttributeSizeX = 16777216ULL,
+  PartAttributesUpdateFlags_AttributeSizeY = 33554432ULL,
+  PartAttributesUpdateFlags_AttributeImgFlipH = 67108864ULL,
+  PartAttributesUpdateFlags_AttributeImgFlipV = 134217728ULL,
+  PartAttributesUpdateFlags_AttributeUvtX = 268435456ULL,
+  PartAttributesUpdateFlags_AttributeUvtY = 536870912ULL,
+  PartAttributesUpdateFlags_AttributeUvrZ = 1073741824ULL,
+  PartAttributesUpdateFlags_AttributeUvsX = 2147483648ULL,
+  PartAttributesUpdateFlags_AttributeUvsY = 4294967296ULL,
+  PartAttributesUpdateFlags_AttributeBoundr = 8589934592ULL,
+  PartAttributesUpdateFlags_AttributeMask = 17179869184ULL,
+  PartAttributesUpdateFlags_AttributeSkew = 34359738368ULL,
+  PartAttributesUpdateFlags_AttributeDeform = 68719476736ULL,
+  PartAttributesUpdateFlags_AttributeTexture = 137438953472ULL,
+  PartAttributesUpdateFlags_NONE = 0,
+  PartAttributesUpdateFlags_ANY = 274877906943ULL
+};
+
+inline const PartAttributesUpdateFlags (&EnumValuesPartAttributesUpdateFlags())[38] {
+  static const PartAttributesUpdateFlags values[] = {
+    PartAttributesUpdateFlags_AttributeCell,
+    PartAttributesUpdateFlags_AttributePosX,
+    PartAttributesUpdateFlags_AttributePosY,
+    PartAttributesUpdateFlags_AttributePosZ,
+    PartAttributesUpdateFlags_AttributeRotX,
+    PartAttributesUpdateFlags_AttributeRotY,
+    PartAttributesUpdateFlags_AttributeRotZ,
+    PartAttributesUpdateFlags_AttributeSclX,
+    PartAttributesUpdateFlags_AttributeSclY,
+    PartAttributesUpdateFlags_AttributeLosclX,
+    PartAttributesUpdateFlags_AttributeLosclY,
+    PartAttributesUpdateFlags_AttributeAlpha,
+    PartAttributesUpdateFlags_AttributeLoAlpha,
+    PartAttributesUpdateFlags_AttributePrio,
+    PartAttributesUpdateFlags_AttributeFlipH,
+    PartAttributesUpdateFlags_AttributeFlipV,
+    PartAttributesUpdateFlags_AttributeHide,
+    PartAttributesUpdateFlags_AttributePartColor,
+    PartAttributesUpdateFlags_AttributeShader,
+    PartAttributesUpdateFlags_AttributeVertex,
+    PartAttributesUpdateFlags_AttributePivotX,
+    PartAttributesUpdateFlags_AttributePivotY,
+    PartAttributesUpdateFlags_AttributeAnchorX,
+    PartAttributesUpdateFlags_AttributeAnchorY,
+    PartAttributesUpdateFlags_AttributeSizeX,
+    PartAttributesUpdateFlags_AttributeSizeY,
+    PartAttributesUpdateFlags_AttributeImgFlipH,
+    PartAttributesUpdateFlags_AttributeImgFlipV,
+    PartAttributesUpdateFlags_AttributeUvtX,
+    PartAttributesUpdateFlags_AttributeUvtY,
+    PartAttributesUpdateFlags_AttributeUvrZ,
+    PartAttributesUpdateFlags_AttributeUvsX,
+    PartAttributesUpdateFlags_AttributeUvsY,
+    PartAttributesUpdateFlags_AttributeBoundr,
+    PartAttributesUpdateFlags_AttributeMask,
+    PartAttributesUpdateFlags_AttributeSkew,
+    PartAttributesUpdateFlags_AttributeDeform,
+    PartAttributesUpdateFlags_AttributeTexture
+  };
+  return values;
+}
+
+inline const char *EnumNamePartAttributesUpdateFlags(PartAttributesUpdateFlags e) {
+  switch (e) {
+    case PartAttributesUpdateFlags_AttributeCell: return "AttributeCell";
+    case PartAttributesUpdateFlags_AttributePosX: return "AttributePosX";
+    case PartAttributesUpdateFlags_AttributePosY: return "AttributePosY";
+    case PartAttributesUpdateFlags_AttributePosZ: return "AttributePosZ";
+    case PartAttributesUpdateFlags_AttributeRotX: return "AttributeRotX";
+    case PartAttributesUpdateFlags_AttributeRotY: return "AttributeRotY";
+    case PartAttributesUpdateFlags_AttributeRotZ: return "AttributeRotZ";
+    case PartAttributesUpdateFlags_AttributeSclX: return "AttributeSclX";
+    case PartAttributesUpdateFlags_AttributeSclY: return "AttributeSclY";
+    case PartAttributesUpdateFlags_AttributeLosclX: return "AttributeLosclX";
+    case PartAttributesUpdateFlags_AttributeLosclY: return "AttributeLosclY";
+    case PartAttributesUpdateFlags_AttributeAlpha: return "AttributeAlpha";
+    case PartAttributesUpdateFlags_AttributeLoAlpha: return "AttributeLoAlpha";
+    case PartAttributesUpdateFlags_AttributePrio: return "AttributePrio";
+    case PartAttributesUpdateFlags_AttributeFlipH: return "AttributeFlipH";
+    case PartAttributesUpdateFlags_AttributeFlipV: return "AttributeFlipV";
+    case PartAttributesUpdateFlags_AttributeHide: return "AttributeHide";
+    case PartAttributesUpdateFlags_AttributePartColor: return "AttributePartColor";
+    case PartAttributesUpdateFlags_AttributeShader: return "AttributeShader";
+    case PartAttributesUpdateFlags_AttributeVertex: return "AttributeVertex";
+    case PartAttributesUpdateFlags_AttributePivotX: return "AttributePivotX";
+    case PartAttributesUpdateFlags_AttributePivotY: return "AttributePivotY";
+    case PartAttributesUpdateFlags_AttributeAnchorX: return "AttributeAnchorX";
+    case PartAttributesUpdateFlags_AttributeAnchorY: return "AttributeAnchorY";
+    case PartAttributesUpdateFlags_AttributeSizeX: return "AttributeSizeX";
+    case PartAttributesUpdateFlags_AttributeSizeY: return "AttributeSizeY";
+    case PartAttributesUpdateFlags_AttributeImgFlipH: return "AttributeImgFlipH";
+    case PartAttributesUpdateFlags_AttributeImgFlipV: return "AttributeImgFlipV";
+    case PartAttributesUpdateFlags_AttributeUvtX: return "AttributeUvtX";
+    case PartAttributesUpdateFlags_AttributeUvtY: return "AttributeUvtY";
+    case PartAttributesUpdateFlags_AttributeUvrZ: return "AttributeUvrZ";
+    case PartAttributesUpdateFlags_AttributeUvsX: return "AttributeUvsX";
+    case PartAttributesUpdateFlags_AttributeUvsY: return "AttributeUvsY";
+    case PartAttributesUpdateFlags_AttributeBoundr: return "AttributeBoundr";
+    case PartAttributesUpdateFlags_AttributeMask: return "AttributeMask";
+    case PartAttributesUpdateFlags_AttributeSkew: return "AttributeSkew";
+    case PartAttributesUpdateFlags_AttributeDeform: return "AttributeDeform";
+    case PartAttributesUpdateFlags_AttributeTexture: return "AttributeTexture";
+    default: return "";
+  }
+}
 
 enum ShapeType : uint8_t {
   ShapeType_Unknown = 0,
@@ -4600,49 +4731,53 @@ inline ::flatbuffers::Offset<PartAttributeAudio> CreatePartAttributeAudioDirect(
       loop_num);
 }
 
-struct PartAttributes FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
-  typedef PartAttributesBuilder Builder;
+struct InitialPartAttributes FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef InitialPartAttributesBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
-    VT_CELL = 4,
-    VT_POSITION_X = 6,
-    VT_POSITION_Y = 8,
-    VT_POSITION_Z = 10,
-    VT_ROTATION_X = 12,
-    VT_ROTATION_Y = 14,
-    VT_ROTATION_Z = 16,
-    VT_SCALE_X = 18,
-    VT_SCALE_Y = 20,
-    VT_LOCAL_SCALE_X = 22,
-    VT_LOCAL_SCALE_Y = 24,
-    VT_ALPHA = 26,
-    VT_LOCAL_ALPHA = 28,
-    VT_PRIORITY = 30,
-    VT_FLIP_H = 32,
-    VT_FLIP_V = 34,
-    VT_HIDE = 36,
-    VT_PART_COLOR = 38,
-    VT_SHADER = 40,
-    VT_VERTEX = 42,
-    VT_PIVOT_X = 44,
-    VT_PIVOT_Y = 46,
-    VT_ANCHOR_X = 48,
-    VT_ANCHOR_Y = 50,
-    VT_SIZE_X = 52,
-    VT_SIZE_Y = 54,
-    VT_IMG_FLIP_H = 56,
-    VT_IMG_FLIP_V = 58,
-    VT_UV_TRANSLATION_X = 60,
-    VT_UV_TRANSLATION_Y = 62,
-    VT_UV_ROTATION_Z = 64,
-    VT_UV_SCALE_X = 66,
-    VT_UV_SCALE_Y = 68,
-    VT_BOUNDING_RADIUS = 70,
-    VT_MASK = 72,
-    VT_SKEW_X = 74,
-    VT_SKEW_Y = 76,
-    VT_DEFORM = 78,
-    VT_TEXTURE = 80
+    VT_UPDATE_FLAG = 4,
+    VT_CELL = 6,
+    VT_POSITION_X = 8,
+    VT_POSITION_Y = 10,
+    VT_POSITION_Z = 12,
+    VT_ROTATION_X = 14,
+    VT_ROTATION_Y = 16,
+    VT_ROTATION_Z = 18,
+    VT_SCALE_X = 20,
+    VT_SCALE_Y = 22,
+    VT_LOCAL_SCALE_X = 24,
+    VT_LOCAL_SCALE_Y = 26,
+    VT_ALPHA = 28,
+    VT_LOCAL_ALPHA = 30,
+    VT_PRIORITY = 32,
+    VT_FLIP_H = 34,
+    VT_FLIP_V = 36,
+    VT_HIDE = 38,
+    VT_PART_COLOR = 40,
+    VT_SHADER = 42,
+    VT_VERTEX = 44,
+    VT_PIVOT_X = 46,
+    VT_PIVOT_Y = 48,
+    VT_ANCHOR_X = 50,
+    VT_ANCHOR_Y = 52,
+    VT_SIZE_X = 54,
+    VT_SIZE_Y = 56,
+    VT_IMG_FLIP_H = 58,
+    VT_IMG_FLIP_V = 60,
+    VT_UV_TRANSLATION_X = 62,
+    VT_UV_TRANSLATION_Y = 64,
+    VT_UV_ROTATION_Z = 66,
+    VT_UV_SCALE_X = 68,
+    VT_UV_SCALE_Y = 70,
+    VT_BOUNDING_RADIUS = 72,
+    VT_MASK = 74,
+    VT_SKEW_X = 76,
+    VT_SKEW_Y = 78,
+    VT_DEFORM = 80,
+    VT_TEXTURE = 82
   };
+  ss::format::PartAttributesUpdateFlags update_flag() const {
+    return static_cast<ss::format::PartAttributesUpdateFlags>(GetField<uint64_t>(VT_UPDATE_FLAG, 0));
+  }
   const ss::format::PartAttributeCell *cell() const {
     return GetPointer<const ss::format::PartAttributeCell *>(VT_CELL);
   }
@@ -4763,6 +4898,7 @@ struct PartAttributes FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
+           VerifyField<uint64_t>(verifier, VT_UPDATE_FLAG, 8) &&
            VerifyOffset(verifier, VT_CELL) &&
            verifier.VerifyTable(cell()) &&
            VerifyField<float>(verifier, VT_POSITION_X, 4) &&
@@ -4811,140 +4947,144 @@ struct PartAttributes FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   }
 };
 
-struct PartAttributesBuilder {
-  typedef PartAttributes Table;
+struct InitialPartAttributesBuilder {
+  typedef InitialPartAttributes Table;
   ::flatbuffers::FlatBufferBuilder &fbb_;
   ::flatbuffers::uoffset_t start_;
+  void add_update_flag(ss::format::PartAttributesUpdateFlags update_flag) {
+    fbb_.AddElement<uint64_t>(InitialPartAttributes::VT_UPDATE_FLAG, static_cast<uint64_t>(update_flag), 0);
+  }
   void add_cell(::flatbuffers::Offset<ss::format::PartAttributeCell> cell) {
-    fbb_.AddOffset(PartAttributes::VT_CELL, cell);
+    fbb_.AddOffset(InitialPartAttributes::VT_CELL, cell);
   }
   void add_position_x(float position_x) {
-    fbb_.AddElement<float>(PartAttributes::VT_POSITION_X, position_x, 0.0f);
+    fbb_.AddElement<float>(InitialPartAttributes::VT_POSITION_X, position_x, 0.0f);
   }
   void add_position_y(float position_y) {
-    fbb_.AddElement<float>(PartAttributes::VT_POSITION_Y, position_y, 0.0f);
+    fbb_.AddElement<float>(InitialPartAttributes::VT_POSITION_Y, position_y, 0.0f);
   }
   void add_position_z(float position_z) {
-    fbb_.AddElement<float>(PartAttributes::VT_POSITION_Z, position_z, 0.0f);
+    fbb_.AddElement<float>(InitialPartAttributes::VT_POSITION_Z, position_z, 0.0f);
   }
   void add_rotation_x(float rotation_x) {
-    fbb_.AddElement<float>(PartAttributes::VT_ROTATION_X, rotation_x, 0.0f);
+    fbb_.AddElement<float>(InitialPartAttributes::VT_ROTATION_X, rotation_x, 0.0f);
   }
   void add_rotation_y(float rotation_y) {
-    fbb_.AddElement<float>(PartAttributes::VT_ROTATION_Y, rotation_y, 0.0f);
+    fbb_.AddElement<float>(InitialPartAttributes::VT_ROTATION_Y, rotation_y, 0.0f);
   }
   void add_rotation_z(float rotation_z) {
-    fbb_.AddElement<float>(PartAttributes::VT_ROTATION_Z, rotation_z, 0.0f);
+    fbb_.AddElement<float>(InitialPartAttributes::VT_ROTATION_Z, rotation_z, 0.0f);
   }
   void add_scale_x(float scale_x) {
-    fbb_.AddElement<float>(PartAttributes::VT_SCALE_X, scale_x, 1.0f);
+    fbb_.AddElement<float>(InitialPartAttributes::VT_SCALE_X, scale_x, 1.0f);
   }
   void add_scale_y(float scale_y) {
-    fbb_.AddElement<float>(PartAttributes::VT_SCALE_Y, scale_y, 1.0f);
+    fbb_.AddElement<float>(InitialPartAttributes::VT_SCALE_Y, scale_y, 1.0f);
   }
   void add_local_scale_x(float local_scale_x) {
-    fbb_.AddElement<float>(PartAttributes::VT_LOCAL_SCALE_X, local_scale_x, 1.0f);
+    fbb_.AddElement<float>(InitialPartAttributes::VT_LOCAL_SCALE_X, local_scale_x, 1.0f);
   }
   void add_local_scale_y(float local_scale_y) {
-    fbb_.AddElement<float>(PartAttributes::VT_LOCAL_SCALE_Y, local_scale_y, 1.0f);
+    fbb_.AddElement<float>(InitialPartAttributes::VT_LOCAL_SCALE_Y, local_scale_y, 1.0f);
   }
   void add_alpha(float alpha) {
-    fbb_.AddElement<float>(PartAttributes::VT_ALPHA, alpha, 1.0f);
+    fbb_.AddElement<float>(InitialPartAttributes::VT_ALPHA, alpha, 1.0f);
   }
   void add_local_alpha(float local_alpha) {
-    fbb_.AddElement<float>(PartAttributes::VT_LOCAL_ALPHA, local_alpha, 1.0f);
+    fbb_.AddElement<float>(InitialPartAttributes::VT_LOCAL_ALPHA, local_alpha, 1.0f);
   }
   void add_priority(float priority) {
-    fbb_.AddElement<float>(PartAttributes::VT_PRIORITY, priority, 0.0f);
+    fbb_.AddElement<float>(InitialPartAttributes::VT_PRIORITY, priority, 0.0f);
   }
   void add_flip_h(bool flip_h) {
-    fbb_.AddElement<uint8_t>(PartAttributes::VT_FLIP_H, static_cast<uint8_t>(flip_h), 0);
+    fbb_.AddElement<uint8_t>(InitialPartAttributes::VT_FLIP_H, static_cast<uint8_t>(flip_h), 0);
   }
   void add_flip_v(bool flip_v) {
-    fbb_.AddElement<uint8_t>(PartAttributes::VT_FLIP_V, static_cast<uint8_t>(flip_v), 0);
+    fbb_.AddElement<uint8_t>(InitialPartAttributes::VT_FLIP_V, static_cast<uint8_t>(flip_v), 0);
   }
   void add_hide(bool hide) {
-    fbb_.AddElement<uint8_t>(PartAttributes::VT_HIDE, static_cast<uint8_t>(hide), 0);
+    fbb_.AddElement<uint8_t>(InitialPartAttributes::VT_HIDE, static_cast<uint8_t>(hide), 0);
   }
   void add_part_color(::flatbuffers::Offset<ss::format::PartAttributePartColor> part_color) {
-    fbb_.AddOffset(PartAttributes::VT_PART_COLOR, part_color);
+    fbb_.AddOffset(InitialPartAttributes::VT_PART_COLOR, part_color);
   }
   void add_shader(::flatbuffers::Offset<ss::format::PartAttributeShader> shader) {
-    fbb_.AddOffset(PartAttributes::VT_SHADER, shader);
+    fbb_.AddOffset(InitialPartAttributes::VT_SHADER, shader);
   }
   void add_vertex(::flatbuffers::Offset<ss::format::PartAttributeVertex> vertex) {
-    fbb_.AddOffset(PartAttributes::VT_VERTEX, vertex);
+    fbb_.AddOffset(InitialPartAttributes::VT_VERTEX, vertex);
   }
   void add_pivot_x(float pivot_x) {
-    fbb_.AddElement<float>(PartAttributes::VT_PIVOT_X, pivot_x, 0.0f);
+    fbb_.AddElement<float>(InitialPartAttributes::VT_PIVOT_X, pivot_x, 0.0f);
   }
   void add_pivot_y(float pivot_y) {
-    fbb_.AddElement<float>(PartAttributes::VT_PIVOT_Y, pivot_y, 0.0f);
+    fbb_.AddElement<float>(InitialPartAttributes::VT_PIVOT_Y, pivot_y, 0.0f);
   }
   void add_anchor_x(float anchor_x) {
-    fbb_.AddElement<float>(PartAttributes::VT_ANCHOR_X, anchor_x, 0.0f);
+    fbb_.AddElement<float>(InitialPartAttributes::VT_ANCHOR_X, anchor_x, 0.0f);
   }
   void add_anchor_y(float anchor_y) {
-    fbb_.AddElement<float>(PartAttributes::VT_ANCHOR_Y, anchor_y, 0.0f);
+    fbb_.AddElement<float>(InitialPartAttributes::VT_ANCHOR_Y, anchor_y, 0.0f);
   }
   void add_size_x(float size_x) {
-    fbb_.AddElement<float>(PartAttributes::VT_SIZE_X, size_x, 1.0f);
+    fbb_.AddElement<float>(InitialPartAttributes::VT_SIZE_X, size_x, 1.0f);
   }
   void add_size_y(float size_y) {
-    fbb_.AddElement<float>(PartAttributes::VT_SIZE_Y, size_y, 1.0f);
+    fbb_.AddElement<float>(InitialPartAttributes::VT_SIZE_Y, size_y, 1.0f);
   }
   void add_img_flip_h(bool img_flip_h) {
-    fbb_.AddElement<uint8_t>(PartAttributes::VT_IMG_FLIP_H, static_cast<uint8_t>(img_flip_h), 0);
+    fbb_.AddElement<uint8_t>(InitialPartAttributes::VT_IMG_FLIP_H, static_cast<uint8_t>(img_flip_h), 0);
   }
   void add_img_flip_v(bool img_flip_v) {
-    fbb_.AddElement<uint8_t>(PartAttributes::VT_IMG_FLIP_V, static_cast<uint8_t>(img_flip_v), 0);
+    fbb_.AddElement<uint8_t>(InitialPartAttributes::VT_IMG_FLIP_V, static_cast<uint8_t>(img_flip_v), 0);
   }
   void add_uv_translation_x(float uv_translation_x) {
-    fbb_.AddElement<float>(PartAttributes::VT_UV_TRANSLATION_X, uv_translation_x, 0.0f);
+    fbb_.AddElement<float>(InitialPartAttributes::VT_UV_TRANSLATION_X, uv_translation_x, 0.0f);
   }
   void add_uv_translation_y(float uv_translation_y) {
-    fbb_.AddElement<float>(PartAttributes::VT_UV_TRANSLATION_Y, uv_translation_y, 0.0f);
+    fbb_.AddElement<float>(InitialPartAttributes::VT_UV_TRANSLATION_Y, uv_translation_y, 0.0f);
   }
   void add_uv_rotation_z(float uv_rotation_z) {
-    fbb_.AddElement<float>(PartAttributes::VT_UV_ROTATION_Z, uv_rotation_z, 0.0f);
+    fbb_.AddElement<float>(InitialPartAttributes::VT_UV_ROTATION_Z, uv_rotation_z, 0.0f);
   }
   void add_uv_scale_x(float uv_scale_x) {
-    fbb_.AddElement<float>(PartAttributes::VT_UV_SCALE_X, uv_scale_x, 1.0f);
+    fbb_.AddElement<float>(InitialPartAttributes::VT_UV_SCALE_X, uv_scale_x, 1.0f);
   }
   void add_uv_scale_y(float uv_scale_y) {
-    fbb_.AddElement<float>(PartAttributes::VT_UV_SCALE_Y, uv_scale_y, 1.0f);
+    fbb_.AddElement<float>(InitialPartAttributes::VT_UV_SCALE_Y, uv_scale_y, 1.0f);
   }
   void add_bounding_radius(float bounding_radius) {
-    fbb_.AddElement<float>(PartAttributes::VT_BOUNDING_RADIUS, bounding_radius, 0.0f);
+    fbb_.AddElement<float>(InitialPartAttributes::VT_BOUNDING_RADIUS, bounding_radius, 0.0f);
   }
   void add_mask(float mask) {
-    fbb_.AddElement<float>(PartAttributes::VT_MASK, mask, 0.0f);
+    fbb_.AddElement<float>(InitialPartAttributes::VT_MASK, mask, 0.0f);
   }
   void add_skew_x(float skew_x) {
-    fbb_.AddElement<float>(PartAttributes::VT_SKEW_X, skew_x, 0.0f);
+    fbb_.AddElement<float>(InitialPartAttributes::VT_SKEW_X, skew_x, 0.0f);
   }
   void add_skew_y(float skew_y) {
-    fbb_.AddElement<float>(PartAttributes::VT_SKEW_Y, skew_y, 0.0f);
+    fbb_.AddElement<float>(InitialPartAttributes::VT_SKEW_Y, skew_y, 0.0f);
   }
   void add_deform(::flatbuffers::Offset<ss::format::PartAttributeDeform> deform) {
-    fbb_.AddOffset(PartAttributes::VT_DEFORM, deform);
+    fbb_.AddOffset(InitialPartAttributes::VT_DEFORM, deform);
   }
   void add_texture(uint32_t texture) {
-    fbb_.AddElement<uint32_t>(PartAttributes::VT_TEXTURE, texture, 0);
+    fbb_.AddElement<uint32_t>(InitialPartAttributes::VT_TEXTURE, texture, 0);
   }
-  explicit PartAttributesBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
+  explicit InitialPartAttributesBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
-  ::flatbuffers::Offset<PartAttributes> Finish() {
+  ::flatbuffers::Offset<InitialPartAttributes> Finish() {
     const auto end = fbb_.EndTable(start_);
-    auto o = ::flatbuffers::Offset<PartAttributes>(end);
+    auto o = ::flatbuffers::Offset<InitialPartAttributes>(end);
     return o;
   }
 };
 
-inline ::flatbuffers::Offset<PartAttributes> CreatePartAttributes(
+inline ::flatbuffers::Offset<InitialPartAttributes> CreateInitialPartAttributes(
     ::flatbuffers::FlatBufferBuilder &_fbb,
+    ss::format::PartAttributesUpdateFlags update_flag = static_cast<ss::format::PartAttributesUpdateFlags>(0),
     ::flatbuffers::Offset<ss::format::PartAttributeCell> cell = 0,
     float position_x = 0.0f,
     float position_y = 0.0f,
@@ -4984,7 +5124,8 @@ inline ::flatbuffers::Offset<PartAttributes> CreatePartAttributes(
     float skew_y = 0.0f,
     ::flatbuffers::Offset<ss::format::PartAttributeDeform> deform = 0,
     uint32_t texture = 0) {
-  PartAttributesBuilder builder_(_fbb);
+  InitialPartAttributesBuilder builder_(_fbb);
+  builder_.add_update_flag(update_flag);
   builder_.add_texture(texture);
   builder_.add_deform(deform);
   builder_.add_skew_y(skew_y);
@@ -5027,33 +5168,90 @@ inline ::flatbuffers::Offset<PartAttributes> CreatePartAttributes(
   return builder_.Finish();
 }
 
-struct PartTypeNone FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
-  typedef PartTypeNoneBuilder Builder;
+struct InitialEvents FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef InitialEventsBuilder Builder;
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
+    VT_USER = 4,
+    VT_SIGNAL = 6,
+    VT_AUDIO = 8,
+    VT_INSTANCE = 10,
+    VT_EFFECT = 12
+  };
+  const ss::format::PartAttributeUserData *user() const {
+    return GetPointer<const ss::format::PartAttributeUserData *>(VT_USER);
+  }
+  const ss::format::PartAttributeSignal *signal() const {
+    return GetPointer<const ss::format::PartAttributeSignal *>(VT_SIGNAL);
+  }
+  const ss::format::PartAttributeAudio *audio() const {
+    return GetPointer<const ss::format::PartAttributeAudio *>(VT_AUDIO);
+  }
+  const ss::format::PartAttributeInstance *instance() const {
+    return GetPointer<const ss::format::PartAttributeInstance *>(VT_INSTANCE);
+  }
+  const ss::format::PartAttributeEffect *effect() const {
+    return GetPointer<const ss::format::PartAttributeEffect *>(VT_EFFECT);
+  }
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
+           VerifyOffset(verifier, VT_USER) &&
+           verifier.VerifyTable(user()) &&
+           VerifyOffset(verifier, VT_SIGNAL) &&
+           verifier.VerifyTable(signal()) &&
+           VerifyOffset(verifier, VT_AUDIO) &&
+           verifier.VerifyTable(audio()) &&
+           VerifyOffset(verifier, VT_INSTANCE) &&
+           verifier.VerifyTable(instance()) &&
+           VerifyOffset(verifier, VT_EFFECT) &&
+           verifier.VerifyTable(effect()) &&
            verifier.EndTable();
   }
 };
 
-struct PartTypeNoneBuilder {
-  typedef PartTypeNone Table;
+struct InitialEventsBuilder {
+  typedef InitialEvents Table;
   ::flatbuffers::FlatBufferBuilder &fbb_;
   ::flatbuffers::uoffset_t start_;
-  explicit PartTypeNoneBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
+  void add_user(::flatbuffers::Offset<ss::format::PartAttributeUserData> user) {
+    fbb_.AddOffset(InitialEvents::VT_USER, user);
+  }
+  void add_signal(::flatbuffers::Offset<ss::format::PartAttributeSignal> signal) {
+    fbb_.AddOffset(InitialEvents::VT_SIGNAL, signal);
+  }
+  void add_audio(::flatbuffers::Offset<ss::format::PartAttributeAudio> audio) {
+    fbb_.AddOffset(InitialEvents::VT_AUDIO, audio);
+  }
+  void add_instance(::flatbuffers::Offset<ss::format::PartAttributeInstance> instance) {
+    fbb_.AddOffset(InitialEvents::VT_INSTANCE, instance);
+  }
+  void add_effect(::flatbuffers::Offset<ss::format::PartAttributeEffect> effect) {
+    fbb_.AddOffset(InitialEvents::VT_EFFECT, effect);
+  }
+  explicit InitialEventsBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
-  ::flatbuffers::Offset<PartTypeNone> Finish() {
+  ::flatbuffers::Offset<InitialEvents> Finish() {
     const auto end = fbb_.EndTable(start_);
-    auto o = ::flatbuffers::Offset<PartTypeNone>(end);
+    auto o = ::flatbuffers::Offset<InitialEvents>(end);
     return o;
   }
 };
 
-inline ::flatbuffers::Offset<PartTypeNone> CreatePartTypeNone(
-    ::flatbuffers::FlatBufferBuilder &_fbb) {
-  PartTypeNoneBuilder builder_(_fbb);
+inline ::flatbuffers::Offset<InitialEvents> CreateInitialEvents(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    ::flatbuffers::Offset<ss::format::PartAttributeUserData> user = 0,
+    ::flatbuffers::Offset<ss::format::PartAttributeSignal> signal = 0,
+    ::flatbuffers::Offset<ss::format::PartAttributeAudio> audio = 0,
+    ::flatbuffers::Offset<ss::format::PartAttributeInstance> instance = 0,
+    ::flatbuffers::Offset<ss::format::PartAttributeEffect> effect = 0) {
+  InitialEventsBuilder builder_(_fbb);
+  builder_.add_effect(effect);
+  builder_.add_instance(instance);
+  builder_.add_audio(audio);
+  builder_.add_signal(signal);
+  builder_.add_user(user);
   return builder_.Finish();
 }
 
@@ -5489,11 +5687,11 @@ struct PartData FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   const void *part_type() const {
     return GetPointer<const void *>(VT_PART_TYPE);
   }
-  const ss::format::PartTypeNone *part_type_as_PartTypeNull() const {
-    return part_type_type() == ss::format::PartType_PartTypeNull ? static_cast<const ss::format::PartTypeNone *>(part_type()) : nullptr;
+  const ss::format::NoneValueEntry *part_type_as_PartTypeNull() const {
+    return part_type_type() == ss::format::PartType_PartTypeNull ? static_cast<const ss::format::NoneValueEntry *>(part_type()) : nullptr;
   }
-  const ss::format::PartTypeNone *part_type_as_PartTypeNormal() const {
-    return part_type_type() == ss::format::PartType_PartTypeNormal ? static_cast<const ss::format::PartTypeNone *>(part_type()) : nullptr;
+  const ss::format::NoneValueEntry *part_type_as_PartTypeNormal() const {
+    return part_type_type() == ss::format::PartType_PartTypeNormal ? static_cast<const ss::format::NoneValueEntry *>(part_type()) : nullptr;
   }
   const ss::format::PartTypeShape *part_type_as_PartTypeShape() const {
     return part_type_type() == ss::format::PartType_PartTypeShape ? static_cast<const ss::format::PartTypeShape *>(part_type()) : nullptr;
@@ -5507,38 +5705,38 @@ struct PartData FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   const ss::format::PartTypeInstance *part_type_as_PartTypeInstance() const {
     return part_type_type() == ss::format::PartType_PartTypeInstance ? static_cast<const ss::format::PartTypeInstance *>(part_type()) : nullptr;
   }
-  const ss::format::PartTypeNone *part_type_as_PartTypeArmature() const {
-    return part_type_type() == ss::format::PartType_PartTypeArmature ? static_cast<const ss::format::PartTypeNone *>(part_type()) : nullptr;
+  const ss::format::NoneValueEntry *part_type_as_PartTypeArmature() const {
+    return part_type_type() == ss::format::PartType_PartTypeArmature ? static_cast<const ss::format::NoneValueEntry *>(part_type()) : nullptr;
   }
   const ss::format::PartTypeEffect *part_type_as_PartTypeEffect() const {
     return part_type_type() == ss::format::PartType_PartTypeEffect ? static_cast<const ss::format::PartTypeEffect *>(part_type()) : nullptr;
   }
-  const ss::format::PartTypeNone *part_type_as_PartTypeMesh() const {
-    return part_type_type() == ss::format::PartType_PartTypeMesh ? static_cast<const ss::format::PartTypeNone *>(part_type()) : nullptr;
+  const ss::format::NoneValueEntry *part_type_as_PartTypeMesh() const {
+    return part_type_type() == ss::format::PartType_PartTypeMesh ? static_cast<const ss::format::NoneValueEntry *>(part_type()) : nullptr;
   }
-  const ss::format::PartTypeNone *part_type_as_PartTypeMovenode() const {
-    return part_type_type() == ss::format::PartType_PartTypeMovenode ? static_cast<const ss::format::PartTypeNone *>(part_type()) : nullptr;
+  const ss::format::NoneValueEntry *part_type_as_PartTypeMovenode() const {
+    return part_type_type() == ss::format::PartType_PartTypeMovenode ? static_cast<const ss::format::NoneValueEntry *>(part_type()) : nullptr;
   }
-  const ss::format::PartTypeNone *part_type_as_PartTypeConstraint() const {
-    return part_type_type() == ss::format::PartType_PartTypeConstraint ? static_cast<const ss::format::PartTypeNone *>(part_type()) : nullptr;
+  const ss::format::NoneValueEntry *part_type_as_PartTypeConstraint() const {
+    return part_type_type() == ss::format::PartType_PartTypeConstraint ? static_cast<const ss::format::NoneValueEntry *>(part_type()) : nullptr;
   }
-  const ss::format::PartTypeNone *part_type_as_PartTypeMask() const {
-    return part_type_type() == ss::format::PartType_PartTypeMask ? static_cast<const ss::format::PartTypeNone *>(part_type()) : nullptr;
+  const ss::format::NoneValueEntry *part_type_as_PartTypeMask() const {
+    return part_type_type() == ss::format::PartType_PartTypeMask ? static_cast<const ss::format::NoneValueEntry *>(part_type()) : nullptr;
   }
-  const ss::format::PartTypeNone *part_type_as_PartTypeJoint() const {
-    return part_type_type() == ss::format::PartType_PartTypeJoint ? static_cast<const ss::format::PartTypeNone *>(part_type()) : nullptr;
+  const ss::format::NoneValueEntry *part_type_as_PartTypeJoint() const {
+    return part_type_type() == ss::format::PartType_PartTypeJoint ? static_cast<const ss::format::NoneValueEntry *>(part_type()) : nullptr;
   }
-  const ss::format::PartTypeNone *part_type_as_PartTypeBonepoint() const {
-    return part_type_type() == ss::format::PartType_PartTypeBonepoint ? static_cast<const ss::format::PartTypeNone *>(part_type()) : nullptr;
+  const ss::format::NoneValueEntry *part_type_as_PartTypeBonepoint() const {
+    return part_type_type() == ss::format::PartType_PartTypeBonepoint ? static_cast<const ss::format::NoneValueEntry *>(part_type()) : nullptr;
   }
-  const ss::format::PartTypeNone *part_type_as_PartTypeTransformConstraint() const {
-    return part_type_type() == ss::format::PartType_PartTypeTransformConstraint ? static_cast<const ss::format::PartTypeNone *>(part_type()) : nullptr;
+  const ss::format::NoneValueEntry *part_type_as_PartTypeTransformConstraint() const {
+    return part_type_type() == ss::format::PartType_PartTypeTransformConstraint ? static_cast<const ss::format::NoneValueEntry *>(part_type()) : nullptr;
   }
-  const ss::format::PartTypeNone *part_type_as_PartTypeCamera() const {
-    return part_type_type() == ss::format::PartType_PartTypeCamera ? static_cast<const ss::format::PartTypeNone *>(part_type()) : nullptr;
+  const ss::format::NoneValueEntry *part_type_as_PartTypeCamera() const {
+    return part_type_type() == ss::format::PartType_PartTypeCamera ? static_cast<const ss::format::NoneValueEntry *>(part_type()) : nullptr;
   }
-  const ss::format::PartTypeNone *part_type_as_PartTypeAudio() const {
-    return part_type_type() == ss::format::PartType_PartTypeAudio ? static_cast<const ss::format::PartTypeNone *>(part_type()) : nullptr;
+  const ss::format::NoneValueEntry *part_type_as_PartTypeAudio() const {
+    return part_type_type() == ss::format::PartType_PartTypeAudio ? static_cast<const ss::format::NoneValueEntry *>(part_type()) : nullptr;
   }
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
@@ -7218,12 +7416,13 @@ struct AnimationData FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
     VT_PARTS_ANIMATION_DATA = 10,
     VT_PARTS_MESH_DATA = 12,
     VT_EVENTS = 14,
-    VT_LABELS = 16,
-    VT_START_FRAME = 18,
-    VT_END_FRAME = 20,
-    VT_TOTAL_FRAME = 22,
-    VT_FPS = 24,
-    VT_CANVAS = 26
+    VT_INITIAL_EVENTS = 16,
+    VT_LABELS = 18,
+    VT_START_FRAME = 20,
+    VT_END_FRAME = 22,
+    VT_TOTAL_FRAME = 24,
+    VT_FPS = 26,
+    VT_CANVAS = 28
   };
   const ::flatbuffers::String *name() const {
     return GetPointer<const ::flatbuffers::String *>(VT_NAME);
@@ -7243,8 +7442,8 @@ struct AnimationData FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   uint32_t name_hash() const {
     return GetField<uint32_t>(VT_NAME_HASH, 0);
   }
-  const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAttributes>> *parts_initial_attributes() const {
-    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAttributes>> *>(VT_PARTS_INITIAL_ATTRIBUTES);
+  const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::InitialPartAttributes>> *parts_initial_attributes() const {
+    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::InitialPartAttributes>> *>(VT_PARTS_INITIAL_ATTRIBUTES);
   }
   const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationData>> *parts_animation_data() const {
     return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationData>> *>(VT_PARTS_ANIMATION_DATA);
@@ -7254,6 +7453,9 @@ struct AnimationData FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   }
   const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::EventsPerFrame>> *events() const {
     return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::EventsPerFrame>> *>(VT_EVENTS);
+  }
+  const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::InitialEvents>> *initial_events() const {
+    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::InitialEvents>> *>(VT_INITIAL_EVENTS);
   }
   const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::Label>> *labels() const {
     return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::Label>> *>(VT_LABELS);
@@ -7291,6 +7493,9 @@ struct AnimationData FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyOffset(verifier, VT_EVENTS) &&
            verifier.VerifyVector(events()) &&
            verifier.VerifyVectorOfTables(events()) &&
+           VerifyOffset(verifier, VT_INITIAL_EVENTS) &&
+           verifier.VerifyVector(initial_events()) &&
+           verifier.VerifyVectorOfTables(initial_events()) &&
            VerifyOffset(verifier, VT_LABELS) &&
            verifier.VerifyVector(labels()) &&
            verifier.VerifyVectorOfTables(labels()) &&
@@ -7314,7 +7519,7 @@ struct AnimationDataBuilder {
   void add_name_hash(uint32_t name_hash) {
     fbb_.AddElement<uint32_t>(AnimationData::VT_NAME_HASH, name_hash, 0);
   }
-  void add_parts_initial_attributes(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAttributes>>> parts_initial_attributes) {
+  void add_parts_initial_attributes(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::InitialPartAttributes>>> parts_initial_attributes) {
     fbb_.AddOffset(AnimationData::VT_PARTS_INITIAL_ATTRIBUTES, parts_initial_attributes);
   }
   void add_parts_animation_data(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationData>>> parts_animation_data) {
@@ -7325,6 +7530,9 @@ struct AnimationDataBuilder {
   }
   void add_events(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::EventsPerFrame>>> events) {
     fbb_.AddOffset(AnimationData::VT_EVENTS, events);
+  }
+  void add_initial_events(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::InitialEvents>>> initial_events) {
+    fbb_.AddOffset(AnimationData::VT_INITIAL_EVENTS, initial_events);
   }
   void add_labels(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::Label>>> labels) {
     fbb_.AddOffset(AnimationData::VT_LABELS, labels);
@@ -7360,10 +7568,11 @@ inline ::flatbuffers::Offset<AnimationData> CreateAnimationData(
     ::flatbuffers::FlatBufferBuilder &_fbb,
     ::flatbuffers::Offset<::flatbuffers::String> name = 0,
     uint32_t name_hash = 0,
-    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAttributes>>> parts_initial_attributes = 0,
+    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::InitialPartAttributes>>> parts_initial_attributes = 0,
     ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationData>>> parts_animation_data = 0,
     ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartMeshData>>> parts_mesh_data = 0,
     ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::EventsPerFrame>>> events = 0,
+    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::InitialEvents>>> initial_events = 0,
     ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::Label>>> labels = 0,
     int16_t start_frame = 0,
     int16_t end_frame = 0,
@@ -7373,6 +7582,7 @@ inline ::flatbuffers::Offset<AnimationData> CreateAnimationData(
   AnimationDataBuilder builder_(_fbb);
   builder_.add_canvas(canvas);
   builder_.add_labels(labels);
+  builder_.add_initial_events(initial_events);
   builder_.add_events(events);
   builder_.add_parts_mesh_data(parts_mesh_data);
   builder_.add_parts_animation_data(parts_animation_data);
@@ -7390,10 +7600,11 @@ inline ::flatbuffers::Offset<AnimationData> CreateAnimationDataDirect(
     ::flatbuffers::FlatBufferBuilder &_fbb,
     const char *name = nullptr,
     uint32_t name_hash = 0,
-    const std::vector<::flatbuffers::Offset<ss::format::PartAttributes>> *parts_initial_attributes = nullptr,
+    const std::vector<::flatbuffers::Offset<ss::format::InitialPartAttributes>> *parts_initial_attributes = nullptr,
     const std::vector<::flatbuffers::Offset<ss::format::PartAnimationData>> *parts_animation_data = nullptr,
     std::vector<::flatbuffers::Offset<ss::format::PartMeshData>> *parts_mesh_data = nullptr,
     std::vector<::flatbuffers::Offset<ss::format::EventsPerFrame>> *events = nullptr,
+    const std::vector<::flatbuffers::Offset<ss::format::InitialEvents>> *initial_events = nullptr,
     std::vector<::flatbuffers::Offset<ss::format::Label>> *labels = nullptr,
     int16_t start_frame = 0,
     int16_t end_frame = 0,
@@ -7401,10 +7612,11 @@ inline ::flatbuffers::Offset<AnimationData> CreateAnimationDataDirect(
     int16_t fps = 0,
     ::flatbuffers::Offset<ss::format::Rect> canvas = 0) {
   auto name__ = name ? _fbb.CreateString(name) : 0;
-  auto parts_initial_attributes__ = parts_initial_attributes ? _fbb.CreateVector<::flatbuffers::Offset<ss::format::PartAttributes>>(*parts_initial_attributes) : 0;
+  auto parts_initial_attributes__ = parts_initial_attributes ? _fbb.CreateVector<::flatbuffers::Offset<ss::format::InitialPartAttributes>>(*parts_initial_attributes) : 0;
   auto parts_animation_data__ = parts_animation_data ? _fbb.CreateVector<::flatbuffers::Offset<ss::format::PartAnimationData>>(*parts_animation_data) : 0;
   auto parts_mesh_data__ = parts_mesh_data ? _fbb.CreateVectorOfSortedTables<ss::format::PartMeshData>(parts_mesh_data) : 0;
   auto events__ = events ? _fbb.CreateVectorOfSortedTables<ss::format::EventsPerFrame>(events) : 0;
+  auto initial_events__ = initial_events ? _fbb.CreateVector<::flatbuffers::Offset<ss::format::InitialEvents>>(*initial_events) : 0;
   auto labels__ = labels ? _fbb.CreateVectorOfSortedTables<ss::format::Label>(labels) : 0;
   return ss::format::CreateAnimationData(
       _fbb,
@@ -7414,6 +7626,7 @@ inline ::flatbuffers::Offset<AnimationData> CreateAnimationDataDirect(
       parts_animation_data__,
       parts_mesh_data__,
       events__,
+      initial_events__,
       labels__,
       start_frame,
       end_frame,
@@ -7932,11 +8145,11 @@ inline bool VerifyPartType(::flatbuffers::VerifierTemplate<B> &verifier, const v
       return true;
     }
     case PartType_PartTypeNull: {
-      auto ptr = reinterpret_cast<const ss::format::PartTypeNone *>(obj);
+      auto ptr = reinterpret_cast<const ss::format::NoneValueEntry *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case PartType_PartTypeNormal: {
-      auto ptr = reinterpret_cast<const ss::format::PartTypeNone *>(obj);
+      auto ptr = reinterpret_cast<const ss::format::NoneValueEntry *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case PartType_PartTypeShape: {
@@ -7956,7 +8169,7 @@ inline bool VerifyPartType(::flatbuffers::VerifierTemplate<B> &verifier, const v
       return verifier.VerifyTable(ptr);
     }
     case PartType_PartTypeArmature: {
-      auto ptr = reinterpret_cast<const ss::format::PartTypeNone *>(obj);
+      auto ptr = reinterpret_cast<const ss::format::NoneValueEntry *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case PartType_PartTypeEffect: {
@@ -7964,39 +8177,39 @@ inline bool VerifyPartType(::flatbuffers::VerifierTemplate<B> &verifier, const v
       return verifier.VerifyTable(ptr);
     }
     case PartType_PartTypeMesh: {
-      auto ptr = reinterpret_cast<const ss::format::PartTypeNone *>(obj);
+      auto ptr = reinterpret_cast<const ss::format::NoneValueEntry *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case PartType_PartTypeMovenode: {
-      auto ptr = reinterpret_cast<const ss::format::PartTypeNone *>(obj);
+      auto ptr = reinterpret_cast<const ss::format::NoneValueEntry *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case PartType_PartTypeConstraint: {
-      auto ptr = reinterpret_cast<const ss::format::PartTypeNone *>(obj);
+      auto ptr = reinterpret_cast<const ss::format::NoneValueEntry *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case PartType_PartTypeMask: {
-      auto ptr = reinterpret_cast<const ss::format::PartTypeNone *>(obj);
+      auto ptr = reinterpret_cast<const ss::format::NoneValueEntry *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case PartType_PartTypeJoint: {
-      auto ptr = reinterpret_cast<const ss::format::PartTypeNone *>(obj);
+      auto ptr = reinterpret_cast<const ss::format::NoneValueEntry *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case PartType_PartTypeBonepoint: {
-      auto ptr = reinterpret_cast<const ss::format::PartTypeNone *>(obj);
+      auto ptr = reinterpret_cast<const ss::format::NoneValueEntry *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case PartType_PartTypeTransformConstraint: {
-      auto ptr = reinterpret_cast<const ss::format::PartTypeNone *>(obj);
+      auto ptr = reinterpret_cast<const ss::format::NoneValueEntry *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case PartType_PartTypeCamera: {
-      auto ptr = reinterpret_cast<const ss::format::PartTypeNone *>(obj);
+      auto ptr = reinterpret_cast<const ss::format::NoneValueEntry *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case PartType_PartTypeAudio: {
-      auto ptr = reinterpret_cast<const ss::format::PartTypeNone *>(obj);
+      auto ptr = reinterpret_cast<const ss::format::NoneValueEntry *>(obj);
       return verifier.VerifyTable(ptr);
     }
     default: return true;
