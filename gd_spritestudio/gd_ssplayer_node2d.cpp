@@ -14,6 +14,7 @@
 
 GdSsPlayerNode2D::GdSsPlayerNode2D() {
     runtime_ctx = ss_runtime_create();
+    ss_context_set_coordinate_system(runtime_ctx, 1);
 }
 
 GdSsPlayerNode2D::~GdSsPlayerNode2D() {
@@ -569,9 +570,8 @@ void GdSsPlayerNode2D::drawAnimation() {
         if (!use_advanced && partBinary->part_type_type() != ss::format::PartType_PartTypeMesh) {
             // --- 通常パス: Transform2D を利用した高速描画 ---
             Transform2D t;
-            // Godot の Y 軸は下向き、回転は時計回りのため、Y 座標と回転を反転させる
-            t.set_origin(Vector2(part->position_x(), -part->position_y()));
-            t.set_rotation(-part->rotation_z());
+            t.set_origin(Vector2(part->position_x(), part->position_y()));
+            t.set_rotation(part->rotation_z());
             t.set_scale(Vector2(part->scale_x(), part->scale_y()));
             rs->canvas_item_set_transform(ci, t);
 
@@ -597,17 +597,15 @@ void GdSsPlayerNode2D::drawAnimation() {
 
             if (flags & ss::runtime::UpdateAttributeFlags_AttributeVertex) {
                 auto vd = frameData->vertices()->Get(part->vertex());
-                // Godot の座標系に合わせて Y を反転 (Deform)
-                verts[0] += Vector2(vd->lt().x(), -vd->lt().y());
-                verts[1] += Vector2(vd->rt().x(), -vd->rt().y());
-                verts[2] += Vector2(vd->lb().x(), -vd->lb().y());
-                verts[3] += Vector2(vd->rb().x(), -vd->rb().y());
+                verts[0] += Vector2(vd->lt().x(), vd->lt().y());
+                verts[1] += Vector2(vd->rt().x(), vd->rt().y());
+                verts[2] += Vector2(vd->lb().x(), vd->lb().y());
+                verts[3] += Vector2(vd->rb().x(), vd->rb().y());
             }
 
             Transform2D t;
-            // パーツのTRSを頂点に適用 (Y座標とZ回転を反転)
-            t.set_origin(Vector2(part->position_x(), -part->position_y()));
-            t.set_rotation(-part->rotation_z());
+            t.set_origin(Vector2(part->position_x(), part->position_y()));
+            t.set_rotation(part->rotation_z());
             t.set_scale(Vector2(part->scale_x(), part->scale_y()));
             for (int j = 0; j < 4; j++) {
                 verts[j] = t.xform(verts[j]);
