@@ -3,6 +3,15 @@
 #include "runtime/ssruntime.h"
 #include "runtime/framedata.h"
 
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+#include <godot_cpp/classes/resource_loader.hpp>
+#include <godot_cpp/classes/rendering_server.hpp>
+#else
+#include "core/io/resource_loader.h"
+#include "servers/rendering/rendering_server.h"
+#endif
+
+
 GdSsPlayerNode2D::GdSsPlayerNode2D() {
     runtime_ctx = ss_runtime_create();
 }
@@ -25,6 +34,7 @@ void GdSsPlayerNode2D::_clear_canvas_items() {
         rs->free_rid(_canvas_items[i]);
     }
     _canvas_items.clear();
+    _blend_materials.clear();
 }
 
 void GdSsPlayerNode2D::setSsabResource( const Ref<GdSsabResource>& ssabRes ) {
@@ -501,7 +511,6 @@ void GdSsPlayerNode2D::drawAnimation() {
         }
 
         if (part->update_flag() == 0) {
-            // RenderingServer retains state, so we don't need to redraw if nothing changed
             continue;
         }
 
@@ -514,18 +523,14 @@ void GdSsPlayerNode2D::drawAnimation() {
 
         auto frameDataCellIndex = part->cell();
         auto frameDataCell = frameData->cells()->Get(frameDataCellIndex);
-
-        // 1. CellMap (テクスチャ情報) の取得
         auto cellmap = binary->cellmaps()->Get(frameDataCell->map_id());
 
-        // 2. テクスチャの取得 (CellMap のハッシュを使用)
         uint32_t texHash = cellmap->name_hash();
         if (!_textures.has(texHash)) {
              continue;
         }
         Ref<Texture2D> tex = _textures[texHash];
 
-        // 3. Cell (矩形情報) の取得
         auto cell = cellmap->cells()->LookupByKey(frameDataCell->name_hash());
         if (!cell) {
             continue;
@@ -534,22 +539,153 @@ void GdSsPlayerNode2D::drawAnimation() {
         auto rect = cell->rectangle();
         auto pivot = cell->pivot();
 
-         // --- 描画準備 ---
-        Transform2D t;
-        t.set_origin(Vector2(part->position_x(), part->position_y()));
-        t.set_rotation(part->rotation_z());
-        t.set_scale(Vector2(part->scale_x(), part->scale_y()));
+        // 1. Blend Mode 設定
+        auto partBinary = binary->parts()->Get(part->part_index());
+        ss::format::BlendType ss_blend = partBinary->blend_type();
+        if (!_blend_materials.has((int)ss_blend)) {
+            Ref<CanvasItemMaterial> mat;
+            mat.instantiate();
+            switch (ss_blend) {
+                case ss::format::BlendType_Mix: mat->set_blend_mode(CanvasItemMaterial::BLEND_MODE_MIX); break;
+                case ss::format::BlendType_Add: mat->set_blend_mode(CanvasItemMaterial::BLEND_MODE_ADD); break;
+                case ss::format::BlendType_Sub: mat->set_blend_mode(CanvasItemMaterial::BLEND_MODE_SUB); break;
+                case ss::format::BlendType_Mul: mat->set_blend_mode(CanvasItemMaterial::BLEND_MODE_MUL); break;
+                default: mat->set_blend_mode(CanvasItemMaterial::BLEND_MODE_MIX); break;
+            }
+            _blend_materials[(int)ss_blend] = mat;
+        }
+        rs->canvas_item_set_material(ci, _blend_materials[(int)ss_blend]->get_rid());
 
-        rs->canvas_item_set_transform(ci, t);
+        // 2. 高度な描画が必要か判定
+        uint64_t flags = part->update_flag();
+        bool use_advanced = (flags & ss::runtime::UpdateAttributeFlags_AttributeVertex);
+        use_advanced |= (flags & ss::runtime::UpdateAttributeFlags_AttributePartColor);
+        use_advanced |= (flags & (ss::runtime::UpdateAttributeFlags_AttributeUvtX | ss::runtime::UpdateAttributeFlags_AttributeUvtY |
+                                  ss::runtime::UpdateAttributeFlags_AttributeUvrZ | ss::runtime::UpdateAttributeFlags_AttributeUvsX |
+                                  ss::runtime::UpdateAttributeFlags_AttributeUvsY));
 
-        Rect2 src_rect(rect->x1(), rect->y1(), rect->x2() - rect->x1(), rect->y2() - rect->y1());
-        Vector2 draw_pos = Vector2(-src_rect.size.x * (pivot->v1() + 0.5f),
-                                   -src_rect.size.y * (0.5f - pivot->v2()));
+        Rect2 src_rect(rect->x1(), rect->y1(), rect->x2(), rect->y2());
 
-        rs->canvas_item_add_texture_rect_region(ci, Rect2(draw_pos, src_rect.size), tex->get_rid(), src_rect, Color(1, 1, 1, part->alpha()));
+        if (!use_advanced && partBinary->part_type_type() != ss::format::PartType_PartTypeMesh) {
+            // --- 通常パス: Transform2D を利用した高速描画 ---
+            Transform2D t;
+            // Godot の Y 軸は下向き、回転は時計回りのため、Y 座標と回転を反転させる
+            t.set_origin(Vector2(part->position_x(), -part->position_y()));
+            t.set_rotation(-part->rotation_z());
+            t.set_scale(Vector2(part->scale_x(), part->scale_y()));
+            rs->canvas_item_set_transform(ci, t);
+
+            Vector2 draw_pos = Vector2(-src_rect.size.x * (pivot->v1() + 0.5f),
+                                       -src_rect.size.y * (0.5f - pivot->v2()));
+
+            rs->canvas_item_add_texture_rect_region(ci, Rect2(draw_pos, src_rect.size), tex->get_rid(), src_rect, Color(1, 1, 1, part->alpha()));
+        } else if (partBinary->part_type_type() != ss::format::PartType_PartTypeMesh) {
+            // --- 高度パス: 頂点配列 (Triangle Array) による描画 (Normalパーツのみ) ---
+            rs->canvas_item_set_transform(ci, Transform2D());
+
+            float w = src_rect.size.x;
+            float h = src_rect.size.y;
+            float px = -w * (pivot->v1() + 0.5f);
+            float py = -h * (0.5f - pivot->v2());
+
+            Vector2 verts[4] = {
+                Vector2(px, py),
+                Vector2(px + w, py),
+                Vector2(px, py + h),
+                Vector2(px + w, py + h)
+            };
+
+            if (flags & ss::runtime::UpdateAttributeFlags_AttributeVertex) {
+                auto vd = frameData->vertices()->Get(part->vertex());
+                // Godot の座標系に合わせて Y を反転 (Deform)
+                verts[0] += Vector2(vd->lt().x(), -vd->lt().y());
+                verts[1] += Vector2(vd->rt().x(), -vd->rt().y());
+                verts[2] += Vector2(vd->lb().x(), -vd->lb().y());
+                verts[3] += Vector2(vd->rb().x(), -vd->rb().y());
+            }
+
+            Transform2D t;
+            // パーツのTRSを頂点に適用 (Y座標とZ回転を反転)
+            t.set_origin(Vector2(part->position_x(), -part->position_y()));
+            t.set_rotation(-part->rotation_z());
+            t.set_scale(Vector2(part->scale_x(), part->scale_y()));
+            for (int j = 0; j < 4; j++) {
+                verts[j] = t.xform(verts[j]);
+            }
+
+            Vector2 uvs[4] = {
+                Vector2(src_rect.position.x, src_rect.position.y),
+                Vector2(src_rect.position.x + src_rect.size.x, src_rect.position.y),
+                Vector2(src_rect.position.x, src_rect.position.y + src_rect.size.y),
+                Vector2(src_rect.position.x + src_rect.size.x, src_rect.position.y + src_rect.size.y)
+            };
+
+            if (flags & (ss::runtime::UpdateAttributeFlags_AttributeUvtX | ss::runtime::UpdateAttributeFlags_AttributeUvtY |
+                         ss::runtime::UpdateAttributeFlags_AttributeUvrZ | ss::runtime::UpdateAttributeFlags_AttributeUvsX |
+                         ss::runtime::UpdateAttributeFlags_AttributeUvsY)) {
+                Vector2 uv_center = src_rect.position + src_rect.size * 0.5f;
+                for (int j = 0; j < 4; j++) {
+                    Vector2 uv = uvs[j];
+                    uv.x = (uv.x - uv_center.x) * part->uv_scale_x() + uv_center.x;
+                    uv.y = (uv.y - uv_center.y) * part->uv_scale_y() + uv_center.y;
+                    if (part->uv_rotation_z() != 0.0f) {
+                        float s = Math::sin(part->uv_rotation_z());
+                        float c = Math::cos(part->uv_rotation_z());
+                        float rel_x = uv.x - uv_center.x;
+                        float rel_y = uv.y - uv_center.y;
+                        uv.x = rel_x * c - rel_y * s + uv_center.x;
+                        uv.y = rel_x * s + rel_y * c + uv_center.y;
+                    }
+                    uv.x += part->uv_translation_x() * src_rect.size.x;
+                    uv.y += part->uv_translation_y() * src_rect.size.y;
+                    uvs[j] = uv;
+                }
+            }
+            
+            Vector2 tex_size = tex->get_size();
+            for (int j = 0; j < 4; j++) {
+                uvs[j].x /= tex_size.x;
+                uvs[j].y /= tex_size.y;
+            }
+
+            Color colors[4] = {
+                Color(1, 1, 1, part->alpha()),
+                Color(1, 1, 1, part->alpha()),
+                Color(1, 1, 1, part->alpha()),
+                Color(1, 1, 1, part->alpha())
+            };
+
+            if (flags & ss::runtime::UpdateAttributeFlags_AttributePartColor) {
+                auto pc = frameData->parts_color()->Get(part->part_color());
+                colors[0] = Color(pc->lt().rgba().r() / 255.0f, pc->lt().rgba().g() / 255.0f, pc->lt().rgba().b() / 255.0f, (pc->lt().rgba().a() / 255.0f) * part->alpha());
+                colors[1] = Color(pc->rt().rgba().r() / 255.0f, pc->rt().rgba().g() / 255.0f, pc->rt().rgba().b() / 255.0f, (pc->rt().rgba().a() / 255.0f) * part->alpha());
+                colors[2] = Color(pc->lb().rgba().r() / 255.0f, pc->lb().rgba().g() / 255.0f, pc->lb().rgba().b() / 255.0f, (pc->lb().rgba().a() / 255.0f) * part->alpha());
+                colors[3] = Color(pc->rb().rgba().r() / 255.0f, pc->rb().rgba().g() / 255.0f, pc->rb().rgba().b() / 255.0f, (pc->rb().rgba().a() / 255.0f) * part->alpha());
+            }
+
+            #ifdef SPRITESTUDIO_GODOT_EXTENSION
+            PackedVector2Array p_verts; p_verts.resize(4);
+            PackedVector2Array p_uvs; p_uvs.resize(4);
+            PackedColorArray p_colors; p_colors.resize(4);
+            PackedInt32Array p_indices; p_indices.resize(6);
+            #else
+            Vector<Vector2> p_verts; p_verts.resize(4);
+            Vector<Vector2> p_uvs; p_uvs.resize(4);
+            Vector<Color> p_colors; p_colors.resize(4);
+            Vector<int> p_indices; p_indices.resize(6);
+            #endif
+
+            for(int j=0; j<4; j++) {
+                p_verts.set(j, verts[j]);
+                p_uvs.set(j, uvs[j]);
+                p_colors.set(j, colors[j]);
+            }
+            p_indices.set(0, 0); p_indices.set(1, 1); p_indices.set(2, 2);
+            p_indices.set(3, 1); p_indices.set(4, 3); p_indices.set(5, 2);
+
+            rs->canvas_item_add_triangle_array(ci, p_indices, p_verts, p_colors, p_uvs, {}, {}, tex->get_rid());
+        }
     }
-
-    // draw_set_transform_matrix(Transform2D()); // No longer needed for RenderingServer
 }
 
 void GdSsPlayerNode2D::fetchAnimation() {
