@@ -30,17 +30,21 @@ void GdSsPlayerNode2D::_clear_canvas_items() {
 void GdSsPlayerNode2D::setSsabResource( const Ref<GdSsabResource>& ssabRes ) {
 	_ssabRes = ssabRes;
     _strAnimationSelected = "";
+
     if ( !_ssabRes.is_null() ) {
-        auto vecAnimeName = _ssabRes->get_animation_names();
-        if ( vecAnimeName.size() > 0 )
-            _strAnimationSelected = vecAnimeName[0];
-        loadTextures(_ssabRes);
+        if (!_ssabRes->is_valid()) {
+            ERR_PRINT("SSAB Error: Assigned resource is invalid (missing parts or animations).");
+            _ssabRes = Ref<GdSsabResource>(); // 無効な場合はリセット
+        } else {
+            auto vecAnimeName = _ssabRes->get_animation_names();
+            if ( vecAnimeName.size() > 0 )
+                _strAnimationSelected = vecAnimeName[0];
+            loadTextures(_ssabRes);
+        }
     }
 
 	fetchAnimation();
 	NOTIFY_PROPERTY_LIST_CHANGED();
-
-	// GdNotifier::getInstance().notifyResourcePlayerChanged( this );
 }
 
 Ref<GdSsabResource> GdSsPlayerNode2D::getSsabResource() const {
@@ -477,10 +481,6 @@ void GdSsPlayerNode2D::updateAnimation( float delta ) {
 }
 
 void GdSsPlayerNode2D::drawAnimation() {
-    if (_ssabRes.is_null() || !runtime_ctx) {
-        return;
-    }
-
     unsigned char *data = nullptr;
     uintptr_t len = 0;
     ss_runtime_get_frame_data(runtime_ctx, ss_runtime_get_frame_no(runtime_ctx), &data, &len);
@@ -490,9 +490,6 @@ void GdSsPlayerNode2D::drawAnimation() {
 
     auto frameData = ss::runtime::GetFrameData(data);
     auto parts = frameData->parts();
-    if (!parts) {
-        return;
-    }
 
     auto binary = _ssabRes->get_ss_anime_binary();
     RenderingServer *rs = RenderingServer::get_singleton();
@@ -519,11 +516,7 @@ void GdSsPlayerNode2D::drawAnimation() {
         auto frameDataCell = frameData->cells()->Get(frameDataCellIndex);
 
         // 1. CellMap (テクスチャ情報) の取得
-        int mapIdx = frameDataCell->map_id();
-        if (mapIdx < 0 || mapIdx >= binary->cellmaps()->size()) {
-            continue;
-        }
-        auto cellmap = binary->cellmaps()->Get(mapIdx);
+        auto cellmap = binary->cellmaps()->Get(frameDataCell->map_id());
 
         // 2. テクスチャの取得 (CellMap のハッシュを使用)
         uint32_t texHash = cellmap->name_hash();
@@ -533,12 +526,7 @@ void GdSsPlayerNode2D::drawAnimation() {
         Ref<Texture2D> tex = _textures[texHash];
 
         // 3. Cell (矩形情報) の取得
-        uint32_t cellHash = frameDataCell->name_hash();
-        const ss::format::Cell* cell = nullptr;
-        if (cellmap->cells() != nullptr) {
-            cell = cellmap->cells()->LookupByKey(cellHash);
-        }
-
+        auto cell = cellmap->cells()->LookupByKey(frameDataCell->name_hash());
         if (!cell) {
             continue;
         }
@@ -572,28 +560,32 @@ void GdSsPlayerNode2D::fetchAnimation() {
             rutime_res = nullptr;
         }
         _currentAnimationData = nullptr;
-    } else {
-        if (rutime_res != nullptr) {
-            ss_resource_destroy(rutime_res);
-            rutime_res = nullptr;
-        }
-
-        rutime_res = ss_resource_create_borrow(_ssabRes->get_data_ptr(), _ssabRes->get_data_size());
-        if (rutime_res == nullptr) {
-            ERR_PRINT( "SSAB Resource Create Failed" );
-            return;
-        }
-
-        bool binded = ss_runtime_bind_resource(runtime_ctx, rutime_res);
-        if ( !binded ) {
-            ERR_PRINT( "SSAB Resource Bind Failed" );
-            return;
-        }
-
-        // Initialize RenderingServer CanvasItems
         _clear_canvas_items();
-        auto binary = _ssabRes->get_ss_anime_binary();
-        if (binary->parts() != nullptr) {
+        return;
+    }
+
+    // Initialize RenderingServer CanvasItems
+    _clear_canvas_items();
+
+    if (rutime_res != nullptr) {
+        ss_resource_destroy(rutime_res);
+        rutime_res = nullptr;
+    }
+
+    rutime_res = ss_resource_create_borrow(_ssabRes->get_data_ptr(), _ssabRes->get_data_size());
+    if (rutime_res == nullptr) {
+        ERR_PRINT( "SSAB Resource Create Failed" );
+        return;
+    }
+
+    bool binded = ss_runtime_bind_resource(runtime_ctx, rutime_res);
+    if ( !binded ) {
+        ERR_PRINT( "SSAB Resource Bind Failed" );
+        return;
+    }
+
+    auto binary = _ssabRes->get_ss_anime_binary();
+    if (binary->parts() != nullptr) {
             RenderingServer *rs = RenderingServer::get_singleton();
             for (int i = 0; i < binary->parts()->size(); i++) {
                 RID ci = rs->canvas_item_create();
@@ -617,5 +609,4 @@ void GdSsPlayerNode2D::fetchAnimation() {
 
         previous_frame_no = -1;
         drawAnimation();
-	}
 }

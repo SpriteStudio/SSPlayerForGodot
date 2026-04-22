@@ -12,8 +12,31 @@
 void GdSsabResource::_bind_methods() {
   ClassDB::bind_method(D_METHOD("load_from_file", "path"), &GdSsabResource::load_from_file);
   ClassDB::bind_method(D_METHOD("save_to_file", "path"), &GdSsabResource::save_to_file);
+  ClassDB::bind_method(D_METHOD("is_valid"), &GdSsabResource::is_valid);
   ClassDB::bind_method(D_METHOD("get_animation_count"), &GdSsabResource::get_animation_count);
   ClassDB::bind_method(D_METHOD("get_animation_names"), &GdSsabResource::get_animation_names);
+}
+
+bool GdSsabResource::is_valid() const {
+  if (binary.size() == 0) {
+    return false;
+  }
+
+  ::flatbuffers::Verifier verifier(binary.ptr(), binary.size());
+  if (!ss::format::VerifySsAnimeBinaryBuffer(verifier)) {
+    return false;
+  }
+
+  const ss::format::SsAnimeBinary *ssab = ss::format::GetSsAnimeBinary(binary.ptr());
+  if (ssab->parts() == nullptr || ssab->parts()->size() == 0) {
+    return false;
+  }
+
+  if (ssab->animations() == nullptr || ssab->animations()->size() == 0) {
+    return false;
+  }
+
+  return true;
 }
 
 Error GdSsabResource::load_from_file(const String &path) {
@@ -21,17 +44,22 @@ Error GdSsabResource::load_from_file(const String &path) {
   _parent_dir = path.get_base_dir();
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
   binary = FileAccess::get_file_as_bytes(path);
-  if (binary.size() == 0)
+  if (binary.size() == 0) {
     return ERR_INVALID_DATA;
+  }
 #else
   binary = FileAccess::get_file_as_bytes(path, &error);
-  if (error != OK)
+  if (error != OK) {
     return error;
+  }
 #endif
 
-  return error;
+  if (!is_valid()) {
+    binary.clear();
+    return ERR_INVALID_DATA;
+  }
 
-	// return ERR_FILE_UNRECOGNIZED;
+  return OK;
 }
 
 Error GdSsabResource::save_to_file(const String &path) {

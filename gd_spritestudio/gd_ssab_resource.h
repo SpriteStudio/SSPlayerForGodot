@@ -32,6 +32,7 @@ protected:
 public:
   Error load_from_file(const String &path);
   Error save_to_file(const String &path);
+  bool is_valid() const;
   int get_animation_count();
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
   PackedStringArray get_animation_names();
