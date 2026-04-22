@@ -62,10 +62,9 @@ public:
 private:
     Ref<GdSsabResource> _ssabRes;
     HashMap<uint32_t, Ref<Texture2D>> _textures;
-    Vector<const ss::format::Cell*> _allCells;
     String _strAnimationSelected;
     ss::format::AnimationData* _currentAnimationData = nullptr;
-    void *rutime_ctx = nullptr;
+    void *runtime_ctx = nullptr;
     void *rutime_res = nullptr;
     int previous_frame_no = -1;
     float _speed_rate = 1.0f;

@@ -4,12 +4,12 @@
 #include "runtime/framedata.h"
 
 GdSsPlayerNode2D::GdSsPlayerNode2D() {
-    rutime_ctx = ss_runtime_create();
+    runtime_ctx = ss_runtime_create();
 }
 
 GdSsPlayerNode2D::~GdSsPlayerNode2D() {
-    ss_runtime_destroy(rutime_ctx);
-    rutime_ctx = nullptr;
+    ss_runtime_destroy(runtime_ctx);
+    runtime_ctx = nullptr;
 }
 
 void GdSsPlayerNode2D::setSsabResource( const Ref<GdSsabResource>& ssabRes ) {
@@ -46,32 +46,32 @@ String GdSsPlayerNode2D::getAnimation() const {
 }
 
 bool GdSsPlayerNode2D::isPlaying() const {
-    return ss_runtime_is_playing(rutime_ctx);
+    return ss_runtime_is_playing(runtime_ctx);
 }
 
 void GdSsPlayerNode2D::play( int p_start_frame ) {
     if ( p_start_frame >= 0 ) {
-        ss_runtime_play_with_start_frame(rutime_ctx, p_start_frame);
+        ss_runtime_play_with_start_frame(runtime_ctx, p_start_frame);
     } else {
-        ss_runtime_play(rutime_ctx);
+        ss_runtime_play(runtime_ctx);
     }
 }
 
 bool GdSsPlayerNode2D::isPausing() const {
-    return ss_runtime_is_pausing(rutime_ctx);
+    return ss_runtime_is_pausing(runtime_ctx);
 }
 
 void GdSsPlayerNode2D::pause() {
-    ss_runtime_pause(rutime_ctx);
+    ss_runtime_pause(runtime_ctx);
 }
 
 void GdSsPlayerNode2D::stop() {
-    ss_runtime_stop(rutime_ctx);
+    ss_runtime_stop(runtime_ctx);
 }
 
 void GdSsPlayerNode2D::setSpeed( float p_speed ) {
     _speed_rate = p_speed;
-    ss_runtime_set_animation_speed(rutime_ctx, p_speed);
+    ss_runtime_set_animation_speed(runtime_ctx, p_speed);
 }
 
 float GdSsPlayerNode2D::getSpeed() const {
@@ -79,67 +79,67 @@ float GdSsPlayerNode2D::getSpeed() const {
 }
 
 void GdSsPlayerNode2D::setFrame( int p_frame ) {
-    ss_runtime_set_frame_no(rutime_ctx, p_frame);
+    ss_runtime_set_frame_no(runtime_ctx, p_frame);
 }
 
 int GdSsPlayerNode2D::getFrame() const {
-    return ss_runtime_get_frame_no(rutime_ctx);
+    return ss_runtime_get_frame_no(runtime_ctx);
 }
 
 float GdSsPlayerNode2D::getFrameDecimal() const {
-    return ss_runtime_get_frame_no_decimal(rutime_ctx);
+    return ss_runtime_get_frame_no_decimal(runtime_ctx);
 }
 
 int GdSsPlayerNode2D::getTotalFrames() const {
-    return ss_runtime_get_end_frame(rutime_ctx) - ss_runtime_get_start_frame(rutime_ctx) + 1;
+    return ss_runtime_get_end_frame(runtime_ctx) - ss_runtime_get_start_frame(runtime_ctx) + 1;
 }
 
 void GdSsPlayerNode2D::setFrameRate( int p_fps ) {
-    ss_runtime_set_frame_rate(rutime_ctx, p_fps);
+    ss_runtime_set_frame_rate(runtime_ctx, p_fps);
 }
 
 int GdSsPlayerNode2D::getFrameRate() const {
-    return ss_runtime_get_fps(rutime_ctx);
+    return ss_runtime_get_fps(runtime_ctx);
 }
 
 void GdSsPlayerNode2D::setAnimationSection( int p_start, int p_end ) {
-    ss_runtime_set_animation_section(rutime_ctx, p_start, p_end);
+    ss_runtime_set_animation_section(runtime_ctx, p_start, p_end);
 }
 
 int GdSsPlayerNode2D::getAnimationSectionStart() const {
-    return ss_runtime_get_start_frame(rutime_ctx);
+    return ss_runtime_get_start_frame(runtime_ctx);
 }
 
 int GdSsPlayerNode2D::getAnimationSectionEnd() const {
-    return ss_runtime_get_end_frame(rutime_ctx);
+    return ss_runtime_get_end_frame(runtime_ctx);
 }
 
 void GdSsPlayerNode2D::setPlaybackDirection( int p_direction, int p_style ) {
-    ss_runtime_set_playback_direction(rutime_ctx, p_direction, p_style);
+    ss_runtime_set_playback_direction(runtime_ctx, p_direction, p_style);
 }
 
 int GdSsPlayerNode2D::getPlaybackDirection() const {
-    return ss_runtime_get_playback_direction(rutime_ctx);
+    return ss_runtime_get_playback_direction(runtime_ctx);
 }
 
 int GdSsPlayerNode2D::getPlaybackStyle() const {
-    return ss_runtime_get_playback_style(rutime_ctx);
+    return ss_runtime_get_playback_style(runtime_ctx);
 }
 
 void GdSsPlayerNode2D::setLoop( int p_count ) {
-    ss_runtime_set_loop(rutime_ctx, p_count);
+    ss_runtime_set_loop(runtime_ctx, p_count);
 }
 
 int GdSsPlayerNode2D::getLoop() const {
-    return ss_runtime_get_loops(rutime_ctx);
+    return ss_runtime_get_loops(runtime_ctx);
 }
 
 void GdSsPlayerNode2D::setSkipFrames( bool p_skip ) {
-    ss_runtime_set_skip_frames(rutime_ctx, p_skip);
+    ss_runtime_set_skip_frames(runtime_ctx, p_skip);
 }
 
 bool GdSsPlayerNode2D::isSkipFrames() const {
-    return ss_runtime_get_skip_frames(rutime_ctx);
+    return ss_runtime_get_skip_frames(runtime_ctx);
 }
 
 
@@ -381,7 +381,6 @@ void GdSsPlayerNode2D::_notification( int p_notification ) {
 void GdSsPlayerNode2D::loadTextures(const Ref<GdSsabResource>& ssabRes) {
     auto a = ssabRes->get_ss_anime_binary();
     _textures.clear();
-    _allCells.clear();
     if (a->cellmaps() != nullptr) {
         for (int i = 0; i < a->cellmaps()->size(); i++) {
             auto cellmap = a->cellmaps()->Get(i);
@@ -393,12 +392,6 @@ void GdSsPlayerNode2D::loadTextures(const Ref<GdSsabResource>& ssabRes) {
             ResourceLoader::load( strImage, "", ResourceFormatLoader::CACHE_MODE_REUSE, nullptr );
             #endif
             _textures[cellmap->name_hash()] = texture;
-
-            if (cellmap->cells() != nullptr) {
-                for (int j = 0; j < cellmap->cells()->size(); j++) {
-                    _allCells.push_back(cellmap->cells()->Get(j));
-                }
-            }
         }
     }
     if (a->external_textures() != nullptr) {
@@ -418,19 +411,21 @@ void GdSsPlayerNode2D::loadTextures(const Ref<GdSsabResource>& ssabRes) {
 
 
 void GdSsPlayerNode2D::updateAnimation( float delta ) {
-    if (ss_runtime_is_playing(rutime_ctx)) {
+    if (ss_runtime_is_playing(runtime_ctx)) {
         auto d = delta * 1000.0f;
-        auto frame_no = ss_runtime_update(rutime_ctx, d);
+        auto frame_no = ss_runtime_update(runtime_ctx, d);
 
         if (previous_frame_no == frame_no) {
             // print_line("skip: " + String::num(frame_no));
             return;
         }
 
+        // TODO: implement event handling
+        /*
         if (_currentAnimationData->events() != nullptr) {
-            int event_count = ss_runtime_get_passed_event_count(rutime_ctx);
+            int event_count = ss_runtime_get_passed_event_count(runtime_ctx);
             for (int i = 0; i < event_count; i++) {
-                int event_idx = ss_runtime_get_passed_event_index(rutime_ctx, i);
+                int event_idx = ss_runtime_get_passed_event_index(runtime_ctx, i);
                 auto events_per_frame = _currentAnimationData->events()->Get(event_idx);
 
                 if (auto users = events_per_frame->users()) {
@@ -464,19 +459,20 @@ void GdSsPlayerNode2D::updateAnimation( float delta ) {
                 }
             }
         }
+        */
         previous_frame_no = frame_no;
         queue_redraw();
     }
 }
 
 void GdSsPlayerNode2D::drawAnimation() {
-    if (_ssabRes.is_null() || !rutime_ctx) {
+    if (_ssabRes.is_null() || !runtime_ctx) {
         return;
     }
 
     unsigned char *data = nullptr;
     uintptr_t len = 0;
-    ss_runtime_get_frame_data(rutime_ctx, ss_runtime_get_frame_no(rutime_ctx), &data, &len);
+    ss_runtime_get_frame_data(runtime_ctx, ss_runtime_get_frame_no(runtime_ctx), &data, &len);
     if (!data) {
         return;
     }
@@ -487,29 +483,48 @@ void GdSsPlayerNode2D::drawAnimation() {
         return;
     }
 
+    auto binary = _ssabRes->get_ss_anime_binary();
+    // print_line("draw frame: " + String::num(ss_runtime_get_frame_no(runtime_ctx)) + " parts: " + String::num(parts->size()));
     for (uint32_t i = 0; i < parts->size(); i++) {
         auto part = parts->Get(i);
-        if (part->hide()) {
+        auto updateFlag = part->update_flag();
+        if (updateFlag == 0) {
             continue;
         }
 
-        // テクスチャの取得
-        uint32_t texHash = part->texture();
-        if (!_textures.has(texHash)) {
+        auto frameDataCellIndex = part->cell();
+        auto frameDataCell = frameData->cells()->Get(frameDataCellIndex);
+
+        // 1. CellMap (テクスチャ情報) の取得
+        int mapIdx = frameDataCell->map_id();
+        if (mapIdx < 0 || mapIdx >= binary->cellmaps()->size()) {
             continue;
+        }
+        auto cellmap = binary->cellmaps()->Get(mapIdx);
+
+        // 2. テクスチャの取得 (CellMap のハッシュを使用)
+        uint32_t texHash = cellmap->name_hash();
+        if (!_textures.has(texHash)) {
+             ERR_PRINT("Texture not found for hash: " + String::num(texHash));
+             continue;
         }
         Ref<Texture2D> tex = _textures[texHash];
 
-        // セル情報の取得
-        int16_t cellIdx = part->cell();
-        if (cellIdx < 0 || cellIdx >= (int16_t)_allCells.size()) {
+        // 3. Cell (矩形情報) の取得
+        uint32_t cellHash = frameDataCell->name_hash();
+        const ss::format::Cell* cell = nullptr;
+        if (cellmap->cells() != nullptr) {
+            cell = cellmap->cells()->LookupByKey(cellHash);
+        }
+
+        if (!cell) {
             continue;
         }
-        auto cell = _allCells[cellIdx];
+
         auto rect = cell->rectangle();
         auto pivot = cell->pivot();
 
-        // --- 描画準備 ---
+         // --- 描画準備 ---
         // 1. パーツの Transform を計算
         Transform2D t;
         t.set_origin(Vector2(part->position_x(), part->position_y()));
@@ -536,7 +551,7 @@ void GdSsPlayerNode2D::drawAnimation() {
 
 void GdSsPlayerNode2D::fetchAnimation() {
 	if ( _strAnimationSelected.is_empty() || _ssabRes.is_null() ) {
-        ss_runtime_reset(rutime_ctx);
+        ss_runtime_reset(runtime_ctx);
         if (rutime_res != nullptr) {
             ss_resource_destroy(rutime_res);
             rutime_res = nullptr;
@@ -554,7 +569,7 @@ void GdSsPlayerNode2D::fetchAnimation() {
             return;
         }
 
-        bool binded = ss_runtime_bind_resource(rutime_ctx, rutime_res);
+        bool binded = ss_runtime_bind_resource(runtime_ctx, rutime_res);
         if ( !binded ) {
             ERR_PRINT( "SSAB Resource Bind Failed" );
             return;
@@ -567,7 +582,7 @@ void GdSsPlayerNode2D::fetchAnimation() {
             return;
 		}
         _currentAnimationData = animation;
-        bool setup = ss_runtime_setup_animation(rutime_ctx, c.get_data());
+        bool setup = ss_runtime_setup_animation(runtime_ctx, c.get_data());
         if ( !setup ) {
             ERR_PRINT( "SSAB Setup Animation Failed: " + _strAnimationSelected );
             return;
