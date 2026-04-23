@@ -5,12 +5,14 @@
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
 #include <godot_cpp/classes/dir_access.hpp>
 #include <godot_cpp/classes/editor_interface.hpp>
+#include <godot_cpp/classes/editor_settings.hpp>
 #include <godot_cpp/classes/editor_file_system.hpp>
 #include <godot_cpp/classes/window.hpp>
 using namespace godot;
 #else
 #include "core/io/dir_access.h"
 #include "editor/editor_interface.h"
+#include "editor/settings/editor_settings.h"
 #if VERSION_MAJOR >= 4
     #if VERSION_MINOR >= 5
     #include "editor/file_system/editor_file_system.h"
@@ -419,9 +421,7 @@ void GdSsImportControl::_on_recent_file_pressed(const String &p_path) {
 }
 
 void GdSsImportControl::_on_clear_history_pressed() {
-    ProjectSettings *ps = ProjectSettings::get_singleton();
-    ps->set_setting(RECENT_FILES_KEY, PackedStringArray());
-    ps->save();
+    EditorInterface::get_singleton()->get_editor_settings()->set_project_metadata("spritestudio", "recent_files", PackedStringArray());
     _update_recent_files_ui();
 }
 
@@ -433,11 +433,7 @@ void GdSsImportControl::_update_recent_files_ui() {
         child->queue_free();
     }
 
-    ProjectSettings *ps = ProjectSettings::get_singleton();
-    PackedStringArray recent_files;
-    if (ps->has_setting(RECENT_FILES_KEY)) {
-        recent_files = ps->get_setting(RECENT_FILES_KEY);
-    }
+    PackedStringArray recent_files = EditorInterface::get_singleton()->get_editor_settings()->get_project_metadata("spritestudio", "recent_files", PackedStringArray());
 
     if (recent_files.is_empty()) {
         Label *empty_label = memnew(Label);
@@ -458,11 +454,8 @@ void GdSsImportControl::_update_recent_files_ui() {
 }
 
 void GdSsImportControl::_add_to_recent_files(const String &p_path) {
-    ProjectSettings *ps = ProjectSettings::get_singleton();
-    PackedStringArray recent_files;
-    if (ps->has_setting(RECENT_FILES_KEY)) {
-        recent_files = ps->get_setting(RECENT_FILES_KEY);
-    }
+    Ref<EditorSettings> es = EditorInterface::get_singleton()->get_editor_settings();
+    PackedStringArray recent_files = es->get_project_metadata("spritestudio", "recent_files", PackedStringArray());
 
     // Remove if already exists to move to top
     for (int i = 0; i < recent_files.size(); i++) {
@@ -479,8 +472,7 @@ void GdSsImportControl::_add_to_recent_files(const String &p_path) {
         recent_files.resize(5);
     }
 
-    ps->set_setting(RECENT_FILES_KEY, recent_files);
-    ps->save();
+    es->set_project_metadata("spritestudio", "recent_files", recent_files);
 
     _update_recent_files_ui();
 }
