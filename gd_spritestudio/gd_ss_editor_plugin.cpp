@@ -17,7 +17,7 @@ void GdSsEditorPlugin::_notification(int what) {
             if (this->import_dock == nullptr) {
                 this->import_dock = memnew(GdSsImportControl);
                 this->import_dock->set_name(String::utf8("SSPJ"));
-                add_control_to_dock(EditorPlugin::DOCK_SLOT_RIGHT_UL, this->import_dock, Ref<Shortcut>());
+                add_control_to_dock(EditorPlugin::DOCK_SLOT_RIGHT_BL, this->import_dock, Ref<Shortcut>());
             }
         } break;
 

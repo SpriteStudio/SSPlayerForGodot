@@ -32,6 +32,8 @@ void GdSsImportControl::_bind_methods() {
     ClassDB::bind_method(D_METHOD("_on_browse_button_pressed"), &GdSsImportControl::_on_browse_button_pressed);
     ClassDB::bind_method(D_METHOD("_on_reset_button_pressed"), &GdSsImportControl::_on_reset_button_pressed);
     ClassDB::bind_method(D_METHOD("_on_dir_selected"), &GdSsImportControl::_on_dir_selected);
+    ClassDB::bind_method(D_METHOD("_on_recent_file_pressed", "path"), &GdSsImportControl::_on_recent_file_pressed);
+    ClassDB::bind_method(D_METHOD("_on_clear_history_pressed"), &GdSsImportControl::_on_clear_history_pressed);
 }
 
 
@@ -83,6 +85,30 @@ GdSsImportControl::GdSsImportControl() {
     file_dialog->set_file_mode(EditorFileDialog::FILE_MODE_OPEN_DIR);
     file_dialog->connect("dir_selected", Callable(this, "_on_dir_selected"));
     add_child(file_dialog);
+
+    // Recent files section
+    HBoxContainer *recent_hbox = memnew(HBoxContainer);
+    add_child(recent_hbox);
+
+    recent_label = memnew(Label);
+    recent_label->set_text("Recent SSPJs:");
+    recent_label->set_h_size_flags(SIZE_EXPAND_FILL);
+    recent_hbox->add_child(recent_label);
+
+    Button *clear_btn = memnew(Button);
+    clear_btn->set_text(L"🗑");
+    clear_btn->set_tooltip_text("Clear import history");
+    clear_btn->connect("pressed", Callable(this, "_on_clear_history_pressed"));
+    recent_hbox->add_child(clear_btn);
+
+    ScrollContainer *scroll = memnew(ScrollContainer);
+    scroll->set_custom_minimum_size(Size2(0, 100));
+    scroll->set_h_size_flags(SIZE_EXPAND_FILL);
+    add_child(scroll);
+
+    recent_vbox = memnew(VBoxContainer);
+    recent_vbox->set_h_size_flags(SIZE_EXPAND_FILL);
+    scroll->add_child(recent_vbox);
 
     background_panel = memnew(Panel);
     background_panel->set_v_size_flags(Control::SIZE_EXPAND_FILL);
@@ -264,8 +290,6 @@ void GdSsImportControl::_on_window_files_dropped(const Vector<String> &p_files) 
             return;
         }
 
-        // print_line("GdSsImportControl: Processing custom file drop...");
-
         // validate sspj file
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
         PackedStringArray sspj_files;
@@ -284,39 +308,48 @@ void GdSsImportControl::_on_window_files_dropped(const Vector<String> &p_files) 
             return;
         }
 
-        String output_dir = path_line_edit->get_text();
-
-        Ref<DirAccess> da = DirAccess::open("res://");
-        if (!da->dir_exists(output_dir)) {
-            //UtilityFunctions::printerr("Output directory does not exist, using default: " + output_dir);
-            da->make_dir_recursive(output_dir);
-        }
-
-        for (int i = 0; i < sspj_files.size(); i++) {
-            String src_file_path = sspj_files[i];
-            String src_file = src_file_path.get_file();
-            String src_stem = src_file.get_basename();
-            String dst_dir = output_dir.path_join(src_stem);
-            String global_dst_dir = ProjectSettings::get_singleton()->globalize_path(dst_dir);
-            String global_src_file_path = ProjectSettings::get_singleton()->globalize_path(src_file_path);
-            void *ctx = process_file(global_src_file_path, global_dst_dir);
-            print_line("GdSsImportControl: convert sspj file: " + src_file_path + ", to ssab files: " + dst_dir);
-            import_contexts.push_back(ctx);
-        }
-
-        import_dialog = memnew(GdProgressDialog);
-        EditorInterface::get_singleton()->get_base_control()->add_child(import_dialog);
-        import_dialog->show_progress("Importing SSPJ...", import_contexts.size());
-
-        import_finished_contexts.resize(import_contexts.size());
-        import_prev_num = 0;
-        is_importing = true;
-        import_dialog->step(vformat("Importing SSPJ: %d/%d", 0, import_finished_contexts.size()), 0);
-
-        set_process(true);
+        _start_import(sspj_files);
     } else {
         _perform_default_drop_logic(p_files);
     }
+}
+
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+void GdSsImportControl::_start_import(const PackedStringArray &p_sspj_files) {
+#else
+void GdSsImportControl::_start_import(const Vector<String> &p_sspj_files) {
+#endif
+    String output_dir = path_line_edit->get_text();
+
+    Ref<DirAccess> da = DirAccess::open("res://");
+    if (!da->dir_exists(output_dir)) {
+        da->make_dir_recursive(output_dir);
+    }
+
+    for (int i = 0; i < p_sspj_files.size(); i++) {
+        String src_file_path = p_sspj_files[i];
+        String src_file = src_file_path.get_file();
+        String src_stem = src_file.get_basename();
+        String dst_dir = output_dir.path_join(src_stem);
+        String global_dst_dir = ProjectSettings::get_singleton()->globalize_path(dst_dir);
+        String global_src_file_path = ProjectSettings::get_singleton()->globalize_path(src_file_path);
+        void *ctx = process_file(global_src_file_path, global_dst_dir);
+        print_line("GdSsImportControl: convert sspj file: " + src_file_path + ", to ssab files: " + dst_dir);
+        import_contexts.push_back(ctx);
+
+        _add_to_recent_files(src_file_path);
+    }
+
+    import_dialog = memnew(GdProgressDialog);
+    EditorInterface::get_singleton()->get_base_control()->add_child(import_dialog);
+    import_dialog->show_progress("Importing SSPJ...", import_contexts.size());
+
+    import_finished_contexts.resize(import_contexts.size());
+    import_prev_num = 0;
+    is_importing = true;
+    import_dialog->step(vformat("Importing SSPJ: %d/%d", 0, import_finished_contexts.size()), 0);
+
+    set_process(true);
 }
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
@@ -371,6 +404,87 @@ void GdSsImportControl::_on_dir_selected(const String &p_path) {
     _save_settings();
 }
 
+void GdSsImportControl::_on_recent_file_pressed(const String &p_path) {
+    if (is_importing) {
+        print_line("GdSsImportControl: Already importing. Please wait.");
+        return;
+    }
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+    PackedStringArray files;
+#else
+    Vector<String> files;
+#endif
+    files.push_back(p_path);
+    _start_import(files);
+}
+
+void GdSsImportControl::_on_clear_history_pressed() {
+    ProjectSettings *ps = ProjectSettings::get_singleton();
+    ps->set_setting(RECENT_FILES_KEY, PackedStringArray());
+    ps->save();
+    _update_recent_files_ui();
+}
+
+void GdSsImportControl::_update_recent_files_ui() {
+    // Clear existing buttons
+    while (recent_vbox->get_child_count() > 0) {
+        Node *child = recent_vbox->get_child(0);
+        recent_vbox->remove_child(child);
+        child->queue_free();
+    }
+
+    ProjectSettings *ps = ProjectSettings::get_singleton();
+    PackedStringArray recent_files;
+    if (ps->has_setting(RECENT_FILES_KEY)) {
+        recent_files = ps->get_setting(RECENT_FILES_KEY);
+    }
+
+    if (recent_files.is_empty()) {
+        Label *empty_label = memnew(Label);
+        empty_label->set_text("No recent files.");
+        empty_label->set_modulate(Color(1, 1, 1, 0.5));
+        recent_vbox->add_child(empty_label);
+    } else {
+        for (int i = 0; i < recent_files.size(); i++) {
+            String path = recent_files[i];
+            Button *btn = memnew(Button);
+            btn->set_text(path.get_file());
+            btn->set_tooltip_text(path);
+            btn->set_text_alignment(HORIZONTAL_ALIGNMENT_LEFT);
+            btn->connect("pressed", callable_mp(this, &GdSsImportControl::_on_recent_file_pressed).bind(path));
+            recent_vbox->add_child(btn);
+        }
+    }
+}
+
+void GdSsImportControl::_add_to_recent_files(const String &p_path) {
+    ProjectSettings *ps = ProjectSettings::get_singleton();
+    PackedStringArray recent_files;
+    if (ps->has_setting(RECENT_FILES_KEY)) {
+        recent_files = ps->get_setting(RECENT_FILES_KEY);
+    }
+
+    // Remove if already exists to move to top
+    for (int i = 0; i < recent_files.size(); i++) {
+        if (recent_files[i] == p_path) {
+            recent_files.remove_at(i);
+            break;
+        }
+    }
+
+    recent_files.insert(0, p_path);
+
+    // Keep only last 5
+    if (recent_files.size() > 5) {
+        recent_files.resize(5);
+    }
+
+    ps->set_setting(RECENT_FILES_KEY, recent_files);
+    ps->save();
+
+    _update_recent_files_ui();
+}
+
 void GdSsImportControl::_load_settings() {
     ProjectSettings *ps = ProjectSettings::get_singleton();
     String path = DEFAULT_PATH;
@@ -382,6 +496,8 @@ void GdSsImportControl::_load_settings() {
     }
 
     path_line_edit->set_text(path);
+
+    _update_recent_files_ui();
 }
 
 void GdSsImportControl::_save_settings() {
