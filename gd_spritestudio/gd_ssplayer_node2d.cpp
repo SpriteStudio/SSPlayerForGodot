@@ -436,6 +436,85 @@ void GdSsPlayerNode2D::loadTextures(const Ref<GdSsabResource>& ssabRes) {
 }
 
 
+namespace {
+    struct SsVertexComputeParams {
+        Vector2 size;
+        Vector2 pivot;
+        bool flip_h = false;
+        bool flip_v = false;
+        bool use_5_vertices = true;
+        bool has_deform = false;
+        Vector2 deform_lt, deform_rt, deform_lb, deform_rb;
+    };
+
+    int compute_vertices(const SsVertexComputeParams& params, float* out_x, float* out_y) {
+        float deform_x[4], deform_y[4];
+        const float *p_dx = nullptr, *p_dy = nullptr;
+        if (params.has_deform) {
+            deform_x[0] = params.deform_lt.x; deform_x[1] = params.deform_rt.x;
+            deform_x[2] = params.deform_lb.x; deform_x[3] = params.deform_rb.x;
+            deform_y[0] = -params.deform_lt.y; deform_y[1] = -params.deform_rt.y;
+            deform_y[2] = -params.deform_lb.y; deform_y[3] = -params.deform_rb.y;
+            p_dx = deform_x; p_dy = deform_y;
+        }
+
+        int v_count = ss_vertex_compute_local(
+            params.size.x, params.size.y,
+            params.pivot.x, params.pivot.y,
+            0, 0, // pivot_offset
+            params.flip_h, params.flip_v,
+            params.use_5_vertices,
+            p_dx, p_dy,
+            out_x, out_y
+        );
+
+        // Convert from Y-up (ssruntime) to Y-down (Godot)
+        for (int i = 0; i < v_count; i++) {
+            out_y[i] = -out_y[i];
+        }
+
+        return v_count;
+    }
+
+    struct SsUvComputeParams {
+        Rect2 src_rect;
+        Vector2 uv_translation;
+        float uv_rotation_z = 0.0f;
+        Vector2 uv_scale;
+        bool part_flip_h = false;
+        bool part_flip_v = false;
+        bool img_flip_h = false;
+        bool img_flip_v = false;
+        bool rotated = false;
+        bool use_5_vertices = true;
+    };
+
+    int compute_uvs(const SsUvComputeParams& params, float* out_u, float* out_v) {
+        return ss_uv_compute_local(
+            params.src_rect.position.x, params.src_rect.position.y,
+            params.src_rect.position.x + params.src_rect.size.x,
+            params.src_rect.position.y + params.src_rect.size.y,
+            params.uv_translation.x * params.src_rect.size.x,
+            params.uv_translation.y * params.src_rect.size.y,
+            Math::rad_to_deg(params.uv_rotation_z),
+            params.uv_scale.x, params.uv_scale.y,
+            params.part_flip_h, params.part_flip_v,
+            params.img_flip_h, params.img_flip_v,
+            params.rotated,
+            params.use_5_vertices,
+            out_u, out_v
+        );
+    }
+
+    Transform2D matrix_to_transform2d(const float* m) {
+        Transform2D t;
+        t.columns[0] = Vector2(m[0], m[1]);
+        t.columns[1] = Vector2(m[4], m[5]);
+        t.columns[2] = Vector2(m[12], m[13]);
+        return t;
+    }
+}
+
 void GdSsPlayerNode2D::updateAnimation( float delta ) {
     if (ss_runtime_is_playing(runtime_ctx)) {
         auto d = delta * 1000.0f;
@@ -471,18 +550,6 @@ void GdSsPlayerNode2D::updateAnimation( float delta ) {
                         // TODO: impl
                     }
                 }
-
-                if (auto instances = events_per_frame->instances()) {
-                    for (auto instance : *instances) {
-                        // TODO: impl
-                    }
-                }
-
-                if (auto effects = events_per_frame->effects()) {
-                    for (auto effect : *effects) {
-                        // TODO: impl
-                    }
-                }
             }
         }
         */
@@ -494,195 +561,162 @@ void GdSsPlayerNode2D::updateAnimation( float delta ) {
 void GdSsPlayerNode2D::drawAnimation() {
     unsigned char *data = nullptr;
     uintptr_t len = 0;
-    ss_runtime_get_frame_data(runtime_ctx, ss_runtime_get_frame_no(runtime_ctx), &data, &len);
-    if (!data) {
-        return;
-    }
+    int frame_no = ss_runtime_get_frame_no(runtime_ctx);
+    ss_runtime_get_frame_data(runtime_ctx, frame_no, &data, &len);
+    if (!data) return;
 
     auto frameData = ss::runtime::GetFrameData(data);
     auto parts = frameData->parts();
-
     auto binary = _ssabRes->get_ss_anime_binary();
     RenderingServer *rs = RenderingServer::get_singleton();
 
     for (uint32_t i = 0; i < parts->size(); i++) {
         auto part = parts->Get(i);
-        if (i >= (uint32_t)_canvas_items.size()) {
-            break;
-        }
-
-        if (part->update_flag() == 0) {
-            continue;
-        }
+        if (i >= (uint32_t)_canvas_items.size() || part->update_flag() == 0) continue;
 
         RID ci = _canvas_items[i];
         rs->canvas_item_clear(ci);
-
-        if (part->hide()) {
-            continue;
-        }
+        if (part->hide()) continue;
 
         auto frameDataCellIndex = part->cell();
         auto frameDataCell = frameData->cells()->Get(frameDataCellIndex);
         auto cellmap = binary->cellmaps()->Get(frameDataCell->map_id());
 
         uint32_t texHash = cellmap->name_hash();
-        if (!_textures.has(texHash)) {
-             continue;
-        }
+        if (!_textures.has(texHash)) continue;
         Ref<Texture2D> tex = _textures[texHash];
 
         auto cell = cellmap->cells()->LookupByKey(frameDataCell->name_hash());
-        if (!cell) {
-            continue;
-        }
+        if (!cell) continue;
 
-        auto rect = cell->rectangle();
-        auto pivot = cell->pivot();
-
-        // 1. Blend Mode 設定
         auto partBinary = binary->parts()->Get(part->part_index());
-        ss::format::BlendType ss_blend = partBinary->blend_type();
-        if (!_blend_materials.has((int)ss_blend)) {
-            Ref<CanvasItemMaterial> mat;
-            mat.instantiate();
-            switch (ss_blend) {
-                case ss::format::BlendType_Mix: mat->set_blend_mode(CanvasItemMaterial::BLEND_MODE_MIX); break;
-                case ss::format::BlendType_Add: mat->set_blend_mode(CanvasItemMaterial::BLEND_MODE_ADD); break;
-                case ss::format::BlendType_Sub: mat->set_blend_mode(CanvasItemMaterial::BLEND_MODE_SUB); break;
-                case ss::format::BlendType_Mul: mat->set_blend_mode(CanvasItemMaterial::BLEND_MODE_MUL); break;
-                default: mat->set_blend_mode(CanvasItemMaterial::BLEND_MODE_MIX); break;
-            }
-            _blend_materials[(int)ss_blend] = mat;
-        }
-        rs->canvas_item_set_material(ci, _blend_materials[(int)ss_blend]->get_rid());
+        _draw_part(rs, ci, frameData, part, partBinary, tex, cell);
+    }
+}
 
-        // 2. 高度な描画が必要か判定
-        uint64_t flags = part->update_flag();
-        bool use_advanced = (flags & ss::runtime::UpdateAttributeFlags_AttributeVertex);
-        use_advanced |= (flags & ss::runtime::UpdateAttributeFlags_AttributePartColor);
-        use_advanced |= (flags & (ss::runtime::UpdateAttributeFlags_AttributeUvtX | ss::runtime::UpdateAttributeFlags_AttributeUvtY |
+void GdSsPlayerNode2D::_draw_part(RenderingServer *rs, RID ci, const ss::runtime::FrameData *frameData, const ss::runtime::PartState *part, const ss::format::PartData *partBinary, const Ref<Texture2D> &tex, const ss::format::Cell *cell) {
+    // 1. Blend Mode
+    ss::format::BlendType ss_blend = partBinary->blend_type();
+    if (!_blend_materials.has((int)ss_blend)) {
+        Ref<CanvasItemMaterial> mat; mat.instantiate();
+        switch (ss_blend) {
+            case ss::format::BlendType_Mix: mat->set_blend_mode(CanvasItemMaterial::BLEND_MODE_MIX); break;
+            case ss::format::BlendType_Add: mat->set_blend_mode(CanvasItemMaterial::BLEND_MODE_ADD); break;
+            case ss::format::BlendType_Sub: mat->set_blend_mode(CanvasItemMaterial::BLEND_MODE_SUB); break;
+            case ss::format::BlendType_Mul: mat->set_blend_mode(CanvasItemMaterial::BLEND_MODE_MUL); break;
+            default: mat->set_blend_mode(CanvasItemMaterial::BLEND_MODE_MIX); break;
+        }
+        _blend_materials[(int)ss_blend] = mat;
+    }
+    rs->canvas_item_set_material(ci, _blend_materials[(int)ss_blend]->get_rid());
+
+    // 2. Matrix Calculation (Hierarchy aware)
+    float draw_m[16];
+    if (!ss_util_get_part_world_matrix(runtime_ctx, part->part_index(), ss_runtime_get_frame_no(runtime_ctx), draw_m)) {
+        return;
+    }
+
+    uint64_t flags = part->update_flag();
+    auto rect = cell->rectangle();
+    auto pivot = cell->pivot();
+    Rect2 src_rect(rect->x1(), rect->y1(), rect->x2(), rect->y2());
+
+    bool use_advanced = (flags & (ss::runtime::UpdateAttributeFlags_AttributeVertex | ss::runtime::UpdateAttributeFlags_AttributePartColor |
+                                  ss::runtime::UpdateAttributeFlags_AttributeUvtX | ss::runtime::UpdateAttributeFlags_AttributeUvtY |
                                   ss::runtime::UpdateAttributeFlags_AttributeUvrZ | ss::runtime::UpdateAttributeFlags_AttributeUvsX |
                                   ss::runtime::UpdateAttributeFlags_AttributeUvsY));
 
-        Rect2 src_rect(rect->x1(), rect->y1(), rect->x2(), rect->y2());
+    if (!use_advanced && partBinary->part_type_type() != ss::format::PartType_PartTypeMesh) {
+        Transform2D t = matrix_to_transform2d(draw_m);
+        rs->canvas_item_set_transform(ci, t);
 
-        if (!use_advanced && partBinary->part_type_type() != ss::format::PartType_PartTypeMesh) {
-            // --- 通常パス: Transform2D を利用した高速描画 ---
-            Transform2D t;
-            t.set_origin(Vector2(part->position_x(), part->position_y()));
-            t.set_rotation(part->rotation_z());
-            t.set_scale(Vector2(part->scale_x(), part->scale_y()));
-            rs->canvas_item_set_transform(ci, t);
+        Vector2 draw_pos = Vector2(-src_rect.size.x * (pivot->v1() + 0.5f),
+                                   -src_rect.size.y * (0.5f - pivot->v2()));
+        rs->canvas_item_add_texture_rect_region(ci, Rect2(draw_pos, src_rect.size), tex->get_rid(), src_rect, Color(1, 1, 1, part->alpha()));
+    } else if (partBinary->part_type_type() != ss::format::PartType_PartTypeMesh) {
+        rs->canvas_item_set_transform(ci, Transform2D());
 
-            Vector2 draw_pos = Vector2(-src_rect.size.x * (pivot->v1() + 0.5f),
-                                       -src_rect.size.y * (0.5f - pivot->v2()));
+        constexpr int CORNERS_COUNT = 4;
+        constexpr int MAX_VERTICES_COUNT = 5;
+        constexpr int INDICES_COUNT_QUAD = 6;
+        constexpr int INDICES_COUNT_PENTAGON = 12;
 
-            rs->canvas_item_add_texture_rect_region(ci, Rect2(draw_pos, src_rect.size), tex->get_rid(), src_rect, Color(1, 1, 1, part->alpha()));
-        } else if (partBinary->part_type_type() != ss::format::PartType_PartTypeMesh) {
-            // --- 高度パス: 頂点配列 (Triangle Array) による描画 (Normalパーツのみ) ---
-            rs->canvas_item_set_transform(ci, Transform2D());
+        float out_x[MAX_VERTICES_COUNT], out_y[MAX_VERTICES_COUNT];
+        SsVertexComputeParams params;
+        params.size = src_rect.size;
+        params.pivot = Vector2(pivot->v1(), pivot->v2());
+        params.flip_h = part->flip_h();
+        params.flip_v = part->flip_v();
+        params.use_5_vertices = true;
 
-            float w = src_rect.size.x;
-            float h = src_rect.size.y;
-            float px = -w * (pivot->v1() + 0.5f);
-            float py = -h * (0.5f - pivot->v2());
-
-            Vector2 verts[4] = {
-                Vector2(px, py),
-                Vector2(px + w, py),
-                Vector2(px, py + h),
-                Vector2(px + w, py + h)
-            };
-
-            if (flags & ss::runtime::UpdateAttributeFlags_AttributeVertex) {
-                auto vd = frameData->vertices()->Get(part->vertex());
-                verts[0] += Vector2(vd->lt().x(), vd->lt().y());
-                verts[1] += Vector2(vd->rt().x(), vd->rt().y());
-                verts[2] += Vector2(vd->lb().x(), vd->lb().y());
-                verts[3] += Vector2(vd->rb().x(), vd->rb().y());
-            }
-
-            Transform2D t;
-            t.set_origin(Vector2(part->position_x(), part->position_y()));
-            t.set_rotation(part->rotation_z());
-            t.set_scale(Vector2(part->scale_x(), part->scale_y()));
-            for (int j = 0; j < 4; j++) {
-                verts[j] = t.xform(verts[j]);
-            }
-
-            Vector2 uvs[4] = {
-                Vector2(src_rect.position.x, src_rect.position.y),
-                Vector2(src_rect.position.x + src_rect.size.x, src_rect.position.y),
-                Vector2(src_rect.position.x, src_rect.position.y + src_rect.size.y),
-                Vector2(src_rect.position.x + src_rect.size.x, src_rect.position.y + src_rect.size.y)
-            };
-
-            if (flags & (ss::runtime::UpdateAttributeFlags_AttributeUvtX | ss::runtime::UpdateAttributeFlags_AttributeUvtY |
-                         ss::runtime::UpdateAttributeFlags_AttributeUvrZ | ss::runtime::UpdateAttributeFlags_AttributeUvsX |
-                         ss::runtime::UpdateAttributeFlags_AttributeUvsY)) {
-                Vector2 uv_center = src_rect.position + src_rect.size * 0.5f;
-                for (int j = 0; j < 4; j++) {
-                    Vector2 uv = uvs[j];
-                    uv.x = (uv.x - uv_center.x) * part->uv_scale_x() + uv_center.x;
-                    uv.y = (uv.y - uv_center.y) * part->uv_scale_y() + uv_center.y;
-                    if (part->uv_rotation_z() != 0.0f) {
-                        float s = Math::sin(part->uv_rotation_z());
-                        float c = Math::cos(part->uv_rotation_z());
-                        float rel_x = uv.x - uv_center.x;
-                        float rel_y = uv.y - uv_center.y;
-                        uv.x = rel_x * c - rel_y * s + uv_center.x;
-                        uv.y = rel_x * s + rel_y * c + uv_center.y;
-                    }
-                    uv.x += part->uv_translation_x() * src_rect.size.x;
-                    uv.y += part->uv_translation_y() * src_rect.size.y;
-                    uvs[j] = uv;
-                }
-            }
-            
-            Vector2 tex_size = tex->get_size();
-            for (int j = 0; j < 4; j++) {
-                uvs[j].x /= tex_size.x;
-                uvs[j].y /= tex_size.y;
-            }
-
-            Color colors[4] = {
-                Color(1, 1, 1, part->alpha()),
-                Color(1, 1, 1, part->alpha()),
-                Color(1, 1, 1, part->alpha()),
-                Color(1, 1, 1, part->alpha())
-            };
-
-            if (flags & ss::runtime::UpdateAttributeFlags_AttributePartColor) {
-                auto pc = frameData->parts_color()->Get(part->part_color());
-                colors[0] = Color(pc->lt().rgba().r() / 255.0f, pc->lt().rgba().g() / 255.0f, pc->lt().rgba().b() / 255.0f, (pc->lt().rgba().a() / 255.0f) * part->alpha());
-                colors[1] = Color(pc->rt().rgba().r() / 255.0f, pc->rt().rgba().g() / 255.0f, pc->rt().rgba().b() / 255.0f, (pc->rt().rgba().a() / 255.0f) * part->alpha());
-                colors[2] = Color(pc->lb().rgba().r() / 255.0f, pc->lb().rgba().g() / 255.0f, pc->lb().rgba().b() / 255.0f, (pc->lb().rgba().a() / 255.0f) * part->alpha());
-                colors[3] = Color(pc->rb().rgba().r() / 255.0f, pc->rb().rgba().g() / 255.0f, pc->rb().rgba().b() / 255.0f, (pc->rb().rgba().a() / 255.0f) * part->alpha());
-            }
-
-            #ifdef SPRITESTUDIO_GODOT_EXTENSION
-            PackedVector2Array p_verts; p_verts.resize(4);
-            PackedVector2Array p_uvs; p_uvs.resize(4);
-            PackedColorArray p_colors; p_colors.resize(4);
-            PackedInt32Array p_indices; p_indices.resize(6);
-            #else
-            Vector<Vector2> p_verts; p_verts.resize(4);
-            Vector<Vector2> p_uvs; p_uvs.resize(4);
-            Vector<Color> p_colors; p_colors.resize(4);
-            Vector<int> p_indices; p_indices.resize(6);
-            #endif
-
-            for(int j=0; j<4; j++) {
-                p_verts.set(j, verts[j]);
-                p_uvs.set(j, uvs[j]);
-                p_colors.set(j, colors[j]);
-            }
-            p_indices.set(0, 0); p_indices.set(1, 1); p_indices.set(2, 2);
-            p_indices.set(3, 1); p_indices.set(4, 3); p_indices.set(5, 2);
-
-            rs->canvas_item_add_triangle_array(ci, p_indices, p_verts, p_colors, p_uvs, {}, {}, tex->get_rid());
+        if (flags & ss::runtime::UpdateAttributeFlags_AttributeVertex) {
+            auto vd = frameData->vertices()->Get(part->vertex());
+            params.has_deform = true;
+            params.deform_lt = Vector2(vd->lt().x(), vd->lt().y());
+            params.deform_rt = Vector2(vd->rt().x(), vd->rt().y());
+            params.deform_lb = Vector2(vd->lb().x(), vd->lb().y());
+            params.deform_rb = Vector2(vd->rb().x(), vd->rb().y());
         }
+
+        int v_count = compute_vertices(params, out_x, out_y);
+
+        if (v_count < CORNERS_COUNT) {
+            return;
+        }
+
+        #ifdef SPRITESTUDIO_GODOT_EXTENSION
+        PackedVector2Array p_verts; p_verts.resize(v_count);
+        PackedVector2Array p_uvs; p_uvs.resize(v_count);
+        PackedColorArray p_colors; p_colors.resize(v_count);
+        PackedInt32Array p_indices; p_indices.resize((v_count == MAX_VERTICES_COUNT) ? INDICES_COUNT_PENTAGON : INDICES_COUNT_QUAD);
+        #else
+        Vector<Vector2> p_verts; p_verts.resize(v_count);
+        Vector<Vector2> p_uvs; p_uvs.resize(v_count);
+        Vector<Color> p_colors; p_colors.resize(v_count);
+        Vector<int> p_indices; p_indices.resize((v_count == MAX_VERTICES_COUNT) ? INDICES_COUNT_PENTAGON : INDICES_COUNT_QUAD);
+        #endif
+
+        float out_u[MAX_VERTICES_COUNT], out_v[MAX_VERTICES_COUNT];
+        SsUvComputeParams uv_params;
+        uv_params.src_rect = src_rect;
+        uv_params.uv_translation = Vector2(part->uv_translation_x(), part->uv_translation_y());
+        uv_params.uv_rotation_z = part->uv_rotation_z();
+        uv_params.uv_scale = Vector2(part->uv_scale_x(), part->uv_scale_y());
+        uv_params.part_flip_h = part->flip_h();
+        uv_params.part_flip_v = part->flip_v();
+        uv_params.img_flip_h = part->img_flip_h();
+        uv_params.img_flip_v = part->img_flip_v();
+        uv_params.rotated = cell->rotated();
+        uv_params.use_5_vertices = true;
+
+        compute_uvs(uv_params, out_u, out_v);
+
+        Vector2 tex_size = tex->get_size();
+        Color corner_colors[CORNERS_COUNT] = { Color(1, 1, 1, part->alpha()), Color(1, 1, 1, part->alpha()), Color(1, 1, 1, part->alpha()), Color(1, 1, 1, part->alpha()) };
+        if (flags & ss::runtime::UpdateAttributeFlags_AttributePartColor) {
+            auto pc = frameData->parts_color()->Get(part->part_color());
+            auto to_color = [&](const ss::runtime::SsAttributePartColorKeyValueColor &c) { return Color(c.rgba().r()/255.0f, c.rgba().g()/255.0f, c.rgba().b()/255.0f, (c.rgba().a()/255.0f)*part->alpha()); };
+            corner_colors[0] = to_color(pc->lt()); corner_colors[1] = to_color(pc->rt()); corner_colors[2] = to_color(pc->lb()); corner_colors[3] = to_color(pc->rb());
+        }
+
+        Transform2D draw_transform = matrix_to_transform2d(draw_m);
+
+        for (int j = 0; j < CORNERS_COUNT; j++) {
+            p_verts.set(j, draw_transform.xform(Vector2(out_x[j], out_y[j])));
+            p_uvs.set(j, Vector2(out_u[j] / tex_size.x, out_v[j] / tex_size.y));
+            p_colors.set(j, corner_colors[j]);
+        }
+        if (v_count == MAX_VERTICES_COUNT) {
+            p_verts.set(CORNERS_COUNT, draw_transform.xform(Vector2(out_x[CORNERS_COUNT], out_y[CORNERS_COUNT])));
+            p_uvs.set(CORNERS_COUNT, Vector2(out_u[CORNERS_COUNT] / tex_size.x, out_v[CORNERS_COUNT] / tex_size.y));
+            p_colors.set(CORNERS_COUNT, (corner_colors[0] + corner_colors[1] + corner_colors[2] + corner_colors[3]) * 0.25f);
+            int idxs[] = { 0,1,4, 1,3,4, 3,2,4, 2,0,4 };
+            for(int k=0; k<INDICES_COUNT_PENTAGON; k++) p_indices.set(k, idxs[k]);
+        } else {
+            int idxs[] = { 0,1,2, 1,3,2 };
+            for(int k=0; k<INDICES_COUNT_QUAD; k++) p_indices.set(k, idxs[k]);
+        }
+        rs->canvas_item_add_triangle_array(ci, p_indices, p_verts, p_colors, p_uvs, {}, {}, tex->get_rid());
     }
 }
 

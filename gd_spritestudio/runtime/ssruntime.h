@@ -281,4 +281,58 @@ int32_t ss_runtime_get_passed_event_frame_no(void *context, int32_t index);
 
 int32_t ss_runtime_get_passed_event_index(void *context, int32_t index);
 
+/// Computes the local vertex coordinates for a part.
+///
+/// # Safety
+/// - `input_data`: Must point to an array of at least 6 floats if `has_deform` (flag 4) is false,
+///   or 14 floats if `has_deform` is true.
+///   Layout: [size_x, size_y, pivot_x, pivot_y, pivot_offset_x, pivot_offset_y, (optional) dx0..3, dy0..3]
+/// - `out_x`, `out_y`: Must point to buffers with at least 4 floats, or 5 floats if `use_5_vertices` (flag 8) is true.
+/// Computes the local vertices for a part using primitive parameters.
+/// deform_x_ptr, deform_y_ptr: optional pointers to float arrays of size 4.
+/// out_x, out_y: pointers to float arrays of size 5 to store results.
+/// # Safety
+/// This function is unsafe because it dereferences raw pointers.
+int32_t ss_vertex_compute_local(float size_w,
+                                float size_h,
+                                float pivot_x,
+                                float pivot_y,
+                                float pivot_offset_x,
+                                float pivot_offset_y,
+                                bool h_flip,
+                                bool v_flip,
+                                bool use_5_vertices,
+                                const float *deform_x_ptr,
+                                const float *deform_y_ptr,
+                                float *out_x,
+                                float *out_y);
+
+/// Computes the local UV coordinates for a part.
+///
+/// # Safety
+/// - `input_data`: Must point to an array of at least 9 floats.
+///   Layout: [left, top, right, bottom, trans_u, trans_v, rot_deg, scale_u, scale_v]
+/// - `out_u`, `out_v`: Must point to buffers with at least 4 floats, or 5 floats if `use_5_vertices` (flag 32) is true.
+/// Computes the local UV coordinates for a part using primitive parameters.
+/// out_u, out_v: pointers to float arrays of size 5 to store results.
+/// # Safety
+/// This function is unsafe because it dereferences raw pointers.
+int32_t ss_uv_compute_local(float u_left,
+                            float v_top,
+                            float u_right,
+                            float v_bottom,
+                            float trans_u,
+                            float trans_v,
+                            float rot_deg,
+                            float scale_u,
+                            float scale_v,
+                            bool part_flip_h,
+                            bool part_flip_v,
+                            bool img_flip_h,
+                            bool img_flip_v,
+                            bool rotated,
+                            bool use_5_vertices,
+                            float *out_u,
+                            float *out_v);
+
 }  // extern "C"
