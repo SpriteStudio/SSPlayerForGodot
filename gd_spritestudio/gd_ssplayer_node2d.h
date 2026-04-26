@@ -94,5 +94,6 @@ private:
     void _draw_part(RenderingServer *rs, RID ci, const ss::runtime::FrameData *frameData, const ss::runtime::PartState *part, const ss::format::PartData *partBinary, const Ref<Texture2D> &tex, const ss::format::Cell *cell, const float *draw_m);
 
     Vector<float> _inheritance_matrices;
+    void _reconfigure();
     void _clear_canvas_items();
 };

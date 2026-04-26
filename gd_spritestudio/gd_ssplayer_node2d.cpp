@@ -14,7 +14,13 @@
 
 GdSsPlayerNode2D::GdSsPlayerNode2D() {
     runtime_ctx = ss_runtime_create();
-    ss_context_set_coordinate_system(runtime_ctx, 1);
+    _reconfigure();
+}
+
+void GdSsPlayerNode2D::_reconfigure() {
+    if (runtime_ctx != nullptr) {
+        ss_context_set_coordinate_system(runtime_ctx, 1);
+    }
 }
 
 GdSsPlayerNode2D::~GdSsPlayerNode2D() {
@@ -733,6 +739,7 @@ void GdSsPlayerNode2D::_draw_part(RenderingServer *rs, RID ci, const ss::runtime
 void GdSsPlayerNode2D::fetchAnimation() {
 	if ( _strAnimationSelected.is_empty() || _ssabRes.is_null() ) {
         ss_runtime_reset(runtime_ctx);
+        _reconfigure();
         if (rutime_res != nullptr) {
             ss_resource_destroy(rutime_res);
             rutime_res = nullptr;
