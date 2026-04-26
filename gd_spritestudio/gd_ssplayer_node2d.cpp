@@ -3,6 +3,9 @@
 #include "runtime/ssruntime.h"
 #include "runtime/framedata.h"
 
+#include <algorithm>
+#include <vector>
+
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
 #include <godot_cpp/classes/resource_loader.hpp>
 #include <godot_cpp/classes/rendering_server.hpp>
@@ -576,15 +579,38 @@ void GdSsPlayerNode2D::drawAnimation(int frame_no) {
 
     auto frameData = ss::runtime::GetFrameData(data);
     auto parts = frameData->parts();
-    auto binary = _ssabRes->get_ss_anime_binary();
-    RenderingServer *rs = RenderingServer::get_singleton();
+    if (!parts) return;
 
+    // Collect and sort parts according to the logic: priority first, then part_index (SS6-SDK style)
+    std::vector<const ss::runtime::PartState*> sorted_parts;
+    sorted_parts.reserve(parts->size());
     for (uint32_t i = 0; i < parts->size(); i++) {
-        auto part = parts->Get(i);
-        auto partBinary = binary->parts()->Get(part->part_index());
+        sorted_parts.push_back(parts->Get(i));
+    }
+    std::sort(sorted_parts.begin(), sorted_parts.end(), [](const ss::runtime::PartState* lhs, const ss::runtime::PartState* rhs) {
+        if (lhs->priority() == rhs->priority())
+            return lhs->part_index() < rhs->part_index();
+        return lhs->priority() < rhs->priority();
+    });
 
+    RenderingServer *rs = RenderingServer::get_singleton();
+    // Clear all canvas items once per frame to ensure a clean state
+    for (RID ci : _canvas_items) {
+        rs->canvas_item_clear(ci);
+    }
+
+    auto binary = _ssabRes->get_ss_anime_binary();
+
+    for (uint32_t i = 0; i < sorted_parts.size(); i++) {
+        auto part = sorted_parts[i];
         int p_idx = part->part_index();
         if (p_idx < 0 || p_idx >= (int)_canvas_items.size()) continue;
+
+        RID ci = _canvas_items[p_idx];
+        // Use the sorted rank 'i' as the z_index to strictly enforce the determined order
+        rs->canvas_item_set_z_index(ci, i);
+
+        if (part->hide()) continue;
 
         const float *drawing_m = nullptr;
         if (world_matrices && ((uintptr_t)p_idx * 16 < world_matrices_len)) {
@@ -593,10 +619,7 @@ void GdSsPlayerNode2D::drawAnimation(int frame_no) {
             continue;
         }
 
-        RID ci = _canvas_items[p_idx];
-        rs->canvas_item_clear(ci);
-        rs->canvas_item_set_z_index(ci, (int)part->priority());
-        if (part->hide()) continue;
+        auto partBinary = binary->parts()->Get(p_idx);
 
         auto frameDataCellIndex = part->cell();
         auto frameDataCell = frameData->cells()->Get(frameDataCellIndex);
