@@ -570,30 +570,28 @@ void GdSsPlayerNode2D::drawAnimation(int frame_no) {
     ss_runtime_get_frame_data(runtime_ctx, frame_no, &data, &len);
     if (!data) return;
 
+    const float *world_matrices = nullptr;
+    uintptr_t world_matrices_len = 0;
+    ss_runtime_get_world_matrices(runtime_ctx, &world_matrices, &world_matrices_len);
+
     auto frameData = ss::runtime::GetFrameData(data);
     auto parts = frameData->parts();
     auto binary = _ssabRes->get_ss_anime_binary();
     RenderingServer *rs = RenderingServer::get_singleton();
 
-    int num_parts = binary->parts()->size();
-    if (_inheritance_matrices.size() < num_parts * 16) {
-        _inheritance_matrices.resize(num_parts * 16);
-    }
-
     for (uint32_t i = 0; i < parts->size(); i++) {
         auto part = parts->Get(i);
         auto partBinary = binary->parts()->Get(part->part_index());
 
-        int parent_idx = partBinary->parent_index();
-        float *parent_m = (parent_idx >= 0) ? _inheritance_matrices.ptrw() + (parent_idx * 16) : nullptr;
-        float drawing_m[16];
-        float *inheritance_m = _inheritance_matrices.ptrw() + (part->part_index() * 16);
-
-        // TODO: Pass parent size if using NineSlice/etc. (not fully supported here yet)
-        ss_matrix_compute_world(inheritance_m, drawing_m, part, parent_m, false, 0.0f, 0.0f);
-
         int p_idx = part->part_index();
         if (p_idx < 0 || p_idx >= (int)_canvas_items.size()) continue;
+
+        const float *drawing_m = nullptr;
+        if (world_matrices && ((uintptr_t)p_idx * 16 < world_matrices_len)) {
+            drawing_m = world_matrices + (p_idx * 16);
+        } else {
+            continue;
+        }
 
         RID ci = _canvas_items[p_idx];
         rs->canvas_item_clear(ci);
