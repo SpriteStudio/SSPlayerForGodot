@@ -90,8 +90,9 @@ private:
     void loadTextures(const Ref<GdSsabResource>& ssabRes);
     void updateAnimation(float delta);
     void fetchAnimation();
-    void drawAnimation();
-    void _draw_part(RenderingServer *rs, RID ci, const ss::runtime::FrameData *frameData, const ss::runtime::PartState *part, const ss::format::PartData *partBinary, const Ref<Texture2D> &tex, const ss::format::Cell *cell);
+    void drawAnimation(int frame_no);
+    void _draw_part(RenderingServer *rs, RID ci, const ss::runtime::FrameData *frameData, const ss::runtime::PartState *part, const ss::format::PartData *partBinary, const Ref<Texture2D> &tex, const ss::format::Cell *cell, const float *draw_m);
 
+    Vector<float> _inheritance_matrices;
     void _clear_canvas_items();
 };

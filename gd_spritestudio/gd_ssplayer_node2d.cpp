@@ -554,14 +554,13 @@ void GdSsPlayerNode2D::updateAnimation( float delta ) {
         }
         */
         previous_frame_no = frame_no;
-        drawAnimation();
+        drawAnimation(frame_no);
     }
 }
 
-void GdSsPlayerNode2D::drawAnimation() {
+void GdSsPlayerNode2D::drawAnimation(int frame_no) {
     unsigned char *data = nullptr;
     uintptr_t len = 0;
-    int frame_no = ss_runtime_get_frame_no(runtime_ctx);
     ss_runtime_get_frame_data(runtime_ctx, frame_no, &data, &len);
     if (!data) return;
 
@@ -570,12 +569,29 @@ void GdSsPlayerNode2D::drawAnimation() {
     auto binary = _ssabRes->get_ss_anime_binary();
     RenderingServer *rs = RenderingServer::get_singleton();
 
+    int num_parts = binary->parts()->size();
+    if (_inheritance_matrices.size() < num_parts * 16) {
+        _inheritance_matrices.resize(num_parts * 16);
+    }
+
     for (uint32_t i = 0; i < parts->size(); i++) {
         auto part = parts->Get(i);
-        if (i >= (uint32_t)_canvas_items.size() || part->update_flag() == 0) continue;
+        auto partBinary = binary->parts()->Get(part->part_index());
 
-        RID ci = _canvas_items[i];
+        int parent_idx = partBinary->parent_index();
+        float *parent_m = (parent_idx >= 0) ? _inheritance_matrices.ptrw() + (parent_idx * 16) : nullptr;
+        float drawing_m[16];
+        float *inheritance_m = _inheritance_matrices.ptrw() + (part->part_index() * 16);
+
+        // TODO: Pass parent size if using NineSlice/etc. (not fully supported here yet)
+        ss_matrix_compute_world(inheritance_m, drawing_m, part, parent_m, false, 0.0f, 0.0f);
+
+        int p_idx = part->part_index();
+        if (p_idx < 0 || p_idx >= (int)_canvas_items.size()) continue;
+
+        RID ci = _canvas_items[p_idx];
         rs->canvas_item_clear(ci);
+        rs->canvas_item_set_z_index(ci, (int)part->priority());
         if (part->hide()) continue;
 
         auto frameDataCellIndex = part->cell();
@@ -589,12 +605,11 @@ void GdSsPlayerNode2D::drawAnimation() {
         auto cell = cellmap->cells()->LookupByKey(frameDataCell->name_hash());
         if (!cell) continue;
 
-        auto partBinary = binary->parts()->Get(part->part_index());
-        _draw_part(rs, ci, frameData, part, partBinary, tex, cell);
+        _draw_part(rs, ci, frameData, part, partBinary, tex, cell, drawing_m);
     }
 }
 
-void GdSsPlayerNode2D::_draw_part(RenderingServer *rs, RID ci, const ss::runtime::FrameData *frameData, const ss::runtime::PartState *part, const ss::format::PartData *partBinary, const Ref<Texture2D> &tex, const ss::format::Cell *cell) {
+void GdSsPlayerNode2D::_draw_part(RenderingServer *rs, RID ci, const ss::runtime::FrameData *frameData, const ss::runtime::PartState *part, const ss::format::PartData *partBinary, const Ref<Texture2D> &tex, const ss::format::Cell *cell, const float *draw_m) {
     // 1. Blend Mode
     ss::format::BlendType ss_blend = partBinary->blend_type();
     if (!_blend_materials.has((int)ss_blend)) {
@@ -611,11 +626,6 @@ void GdSsPlayerNode2D::_draw_part(RenderingServer *rs, RID ci, const ss::runtime
     rs->canvas_item_set_material(ci, _blend_materials[(int)ss_blend]->get_rid());
 
     // 2. Matrix Calculation (Hierarchy aware)
-    float draw_m[16];
-    if (!ss_util_get_part_world_matrix(runtime_ctx, part->part_index(), ss_runtime_get_frame_no(runtime_ctx), draw_m)) {
-        return;
-    }
-
     uint64_t flags = part->update_flag();
     auto rect = cell->rectangle();
     auto pivot = cell->pivot();
@@ -776,5 +786,5 @@ void GdSsPlayerNode2D::fetchAnimation() {
         }
 
         previous_frame_no = -1;
-        drawAnimation();
+        drawAnimation(ss_runtime_get_frame_no(runtime_ctx));
 }
