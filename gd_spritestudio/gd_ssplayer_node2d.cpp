@@ -577,21 +577,13 @@ void GdSsPlayerNode2D::drawAnimation(int frame_no) {
     uintptr_t world_matrices_len = 0;
     ss_runtime_get_world_matrices(runtime_ctx, &world_matrices, &world_matrices_len);
 
+    const int32_t *z_order = nullptr;
+    uintptr_t z_order_len = 0;
+    ss_runtime_get_z_order(runtime_ctx, &z_order, &z_order_len);
+
     auto frameData = ss::runtime::GetFrameData(data);
     auto parts = frameData->parts();
     if (!parts) return;
-
-    // Collect and sort parts according to the logic: priority first, then part_index (SS6-SDK style)
-    std::vector<const ss::runtime::PartState*> sorted_parts;
-    sorted_parts.reserve(parts->size());
-    for (uint32_t i = 0; i < parts->size(); i++) {
-        sorted_parts.push_back(parts->Get(i));
-    }
-    std::sort(sorted_parts.begin(), sorted_parts.end(), [](const ss::runtime::PartState* lhs, const ss::runtime::PartState* rhs) {
-        if (lhs->priority() == rhs->priority())
-            return lhs->part_index() < rhs->part_index();
-        return lhs->priority() < rhs->priority();
-    });
 
     RenderingServer *rs = RenderingServer::get_singleton();
     // Clear all canvas items once per frame to ensure a clean state
@@ -601,14 +593,16 @@ void GdSsPlayerNode2D::drawAnimation(int frame_no) {
 
     auto binary = _ssabRes->get_ss_anime_binary();
 
-    for (uint32_t i = 0; i < sorted_parts.size(); i++) {
-        auto part = sorted_parts[i];
+    for (uint32_t i = 0; i < parts->size(); i++) {
+        auto part = parts->Get(i);
         int p_idx = part->part_index();
         if (p_idx < 0 || p_idx >= (int)_canvas_items.size()) continue;
 
         RID ci = _canvas_items[p_idx];
-        // Use the sorted rank 'i' as the z_index to strictly enforce the determined order
-        rs->canvas_item_set_z_index(ci, i);
+        // Use the Z-order rank provided by the runtime to strictly enforce the determined order
+        if (z_order && (uintptr_t)p_idx < z_order_len) {
+            rs->canvas_item_set_z_index(ci, z_order[p_idx]);
+        }
 
         if (part->hide()) continue;
 

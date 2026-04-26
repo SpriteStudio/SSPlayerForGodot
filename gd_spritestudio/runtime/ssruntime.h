@@ -108,6 +108,12 @@ void ss_runtime_get_frame_data(void *context,
 /// The caller must ensure `out_data` and `out_len` are valid if they are not null.
 void ss_runtime_get_world_matrices(void *context, const float **out_data, uintptr_t *out_len);
 
+/// # Safety
+///
+/// This function is unsafe because it dereferences raw pointers for output.
+/// The caller must ensure `out_data` and `out_len` are valid if they are not null.
+void ss_runtime_get_z_order(void *context, const int32_t **out_data, uintptr_t *out_len);
+
 int ss_runtime_get_frame_no(void *context);
 
 float ss_runtime_get_frame_no_decimal(void *context);
