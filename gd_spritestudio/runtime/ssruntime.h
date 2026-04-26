@@ -186,6 +186,10 @@ float ss_util_calculate_instance_frame(float parent_frame,
                                        bool independent,
                                        float accumulated_time);
 
+void ss_runtime_set_world_matrix_calculation_enabled(void *context, bool enabled);
+
+bool ss_runtime_is_world_matrix_calculation_enabled(void *context);
+
 void ss_context_set_coordinate_system(void *context, int32_t coordinate_system);
 
 int32_t ss_context_get_coordinate_system(void *context);
