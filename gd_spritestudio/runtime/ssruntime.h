@@ -335,4 +335,8 @@ int32_t ss_uv_compute_local(float u_left,
                             float *out_u,
                             float *out_v);
 
+bool ss_geometry_is_point_in_rect(float px, float py, float size_w, float size_h);
+
+bool ss_geometry_is_point_in_quad(float tx, float ty, const float *vx, const float *vy);
+
 }  // extern "C"
