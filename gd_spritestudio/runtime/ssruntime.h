@@ -202,13 +202,6 @@ void ss_context_set_unit(void *context, int32_t unit);
 
 int32_t ss_context_get_unit(void *context);
 
-/// Compute world matrix for a specific part by traversing its ancestors.
-/// out_m: pointer to float array of size 16.
-bool ss_util_get_part_world_matrix(void *context,
-                                   uint16_t part_index,
-                                   int32_t frame_no,
-                                   float *out_m);
-
 /// Transform multiple particle positions by a matrix.
 /// matrix_ptr: pointer to float array of size 16.
 /// particles_ptr: pointer to ParticleState array from ss_effect_get_state.
@@ -218,72 +211,6 @@ void ss_effect_transform_particles(const float *matrix_ptr,
                                    const void *particles_ptr,
                                    int32_t count,
                                    float *out_pos_ptr);
-
-/// out_m must be a pointer to a float array of size 16.
-/// # Safety
-/// This function is unsafe because it dereferences a raw pointer.
-void ss_matrix_identity(float *out_m);
-
-/// out_m, lhs, rhs must be pointers to float arrays of size 16.
-/// # Safety
-/// This function is unsafe because it dereferences raw pointers.
-void ss_matrix_multiply(float *out_m, const float *lhs, const float *rhs);
-
-/// out_m, in_m must be pointers to float arrays of size 16.
-/// # Safety
-/// This function is unsafe because it dereferences raw pointers.
-void ss_matrix_inverse(float *out_m, const float *in_m);
-
-/// out_x, out_y, out_z: output pointers for transformed vector.
-/// mat: pointer to a float array of size 16.
-/// x, y, z: input vector components.
-/// # Safety
-/// This function is unsafe because it dereferences raw pointers.
-void ss_matrix_transform_vector3(float *out_x,
-                                 float *out_y,
-                                 float *out_z,
-                                 const float *mat,
-                                 float x,
-                                 float y,
-                                 float z);
-
-/// out_m: pointer to a float array of size 16.
-/// # Safety
-/// This function is unsafe because it dereferences a raw pointer.
-void ss_matrix_create_scale(float *out_m, float x, float y, float z);
-
-/// out_m: pointer to a float array of size 16.
-/// # Safety
-/// This function is unsafe because it dereferences a raw pointer.
-void ss_matrix_create_translation(float *out_m, float x, float y, float z);
-
-/// out_m: pointer to a float array of size 16.
-/// # Safety
-/// This function is unsafe because it dereferences a raw pointer.
-void ss_matrix_create_rotation_x(float *out_m, float radians);
-
-/// out_m: pointer to a float array of size 16.
-/// # Safety
-/// This function is unsafe because it dereferences a raw pointer.
-void ss_matrix_create_rotation_y(float *out_m, float radians);
-
-/// out_m: pointer to a float array of size 16.
-/// # Safety
-/// This function is unsafe because it dereferences a raw pointer.
-void ss_matrix_create_rotation_z(float *out_m, float radians);
-
-/// out_inheritance_m, out_drawing_m: pointers to float arrays of size 16.
-/// state: pointer to PartState
-/// parent_matrix: pointer to a float array of size 16, or null.
-/// # Safety
-/// This function is unsafe because it dereferences raw pointers.
-void ss_matrix_compute_world(float *out_inheritance_m,
-                             float *out_drawing_m,
-                             const void *state,
-                             const float *parent_matrix,
-                             bool has_parent_size,
-                             float parent_size_x,
-                             float parent_size_y);
 
 int32_t ss_runtime_get_passed_event_count(void *context);
 
