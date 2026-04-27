@@ -451,7 +451,6 @@ namespace {
         Vector2 pivot;
         bool flip_h = false;
         bool flip_v = false;
-        bool use_5_vertices = true;
         bool has_deform = false;
         Vector2 deform_lt, deform_rt, deform_lb, deform_rb;
     };
@@ -472,7 +471,6 @@ namespace {
             params.pivot.x, params.pivot.y,
             0, 0, // pivot_offset
             params.flip_h, params.flip_v,
-            params.use_5_vertices,
             p_dx, p_dy,
             out_x, out_y
         );
@@ -495,7 +493,6 @@ namespace {
         bool img_flip_h = false;
         bool img_flip_v = false;
         bool rotated = false;
-        bool use_5_vertices = true;
     };
 
     int compute_uvs(const SsUvComputeParams& params, float* out_u, float* out_v) {
@@ -510,7 +507,6 @@ namespace {
             params.part_flip_h, params.part_flip_v,
             params.img_flip_h, params.img_flip_v,
             params.rotated,
-            params.use_5_vertices,
             out_u, out_v
         );
     }
@@ -678,7 +674,6 @@ void GdSsPlayerNode2D::_draw_part(RenderingServer *rs, RID ci, const ss::runtime
         params.pivot = Vector2(pivot->v1(), pivot->v2());
         params.flip_h = part->flip_h();
         params.flip_v = part->flip_v();
-        params.use_5_vertices = true;
 
         if (flags & ss::runtime::UpdateAttributeFlags_AttributeVertex) {
             auto vd = frameData->vertices()->Get(part->vertex());
@@ -718,7 +713,6 @@ void GdSsPlayerNode2D::_draw_part(RenderingServer *rs, RID ci, const ss::runtime
         uv_params.img_flip_h = part->img_flip_h();
         uv_params.img_flip_v = part->img_flip_v();
         uv_params.rotated = cell->rotated();
-        uv_params.use_5_vertices = true;
 
         compute_uvs(uv_params, out_u, out_v);
 
