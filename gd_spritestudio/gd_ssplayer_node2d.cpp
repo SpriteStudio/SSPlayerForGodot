@@ -455,7 +455,11 @@ namespace {
         Vector2 deform_lt, deform_rt, deform_lb, deform_rb;
     };
 
-    int compute_vertices(const SsVertexComputeParams& params, float* out_x, float* out_y) {
+    constexpr int CORNERS_COUNT = 4;
+    constexpr int MAX_VERTICES_COUNT = 5;
+    constexpr int INDICES_COUNT_PENTAGON = 12;
+
+    bool compute_vertices(const SsVertexComputeParams& params, float* out_x, float* out_y) {
         float deform_x[4], deform_y[4];
         const float *p_dx = nullptr, *p_dy = nullptr;
         if (params.has_deform) {
@@ -466,7 +470,7 @@ namespace {
             p_dx = deform_x; p_dy = deform_y;
         }
 
-        int v_count = ss_vertex_compute_local(
+        bool success = ss_vertex_compute_local(
             params.size.x, params.size.y,
             params.pivot.x, params.pivot.y,
             0, 0, // pivot_offset
@@ -475,12 +479,13 @@ namespace {
             out_x, out_y
         );
 
-        // Convert from Y-up (ssruntime) to Y-down (Godot)
-        for (int i = 0; i < v_count; i++) {
-            out_y[i] = -out_y[i];
+        if (success) {
+            // Convert from Y-up (ssruntime) to Y-down (Godot)
+            for (int i = 0; i < MAX_VERTICES_COUNT; i++) {
+                out_y[i] = -out_y[i];
+            }
         }
-
-        return v_count;
+        return success;
     }
 
     struct SsUvComputeParams {
@@ -495,7 +500,7 @@ namespace {
         bool rotated = false;
     };
 
-    int compute_uvs(const SsUvComputeParams& params, float* out_u, float* out_v) {
+    bool compute_uvs(const SsUvComputeParams& params, float* out_u, float* out_v) {
         return ss_uv_compute_local(
             params.src_rect.position.x, params.src_rect.position.y,
             params.src_rect.position.x + params.src_rect.size.x,
@@ -663,11 +668,6 @@ void GdSsPlayerNode2D::_draw_part(RenderingServer *rs, RID ci, const ss::runtime
     } else if (partBinary->part_type_type() != ss::format::PartType_PartTypeMesh) {
         rs->canvas_item_set_transform(ci, Transform2D());
 
-        constexpr int CORNERS_COUNT = 4;
-        constexpr int MAX_VERTICES_COUNT = 5;
-        constexpr int INDICES_COUNT_QUAD = 6;
-        constexpr int INDICES_COUNT_PENTAGON = 12;
-
         float out_x[MAX_VERTICES_COUNT], out_y[MAX_VERTICES_COUNT];
         SsVertexComputeParams params;
         params.size = src_rect.size;
@@ -684,22 +684,20 @@ void GdSsPlayerNode2D::_draw_part(RenderingServer *rs, RID ci, const ss::runtime
             params.deform_rb = Vector2(vd->rb().x(), vd->rb().y());
         }
 
-        int v_count = compute_vertices(params, out_x, out_y);
-
-        if (v_count < CORNERS_COUNT) {
+        if (!compute_vertices(params, out_x, out_y)) {
             return;
         }
 
         #ifdef SPRITESTUDIO_GODOT_EXTENSION
-        PackedVector2Array p_verts; p_verts.resize(v_count);
-        PackedVector2Array p_uvs; p_uvs.resize(v_count);
-        PackedColorArray p_colors; p_colors.resize(v_count);
-        PackedInt32Array p_indices; p_indices.resize((v_count == MAX_VERTICES_COUNT) ? INDICES_COUNT_PENTAGON : INDICES_COUNT_QUAD);
+        PackedVector2Array p_verts; p_verts.resize(MAX_VERTICES_COUNT);
+        PackedVector2Array p_uvs; p_uvs.resize(MAX_VERTICES_COUNT);
+        PackedColorArray p_colors; p_colors.resize(MAX_VERTICES_COUNT);
+        PackedInt32Array p_indices; p_indices.resize(INDICES_COUNT_PENTAGON);
         #else
-        Vector<Vector2> p_verts; p_verts.resize(v_count);
-        Vector<Vector2> p_uvs; p_uvs.resize(v_count);
-        Vector<Color> p_colors; p_colors.resize(v_count);
-        Vector<int> p_indices; p_indices.resize((v_count == MAX_VERTICES_COUNT) ? INDICES_COUNT_PENTAGON : INDICES_COUNT_QUAD);
+        Vector<Vector2> p_verts; p_verts.resize(MAX_VERTICES_COUNT);
+        Vector<Vector2> p_uvs; p_uvs.resize(MAX_VERTICES_COUNT);
+        Vector<Color> p_colors; p_colors.resize(MAX_VERTICES_COUNT);
+        Vector<int> p_indices; p_indices.resize(INDICES_COUNT_PENTAGON);
         #endif
 
         float out_u[MAX_VERTICES_COUNT], out_v[MAX_VERTICES_COUNT];
@@ -714,7 +712,9 @@ void GdSsPlayerNode2D::_draw_part(RenderingServer *rs, RID ci, const ss::runtime
         uv_params.img_flip_v = part->img_flip_v();
         uv_params.rotated = cell->rotated();
 
-        compute_uvs(uv_params, out_u, out_v);
+        if (!compute_uvs(uv_params, out_u, out_v)) {
+            return;
+        }
 
         Vector2 tex_size = tex->get_size();
         Color corner_colors[CORNERS_COUNT] = { Color(1, 1, 1, part->alpha()), Color(1, 1, 1, part->alpha()), Color(1, 1, 1, part->alpha()), Color(1, 1, 1, part->alpha()) };
@@ -731,16 +731,13 @@ void GdSsPlayerNode2D::_draw_part(RenderingServer *rs, RID ci, const ss::runtime
             p_uvs.set(j, Vector2(out_u[j] / tex_size.x, out_v[j] / tex_size.y));
             p_colors.set(j, corner_colors[j]);
         }
-        if (v_count == MAX_VERTICES_COUNT) {
-            p_verts.set(CORNERS_COUNT, draw_transform.xform(Vector2(out_x[CORNERS_COUNT], out_y[CORNERS_COUNT])));
-            p_uvs.set(CORNERS_COUNT, Vector2(out_u[CORNERS_COUNT] / tex_size.x, out_v[CORNERS_COUNT] / tex_size.y));
-            p_colors.set(CORNERS_COUNT, (corner_colors[0] + corner_colors[1] + corner_colors[2] + corner_colors[3]) * 0.25f);
-            int idxs[] = { 0,1,4, 1,3,4, 3,2,4, 2,0,4 };
-            for(int k=0; k<INDICES_COUNT_PENTAGON; k++) p_indices.set(k, idxs[k]);
-        } else {
-            int idxs[] = { 0,1,2, 1,3,2 };
-            for(int k=0; k<INDICES_COUNT_QUAD; k++) p_indices.set(k, idxs[k]);
-        }
+
+        p_verts.set(CORNERS_COUNT, draw_transform.xform(Vector2(out_x[CORNERS_COUNT], out_y[CORNERS_COUNT])));
+        p_uvs.set(CORNERS_COUNT, Vector2(out_u[CORNERS_COUNT] / tex_size.x, out_v[CORNERS_COUNT] / tex_size.y));
+        p_colors.set(CORNERS_COUNT, (corner_colors[0] + corner_colors[1] + corner_colors[2] + corner_colors[3]) * 0.25f);
+        int idxs[] = { 0,1,4, 1,3,4, 3,2,4, 2,0,4 };
+        for(int k=0; k<INDICES_COUNT_PENTAGON; k++) p_indices.set(k, idxs[k]);
+
         rs->canvas_item_add_triangle_array(ci, p_indices, p_verts, p_colors, p_uvs, {}, {}, tex->get_rid());
     }
 }

@@ -236,18 +236,18 @@ int32_t ss_runtime_get_passed_event_index(void *context, int32_t index);
 /// out_x, out_y: pointers to float arrays of size 5 to store results.
 /// # Safety
 /// This function is unsafe because it dereferences raw pointers.
-int32_t ss_vertex_compute_local(float size_w,
-                                float size_h,
-                                float pivot_x,
-                                float pivot_y,
-                                float pivot_offset_x,
-                                float pivot_offset_y,
-                                bool h_flip,
-                                bool v_flip,
-                                const float *deform_x_ptr,
-                                const float *deform_y_ptr,
-                                float *out_x,
-                                float *out_y);
+bool ss_vertex_compute_local(float size_w,
+                             float size_h,
+                             float pivot_x,
+                             float pivot_y,
+                             float pivot_offset_x,
+                             float pivot_offset_y,
+                             bool h_flip,
+                             bool v_flip,
+                             const float *deform_x_ptr,
+                             const float *deform_y_ptr,
+                             float *out_x,
+                             float *out_y);
 
 /// Computes the local UV coordinates for a part.
 ///
@@ -259,22 +259,22 @@ int32_t ss_vertex_compute_local(float size_w,
 /// out_u, out_v: pointers to float arrays of size 5 to store results.
 /// # Safety
 /// This function is unsafe because it dereferences raw pointers.
-int32_t ss_uv_compute_local(float u_left,
-                            float v_top,
-                            float u_right,
-                            float v_bottom,
-                            float trans_u,
-                            float trans_v,
-                            float rot_deg,
-                            float scale_u,
-                            float scale_v,
-                            bool part_flip_h,
-                            bool part_flip_v,
-                            bool img_flip_h,
-                            bool img_flip_v,
-                            bool rotated,
-                            float *out_u,
-                            float *out_v);
+bool ss_uv_compute_local(float u_left,
+                         float v_top,
+                         float u_right,
+                         float v_bottom,
+                         float trans_u,
+                         float trans_v,
+                         float rot_deg,
+                         float scale_u,
+                         float scale_v,
+                         bool part_flip_h,
+                         bool part_flip_v,
+                         bool img_flip_h,
+                         bool img_flip_v,
+                         bool rotated,
+                         float *out_u,
+                         float *out_v);
 
 bool ss_geometry_is_point_in_rect(float px, float py, float size_w, float size_h);
 
