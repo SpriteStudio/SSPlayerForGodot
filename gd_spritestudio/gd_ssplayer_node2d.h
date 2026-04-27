@@ -15,6 +15,17 @@ using namespace godot;
 // #include "gd_ssplayer_resource.h"
 #include "gd_ssab_resource.h"
 
+namespace ss {
+namespace runtime {
+struct FrameData;
+struct PartState;
+}
+namespace format {
+struct PartData;
+struct Cell;
+}
+}
+
 class GdSsPlayerNode2D : public Node2D {
     GDCLASS( GdSsPlayerNode2D, Node2D );
 
@@ -77,9 +88,11 @@ private:
     float _speed_rate = 1.0f;
 
     void loadTextures(const Ref<GdSsabResource>& ssabRes);
-	void updateAnimation(float delta);
+    void updateAnimation(float delta);
     void fetchAnimation();
-    void drawAnimation();
+    void drawAnimation(int frame_no);
+    void _draw_part(RenderingServer *rs, RID ci, const ss::runtime::FrameData *frameData, const ss::runtime::PartState *part, const ss::format::PartData *partBinary, const Ref<Texture2D> &tex, const ss::format::Cell *cell, const float *draw_m);
 
+    void _reconfigure();
     void _clear_canvas_items();
 };
