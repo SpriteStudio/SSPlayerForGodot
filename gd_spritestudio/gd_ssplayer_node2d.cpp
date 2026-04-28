@@ -88,8 +88,8 @@ bool GdSsPlayerNode2D::isPlaying() const {
     return ss_runtime_is_playing(runtime_ctx);
 }
 
-void GdSsPlayerNode2D::play( int p_start_frame ) {
-    if ( p_start_frame >= 0 ) {
+void GdSsPlayerNode2D::play( float p_start_frame ) {
+    if ( p_start_frame >= 0.0f ) {
         ss_runtime_play_with_start_frame(runtime_ctx, p_start_frame);
     } else {
         ss_runtime_play(runtime_ctx);
@@ -117,12 +117,12 @@ float GdSsPlayerNode2D::getSpeed() const {
     return _speed_rate;
 }
 
-void GdSsPlayerNode2D::setFrame( int p_frame ) {
-    ss_runtime_set_frame_no(runtime_ctx, (float)p_frame);
+void GdSsPlayerNode2D::setFrame( float p_frame ) {
+    ss_runtime_set_frame_no(runtime_ctx, p_frame);
 }
 
-int GdSsPlayerNode2D::getFrame() const {
-    return (int)ss_runtime_get_frame_no(runtime_ctx);
+float GdSsPlayerNode2D::getFrame() const {
+    return ss_runtime_get_frame_no(runtime_ctx);
 }
 
 int GdSsPlayerNode2D::getTotalFrames() const {
@@ -193,7 +193,7 @@ void GdSsPlayerNode2D::_bind_methods() {
     ClassDB::bind_method( D_METHOD( "get_animation" ), &GdSsPlayerNode2D::getAnimation );
 
     ClassDB::bind_method( D_METHOD( "is_playing" ), &GdSsPlayerNode2D::isPlaying );
-    ClassDB::bind_method( D_METHOD( "play", "start_frame" ), &GdSsPlayerNode2D::play, DEFVAL(-1) );
+    ClassDB::bind_method( D_METHOD( "play", "start_frame" ), &GdSsPlayerNode2D::play, DEFVAL(-1.0f) );
     ClassDB::bind_method( D_METHOD( "is_pausing" ), &GdSsPlayerNode2D::isPausing );
     ClassDB::bind_method( D_METHOD( "pause" ), &GdSsPlayerNode2D::pause );
     ClassDB::bind_method( D_METHOD( "stop" ), &GdSsPlayerNode2D::stop );
@@ -419,10 +419,10 @@ void GdSsPlayerNode2D::_get_property_list( List<PropertyInfo>* p_list ) const {
     p_list->push_back( animasPropertyInfo );
 
     animasPropertyInfo.name = "frame";
-    animasPropertyInfo.type = Variant::INT;
+    animasPropertyInfo.type = Variant::FLOAT;
     animasPropertyInfo.usage = PROPERTY_USAGE_EDITOR;
     animasPropertyInfo.hint = PROPERTY_HINT_RANGE;
-    animasPropertyInfo.hint_string = "0," + String::num(getTotalFrames()-1) + ",1";
+    animasPropertyInfo.hint_string = "0," + String::num(getTotalFrames()-1) + ",0.01";
     p_list->push_back( animasPropertyInfo );
 
 }
