@@ -118,15 +118,11 @@ float GdSsPlayerNode2D::getSpeed() const {
 }
 
 void GdSsPlayerNode2D::setFrame( int p_frame ) {
-    ss_runtime_set_frame_no(runtime_ctx, p_frame);
+    ss_runtime_set_frame_no(runtime_ctx, (float)p_frame);
 }
 
 int GdSsPlayerNode2D::getFrame() const {
-    return ss_runtime_get_frame_no(runtime_ctx);
-}
-
-float GdSsPlayerNode2D::getFrameDecimal() const {
-    return ss_runtime_get_frame_no_decimal(runtime_ctx);
+    return (int)ss_runtime_get_frame_no(runtime_ctx);
 }
 
 int GdSsPlayerNode2D::getTotalFrames() const {
@@ -198,7 +194,6 @@ void GdSsPlayerNode2D::_bind_methods() {
     ClassDB::bind_method( D_METHOD( "get_speed" ), &GdSsPlayerNode2D::getSpeed );
     ClassDB::bind_method( D_METHOD( "set_frame", "frame" ), &GdSsPlayerNode2D::setFrame );
     ClassDB::bind_method( D_METHOD( "get_frame" ), &GdSsPlayerNode2D::getFrame );
-    ClassDB::bind_method( D_METHOD( "get_frame_decimal" ), &GdSsPlayerNode2D::getFrameDecimal );
 
     ClassDB::bind_method( D_METHOD( "get_total_frames" ), &GdSsPlayerNode2D::getTotalFrames );
 
@@ -528,7 +523,8 @@ namespace {
 void GdSsPlayerNode2D::updateAnimation( float delta ) {
     if (ss_runtime_is_playing(runtime_ctx)) {
         auto d = delta * 1000.0f;
-        auto frame_no = ss_runtime_update(runtime_ctx, d);
+        float frame_no_f = ss_runtime_update(runtime_ctx, d);
+        int frame_no = (int)frame_no_f;
 
         if (previous_frame_no == frame_no) {
             // print_line("skip: " + String::num(frame_no));
