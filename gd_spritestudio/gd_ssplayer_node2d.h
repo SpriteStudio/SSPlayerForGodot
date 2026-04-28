@@ -54,7 +54,6 @@ public:
     float getSpeed() const;
     void setFrame( int p_frame );
     int getFrame() const;
-    float getFrameDecimal() const;
 
     int getTotalFrames() const;
 

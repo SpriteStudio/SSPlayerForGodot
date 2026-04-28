@@ -114,9 +114,7 @@ void ss_runtime_get_world_matrices(void *context, const float **out_data, uintpt
 /// The caller must ensure `out_data` and `out_len` are valid if they are not null.
 void ss_runtime_get_z_order(void *context, const int32_t **out_data, uintptr_t *out_len);
 
-int ss_runtime_get_frame_no(void *context);
-
-float ss_runtime_get_frame_no_decimal(void *context);
+float ss_runtime_get_frame_no(void *context);
 
 bool ss_runtime_is_end_frame_reached(void *context);
 
@@ -152,19 +150,19 @@ void ss_runtime_set_animation_speed(void *context, float speed_rate);
 
 void ss_runtime_set_animation_section(void *context, int start_frame, int end_frame);
 
-int32_t ss_runtime_update(void *context, float delta);
+float ss_runtime_update(void *context, float delta);
 
-int32_t ss_runtime_update_animation(void *context, float delta);
+float ss_runtime_update_animation(void *context, float delta);
 
 void ss_runtime_play(void *context);
 
-void ss_runtime_play_with_start_frame(void *context, int32_t frame_no);
+void ss_runtime_play_with_start_frame(void *context, float frame_no);
 
 void ss_runtime_pause(void *context);
 
 void ss_runtime_stop(void *context);
 
-void ss_runtime_set_frame_no(void *context, int frame);
+void ss_runtime_set_frame_no(void *context, float frame);
 
 void ss_runtime_next_frame(void *context);
 
