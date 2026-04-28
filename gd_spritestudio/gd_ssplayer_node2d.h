@@ -88,7 +88,7 @@ private:
     void *rutime_res = nullptr;
     float previous_frame_no = -1.0f;
     float _speed_rate = 1.0f;
-    bool _sub_frame_enabled = true;
+    bool _sub_frame_enabled = false;
 
     void loadTextures(const Ref<GdSsabResource>& ssabRes);
     void updateAnimation(float delta);
