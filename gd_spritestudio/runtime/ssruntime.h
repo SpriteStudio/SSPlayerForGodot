@@ -98,7 +98,7 @@ bool ss_runtime_setup_animation(void *context, const char *name);
 /// This function is unsafe because it dereferences raw pointers for output.
 /// The caller must ensure `out_data` and `out_len` are valid if they are not null.
 void ss_runtime_get_frame_data(void *context,
-                               int frame_no,
+                               float frame_no,
                                unsigned char **out_data,
                                uintptr_t *out_len);
 
@@ -217,8 +217,6 @@ void ss_effect_transform_particles(const float *matrix_ptr,
                                    float *out_pos_ptr);
 
 int32_t ss_runtime_get_passed_event_count(void *context);
-
-int32_t ss_runtime_get_passed_event_frame_no(void *context, int32_t index);
 
 int32_t ss_runtime_get_passed_event_index(void *context, int32_t index);
 

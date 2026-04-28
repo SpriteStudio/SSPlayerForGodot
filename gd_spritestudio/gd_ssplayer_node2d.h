@@ -74,6 +74,9 @@ public:
     void setSkipFrames( bool p_skip );
     bool isSkipFrames() const;
 
+    void setSubFrameEnabled( bool p_enabled );
+    bool isSubFrameEnabled() const;
+
 private:
     Ref<GdSsabResource> _ssabRes;
     HashMap<uint32_t, Ref<Texture2D>> _textures;
@@ -83,13 +86,14 @@ private:
     ss::format::AnimationData* _currentAnimationData = nullptr;
     void *runtime_ctx = nullptr;
     void *rutime_res = nullptr;
-    int previous_frame_no = -1;
+    float previous_frame_no = -1.0f;
     float _speed_rate = 1.0f;
+    bool _sub_frame_enabled = true;
 
     void loadTextures(const Ref<GdSsabResource>& ssabRes);
     void updateAnimation(float delta);
     void fetchAnimation();
-    void drawAnimation(int frame_no);
+    void drawAnimation(float frame_no);
     void _draw_part(RenderingServer *rs, RID ci, const ss::runtime::FrameData *frameData, const ss::runtime::PartState *part, const ss::format::PartData *partBinary, const Ref<Texture2D> &tex, const ss::format::Cell *cell, const float *draw_m);
 
     void _reconfigure();
