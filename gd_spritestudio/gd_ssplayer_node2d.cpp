@@ -177,6 +177,14 @@ bool GdSsPlayerNode2D::isSkipFrames() const {
     return ss_runtime_get_skip_frames(runtime_ctx);
 }
 
+void GdSsPlayerNode2D::setSubFrameEnabled( bool p_enabled ) {
+    _sub_frame_enabled = p_enabled;
+}
+
+bool GdSsPlayerNode2D::isSubFrameEnabled() const {
+    return _sub_frame_enabled;
+}
+
 
 void GdSsPlayerNode2D::_bind_methods() {
     ClassDB::bind_method( D_METHOD( "set_ssab_resource", "res_ssab" ), &GdSsPlayerNode2D::setSsabResource );
@@ -213,6 +221,9 @@ void GdSsPlayerNode2D::_bind_methods() {
 
     ClassDB::bind_method( D_METHOD( "set_skip_frames", "skip" ), &GdSsPlayerNode2D::setSkipFrames );
     ClassDB::bind_method( D_METHOD( "is_skip_frames" ), &GdSsPlayerNode2D::isSkipFrames );
+
+    ClassDB::bind_method( D_METHOD( "set_sub_frame_enabled", "enabled" ), &GdSsPlayerNode2D::setSubFrameEnabled );
+    ClassDB::bind_method( D_METHOD( "is_sub_frame_enabled" ), &GdSsPlayerNode2D::isSubFrameEnabled );
 
 	ADD_SIGNAL(
 		MethodInfo(
@@ -291,6 +302,15 @@ void GdSsPlayerNode2D::_bind_methods() {
         "is_skip_frames"
     );
 
+    ADD_PROPERTY(
+        PropertyInfo(
+            Variant::BOOL,
+            "sub_frame_enabled"
+        ),
+        "set_sub_frame_enabled",
+        "is_sub_frame_enabled"
+    );
+
 	ADD_GROUP( "Animation Settings", "" );
 }
 
@@ -313,6 +333,10 @@ bool GdSsPlayerNode2D::_set( const StringName& p_name, const Variant& p_property
 		return	true;
 	} else if ( p_name == StringName("skip_frames")) {
 		setSkipFrames( p_property );
+
+		return	true;
+	} else if ( p_name == StringName("sub_frame_enabled")) {
+		setSubFrameEnabled( p_property );
 
 		return	true;
 	} else if ( p_name == StringName("playing")) {
@@ -346,6 +370,10 @@ bool GdSsPlayerNode2D::_get( const StringName& p_name, Variant& r_property ) con
         return	true;
     } else if ( p_name == StringName("skip_frames") ) {
         r_property = isSkipFrames();
+
+        return	true;
+    } else if ( p_name == StringName("sub_frame_enabled") ) {
+        r_property = isSubFrameEnabled();
 
         return	true;
     } else if ( p_name == StringName("playing") ) {
@@ -383,6 +411,12 @@ void GdSsPlayerNode2D::_get_property_list( List<PropertyInfo>* p_list ) const {
     animasPropertyInfo.usage = PROPERTY_USAGE_EDITOR | PROPERTY_USAGE_STORAGE;
     animasPropertyInfo.hint = PROPERTY_HINT_NONE;
 	p_list->push_back( animasPropertyInfo );
+
+    animasPropertyInfo.name = "sub_frame_enabled";
+    animasPropertyInfo.type = Variant::BOOL;
+    animasPropertyInfo.usage = PROPERTY_USAGE_EDITOR | PROPERTY_USAGE_STORAGE;
+    animasPropertyInfo.hint = PROPERTY_HINT_NONE;
+    p_list->push_back( animasPropertyInfo );
 
     animasPropertyInfo.name = "frame";
     animasPropertyInfo.type = Variant::INT;
@@ -523,11 +557,11 @@ namespace {
 void GdSsPlayerNode2D::updateAnimation( float delta ) {
     if (ss_runtime_is_playing(runtime_ctx)) {
         auto d = delta * 1000.0f;
-        float frame_no_f = ss_runtime_update(runtime_ctx, d);
-        int frame_no = (int)frame_no_f;
+        float frame_no = ss_runtime_update(runtime_ctx, d);
 
-        if (previous_frame_no == frame_no) {
-            // print_line("skip: " + String::num(frame_no));
+        float draw_frame = _sub_frame_enabled ? frame_no : (float)((int)frame_no);
+
+        if (previous_frame_no == draw_frame) {
             return;
         }
 
@@ -559,12 +593,12 @@ void GdSsPlayerNode2D::updateAnimation( float delta ) {
             }
         }
         */
-        previous_frame_no = frame_no;
-        drawAnimation(frame_no);
+        previous_frame_no = draw_frame;
+        drawAnimation(draw_frame);
     }
 }
 
-void GdSsPlayerNode2D::drawAnimation(int frame_no) {
+void GdSsPlayerNode2D::drawAnimation(float frame_no) {
     unsigned char *data = nullptr;
     uintptr_t len = 0;
     ss_runtime_get_frame_data(runtime_ctx, frame_no, &data, &len);
@@ -794,6 +828,6 @@ void GdSsPlayerNode2D::fetchAnimation() {
             return;
         }
 
-        previous_frame_no = -1;
+        previous_frame_no = -1.0f;
         drawAnimation(ss_runtime_get_frame_no(runtime_ctx));
 }
