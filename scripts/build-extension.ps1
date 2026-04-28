@@ -29,6 +29,7 @@ $scons_default_opts = @{
     platform = "windows"
     target = "editor"
     compiledb = "yes"
+    use_static_cpp = "no"
 }
 
 # winbuild default options
@@ -90,6 +91,7 @@ $BINDIR = "bin/$($opts.platform)"
 mkdir "$BINDIR" -Force
 Invoke-Expression "scons $scons_command_opts"
 
+mkdir examples\feature_test_gdextension\bin -Force | Out-Null
 cp misc\ssplayer_godot_extension.gdextension examples\feature_test_gdextension\bin\ssplayer_godot_extension.gdextension
 
 popd
