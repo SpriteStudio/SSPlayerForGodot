@@ -45,15 +45,15 @@ public:
     String getAnimation() const;
 
     bool isPlaying() const;
-    void play( int p_start_frame = -1 );
+    void play( float p_start_frame = -1.0f );
     bool isPausing() const;
     void pause();
     void stop();
 
     void setSpeed( float p_speed );
     float getSpeed() const;
-    void setFrame( int p_frame );
-    int getFrame() const;
+    void setFrame( float p_frame );
+    float getFrame() const;
 
     int getTotalFrames() const;
 
