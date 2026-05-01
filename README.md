@@ -1,8 +1,8 @@
-[**日本語**](./README.ja.md) | [**English**](./README.md)
-
 # SpriteStudioPlayer for Godot
 
 **The branch is in experimental and unstable phase.**
+
+**If you are looking for the stable version, please refer to the [main branch](https://github.com/SpriteStudio/SSPlayerForGodot/tree/main).**
 
 **No guarantee, No support and can't reply any requests and any bug reports regarding the branch.**
 
