@@ -6,11 +6,9 @@ TARGET_DIR="${ROOTDIR}/gd_spritestudio"
 VERSION_FILE="${TARGET_DIR}/SDK_VERSION.txt"
 CURRENT_VERSION_FILE="${TARGET_DIR}/runtime/VERSION"
 
-# バージョン文字列を取得
 TARGET_VERSION=$(cat "$VERSION_FILE" | tr -d '
 ')
 
-# 既に同じバージョンが存在するかチェック
 if [ -f "$CURRENT_VERSION_FILE" ]; then
     CURRENT_VERSION=$(cat "$CURRENT_VERSION_FILE" | tr -d '
 ')
@@ -29,12 +27,11 @@ echo "Downloading SDK..."
 curl -L -o "$ZIP_FILE" "$URL"
 
 echo "Extracting SDK..."
-# 既存のruntimeフォルダを削除してから解凍
 rm -rf "${TARGET_DIR}/runtime"
 unzip -q -o "$ZIP_FILE" -d "${TARGET_DIR}/"
 rm "$ZIP_FILE"
 
-# VERSIONファイルにダウンロードしたバージョンを記録
 echo "$TARGET_VERSION" > "$CURRENT_VERSION_FILE"
 
 echo "Done."
+
