@@ -55,6 +55,7 @@ private:
   bool is_reemitting = false;
 
   Vector<void*> import_contexts;
+  Vector<String> import_dst_dirs;
   class GdProgressDialog* import_dialog = nullptr;
   Vector<bool> import_finished_contexts;
   int import_prev_num = 0;
