@@ -94,7 +94,8 @@ env.Append(
     CPPPATH=[
         "gd_spritestudio/flatbuffers/src",
         "gd_spritestudio/flatbuffers/include",
-        "gd_spritestudio/runtime",
+        "gd_spritestudio/format",
+        "gd_spritestudio/runtime/include",
     ]
 )
 

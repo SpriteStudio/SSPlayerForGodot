@@ -1,6 +1,6 @@
 
 #include "gd_ssqb_resource.h"
-#include "runtime/ssqb.h"
+#include "format/ssqb.h"
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
 #include <godot_cpp/classes/file_access.hpp>
 #include <godot_cpp/core/error_macros.hpp>

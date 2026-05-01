@@ -15,7 +15,7 @@ using namespace godot;
 #include "core/io/resource_saver.h"
 #endif
 
-#include "runtime/ssab.h"
+#include "format/ssab.h"
 
 class GdSsabResource : public Resource {
   GDCLASS(GdSsabResource, Resource);
