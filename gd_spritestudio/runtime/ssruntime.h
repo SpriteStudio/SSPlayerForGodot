@@ -276,4 +276,28 @@ bool ss_geometry_is_point_in_rect(float px, float py, float size_w, float size_h
 
 bool ss_geometry_is_point_in_quad(float tx, float ty, const float *vx, const float *vy);
 
+bool ss_nineslice_compute_local(float size_w,
+                                float size_h,
+                                float u_left,
+                                float v_top,
+                                float u_right,
+                                float v_bottom,
+                                float margin_l,
+                                float margin_t,
+                                float margin_r,
+                                float margin_b,
+                                float source_w,
+                                float source_h,
+                                float *out_vx,
+                                float *out_vy,
+                                float *out_uv,
+                                float *out_vv);
+
+bool ss_shape_compute_local(int32_t shape_type,
+                            float size_w,
+                            float size_h,
+                            float *out_vx,
+                            float *out_vy,
+                            int32_t *out_count);
+
 }  // extern "C"
