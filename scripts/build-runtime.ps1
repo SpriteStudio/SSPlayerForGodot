@@ -65,15 +65,26 @@ New-Item "./${outputDir}" -ItemType Directory -ErrorAction SilentlyContinue
 
 if ($opts.build -eq "release") {
     if ($platform -eq "windows") {
-        Copy-Item ./${inputDir}/x86_64-pc-windows-msvc/release/ssruntime.lib ./${outputDir}/ -Force
-        Copy-Item ./${inputDir}/x86_64-pc-windows-msvc/release/ssconverter.lib ./${outputDir}/ -Force
+        $src_runtime = "./${inputDir}/x86_64-pc-windows-msvc/release/ssruntime.lib"
+        $src_converter = "./${inputDir}/x86_64-pc-windows-msvc/release/ssconverter.lib"
     } else {
-        Copy-Item ./${inputDir}/release/ssruntime.lib ./${outputDir}/ -Force
-        Copy-Item ./${inputDir}/release/ssconverter.lib ./${outputDir}/ -Force
+        $src_runtime = "./${inputDir}/release/ssruntime.lib"
+        $src_converter = "./${inputDir}/release/ssconverter.lib"
     }
 } else {
-    Copy-Item ./${inputDir}/$($opts.build)/ssruntime.lib ./${outputDir}/ -Force
-    Copy-Item ./${inputDir}/$($opts.build)/ssconverter.lib ./${outputDir}/ -Force
+    $src_runtime = "./${inputDir}/$($opts.build)/ssruntime.lib"
+    $src_converter = "./${inputDir}/$($opts.build)/ssconverter.lib"
+}
+
+# Copy to the standard location
+Copy-Item $src_runtime ./${outputDir}/ssruntime.lib -Force
+Copy-Item $src_converter ./${outputDir}/ssconverter.lib -Force
+
+# Copy for Godot Custom Module (with platform.target.arch naming)
+$targets = "editor", "template_release", "template_debug"
+foreach($target in $targets) {
+    Copy-Item $src_runtime ./${outputDir}/ssruntime.$platform.$target.$arch.lib -Force
+    Copy-Item $src_converter ./${outputDir}/ssconverter.$platform.$target.$arch.lib -Force
 }
 
 
