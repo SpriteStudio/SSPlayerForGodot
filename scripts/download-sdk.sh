@@ -23,7 +23,9 @@ fi
 URL="https://github.com/SpriteStudio/SpriteStudio7-SDK/releases/download/${TARGET_VERSION}/spritestudio7-sdk-static-libs.zip"
 ZIP_FILE="${TARGET_DIR}/sdk.zip"
 
-echo "Downloading SDK ${TARGET_VERSION}..."
+echo "Target SDK Version: ${TARGET_VERSION}"
+echo "Download URL: ${URL}"
+echo "Downloading SDK..."
 curl -L -o "$ZIP_FILE" "$URL"
 
 echo "Extracting SDK..."

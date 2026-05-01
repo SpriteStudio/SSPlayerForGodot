@@ -19,7 +19,9 @@ if (Test-Path $currentVersionFile) {
 $url = "https://github.com/SpriteStudio/SpriteStudio7-SDK/releases/download/$targetVersion/spritestudio7-sdk-static-libs.zip"
 $zipFile = "$targetDir/sdk.zip"
 
-Write-Host "Downloading SDK $targetVersion..."
+Write-Host "Target SDK Version: $targetVersion"
+Write-Host "Download URL: $url"
+Write-Host "Downloading SDK..."
 Invoke-WebRequest -Uri $url -OutFile $zipFile
 
 Write-Host "Extracting SDK..."
