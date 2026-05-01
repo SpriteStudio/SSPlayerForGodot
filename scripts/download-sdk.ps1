@@ -31,6 +31,17 @@ if (Test-Path "$targetDir/runtime") {
 Expand-Archive -Path $zipFile -DestinationPath $targetDir -Force
 Remove-Item $zipFile
 
+# Godot Custom Module compatibility (Windows x86_64)
+$winLibDir = "$targetDir/runtime/libs/windows/x86_64"
+if (Test-Path $winLibDir) {
+    Write-Host "Creating library copies for Godot Custom Module..."
+    $targets = "editor", "template_release", "template_debug"
+    foreach($target in $targets) {
+        Copy-Item "$winLibDir/ssruntime.lib" "$winLibDir/ssruntime.windows.$target.x86_64.lib" -Force
+        Copy-Item "$winLibDir/ssconverter.lib" "$winLibDir/ssconverter.windows.$target.x86_64.lib" -Force
+    }
+}
+
 Set-Content -Path $currentVersionFile -Value $targetVersion
 
 Write-Host "Done."
