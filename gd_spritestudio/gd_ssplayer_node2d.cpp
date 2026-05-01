@@ -1,7 +1,7 @@
 #include "gd_ssplayer_node2d.h"
-#include "runtime/ssab.h"
-#include "runtime/ssruntime.h"
-#include "runtime/framedata.h"
+#include "format/ssab.h"
+#include "ssruntime.h"
+#include "format/framedata.h"
 
 #include <algorithm>
 #include <vector>

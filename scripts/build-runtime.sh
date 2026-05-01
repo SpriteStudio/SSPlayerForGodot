@@ -7,7 +7,7 @@ ROOTDIR=${BASEDIR}/..
 ROOTDIR=$(cd $ROOTDIR && pwd -P)
 
 if [ "$OSTYPE" = "msys" ]; then
-    PLATFORM=win
+    PLATFORM=windows
 elif [[ "$OSTYPE" = "darwin"* ]]; then
     PLATFORM=macos
 else
@@ -61,17 +61,32 @@ fi
 popd > /dev/null
 
 INPUT=SpriteStudio7-SDK
-OUTPUT=runtime
+OUTPUT=runtime/include
+/bin/mkdir -p ${OUTPUT}
 /bin/cp ${INPUT}/libs/ssconverter/target/ssconverter.h ${OUTPUT}/
 /bin/cp ${INPUT}/libs/ssruntime/target/ssruntime.h ${OUTPUT}/
 
 INPUT=SpriteStudio7-SDK/target
-OUTPUT=runtime/libs/${opts[platform]}
+PLATFORM=${opts[platform]}
+ARCH=${opts[arch]}
+
+if [[ "$PLATFORM" == "macos" || "$PLATFORM" == "ios" || "$PLATFORM" == "web" ]]; then
+    OUTPUT=runtime/libs/${PLATFORM}
+else
+    OUTPUT=runtime/libs/${PLATFORM}/${ARCH}
+fi
 /bin/mkdir -p ${OUTPUT}
+
 if [[ "${opts[build]}" == "release" ]]; then
-    if [[ "${opts[platform]}" == "macos" ]]; then
+    if [[ "$PLATFORM" == "macos" ]]; then
         /bin/cp ${INPUT}/universal-apple-darwin/libssruntime.a ${OUTPUT}/
         /bin/cp ${INPUT}/universal-apple-darwin/libssconverter.a ${OUTPUT}/
+    elif [[ "$PLATFORM" == "ios" ]]; then
+        /bin/cp ${INPUT}/universal-apple-ios/libssruntime.a ${OUTPUT}/
+        /bin/cp ${INPUT}/universal-apple-ios/libssconverter.a ${OUTPUT}/
+    else
+        /bin/cp ${INPUT}/release/libssruntime.a ${OUTPUT}/
+        /bin/cp ${INPUT}/release/libssconverter.a ${OUTPUT}/
     fi
 else
     /bin/cp ${INPUT}/${opts[build]}/libssruntime.a ${OUTPUT}/

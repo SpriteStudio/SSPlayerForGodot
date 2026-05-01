@@ -47,22 +47,34 @@ if ($opts.build -eq "release") {
 popd
 
 $inputDir="SpriteStudio7-SDK"
-$outputDir="runtime"
+$outputDir="runtime/include"
+New-Item "./${outputDir}" -ItemType Directory -ErrorAction SilentlyContinue
 Copy-Item ./${inputDir}/libs/ssconverter/target/ssconverter.h ./${outputDir}/ -Force
 Copy-Item ./${inputDir}/libs/ssruntime/target/ssruntime.h ./${outputDir}/ -Force
 
 $inputDir="SpriteStudio7-SDK/target"
-$outputDir="runtime/libs//$($opts.platform)"
-New-Item "./${outputDir}" -ItemType Directory -ErrorAction SilentlyContinue
-New-Item "./${outputDir}/$($opts.arch)" -ItemType Directory -ErrorAction SilentlyContinue
+$platform = $opts.platform
+$arch = $opts.arch
 
-$targets= "editor", "template_release", "template_debug"
-foreach($target in $targets) {
-    Copy-Item ./${inputDir}/$($opts.build)/ssruntime.lib ./${outputDir}/ssruntime.$($opts.platform).${target}.$($opts.arch).lib -Force
-    Copy-Item ./${inputDir}/$($opts.build)/ssconverter.lib ./${outputDir}/ssconverter.$($opts.platform).${target}.$($opts.arch).lib -Force
+if ($platform -eq "macos" -or $platform -eq "ios" -or $platform -eq "web") {
+    $outputDir="runtime/libs/$platform"
+} else {
+    $outputDir="runtime/libs/$platform/$arch"
 }
-Copy-Item ./${inputDir}/$($opts.build)/ssruntime.lib ./${outputDir}/$($opts.arch)/ssruntime.lib -Force
-Copy-Item ./${inputDir}/$($opts.build)/ssconverter.lib ./${outputDir}/$($opts.arch)/ssconverter.lib -Force
+New-Item "./${outputDir}" -ItemType Directory -ErrorAction SilentlyContinue
+
+if ($opts.build -eq "release") {
+    if ($platform -eq "windows") {
+        Copy-Item ./${inputDir}/x86_64-pc-windows-msvc/release/ssruntime.lib ./${outputDir}/ -Force
+        Copy-Item ./${inputDir}/x86_64-pc-windows-msvc/release/ssconverter.lib ./${outputDir}/ -Force
+    } else {
+        Copy-Item ./${inputDir}/release/ssruntime.lib ./${outputDir}/ -Force
+        Copy-Item ./${inputDir}/release/ssconverter.lib ./${outputDir}/ -Force
+    }
+} else {
+    Copy-Item ./${inputDir}/$($opts.build)/ssruntime.lib ./${outputDir}/ -Force
+    Copy-Item ./${inputDir}/$($opts.build)/ssconverter.lib ./${outputDir}/ -Force
+}
 
 
 popd

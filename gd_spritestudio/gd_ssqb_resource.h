@@ -15,7 +15,7 @@ using namespace godot;
 #include "core/io/resource_saver.h"
 #endif
 
-#include "runtime/ssqb.h"
+#include "format/ssqb.h"
 
 class GdSsqbResource : public Resource {
   GDCLASS(GdSsqbResource, Resource);

@@ -25,6 +25,9 @@ struct RectBuilder;
 struct U8Rect;
 struct U8RectBuilder;
 
+struct SsCurve;
+struct SsCurveBuilder;
+
 struct NoneValueEntry;
 struct NoneValueEntryBuilder;
 
@@ -1284,6 +1287,78 @@ inline ::flatbuffers::Offset<U8Rect> CreateU8Rect(
   builder_.add_g(g);
   builder_.add_r(r);
   builder_.add_a(a);
+  return builder_.Finish();
+}
+
+struct SsCurve FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef SsCurveBuilder Builder;
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
+    VT_START_TIME = 4,
+    VT_START_VALUE = 6,
+    VT_END_TIME = 8,
+    VT_END_VALUE = 10
+  };
+  float start_time() const {
+    return GetField<float>(VT_START_TIME, 0.0f);
+  }
+  float start_value() const {
+    return GetField<float>(VT_START_VALUE, 0.0f);
+  }
+  float end_time() const {
+    return GetField<float>(VT_END_TIME, 0.0f);
+  }
+  float end_value() const {
+    return GetField<float>(VT_END_VALUE, 0.0f);
+  }
+  template <bool B = false>
+  bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyField<float>(verifier, VT_START_TIME, 4) &&
+           VerifyField<float>(verifier, VT_START_VALUE, 4) &&
+           VerifyField<float>(verifier, VT_END_TIME, 4) &&
+           VerifyField<float>(verifier, VT_END_VALUE, 4) &&
+           verifier.EndTable();
+  }
+};
+
+struct SsCurveBuilder {
+  typedef SsCurve Table;
+  ::flatbuffers::FlatBufferBuilder &fbb_;
+  ::flatbuffers::uoffset_t start_;
+  void add_start_time(float start_time) {
+    fbb_.AddElement<float>(SsCurve::VT_START_TIME, start_time, 0.0f);
+  }
+  void add_start_value(float start_value) {
+    fbb_.AddElement<float>(SsCurve::VT_START_VALUE, start_value, 0.0f);
+  }
+  void add_end_time(float end_time) {
+    fbb_.AddElement<float>(SsCurve::VT_END_TIME, end_time, 0.0f);
+  }
+  void add_end_value(float end_value) {
+    fbb_.AddElement<float>(SsCurve::VT_END_VALUE, end_value, 0.0f);
+  }
+  explicit SsCurveBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  ::flatbuffers::Offset<SsCurve> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = ::flatbuffers::Offset<SsCurve>(end);
+    return o;
+  }
+};
+
+inline ::flatbuffers::Offset<SsCurve> CreateSsCurve(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    float start_time = 0.0f,
+    float start_value = 0.0f,
+    float end_time = 0.0f,
+    float end_value = 0.0f) {
+  SsCurveBuilder builder_(_fbb);
+  builder_.add_end_value(end_value);
+  builder_.add_end_time(end_time);
+  builder_.add_start_value(start_value);
+  builder_.add_start_time(start_time);
   return builder_.Finish();
 }
 
@@ -3108,7 +3183,8 @@ struct SoundFile FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
     VT_NAME_HASH = 4,
     VT_NAME = 6,
     VT_FILE_PATH = 8,
-    VT_TIME_TOTAL = 10
+    VT_FILE_PATH_HASH = 10,
+    VT_TIME_TOTAL = 12
   };
   uint32_t name_hash() const {
     return GetField<uint32_t>(VT_NAME_HASH, 0);
@@ -3125,6 +3201,9 @@ struct SoundFile FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   const ::flatbuffers::String *file_path() const {
     return GetPointer<const ::flatbuffers::String *>(VT_FILE_PATH);
   }
+  uint32_t file_path_hash() const {
+    return GetField<uint32_t>(VT_FILE_PATH_HASH, 0);
+  }
   uint32_t time_total() const {
     return GetField<uint32_t>(VT_TIME_TOTAL, 0);
   }
@@ -3136,6 +3215,7 @@ struct SoundFile FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            verifier.VerifyString(name()) &&
            VerifyOffset(verifier, VT_FILE_PATH) &&
            verifier.VerifyString(file_path()) &&
+           VerifyField<uint32_t>(verifier, VT_FILE_PATH_HASH, 4) &&
            VerifyField<uint32_t>(verifier, VT_TIME_TOTAL, 4) &&
            verifier.EndTable();
   }
@@ -3153,6 +3233,9 @@ struct SoundFileBuilder {
   }
   void add_file_path(::flatbuffers::Offset<::flatbuffers::String> file_path) {
     fbb_.AddOffset(SoundFile::VT_FILE_PATH, file_path);
+  }
+  void add_file_path_hash(uint32_t file_path_hash) {
+    fbb_.AddElement<uint32_t>(SoundFile::VT_FILE_PATH_HASH, file_path_hash, 0);
   }
   void add_time_total(uint32_t time_total) {
     fbb_.AddElement<uint32_t>(SoundFile::VT_TIME_TOTAL, time_total, 0);
@@ -3173,9 +3256,11 @@ inline ::flatbuffers::Offset<SoundFile> CreateSoundFile(
     uint32_t name_hash = 0,
     ::flatbuffers::Offset<::flatbuffers::String> name = 0,
     ::flatbuffers::Offset<::flatbuffers::String> file_path = 0,
+    uint32_t file_path_hash = 0,
     uint32_t time_total = 0) {
   SoundFileBuilder builder_(_fbb);
   builder_.add_time_total(time_total);
+  builder_.add_file_path_hash(file_path_hash);
   builder_.add_file_path(file_path);
   builder_.add_name(name);
   builder_.add_name_hash(name_hash);
@@ -3187,6 +3272,7 @@ inline ::flatbuffers::Offset<SoundFile> CreateSoundFileDirect(
     uint32_t name_hash = 0,
     const char *name = nullptr,
     const char *file_path = nullptr,
+    uint32_t file_path_hash = 0,
     uint32_t time_total = 0) {
   auto name__ = name ? _fbb.CreateString(name) : 0;
   auto file_path__ = file_path ? _fbb.CreateString(file_path) : 0;
@@ -3195,6 +3281,7 @@ inline ::flatbuffers::Offset<SoundFile> CreateSoundFileDirect(
       name_hash,
       name__,
       file_path__,
+      file_path_hash,
       time_total);
 }
 
@@ -3432,7 +3519,8 @@ struct FontBitmap FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
     VT_SPACING = 26,
     VT_SIZE_TEXTURE_ORIGINAL = 28,
     VT_NAME_TEXTURE = 30,
-    VT_TABLE_DATA = 32
+    VT_NAME_TEXTURE_HASH = 32,
+    VT_TABLE_DATA = 34
   };
   uint32_t name_hash() const {
     return GetField<uint32_t>(VT_NAME_HASH, 0);
@@ -3482,6 +3570,9 @@ struct FontBitmap FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   const ::flatbuffers::Vector<::flatbuffers::Offset<::flatbuffers::String>> *name_texture() const {
     return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<::flatbuffers::String>> *>(VT_NAME_TEXTURE);
   }
+  const ::flatbuffers::Vector<uint32_t> *name_texture_hash() const {
+    return GetPointer<const ::flatbuffers::Vector<uint32_t> *>(VT_NAME_TEXTURE_HASH);
+  }
   const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::FontGlyphBitmap>> *table_data() const {
     return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::FontGlyphBitmap>> *>(VT_TABLE_DATA);
   }
@@ -3509,6 +3600,8 @@ struct FontBitmap FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyOffset(verifier, VT_NAME_TEXTURE) &&
            verifier.VerifyVector(name_texture()) &&
            verifier.VerifyVectorOfStrings(name_texture()) &&
+           VerifyOffset(verifier, VT_NAME_TEXTURE_HASH) &&
+           verifier.VerifyVector(name_texture_hash()) &&
            VerifyOffset(verifier, VT_TABLE_DATA) &&
            verifier.VerifyVector(table_data()) &&
            verifier.VerifyVectorOfTables(table_data()) &&
@@ -3562,6 +3655,9 @@ struct FontBitmapBuilder {
   void add_name_texture(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<::flatbuffers::String>>> name_texture) {
     fbb_.AddOffset(FontBitmap::VT_NAME_TEXTURE, name_texture);
   }
+  void add_name_texture_hash(::flatbuffers::Offset<::flatbuffers::Vector<uint32_t>> name_texture_hash) {
+    fbb_.AddOffset(FontBitmap::VT_NAME_TEXTURE_HASH, name_texture_hash);
+  }
   void add_table_data(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::FontGlyphBitmap>>> table_data) {
     fbb_.AddOffset(FontBitmap::VT_TABLE_DATA, table_data);
   }
@@ -3592,9 +3688,11 @@ inline ::flatbuffers::Offset<FontBitmap> CreateFontBitmap(
     ::flatbuffers::Offset<ss::format::Vec2> spacing = 0,
     ::flatbuffers::Offset<ss::format::Vec2> size_texture_original = 0,
     ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<::flatbuffers::String>>> name_texture = 0,
+    ::flatbuffers::Offset<::flatbuffers::Vector<uint32_t>> name_texture_hash = 0,
     ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::FontGlyphBitmap>>> table_data = 0) {
   FontBitmapBuilder builder_(_fbb);
   builder_.add_table_data(table_data);
+  builder_.add_name_texture_hash(name_texture_hash);
   builder_.add_name_texture(name_texture);
   builder_.add_size_texture_original(size_texture_original);
   builder_.add_spacing(spacing);
@@ -3628,10 +3726,12 @@ inline ::flatbuffers::Offset<FontBitmap> CreateFontBitmapDirect(
     ::flatbuffers::Offset<ss::format::Vec2> spacing = 0,
     ::flatbuffers::Offset<ss::format::Vec2> size_texture_original = 0,
     const std::vector<::flatbuffers::Offset<::flatbuffers::String>> *name_texture = nullptr,
+    const std::vector<uint32_t> *name_texture_hash = nullptr,
     std::vector<::flatbuffers::Offset<ss::format::FontGlyphBitmap>> *table_data = nullptr) {
   auto name__ = name ? _fbb.CreateString(name) : 0;
   auto name_face__ = name_face ? _fbb.CreateString(name_face) : 0;
   auto name_texture__ = name_texture ? _fbb.CreateVector<::flatbuffers::Offset<::flatbuffers::String>>(*name_texture) : 0;
+  auto name_texture_hash__ = name_texture_hash ? _fbb.CreateVector<uint32_t>(*name_texture_hash) : 0;
   auto table_data__ = table_data ? _fbb.CreateVectorOfSortedTables<ss::format::FontGlyphBitmap>(table_data) : 0;
   return ss::format::CreateFontBitmap(
       _fbb,
@@ -3649,6 +3749,7 @@ inline ::flatbuffers::Offset<FontBitmap> CreateFontBitmapDirect(
       spacing,
       size_texture_original,
       name_texture__,
+      name_texture_hash__,
       table_data__);
 }
 
@@ -4658,12 +4759,16 @@ inline ::flatbuffers::Offset<PartAttributeSignal> CreatePartAttributeSignalDirec
 struct PartAttributeAudio FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   typedef PartAttributeAudioBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
-    VT_SOUND_LIST_ID = 4,
-    VT_SOUND_NAME = 6,
-    VT_LOOP_NUM = 8
+    VT_SOUND_LIST_NAME_HASH = 4,
+    VT_SOUND_NAME_HASH = 6,
+    VT_SOUND_NAME = 8,
+    VT_LOOP_NUM = 10
   };
-  int32_t sound_list_id() const {
-    return GetField<int32_t>(VT_SOUND_LIST_ID, 0);
+  uint32_t sound_list_name_hash() const {
+    return GetField<uint32_t>(VT_SOUND_LIST_NAME_HASH, 0);
+  }
+  uint32_t sound_name_hash() const {
+    return GetField<uint32_t>(VT_SOUND_NAME_HASH, 0);
   }
   const ::flatbuffers::String *sound_name() const {
     return GetPointer<const ::flatbuffers::String *>(VT_SOUND_NAME);
@@ -4674,7 +4779,8 @@ struct PartAttributeAudio FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<int32_t>(verifier, VT_SOUND_LIST_ID, 4) &&
+           VerifyField<uint32_t>(verifier, VT_SOUND_LIST_NAME_HASH, 4) &&
+           VerifyField<uint32_t>(verifier, VT_SOUND_NAME_HASH, 4) &&
            VerifyOffset(verifier, VT_SOUND_NAME) &&
            verifier.VerifyString(sound_name()) &&
            VerifyField<int32_t>(verifier, VT_LOOP_NUM, 4) &&
@@ -4686,8 +4792,11 @@ struct PartAttributeAudioBuilder {
   typedef PartAttributeAudio Table;
   ::flatbuffers::FlatBufferBuilder &fbb_;
   ::flatbuffers::uoffset_t start_;
-  void add_sound_list_id(int32_t sound_list_id) {
-    fbb_.AddElement<int32_t>(PartAttributeAudio::VT_SOUND_LIST_ID, sound_list_id, 0);
+  void add_sound_list_name_hash(uint32_t sound_list_name_hash) {
+    fbb_.AddElement<uint32_t>(PartAttributeAudio::VT_SOUND_LIST_NAME_HASH, sound_list_name_hash, 0);
+  }
+  void add_sound_name_hash(uint32_t sound_name_hash) {
+    fbb_.AddElement<uint32_t>(PartAttributeAudio::VT_SOUND_NAME_HASH, sound_name_hash, 0);
   }
   void add_sound_name(::flatbuffers::Offset<::flatbuffers::String> sound_name) {
     fbb_.AddOffset(PartAttributeAudio::VT_SOUND_NAME, sound_name);
@@ -4708,25 +4817,29 @@ struct PartAttributeAudioBuilder {
 
 inline ::flatbuffers::Offset<PartAttributeAudio> CreatePartAttributeAudio(
     ::flatbuffers::FlatBufferBuilder &_fbb,
-    int32_t sound_list_id = 0,
+    uint32_t sound_list_name_hash = 0,
+    uint32_t sound_name_hash = 0,
     ::flatbuffers::Offset<::flatbuffers::String> sound_name = 0,
     int32_t loop_num = 0) {
   PartAttributeAudioBuilder builder_(_fbb);
   builder_.add_loop_num(loop_num);
   builder_.add_sound_name(sound_name);
-  builder_.add_sound_list_id(sound_list_id);
+  builder_.add_sound_name_hash(sound_name_hash);
+  builder_.add_sound_list_name_hash(sound_list_name_hash);
   return builder_.Finish();
 }
 
 inline ::flatbuffers::Offset<PartAttributeAudio> CreatePartAttributeAudioDirect(
     ::flatbuffers::FlatBufferBuilder &_fbb,
-    int32_t sound_list_id = 0,
+    uint32_t sound_list_name_hash = 0,
+    uint32_t sound_name_hash = 0,
     const char *sound_name = nullptr,
     int32_t loop_num = 0) {
   auto sound_name__ = sound_name ? _fbb.CreateString(sound_name) : 0;
   return ss::format::CreatePartAttributeAudio(
       _fbb,
-      sound_list_id,
+      sound_list_name_hash,
+      sound_name_hash,
       sound_name__,
       loop_num);
 }
@@ -5969,7 +6082,9 @@ struct PartAnimationDataFloatValue FLATBUFFERS_FINAL_CLASS : private ::flatbuffe
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_INDEX = 4,
     VT_INTERPOLATION = 6,
-    VT_VALUE = 8
+    VT_VALUE = 8,
+    VT_CURVE = 10,
+    VT_EASING_RATE = 12
   };
   uint16_t index() const {
     return GetField<uint16_t>(VT_INDEX, 0);
@@ -5986,12 +6101,21 @@ struct PartAnimationDataFloatValue FLATBUFFERS_FINAL_CLASS : private ::flatbuffe
   float value() const {
     return GetField<float>(VT_VALUE, 0.0f);
   }
+  const ss::format::SsCurve *curve() const {
+    return GetPointer<const ss::format::SsCurve *>(VT_CURVE);
+  }
+  float easing_rate() const {
+    return GetField<float>(VT_EASING_RATE, 0.0f);
+  }
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<uint16_t>(verifier, VT_INDEX, 2) &&
            VerifyField<uint8_t>(verifier, VT_INTERPOLATION, 1) &&
            VerifyField<float>(verifier, VT_VALUE, 4) &&
+           VerifyOffset(verifier, VT_CURVE) &&
+           verifier.VerifyTable(curve()) &&
+           VerifyField<float>(verifier, VT_EASING_RATE, 4) &&
            verifier.EndTable();
   }
 };
@@ -6009,6 +6133,12 @@ struct PartAnimationDataFloatValueBuilder {
   void add_value(float value) {
     fbb_.AddElement<float>(PartAnimationDataFloatValue::VT_VALUE, value, 0.0f);
   }
+  void add_curve(::flatbuffers::Offset<ss::format::SsCurve> curve) {
+    fbb_.AddOffset(PartAnimationDataFloatValue::VT_CURVE, curve);
+  }
+  void add_easing_rate(float easing_rate) {
+    fbb_.AddElement<float>(PartAnimationDataFloatValue::VT_EASING_RATE, easing_rate, 0.0f);
+  }
   explicit PartAnimationDataFloatValueBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
@@ -6024,8 +6154,12 @@ inline ::flatbuffers::Offset<PartAnimationDataFloatValue> CreatePartAnimationDat
     ::flatbuffers::FlatBufferBuilder &_fbb,
     uint16_t index = 0,
     ss::format::InterpolationType interpolation = ss::format::InterpolationType_None,
-    float value = 0.0f) {
+    float value = 0.0f,
+    ::flatbuffers::Offset<ss::format::SsCurve> curve = 0,
+    float easing_rate = 0.0f) {
   PartAnimationDataFloatValueBuilder builder_(_fbb);
+  builder_.add_easing_rate(easing_rate);
+  builder_.add_curve(curve);
   builder_.add_value(value);
   builder_.add_index(index);
   builder_.add_interpolation(interpolation);
@@ -6037,7 +6171,9 @@ struct PartAnimationDataIntValue FLATBUFFERS_FINAL_CLASS : private ::flatbuffers
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_INDEX = 4,
     VT_INTERPOLATION = 6,
-    VT_VALUE = 8
+    VT_VALUE = 8,
+    VT_CURVE = 10,
+    VT_EASING_RATE = 12
   };
   uint16_t index() const {
     return GetField<uint16_t>(VT_INDEX, 0);
@@ -6054,12 +6190,21 @@ struct PartAnimationDataIntValue FLATBUFFERS_FINAL_CLASS : private ::flatbuffers
   int32_t value() const {
     return GetField<int32_t>(VT_VALUE, 0);
   }
+  const ss::format::SsCurve *curve() const {
+    return GetPointer<const ss::format::SsCurve *>(VT_CURVE);
+  }
+  float easing_rate() const {
+    return GetField<float>(VT_EASING_RATE, 0.0f);
+  }
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<uint16_t>(verifier, VT_INDEX, 2) &&
            VerifyField<uint8_t>(verifier, VT_INTERPOLATION, 1) &&
            VerifyField<int32_t>(verifier, VT_VALUE, 4) &&
+           VerifyOffset(verifier, VT_CURVE) &&
+           verifier.VerifyTable(curve()) &&
+           VerifyField<float>(verifier, VT_EASING_RATE, 4) &&
            verifier.EndTable();
   }
 };
@@ -6077,6 +6222,12 @@ struct PartAnimationDataIntValueBuilder {
   void add_value(int32_t value) {
     fbb_.AddElement<int32_t>(PartAnimationDataIntValue::VT_VALUE, value, 0);
   }
+  void add_curve(::flatbuffers::Offset<ss::format::SsCurve> curve) {
+    fbb_.AddOffset(PartAnimationDataIntValue::VT_CURVE, curve);
+  }
+  void add_easing_rate(float easing_rate) {
+    fbb_.AddElement<float>(PartAnimationDataIntValue::VT_EASING_RATE, easing_rate, 0.0f);
+  }
   explicit PartAnimationDataIntValueBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
@@ -6092,8 +6243,12 @@ inline ::flatbuffers::Offset<PartAnimationDataIntValue> CreatePartAnimationDataI
     ::flatbuffers::FlatBufferBuilder &_fbb,
     uint16_t index = 0,
     ss::format::InterpolationType interpolation = ss::format::InterpolationType_None,
-    int32_t value = 0) {
+    int32_t value = 0,
+    ::flatbuffers::Offset<ss::format::SsCurve> curve = 0,
+    float easing_rate = 0.0f) {
   PartAnimationDataIntValueBuilder builder_(_fbb);
+  builder_.add_easing_rate(easing_rate);
+  builder_.add_curve(curve);
   builder_.add_value(value);
   builder_.add_index(index);
   builder_.add_interpolation(interpolation);
@@ -6231,7 +6386,9 @@ struct PartAnimationDataPartColor FLATBUFFERS_FINAL_CLASS : private ::flatbuffer
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_INDEX = 4,
     VT_INTERPOLATION = 6,
-    VT_VALUE = 8
+    VT_VALUE = 8,
+    VT_CURVE = 10,
+    VT_EASING_RATE = 12
   };
   uint16_t index() const {
     return GetField<uint16_t>(VT_INDEX, 0);
@@ -6248,6 +6405,12 @@ struct PartAnimationDataPartColor FLATBUFFERS_FINAL_CLASS : private ::flatbuffer
   const ss::format::PartAttributePartColor *value() const {
     return GetPointer<const ss::format::PartAttributePartColor *>(VT_VALUE);
   }
+  const ss::format::SsCurve *curve() const {
+    return GetPointer<const ss::format::SsCurve *>(VT_CURVE);
+  }
+  float easing_rate() const {
+    return GetField<float>(VT_EASING_RATE, 0.0f);
+  }
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
@@ -6255,6 +6418,9 @@ struct PartAnimationDataPartColor FLATBUFFERS_FINAL_CLASS : private ::flatbuffer
            VerifyField<uint8_t>(verifier, VT_INTERPOLATION, 1) &&
            VerifyOffset(verifier, VT_VALUE) &&
            verifier.VerifyTable(value()) &&
+           VerifyOffset(verifier, VT_CURVE) &&
+           verifier.VerifyTable(curve()) &&
+           VerifyField<float>(verifier, VT_EASING_RATE, 4) &&
            verifier.EndTable();
   }
 };
@@ -6272,6 +6438,12 @@ struct PartAnimationDataPartColorBuilder {
   void add_value(::flatbuffers::Offset<ss::format::PartAttributePartColor> value) {
     fbb_.AddOffset(PartAnimationDataPartColor::VT_VALUE, value);
   }
+  void add_curve(::flatbuffers::Offset<ss::format::SsCurve> curve) {
+    fbb_.AddOffset(PartAnimationDataPartColor::VT_CURVE, curve);
+  }
+  void add_easing_rate(float easing_rate) {
+    fbb_.AddElement<float>(PartAnimationDataPartColor::VT_EASING_RATE, easing_rate, 0.0f);
+  }
   explicit PartAnimationDataPartColorBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
@@ -6287,8 +6459,12 @@ inline ::flatbuffers::Offset<PartAnimationDataPartColor> CreatePartAnimationData
     ::flatbuffers::FlatBufferBuilder &_fbb,
     uint16_t index = 0,
     ss::format::InterpolationType interpolation = ss::format::InterpolationType_None,
-    ::flatbuffers::Offset<ss::format::PartAttributePartColor> value = 0) {
+    ::flatbuffers::Offset<ss::format::PartAttributePartColor> value = 0,
+    ::flatbuffers::Offset<ss::format::SsCurve> curve = 0,
+    float easing_rate = 0.0f) {
   PartAnimationDataPartColorBuilder builder_(_fbb);
+  builder_.add_easing_rate(easing_rate);
+  builder_.add_curve(curve);
   builder_.add_value(value);
   builder_.add_index(index);
   builder_.add_interpolation(interpolation);
@@ -6300,7 +6476,9 @@ struct PartAnimationDataShader FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_INDEX = 4,
     VT_INTERPOLATION = 6,
-    VT_VALUE = 8
+    VT_VALUE = 8,
+    VT_CURVE = 10,
+    VT_EASING_RATE = 12
   };
   uint16_t index() const {
     return GetField<uint16_t>(VT_INDEX, 0);
@@ -6317,6 +6495,12 @@ struct PartAnimationDataShader FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::
   const ss::format::PartAttributeShader *value() const {
     return GetPointer<const ss::format::PartAttributeShader *>(VT_VALUE);
   }
+  const ss::format::SsCurve *curve() const {
+    return GetPointer<const ss::format::SsCurve *>(VT_CURVE);
+  }
+  float easing_rate() const {
+    return GetField<float>(VT_EASING_RATE, 0.0f);
+  }
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
@@ -6324,6 +6508,9 @@ struct PartAnimationDataShader FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::
            VerifyField<uint8_t>(verifier, VT_INTERPOLATION, 1) &&
            VerifyOffset(verifier, VT_VALUE) &&
            verifier.VerifyTable(value()) &&
+           VerifyOffset(verifier, VT_CURVE) &&
+           verifier.VerifyTable(curve()) &&
+           VerifyField<float>(verifier, VT_EASING_RATE, 4) &&
            verifier.EndTable();
   }
 };
@@ -6341,6 +6528,12 @@ struct PartAnimationDataShaderBuilder {
   void add_value(::flatbuffers::Offset<ss::format::PartAttributeShader> value) {
     fbb_.AddOffset(PartAnimationDataShader::VT_VALUE, value);
   }
+  void add_curve(::flatbuffers::Offset<ss::format::SsCurve> curve) {
+    fbb_.AddOffset(PartAnimationDataShader::VT_CURVE, curve);
+  }
+  void add_easing_rate(float easing_rate) {
+    fbb_.AddElement<float>(PartAnimationDataShader::VT_EASING_RATE, easing_rate, 0.0f);
+  }
   explicit PartAnimationDataShaderBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
@@ -6356,8 +6549,12 @@ inline ::flatbuffers::Offset<PartAnimationDataShader> CreatePartAnimationDataSha
     ::flatbuffers::FlatBufferBuilder &_fbb,
     uint16_t index = 0,
     ss::format::InterpolationType interpolation = ss::format::InterpolationType_None,
-    ::flatbuffers::Offset<ss::format::PartAttributeShader> value = 0) {
+    ::flatbuffers::Offset<ss::format::PartAttributeShader> value = 0,
+    ::flatbuffers::Offset<ss::format::SsCurve> curve = 0,
+    float easing_rate = 0.0f) {
   PartAnimationDataShaderBuilder builder_(_fbb);
+  builder_.add_easing_rate(easing_rate);
+  builder_.add_curve(curve);
   builder_.add_value(value);
   builder_.add_index(index);
   builder_.add_interpolation(interpolation);
@@ -6369,7 +6566,9 @@ struct PartAnimationDataVertex FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_INDEX = 4,
     VT_INTERPOLATION = 6,
-    VT_VALUE = 8
+    VT_VALUE = 8,
+    VT_CURVE = 10,
+    VT_EASING_RATE = 12
   };
   uint16_t index() const {
     return GetField<uint16_t>(VT_INDEX, 0);
@@ -6386,6 +6585,12 @@ struct PartAnimationDataVertex FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::
   const ss::format::PartAttributeVertex *value() const {
     return GetPointer<const ss::format::PartAttributeVertex *>(VT_VALUE);
   }
+  const ss::format::SsCurve *curve() const {
+    return GetPointer<const ss::format::SsCurve *>(VT_CURVE);
+  }
+  float easing_rate() const {
+    return GetField<float>(VT_EASING_RATE, 0.0f);
+  }
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
@@ -6393,6 +6598,9 @@ struct PartAnimationDataVertex FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::
            VerifyField<uint8_t>(verifier, VT_INTERPOLATION, 1) &&
            VerifyOffset(verifier, VT_VALUE) &&
            verifier.VerifyTable(value()) &&
+           VerifyOffset(verifier, VT_CURVE) &&
+           verifier.VerifyTable(curve()) &&
+           VerifyField<float>(verifier, VT_EASING_RATE, 4) &&
            verifier.EndTable();
   }
 };
@@ -6410,6 +6618,12 @@ struct PartAnimationDataVertexBuilder {
   void add_value(::flatbuffers::Offset<ss::format::PartAttributeVertex> value) {
     fbb_.AddOffset(PartAnimationDataVertex::VT_VALUE, value);
   }
+  void add_curve(::flatbuffers::Offset<ss::format::SsCurve> curve) {
+    fbb_.AddOffset(PartAnimationDataVertex::VT_CURVE, curve);
+  }
+  void add_easing_rate(float easing_rate) {
+    fbb_.AddElement<float>(PartAnimationDataVertex::VT_EASING_RATE, easing_rate, 0.0f);
+  }
   explicit PartAnimationDataVertexBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
@@ -6425,8 +6639,12 @@ inline ::flatbuffers::Offset<PartAnimationDataVertex> CreatePartAnimationDataVer
     ::flatbuffers::FlatBufferBuilder &_fbb,
     uint16_t index = 0,
     ss::format::InterpolationType interpolation = ss::format::InterpolationType_None,
-    ::flatbuffers::Offset<ss::format::PartAttributeVertex> value = 0) {
+    ::flatbuffers::Offset<ss::format::PartAttributeVertex> value = 0,
+    ::flatbuffers::Offset<ss::format::SsCurve> curve = 0,
+    float easing_rate = 0.0f) {
   PartAnimationDataVertexBuilder builder_(_fbb);
+  builder_.add_easing_rate(easing_rate);
+  builder_.add_curve(curve);
   builder_.add_value(value);
   builder_.add_index(index);
   builder_.add_interpolation(interpolation);
@@ -6556,7 +6774,9 @@ struct PartAnimationDataVec2 FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Ta
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_INDEX = 4,
     VT_INTERPOLATION = 6,
-    VT_VALUE = 8
+    VT_VALUE = 8,
+    VT_CURVE = 10,
+    VT_EASING_RATE = 12
   };
   uint16_t index() const {
     return GetField<uint16_t>(VT_INDEX, 0);
@@ -6573,6 +6793,12 @@ struct PartAnimationDataVec2 FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Ta
   const ss::format::Vec2 *value() const {
     return GetPointer<const ss::format::Vec2 *>(VT_VALUE);
   }
+  const ss::format::SsCurve *curve() const {
+    return GetPointer<const ss::format::SsCurve *>(VT_CURVE);
+  }
+  float easing_rate() const {
+    return GetField<float>(VT_EASING_RATE, 0.0f);
+  }
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
@@ -6580,6 +6806,9 @@ struct PartAnimationDataVec2 FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Ta
            VerifyField<uint8_t>(verifier, VT_INTERPOLATION, 1) &&
            VerifyOffset(verifier, VT_VALUE) &&
            verifier.VerifyTable(value()) &&
+           VerifyOffset(verifier, VT_CURVE) &&
+           verifier.VerifyTable(curve()) &&
+           VerifyField<float>(verifier, VT_EASING_RATE, 4) &&
            verifier.EndTable();
   }
 };
@@ -6597,6 +6826,12 @@ struct PartAnimationDataVec2Builder {
   void add_value(::flatbuffers::Offset<ss::format::Vec2> value) {
     fbb_.AddOffset(PartAnimationDataVec2::VT_VALUE, value);
   }
+  void add_curve(::flatbuffers::Offset<ss::format::SsCurve> curve) {
+    fbb_.AddOffset(PartAnimationDataVec2::VT_CURVE, curve);
+  }
+  void add_easing_rate(float easing_rate) {
+    fbb_.AddElement<float>(PartAnimationDataVec2::VT_EASING_RATE, easing_rate, 0.0f);
+  }
   explicit PartAnimationDataVec2Builder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
@@ -6612,8 +6847,12 @@ inline ::flatbuffers::Offset<PartAnimationDataVec2> CreatePartAnimationDataVec2(
     ::flatbuffers::FlatBufferBuilder &_fbb,
     uint16_t index = 0,
     ss::format::InterpolationType interpolation = ss::format::InterpolationType_None,
-    ::flatbuffers::Offset<ss::format::Vec2> value = 0) {
+    ::flatbuffers::Offset<ss::format::Vec2> value = 0,
+    ::flatbuffers::Offset<ss::format::SsCurve> curve = 0,
+    float easing_rate = 0.0f) {
   PartAnimationDataVec2Builder builder_(_fbb);
+  builder_.add_easing_rate(easing_rate);
+  builder_.add_curve(curve);
   builder_.add_value(value);
   builder_.add_index(index);
   builder_.add_interpolation(interpolation);
@@ -6625,7 +6864,9 @@ struct PartAnimationDataDeform FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_INDEX = 4,
     VT_INTERPOLATION = 6,
-    VT_VALUE = 8
+    VT_VALUE = 8,
+    VT_CURVE = 10,
+    VT_EASING_RATE = 12
   };
   uint16_t index() const {
     return GetField<uint16_t>(VT_INDEX, 0);
@@ -6642,6 +6883,12 @@ struct PartAnimationDataDeform FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::
   const ss::format::PartAttributeDeform *value() const {
     return GetPointer<const ss::format::PartAttributeDeform *>(VT_VALUE);
   }
+  const ss::format::SsCurve *curve() const {
+    return GetPointer<const ss::format::SsCurve *>(VT_CURVE);
+  }
+  float easing_rate() const {
+    return GetField<float>(VT_EASING_RATE, 0.0f);
+  }
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
@@ -6649,6 +6896,9 @@ struct PartAnimationDataDeform FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::
            VerifyField<uint8_t>(verifier, VT_INTERPOLATION, 1) &&
            VerifyOffset(verifier, VT_VALUE) &&
            verifier.VerifyTable(value()) &&
+           VerifyOffset(verifier, VT_CURVE) &&
+           verifier.VerifyTable(curve()) &&
+           VerifyField<float>(verifier, VT_EASING_RATE, 4) &&
            verifier.EndTable();
   }
 };
@@ -6666,6 +6916,12 @@ struct PartAnimationDataDeformBuilder {
   void add_value(::flatbuffers::Offset<ss::format::PartAttributeDeform> value) {
     fbb_.AddOffset(PartAnimationDataDeform::VT_VALUE, value);
   }
+  void add_curve(::flatbuffers::Offset<ss::format::SsCurve> curve) {
+    fbb_.AddOffset(PartAnimationDataDeform::VT_CURVE, curve);
+  }
+  void add_easing_rate(float easing_rate) {
+    fbb_.AddElement<float>(PartAnimationDataDeform::VT_EASING_RATE, easing_rate, 0.0f);
+  }
   explicit PartAnimationDataDeformBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
@@ -6681,8 +6937,12 @@ inline ::flatbuffers::Offset<PartAnimationDataDeform> CreatePartAnimationDataDef
     ::flatbuffers::FlatBufferBuilder &_fbb,
     uint16_t index = 0,
     ss::format::InterpolationType interpolation = ss::format::InterpolationType_None,
-    ::flatbuffers::Offset<ss::format::PartAttributeDeform> value = 0) {
+    ::flatbuffers::Offset<ss::format::PartAttributeDeform> value = 0,
+    ::flatbuffers::Offset<ss::format::SsCurve> curve = 0,
+    float easing_rate = 0.0f) {
   PartAnimationDataDeformBuilder builder_(_fbb);
+  builder_.add_easing_rate(easing_rate);
+  builder_.add_curve(curve);
   builder_.add_value(value);
   builder_.add_index(index);
   builder_.add_interpolation(interpolation);

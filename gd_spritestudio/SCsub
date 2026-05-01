@@ -25,7 +25,8 @@ env_ss.Append(
     CPPPATH=[
         "flatbuffers/src",
         "flatbuffers/include",
-        "runtime",
+        "format",
+        "runtime/include",
     ]
 )
 
@@ -33,10 +34,9 @@ env_ss.Append(
 module_path = env.Dir('.').abspath
 platform = env['platform']
 
-if platform in ['macos', 'windows']:
-    runtime_libpath = os.path.join(module_path, "runtime", "libs", platform)
-else:
-    runtime_libpath = os.path.join(module_path, "runtime", "libs", platform, env['arch'])
+runtime_libpath = os.path.join(module_path, "runtime", "libs", platform)
+if platform not in ['macos', 'ios', 'web']:
+    runtime_libpath = os.path.join(runtime_libpath, env['arch'])
 
 env.Append(LIBPATH=[runtime_libpath])
 
