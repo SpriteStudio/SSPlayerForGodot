@@ -24,7 +24,7 @@ ZIP_FILE="${TARGET_DIR}/sdk.zip"
 echo "Target SDK Version: ${TARGET_VERSION}"
 echo "Download URL: ${URL}"
 echo "Downloading SDK..."
-curl -L -o "$ZIP_FILE" "$URL"
+curl -fL -o "$ZIP_FILE" "$URL"
 
 echo "Extracting SDK..."
 rm -rf "${TARGET_DIR}/runtime"
