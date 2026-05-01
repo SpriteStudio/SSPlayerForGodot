@@ -1,32 +1,55 @@
-﻿#!/usr/bin/env python
-
+#!/usr/bin/env python
+import os
 Import("env")
 Import("env_modules")
 
-env_gd_spritestudio = env_modules.Clone()
+env_ss = env_modules.Clone()
 
-env_gd_spritestudio.add_source_files(env.modules_sources, "*.cpp")
-env_gd_spritestudio.add_source_files(env.modules_sources, "SpriteStudio6-SDK/Common/Loader/tinyxml2/*.cpp")
-env_gd_spritestudio.add_source_files(env.modules_sources, "SpriteStudio6-SDK/Common/Loader/*.cpp")
-# env_gd_spritestudio.add_source_files(env.modules_sources, "SpriteStudio6-SDK/Common/Helper/*.cpp")
-env_gd_spritestudio.add_source_files(env.modules_sources, "SpriteStudio6-SDK/Common/Animator/*.cpp")
-env_gd_spritestudio.add_source_files(env.modules_sources, "SpriteStudio6-SDK/Common/Helper/DebugPrint.cpp")
-env_gd_spritestudio.add_source_files(env.modules_sources, "SpriteStudio6-SDK/Common/Helper/IsshTexture.cpp")
+# --- Source Files ---
+# Extension sources
+env_ss.add_source_files(env.modules_sources, "*.cpp")
 
+# FlatBuffers sources
+fb_src_dir = "flatbuffers/src"
+fb_sources = [
+    "idl_parser.cpp",
+    "idl_gen_text.cpp",
+    "reflection.cpp",
+    "util.cpp",
+]
+for f in fb_sources:
+    env_ss.add_source_files(env.modules_sources, os.path.join(fb_src_dir, f))
 
-env_gd_spritestudio.Append(CPPDEFINES = '_NOTUSE_STBI')
-env_gd_spritestudio.Append(CPPDEFINES = '_NOTUSE_TEXTURE_FULLPATH')
-env_gd_spritestudio.Append(CPPDEFINES = '_NOTUSE_EXCEPTION')
+# --- Includes ---
+env_ss.Append(
+    CPPPATH=[
+        "flatbuffers/src",
+        "flatbuffers/include",
+        "runtime",
+    ]
+)
 
-env_gd_spritestudio.Append(
-	CPPPATH=[
-		"SpriteStudio6-SDK/Common/Loader",
-		"SpriteStudio6-SDK/Common/Helper",
-		"SpriteStudio6-SDK/Common/Animator",
-	])
+# --- Libraries & Library Paths ---
+module_path = env.Dir('.').abspath
+platform = env['platform']
 
-if not env_gd_spritestudio.msvc:
-    env_gd_spritestudio.Append(CXXFLAGS=["-Wno-inconsistent-missing-override"])
+if platform in ['macos', 'windows']:
+    runtime_libpath = os.path.join(module_path, "runtime", "libs", platform)
+else:
+    runtime_libpath = os.path.join(module_path, "runtime", "libs", platform, env['arch'])
 
-if env['platform'] == 'macos':
-    env_gd_spritestudio.Append(LINKFLAGS=['-framework', 'Metal'])
+env.Append(LIBPATH=[runtime_libpath])
+
+if env['target'] == 'editor':
+    env.Append(LIBS=["ssconverter"])
+    if platform == "windows":
+        env.Append(LINKFLAGS=["Userenv.lib", "Bcrypt.lib", "Ntdll.lib", "Ws2_32.lib"])
+
+env.Append(LIBS=["ssruntime"])
+
+# --- Compilation Flags ---
+if not env_ss.msvc:
+    env_ss.Append(CXXFLAGS=["-Wno-inconsistent-missing-override"])
+
+if platform == 'macos':
+    env_ss.Append(LINKFLAGS=['-framework', 'Metal'])

@@ -4,7 +4,7 @@ $baseDirectory = Split-Path -Parent $PSCommandPath
 $rootDirectory = Split-Path -Parent $baseDirectory
 $arch = (Get-Item Env:PROCESSOR_ARCHITECTURE).Value
 if ($arch -match "AMD64") {
-    $HOST_ARCH = "x64"
+    $HOST_ARCH = "x86_64"
 } else {
     $HOST_ARCH = "arm64"
 }
@@ -29,13 +29,14 @@ $scons_default_opts = @{
     platform = "windows"
     target = "editor"
     compiledb = "yes"
+    use_static_cpp = "no"
 }
 
 # winbuild default options
 $winbuild_default_opts = @{
     cpus = $cpus
     ccache = "no"
-    version = "4.4"
+    version = "4.6"
 }
 
 $opts = @{}
@@ -86,10 +87,11 @@ echo "scons command options: $scons_command_opts"
 
 pushd $rootDirectory
 
-$BINDIR = "bin/${opts[platform]}"
+$BINDIR = "bin/$($opts.platform)"
 mkdir "$BINDIR" -Force
 Invoke-Expression "scons $scons_command_opts"
 
-cp misc\ssplayer_godot_extension.gdextension examples\feature_test_gdextension\bin
+mkdir examples\feature_test_gdextension\bin -Force | Out-Null
+cp misc\ssplayer_godot_extension.gdextension examples\feature_test_gdextension\bin\ssplayer_godot_extension.gdextension
 
 popd

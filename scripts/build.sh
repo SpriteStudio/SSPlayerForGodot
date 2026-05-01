@@ -37,7 +37,7 @@ declare -A scons_default_opts=(
 declare -A build_default_opts=(
     [cpus]=${CPUS}
     [ccache]="no"
-    [version]="4.4"
+    [version]="4.6"
     [strip]="no"
 )
 
@@ -186,7 +186,7 @@ if [[ "$PLATFORM" == "macos" ]]; then
             lipo -create bin/${internal_opts[app_bin]}.arm64 bin/${internal_opts[app_bin]}.x86_64 -output bin/${internal_opts[app_bin]}.${opts[arch]}
         fi
         /bin/cp bin/${internal_opts[app_bin]}.${opts[arch]} Godot.app/Contents/MacOS/Godot
-        /bin/chmod +x Godot.app/Contents/MacOS/Godot 
+        /bin/chmod +x Godot.app/Contents/MacOS/Godot
         codesign --force --timestamp --options=runtime --entitlements misc/dist/${internal_opts[platform]}/editor.entitlements -s - Godot.app
     fi
 

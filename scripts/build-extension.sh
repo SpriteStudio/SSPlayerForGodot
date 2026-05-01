@@ -35,7 +35,7 @@ declare -A scons_default_opts=(
 # macbuild default options
 declare -A build_default_opts=(
     [cpus]=${CPUS}
-    [version]="4.4"
+    [version]="4.6"
     [strip]="no"
 )
 
@@ -115,7 +115,7 @@ alias scons_macro="scons ${scons_command_opts}"
 if [[ ${opts[arch]} == "universal" ]]; then
     if [[ ${opts[platform]} == "android" ]]; then
         ARCHES=('arm64' 'x86_64')
-    else 
+    else
         ARCHES=${opts[arch]}
     fi
 else
