@@ -11,7 +11,7 @@ Pick one of the following approaches.
 
 1. Download a matching version of Godot Engine from the [official site](https://godotengine.org/download/).
 2. Download the GDExtension package for your target platform from [SSPlayerForGodot Releases](https://github.com/SpriteStudio/SSPlayerForGodot/releases) (or build it yourself; see [BUILD.md](BUILD.md)).
-3. Extract the GDExtension files (`.gdextension` plus the per-platform shared libraries) into your Godot project according to the paths declared in the `.gdextension` file (the sample projects in this repository use `bin/`).
+3. Extract the GDExtension files into your Godot project according to the paths declared in the `.gdextension` file (the sample projects in this repository use `bin/`).
 
 ## B. Use a Godot Engine with the SSPlayerForGodot custom module built in
 

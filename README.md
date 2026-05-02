@@ -73,7 +73,7 @@ Download a 4.6-series editor from the [official site](https://godotengine.org/do
 
 ### 2. Get the SSPlayerForGodot GDExtension
 
-Download the GDExtension package (`.gdextension` plus the per-platform shared libraries) for your target platform from the [SSPlayerForGodot Releases page](https://github.com/SpriteStudio/SSPlayerForGodot/releases).
+Download the GDExtension package for your target platform from the [SSPlayerForGodot Releases page](https://github.com/SpriteStudio/SSPlayerForGodot/releases).
 
 ### 3. Drop it into your project
 
