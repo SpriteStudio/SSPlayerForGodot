@@ -11,38 +11,59 @@
   - Location: `gd_spritestudio/SpriteStudio7-SDK/libs/ssruntime/docs/README.ja.md`
 
 ## Project Overview
-**SSPlayerForGodot** is a Godot Engine integration for [SpriteStudio](https://github.com/SpriteStudio), providing both GDExtension and custom engine module support.
+
+**SSPlayerForGodot** is a Godot Engine integration for [SpriteStudio](https://github.com/SpriteStudio).
+The plugin can be consumed either as a **GDExtension** or as a **custom module** built into a Godot Engine binary.
+
+`.sspj` projects are converted to `.ssab` (animation binary) / `.ssqb` (sequence binary) at build/import time, and played back at runtime through `libssruntime` from SpriteStudio7-SDK.
 
 **Key Technologies:**
-- **C++:** Core plugin logic and Godot bindings.
-- **Rust:** Core runtime (`libssruntime`) exposed via FFI.
+- **C++:** Plugin logic and Godot bindings.
+- **Rust:** Core runtime (`libssruntime`) and converter (`libssconverter`) provided by SpriteStudio7-SDK; consumed via FFI.
 - **FlatBuffers:** Serialization and data exchange.
 - **SCons:** Build system.
 
+## Documentation
+
+User-facing documentation lives at the repository root. Treat these as the source of truth and update them alongside relevant code changes:
+
+- `README.md` / `README.ja.md` — Project overview, quick start (Releases-based), samples.
+- `BUILD.md` / `BUILD.ja.md` — Build instructions: source acquisition, environment notes, libssruntime placement, GDExtension build, custom-module build, release scripts, and an **SS7-SDK developer appendix** for users who build `libssruntime` from source.
+- `USAGE.md` / `USAGE.ja.md` — Editor setup, `.sspj` import (via SS Import Dock or `ssconverter-cli`), node creation, inspector properties, and class API.
+
 ## Building and Running
 
-### 0. Prerequisites (Initial Setup)
-Ensure submodules are initialized and external Godot repositories are cloned into the project root:
-```bash
-git submodule update --init --recursive
-git clone https://github.com/godotengine/godot.git -b 4.6
-git clone https://github.com/godotengine/godot-cpp.git -b 4.5
-```
+### Default flow (Godot binaries)
 
-### 1. Build SS Runtime (Rust)
-- **POSIX:** `./scripts/build-runtime.sh`
-- **Windows:** `.\scripts\build-runtime.ps1`
+This is the path for users who consume `libssruntime` as a prebuilt artifact.
 
-### 2. Build GDExtension
-- **POSIX:** `./scripts/build-extension.sh`
-- **Windows:** `.\scripts\build-extension.ps1`
+1. **Get source:**
+   ```bash
+   git clone --recursive https://github.com/SpriteStudio/SSPlayerForGodot.git
+   git clone https://github.com/godotengine/godot.git -b 4.6        # custom-module path
+   git clone https://github.com/godotengine/godot-cpp.git -b 4.5    # GDExtension path
+   ```
+2. **Place `libssruntime`:** run `./scripts/download-sdk.sh` (POSIX) / `.\scripts\download-sdk.ps1` (Windows). The script fetches the version pinned in `gd_spritestudio/SDK_VERSION.txt` from [SpriteStudio7-SDK Releases](https://github.com/SpriteStudio/SpriteStudio7-SDK/releases), replaces `gd_spritestudio/runtime/`, and (on Windows) generates the target-suffixed `.lib` copies needed by the custom-module build. Skips when the same version is already extracted. iOS / Android / Web bundles do not include `libssconverter`.
+3. **Choose one of:**
+   - GDExtension: `./scripts/build-extension.sh` (POSIX) / `.\scripts\build-extension.ps1` (Windows)
+   - Custom module: `./scripts/build.sh` (POSIX) / `.\scripts\build.ps1` (Windows)
 
-### 3. Build Custom Godot Engine
-- **POSIX:** `./scripts/build.sh`
-- **Windows:** `.\scripts\build.ps1`
+Per-platform release scripts (`scripts/release-*.sh` / `scripts/release-gdextension-*.sh`) loop the build for `editor` / `template_debug` / `template_release` targets. They do **not** fetch or build `libssruntime`.
+
+### SS7-SDK developer flow (build `libssruntime` from source)
+
+Required only when developing/customizing SS7-SDK alongside the Godot side. Rust toolchain setup follows [SpriteStudio7-SDK README](https://github.com/SpriteStudio/SpriteStudio7-SDK?tab=readme-ov-file#for-sdk-developers).
+
+- Build runtime: `./scripts/build-runtime.sh` / `.\scripts\build-runtime.ps1`
+- Regenerate FlatBuffers headers (when `.fbs` files change): `./scripts/generate-runtime-code.sh` / `.\scripts\generate-runtime-code.ps1`
 
 ## Directory Overview
-- `gd_spritestudio/`: Main C++ source, Godot node bindings, and import plugins.
-- `scripts/`: Build and release scripts for various platforms.
-- `examples/`: Sample Godot projects.
-- `misc/`: Platform-specific configuration files.
+
+- `gd_spritestudio/`: Main C++ source, Godot node bindings, and editor import dock.
+  - `gd_spritestudio/SDK_VERSION.txt`: Pinned SS7-SDK release tag consumed by `scripts/download-sdk.{sh,ps1}`. Edit this file to upgrade the bundled `libssruntime`.
+  - `gd_spritestudio/runtime/`: Drop-in location for `libssruntime` / `libssconverter` (headers under `include/`, libs under `libs/<platform>/[<arch>/]`). Populated by `download-sdk.{sh,ps1}` or by manual extraction.
+  - `gd_spritestudio/SpriteStudio7-SDK/`: Submodule. Used only for the SS7-SDK developer flow.
+  - `gd_spritestudio/format/`: FlatBuffers-generated headers (regenerate via `generate-runtime-code.{sh,ps1}`).
+- `scripts/`: Per-platform build and release scripts.
+- `examples/`: Sample Godot projects. **Note:** existing samples were authored for the v1.x `.sspj` direct-load workflow and need migration to the current `.ssab` / `.ssqb` workflow before they will run.
+- `misc/`: Platform-specific configuration files (`.gdextension`, plists, ccache patches).

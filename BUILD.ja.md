@@ -2,10 +2,12 @@
 
 # 概要
 
-本ブランチで Godot 用バイナリを得るまでの流れは以下の2段階です。
+本ブランチで Godot 用バイナリを得るまでの流れは「共通の準備」+「いずれかのビルド」の構成です。
 
-1. **`libssruntime` の用意** — SpriteStudio7-SDK のリリース成果物を取得し、`gd_spritestudio/runtime/` 配下に配置します。
-2. **GDExtension** または **カスタムモジュール組み込み Godot Engine** のビルド — 上記ランタイムをリンクして Godot 用バイナリを生成します。
+1. **`libssruntime` の用意** (共通) — SpriteStudio7-SDK のリリース成果物を取得し、`gd_spritestudio/runtime/` 配下に配置します。
+2. ランタイムをリンクして Godot 用バイナリを生成します。下記いずれかを選択:
+    - **2-A. GDExtension のビルド**
+    - **2-B. カスタムモジュール組み込み Godot Engine のビルド**
 
 # ソース取得
 
@@ -18,80 +20,44 @@ git clone https://github.com/godotengine/godot.git -b 4.6
 git clone https://github.com/godotengine/godot-cpp.git -b 4.5
 ```
 
-`--recursive` を付け忘れた場合は以下を実行してください。
-
-```bash
-git submodule update --init --recursive
-```
-
 `godot` ディレクトリはカスタムモジュール組み込み Godot Engine をビルドする場合に必要です。
 `godot-cpp` ディレクトリは GDExtension をビルドする場合に必要です。
 
 # ビルド環境のセットアップ
 
-## Windows
+各プラットフォーム向けのビルドツール (コンパイラ・Python・SCons など) の準備は、Godot 公式のコンパイル手順を参照してください。
 
-[Godot 公式のコンパイル手順](https://docs.godotengine.org/en/stable/contributing/development/compiling/compiling_for_windows.html) に従って下記を用意します。
+- [Windows](https://docs.godotengine.org/en/stable/contributing/development/compiling/compiling_for_windows.html)
+- [macOS](https://docs.godotengine.org/ja/4.x/contributing/development/compiling/compiling_for_macos.html)
+- Linux: T.B.D.
 
-* ビルドツール (いずれかを選択)
-    * Visual Studio 2019 (推奨) または 2022
-    * MSYS2 + MinGW + gcc + make
-* Python 3.6 以降
-* SCons 3.0 以降
+## 注意点
 
-SCons は下記でインストールできます。
+### macOS で Universal Binary をビルドする場合
 
-```bat
-python -m pip install scons
-```
-
-## macOS
-
-[Godot 公式のコンパイル手順](https://docs.godotengine.org/ja/4.x/contributing/development/compiling/compiling_for_macos.html) に従って下記を用意します。
-
-* Xcode
-* Python 3.6 以降
-* SCons 3.0 以降
-* Vulkan SDK for MoltenVK
-* (Optional) emscripten — Web 向けビルド用
-* (Optional) Android SDK / Android NDK — Android 向けビルド用
-
-Xcode 以外は [Homebrew](https://brew.sh/) でインストールできます。
-
-```sh
-brew install python3 scons
-brew install molten-vk
-```
-
-ホストアーキテクチャと異なる構成 (Universal Binary など) をビルドする場合は `molten-vk` の代わりに [Vulkan SDK for MoltenVK](https://vulkan.lunarg.com/sdk/home) をインストールしてください。
-
-## Linux
-
-T.B.D.
+Homebrew で配布されている `molten-vk` はホストアーキ向けのバイナリのみ提供されるため、`arch=universal` 指定で Universal Binary をビルドする際はリンクに失敗します。代わりに [Vulkan SDK for MoltenVK](https://vulkan.lunarg.com/sdk/home) (Universal 対応版) をインストールしてください。
 
 # 1. libssruntime の用意
 
-[SpriteStudio7-SDK のリリースページ](https://github.com/SpriteStudio/SpriteStudio7-SDK/releases) から該当プラットフォーム向けの SDK バイナリ一式を取得し、リポジトリルートからの相対パスで `gd_spritestudio/runtime/` 配下に展開してください。
+`gd_spritestudio/SDK_VERSION.txt` で指定されたバージョンの SDK パッケージを取得・展開します。
 
-期待されるレイアウトは以下のとおりです。
+**macOS / Linux**
 
+```sh
+./scripts/download-sdk.sh
 ```
-gd_spritestudio/runtime/
-├── include/
-│   ├── ssruntime.h
-│   └── ssconverter.h
-└── libs/
-    ├── macos/        libssruntime.a, libssconverter.a            (universal binary)
-    ├── ios/          libssruntime.a, libssconverter.a            (universal binary)
-    ├── web/          libssruntime.a, libssconverter.a
-    ├── windows/<arch>/    libssruntime.a, libssconverter.a       (例: x86_64)
-    ├── linux/<arch>/      libssruntime.a, libssconverter.a       (例: x86_64)
-    └── android/<arch>/    libssruntime.a, libssconverter.a       (例: arm64, x86_64)
+
+**Windows (PowerShell)**
+
+```powershell
+.\scripts\download-sdk.ps1
 ```
+
+> `libssconverter` (`.sspj` → `.ssab` 変換ライブラリ) はデスクトップ向けにのみ同梱されます。iOS / Android / Web 向けの `libssruntime` パッケージには含まれません。
 
 `libssruntime` を SS7-SDK ソースから自前でビルドしたい場合は [SS7-SDK 開発者向け](#ss7-sdk-開発者向け) を参照してください。
 
-# 2. GDExtension のビルド
+# 2-A. GDExtension のビルド
 
 `godot-cpp` を `4.5` ブランチで clone 済みであることが前提です。
 
@@ -119,7 +85,7 @@ $env:PYTHONUTF8=1
 | `target`   | `editor`                        | `editor` / `template_debug` / `template_release`                  |
 | `cpus`     | 自動検出                        | `scons -j` の並列度                                               |
 
-# 3. カスタムモジュール組み込み Godot Engine のビルド
+# 2-B. カスタムモジュール組み込み Godot Engine のビルド
 
 `godot` を `4.6` ブランチで clone 済みであることが前提です。
 `build.sh` / `build.ps1` は `custom_modules=../gd_spritestudio` を指定して `scons` を実行します。
@@ -157,15 +123,6 @@ $env:PYTHONUTF8=1
 内部では前述の `build.sh` / `build-extension.sh` を `target` を変えて連続実行する構成です。
 これらのスクリプトは `libssruntime` を取得・ビルドはしないため、事前に [1. libssruntime の用意](#1-libssruntime-の用意) を済ませておく必要があります。
 
-## カスタムモジュール組み込み Godot Engine
-
-| プラットフォーム | スクリプト                            | 補足                                          |
-| ---------------- | ------------------------------------- | --------------------------------------------- |
-| Windows          | `.\scripts\release-windows.ps1`       | `arch` はホスト                               |
-| macOS            | `./scripts/release-macos.sh`          | `arch=universal` 固定                         |
-| iOS              | `./scripts/release-ios.sh`            | `arch=arm64` (実機) と `arch=universal` (sim) |
-| Android          | `./scripts/release-android.sh`        | `arm32` / `arm64` / `x86_64` の3アーキ        |
-
 ## GDExtension
 
 | プラットフォーム | スクリプト                                   | 補足                                         |
@@ -176,6 +133,17 @@ $env:PYTHONUTF8=1
 | iOS              | `./scripts/release-gdextension-ios.sh`       | `template_debug` / `template_release` のみ   |
 | Android          | `./scripts/release-gdextension-android.sh`   | `arm32` / `arm64` / `x86_64` の3アーキ       |
 | Web              | `./scripts/release-gdextension-web.sh`       | `wasm32` (`threads=yes` / `threads=no`)      |
+
+## カスタムモジュール組み込み Godot Engine
+
+| プラットフォーム | スクリプト                            | 補足                                          |
+| ---------------- | ------------------------------------- | --------------------------------------------- |
+| Windows          | `.\scripts\release-windows.ps1`       | `arch` はホスト                               |
+| macOS            | `./scripts/release-macos.sh`          | `arch=universal` 固定                         |
+| iOS              | `./scripts/release-ios.sh`            | `arch=arm64` (実機) と `arch=universal` (sim) |
+| Android          | `./scripts/release-android.sh`        | `arm32` / `arm64` / `x86_64` の3アーキ        |
+
+> Linux 向けのカスタムモジュール用一括ビルドスクリプトは未整備です。`./scripts/build.sh platform=linux target=...` を `editor` / `template_debug` / `template_release` で個別に呼び出してください。
 
 # SS7-SDK 開発者向け
 
