@@ -2,11 +2,12 @@
 
 # SpriteStudioPlayer for Godot
 
-> **Note:** 本リポジトリは現在開発中のバージョンです。インターフェースは予告なく変更される可能性があります。
-> v1.x からの移行手順は別途マイグレーションドキュメントを用意予定です。
+本リポジトリは現在開発中のバージョンです。
+本リポジトリに関していかなる保証もサポートも提供しません。リクエストやバグ報告への返信もできません。
+インターフェースは予告なく変更される可能性があります。v1.x からの移行手順は別途マイグレーションドキュメントを用意予定です。
 
 [OPTPiX SpriteStudio](https://www.webtech.co.jp/spritestudio/) で作成したアニメーションを [Godot Engine](https://godotengine.org/) 上で再生するためのプラグインです。
-実行時パフォーマンスを優先するため C++ モジュールの形態を取り、再生処理は [SpriteStudio7-SDK](https://github.com/SpriteStudio/SpriteStudio7-SDK) が提供する `libssruntime` を介して行います。
+再生処理は [SpriteStudio7-SDK](https://github.com/SpriteStudio/SpriteStudio7-SDK) が提供する `libssruntime` を介して行います。
 
 ## 概要 (Overview)
 
@@ -64,35 +65,44 @@ Windows / macOS でのビルドおよび実行を確認しています。
 
 ## クイックスタート
 
-### 1. リポジトリの取得
+ビルド済みの GDExtension を取得して動かす最短手順です。
 
-```bash
-git clone --recursive https://github.com/SpriteStudio/SSPlayerForGodot.git
-cd SSPlayerForGodot
-```
+### 1. Godot Engine の準備
 
-### 2. libssruntime の取得
+[公式サイト](https://godotengine.org/download/) から 4.6 系のエディタをダウンロードしてインストールします。
 
-[SpriteStudio7-SDK のリリースページ](https://github.com/SpriteStudio/SpriteStudio7-SDK/releases) から該当プラットフォームの SDK バイナリ一式を取得し、`gd_spritestudio/runtime/` 配下に展開します。詳細は [BUILD.ja.md](./BUILD.ja.md#1-libssruntime-の用意) を参照してください。
+### 2. SSPlayerForGodot GDExtension の取得
 
-### 3. Godot 用バイナリのビルド
+[SSPlayerForGodot の Releases ページ](https://github.com/SpriteStudio/SSPlayerForGodot/releases) から該当プラットフォーム向けの GDExtension 一式 (`.gdextension` + 各プラットフォームの共有ライブラリ) をダウンロードします。
 
-GDExtension を利用する場合・カスタムモジュール組み込み Godot を利用する場合のいずれかを選んでビルドします。
-詳細は [BUILD.ja.md](./BUILD.ja.md) を参照してください。
+### 3. プロジェクトへの配置
 
-### 4. 利用方法
+ダウンロードした GDExtension 一式を `.gdextension` ファイル内のパス指定に合わせて Godot プロジェクト配下に展開します (本リポジトリのサンプルでは `bin/` を使用)。
+Godot エディタを再起動すると `GdSsPlayerNode2D` ノードや SS Import Dock が利用可能になります。
 
-`.sspj` のインポートからノードへの紐づけ、再生制御まで一通りの利用方法は [USAGE.ja.md](./USAGE.ja.md) を参照してください。
+### 4. SpriteStudio データの変換と再生
+
+`.sspj` の変換から `GdSsPlayerNode2D` での再生まで一通りの利用方法は [USAGE.ja.md](./USAGE.ja.md#spritestudio-データのインポート) を参照してください。
 
 ## サンプル
 
-[examples フォルダ](./examples/)にサンプルプロジェクトがあります。
+[examples フォルダ](./examples/) にサンプルプロジェクトがあります。
+
+> **Note:** 既存サンプルは v1.x 系の `.sspj` 直接読み込み前提で作成されています。本バージョンの `.ssab` / `.ssqb` ワークフローで動作させるには移行作業が必要です。マイグレーションドキュメント整備に合わせて随時更新予定です。
 
 - [feature_test](./examples/feature_test) — カスタムモジュール版の基本機能テスト
 - [feature_test_gdextension](./examples/feature_test_gdextension) — GDExtension 版の基本機能テスト
 - [mesh_bone](./examples/mesh_bone) — メッシュ・ボーン・エフェクトを利用したキャラクターアニメ
 - [particle_effect](./examples/particle_effect) — エフェクト機能のサンプル
 
+## 自分でビルドする / 開発する
+
+GDExtension またはカスタムモジュール組み込み Godot Engine を自分でビルドしたい場合、および SS7-SDK と並行してプラグインを開発したい場合は [BUILD.ja.md](./BUILD.ja.md) を参照してください。
+
 ## 関連リポジトリ
 
 - [SpriteStudio7-SDK](https://github.com/SpriteStudio/SpriteStudio7-SDK) — `libssruntime` / `libssconverter` を提供する SDK 本体
+
+## ライセンス
+
+[LICENSE.txt](./LICENSE.txt) を参照してください。

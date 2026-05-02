@@ -2,11 +2,12 @@
 
 # SpriteStudioPlayer for Godot
 
-> **Note:** This repository is a work-in-progress version. Interfaces may change without notice.
-> A migration guide for v1.x users will be provided as a separate document.
+This repository is a work-in-progress version.
+No warranty or support is provided for this repository, and we cannot respond to feature requests or bug reports.
+Interfaces may change without notice. A migration guide for v1.x users will be provided as a separate document.
 
 A plugin for playing back animations created with [OPTPiX SpriteStudio](https://www.webtech.co.jp/spritestudio/) inside [Godot Engine](https://godotengine.org/).
-The plugin is implemented as a C++ module to prioritize runtime performance, and uses `libssruntime` provided by [SpriteStudio7-SDK](https://github.com/SpriteStudio/SpriteStudio7-SDK) for animation playback.
+Animation playback uses `libssruntime` provided by [SpriteStudio7-SDK](https://github.com/SpriteStudio/SpriteStudio7-SDK).
 
 ## Overview
 
@@ -64,35 +65,44 @@ Build and execution have been verified on Windows / macOS.
 
 ## Quick Start
 
-### 1. Clone the repository
+The shortest path: download a prebuilt GDExtension and use it without any local build.
 
-```bash
-git clone --recursive https://github.com/SpriteStudio/SSPlayerForGodot.git
-cd SSPlayerForGodot
-```
+### 1. Install Godot Engine
 
-### 2. Obtain libssruntime
+Download a 4.6-series editor from the [official site](https://godotengine.org/download/).
 
-Download the SDK binaries for your target platform from the [SpriteStudio7-SDK Releases page](https://github.com/SpriteStudio/SpriteStudio7-SDK/releases) and extract them under `gd_spritestudio/runtime/`. See [BUILD.md](./BUILD.md#1-prepare-libssruntime) for details.
+### 2. Get the SSPlayerForGodot GDExtension
 
-### 3. Build the Godot binaries
+Download the GDExtension package (`.gdextension` plus the per-platform shared libraries) for your target platform from the [SSPlayerForGodot Releases page](https://github.com/SpriteStudio/SSPlayerForGodot/releases).
 
-Choose either GDExtension or a custom-module Godot Engine build, and run the corresponding script.
-See [BUILD.md](./BUILD.md) for details.
+### 3. Drop it into your project
 
-### 4. Use the plugin
+Extract the downloaded GDExtension files into your Godot project according to the paths declared in the `.gdextension` file (the sample projects in this repository use `bin/`).
+After restarting the Godot editor, the `GdSsPlayerNode2D` node and the SS Import Dock become available.
 
-Importing `.sspj`, attaching resources to nodes, and controlling playback are covered in [USAGE.md](./USAGE.md).
+### 4. Convert and play SpriteStudio data
+
+For converting `.sspj` and playing it back via `GdSsPlayerNode2D`, see [USAGE.md](./USAGE.md#importing-spritestudio-data).
 
 ## Samples
 
 Sample projects are available under the [examples folder](./examples/).
+
+> **Note:** Existing samples were created for the v1.x `.sspj` direct-load workflow and need to be migrated to the current `.ssab` / `.ssqb` workflow before they will run on this branch. They will be updated alongside the migration guide.
 
 - [feature_test](./examples/feature_test) — Basic functional test (custom-module build)
 - [feature_test_gdextension](./examples/feature_test_gdextension) — Basic functional test (GDExtension build)
 - [mesh_bone](./examples/mesh_bone) — Character animation using mesh, bone, and effect features
 - [particle_effect](./examples/particle_effect) — Effect feature sample
 
+## Building / Developing
+
+If you want to build the GDExtension or a custom-module Godot Engine yourself, or to develop the plugin in parallel with SS7-SDK, see [BUILD.md](./BUILD.md).
+
 ## Related Repositories
 
 - [SpriteStudio7-SDK](https://github.com/SpriteStudio/SpriteStudio7-SDK) — The SDK itself, providing `libssruntime` / `libssconverter`
+
+## License
+
+See [LICENSE.txt](./LICENSE.txt).

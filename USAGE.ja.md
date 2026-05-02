@@ -7,15 +7,15 @@
 
 下記いずれかの方法で利用してください。
 
-## SpriteStudioPlayer のカスタムモジュールを組み込んだ Godot Engine を利用する
+## A. SSPlayerForGodot の GDExtension を利用する
+
+1. [公式サイト](https://godotengine.org/download/) より対応するバージョンの Godot Engine をダウンロードします。
+2. [SSPlayerForGodot の Releases](https://github.com/SpriteStudio/SSPlayerForGodot/releases) から該当プラットフォーム向けの GDExtension 一式をダウンロードします (自前でビルドする場合は [BUILD.ja.md](BUILD.ja.md) を参照)。
+3. ダウンロードした GDExtension 一式 (`.gdextension` + 共有ライブラリ) を、`.gdextension` ファイル内のパス指定に合わせて Godot プロジェクト配下に展開します (本リポジトリのサンプルでは `bin/` を使用)。
+
+## B. SSPlayerForGodot のカスタムモジュールを組み込んだ Godot Engine を利用する
 
 [BUILD.ja.md](BUILD.ja.md) を参照してカスタムモジュール組み込みの Godot Engine をビルドしてください。
-
-## SpriteStudioPlayer の GDExtension ファイルを利用する
-
-1. 公式サイト (https://godotengine.org/download/) より、対応する Godot Engine のバージョンをダウンロードします。
-2. SpriteStudioPlayer の GDExtension ファイル一式を用意します。GDExtension を自前でビルドする場合は [BUILD.ja.md](BUILD.ja.md) を参照してください。
-3. プロジェクトディレクトリの `bin` ディレクトリへ GDExtension ファイル一式 (`.gdextension`, 各プラットフォームの共有ライブラリ) を配置します。
 
 # SpriteStudio データのインポート
 
@@ -24,21 +24,20 @@ SpriteStudio のプロジェクト (`.sspj`) は **`.ssab` (アニメバイナ�
 
 ## 方法 A: Godot エディタの SS Import Dock を使う
 
-エディタを起動するとプロジェクトドック側に SpriteStudio 用のインポートコントロール (`GdSsImportControl`) が追加されます。
+エディタを起動するとプロジェクトドック側に SpriteStudio 用のインポートコントロールが追加されます。
 最初に変換成果物の出力先を指定します。
 
 * デフォルトの出力先: `res://ssab_generated`
 * 設定キー (プロジェクト設定): `spritestudio/output_directory`
-* 履歴保持キー: `spritestudio/recent_sspj_files`
 
 出力先はインポートコントロール上の `Browse` ボタンまたは入力欄から変更できます。
 
 以下のいずれかの操作で変換が行われます。
 
 * `.sspj` ファイルをエディタウィンドウへドラッグ＆ドロップする
-* インポートコントロールの最近開いた履歴から再実行する
+* インポートコントロールに表示される履歴から再実行する
 
-進捗は `GdProgressDialog` で表示され、完了後は出力先ディレクトリ配下に `.ssab` (アニメパック単位) と `.ssqb` (シーケンス単位) が生成されます。
+変換中は進捗ダイアログが表示され、完了後は出力先ディレクトリ配下に `.ssab` (アニメパック単位) と `.ssqb` (シーケンス単位) が生成されます。
 
 ## 方法 B: SpriteStudio7-SDK の `ssconverter-cli` を直接使う
 
@@ -55,7 +54,7 @@ SpriteStudio のプロジェクト (`.sspj`) は **`.ssab` (アニメバイナ�
 ```
 
 変換結果は `.sspj` と同じディレクトリの `<sspj 名>_ssab/` 配下に `.ssab` / `.ssqb` として生成されます。
-生成されたファイルを Godot プロジェクト配下にコピー (もしくはシンボリックリンク) すると、`GdSsabResource` / `GdSsqbResource` として読み込めるようになります。
+このディレクトリ名を変更して Godot プロジェクト配下にコピーすると、`GdSsabResource` / `GdSsqbResource` として読み込めるようになります。
 
 CI / ビルドパイプラインに変換処理を組み込みたい場合や、Godot エディタを起動せずに変換のみを行いたい場合に便利です。`ssconverter-cli` の詳細なオプションは [`SpriteStudio7-SDK/cli/README.ja.md`](https://github.com/SpriteStudio/SpriteStudio7-SDK/blob/main/cli/README.ja.md) を参照してください。
 
@@ -93,7 +92,7 @@ GDScript からコントロールできる主なクラスです。
 
 ## リソース管理クラス
 
-`GdResource` 系を継承しているため、複数の `GdSsPlayerNode2D` から同じリソースを参照する場合は **Local To Scene** フラグを `True` に設定すると個別に状態を持たせられます。
+Godot の `Resource` を継承しているため、複数の `GdSsPlayerNode2D` から同じリソースを参照する場合は **Local To Scene** フラグを `True` に設定すると個別に状態を持たせられます。
 
 ### [GdSsabResource](./gd_spritestudio/gd_ssab_resource.h)
 
@@ -152,17 +151,3 @@ func _ready() -> void:
 * `set_loop(count: int)` / `get_loop() -> int`
 * `set_skip_frames(enabled: bool)` / `is_skip_frames() -> bool`
 * `set_sub_frame_enabled(enabled: bool)` / `is_sub_frame_enabled() -> bool`
-
-# 制限事項
-
-## 動作しないもの
-
-* マスク機能
-
-## 現状の制約
-
-* **`.sspj` 直接読み込み非対応** — 必ず `.ssab` / `.ssqb` への事前変換が必要です。
-* **シグナル / UserData コールバックは未整備** — `gd_ssplayer_node2d.h` に該当バインドはまだありません。
-* **インポートドックは Editor (TOOLS_ENABLED) ビルドのみ有効** — テンプレート用ビルドにはコントロールが含まれません。
-* 描画モードはミックス相当のみ。
-* シェーダーは SpriteStudio 公式の一部のみ対応 (カスタムシェーダーは独自対応が必要)。

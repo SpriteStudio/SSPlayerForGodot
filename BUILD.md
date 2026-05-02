@@ -2,10 +2,12 @@
 
 # Overview
 
-Producing Godot binaries from this repository involves two stages:
+Producing Godot binaries from this repository consists of a common preparation step followed by one of two build options:
 
-1. **Prepare `libssruntime`** — Obtain the SpriteStudio7-SDK release artifacts and place them under `gd_spritestudio/runtime/`.
-2. **Build the GDExtension** or **custom-module Godot Engine** — Link the runtime above to produce the Godot binaries.
+1. **Prepare `libssruntime`** (common) — Obtain the SpriteStudio7-SDK release artifacts and place them under `gd_spritestudio/runtime/`.
+2. Link the runtime above and build Godot binaries. Choose one of:
+    - **2-A. Build the GDExtension**
+    - **2-B. Build the Custom-Module Godot Engine**
 
 # Get the Source
 
@@ -18,80 +20,44 @@ git clone https://github.com/godotengine/godot.git -b 4.6
 git clone https://github.com/godotengine/godot-cpp.git -b 4.5
 ```
 
-If you forgot `--recursive`, run:
-
-```bash
-git submodule update --init --recursive
-```
-
 The `godot` directory is required when building a custom-module Godot Engine.
 The `godot-cpp` directory is required when building the GDExtension.
 
 # Build Environment Setup
 
-## Windows
+For build tools (compiler, Python, SCons, etc.) on each platform, follow the official Godot compilation guides:
 
-Follow the [official Godot compilation guide](https://docs.godotengine.org/en/stable/contributing/development/compiling/compiling_for_windows.html) to install the following.
+- [Windows](https://docs.godotengine.org/en/stable/contributing/development/compiling/compiling_for_windows.html)
+- [macOS](https://docs.godotengine.org/en/4.x/contributing/development/compiling/compiling_for_macos.html)
+- Linux: T.B.D.
 
-* Build tools (choose one)
-    * Visual Studio 2019 (recommended) or 2022
-    * MSYS2 + MinGW + gcc + make
-* Python 3.6 or later
-* SCons 3.0 or later
+## Notes
 
-SCons can be installed with:
+### Building Universal Binaries on macOS
 
-```bat
-python -m pip install scons
-```
-
-## macOS
-
-Follow the [official Godot compilation guide](https://docs.godotengine.org/en/4.x/contributing/development/compiling/compiling_for_macos.html) to install the following.
-
-* Xcode
-* Python 3.6 or later
-* SCons 3.0 or later
-* Vulkan SDK for MoltenVK
-* (Optional) emscripten — required for Web builds
-* (Optional) Android SDK / Android NDK — required for Android builds
-
-Everything except Xcode can be installed via [Homebrew](https://brew.sh/):
-
-```sh
-brew install python3 scons
-brew install molten-vk
-```
-
-When building for an architecture other than the host (e.g. a Universal Binary), install [Vulkan SDK for MoltenVK](https://vulkan.lunarg.com/sdk/home) instead of `molten-vk`.
-
-## Linux
-
-T.B.D.
+The `molten-vk` package distributed via Homebrew only provides binaries for the host architecture, so linking fails when building with `arch=universal`. Install the universal-capable [Vulkan SDK for MoltenVK](https://vulkan.lunarg.com/sdk/home) instead.
 
 # 1. Prepare libssruntime
 
-Download the SDK binaries for your target platform from the [SpriteStudio7-SDK Releases page](https://github.com/SpriteStudio/SpriteStudio7-SDK/releases) and extract them under `gd_spritestudio/runtime/` (path is relative to the repository root).
+Fetches and extracts the SDK package version pinned in `gd_spritestudio/SDK_VERSION.txt`.
 
-The expected layout is:
+**macOS / Linux**
 
+```sh
+./scripts/download-sdk.sh
 ```
-gd_spritestudio/runtime/
-├── include/
-│   ├── ssruntime.h
-│   └── ssconverter.h
-└── libs/
-    ├── macos/        libssruntime.a, libssconverter.a            (universal binary)
-    ├── ios/          libssruntime.a, libssconverter.a            (universal binary)
-    ├── web/          libssruntime.a, libssconverter.a
-    ├── windows/<arch>/    libssruntime.a, libssconverter.a       (e.g. x86_64)
-    ├── linux/<arch>/      libssruntime.a, libssconverter.a       (e.g. x86_64)
-    └── android/<arch>/    libssruntime.a, libssconverter.a       (e.g. arm64, x86_64)
+
+**Windows (PowerShell)**
+
+```powershell
+.\scripts\download-sdk.ps1
 ```
+
+> `libssconverter` (the `.sspj` → `.ssab` converter library) is bundled only for desktop platforms. The iOS / Android / Web `libssruntime` packages do not include it.
 
 To build `libssruntime` from the SS7-SDK source yourself, see [For SS7-SDK Developers](#for-ss7-sdk-developers).
 
-# 2. Build the GDExtension
+# 2-A. Build the GDExtension
 
 Requires `godot-cpp` to be cloned at the `4.5` branch.
 
@@ -119,7 +85,7 @@ Main options (key=value form):
 | `target`   | `editor`                           | `editor` / `template_debug` / `template_release`                         |
 | `cpus`     | auto-detected                      | `scons -j` parallelism                                                   |
 
-# 3. Build the Custom-Module Godot Engine
+# 2-B. Build the Custom-Module Godot Engine
 
 Requires `godot` to be cloned at the `4.6` branch.
 `build.sh` / `build.ps1` invoke `scons` with `custom_modules=../gd_spritestudio`.
@@ -157,15 +123,6 @@ Per-platform scripts under `scripts/` build `editor` / `template_debug` / `templ
 Internally they invoke `build.sh` / `build-extension.sh` repeatedly with different `target` values.
 These scripts do **not** fetch or build `libssruntime`, so [1. Prepare libssruntime](#1-prepare-libssruntime) must be completed first.
 
-## Custom-module Godot Engine
-
-| Platform | Script                                | Notes                                                  |
-| -------- | ------------------------------------- | ------------------------------------------------------ |
-| Windows  | `.\scripts\release-windows.ps1`       | `arch` = host                                          |
-| macOS    | `./scripts/release-macos.sh`          | Fixed at `arch=universal`                              |
-| iOS      | `./scripts/release-ios.sh`            | `arch=arm64` (device) and `arch=universal` (simulator) |
-| Android  | `./scripts/release-android.sh`        | Three architectures: `arm32` / `arm64` / `x86_64`      |
-
 ## GDExtension
 
 | Platform | Script                                       | Notes                                                |
@@ -176,6 +133,17 @@ These scripts do **not** fetch or build `libssruntime`, so [1. Prepare libssrunt
 | iOS      | `./scripts/release-gdextension-ios.sh`       | Only `template_debug` / `template_release`           |
 | Android  | `./scripts/release-gdextension-android.sh`   | Three architectures: `arm32` / `arm64` / `x86_64`    |
 | Web      | `./scripts/release-gdextension-web.sh`       | `wasm32` (`threads=yes` / `threads=no`)              |
+
+## Custom-module Godot Engine
+
+| Platform | Script                                | Notes                                                  |
+| -------- | ------------------------------------- | ------------------------------------------------------ |
+| Windows  | `.\scripts\release-windows.ps1`       | `arch` = host                                          |
+| macOS    | `./scripts/release-macos.sh`          | Fixed at `arch=universal`                              |
+| iOS      | `./scripts/release-ios.sh`            | `arch=arm64` (device) and `arch=universal` (simulator) |
+| Android  | `./scripts/release-android.sh`        | Three architectures: `arm32` / `arm64` / `x86_64`      |
+
+> No batch release script is provided for the Linux custom module. Invoke `./scripts/build.sh platform=linux target=...` directly for each of `editor` / `template_debug` / `template_release`.
 
 # For SS7-SDK Developers
 
