@@ -118,7 +118,13 @@ float GdSsPlayerNode2D::getSpeed() const {
 }
 
 void GdSsPlayerNode2D::setFrame( float p_frame ) {
-    ss_runtime_set_frame_no(runtime_ctx, p_frame);
+    if (runtime_ctx) {
+        ss_runtime_set_frame_no(runtime_ctx, p_frame);
+        float frame_no = ss_runtime_get_frame_no(runtime_ctx);
+        float draw_frame = _sub_frame_enabled ? frame_no : (float)((int)frame_no);
+        previous_frame_no = draw_frame;
+        drawAnimation(draw_frame);
+    }
 }
 
 float GdSsPlayerNode2D::getFrame() const {
@@ -179,6 +185,12 @@ bool GdSsPlayerNode2D::isSkipFrames() const {
 
 void GdSsPlayerNode2D::setSubFrameEnabled( bool p_enabled ) {
     _sub_frame_enabled = p_enabled;
+    if (runtime_ctx) {
+        float frame_no = ss_runtime_get_frame_no(runtime_ctx);
+        float draw_frame = _sub_frame_enabled ? frame_no : (float)((int)frame_no);
+        previous_frame_no = draw_frame;
+        drawAnimation(draw_frame);
+    }
 }
 
 bool GdSsPlayerNode2D::isSubFrameEnabled() const {
@@ -828,6 +840,8 @@ void GdSsPlayerNode2D::fetchAnimation() {
             return;
         }
 
-        previous_frame_no = -1.0f;
-        drawAnimation(ss_runtime_get_frame_no(runtime_ctx));
+        float frame_no = ss_runtime_get_frame_no(runtime_ctx);
+        float draw_frame = _sub_frame_enabled ? frame_no : (float)((int)frame_no);
+        previous_frame_no = draw_frame;
+        drawAnimation(draw_frame);
 }
