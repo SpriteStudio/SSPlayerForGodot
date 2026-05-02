@@ -188,15 +188,22 @@ void GdSsImportControl::_notification(int p_what) {
                     }
                     import_contexts.clear();
                     import_finished_contexts.clear();
+
+#if defined(SPRITESTUDIO_GODOT_EXTENSION) || (VERSION_MAJOR >= 4 && VERSION_MINOR >= 6)
+                    for (int i = 0; i < import_dst_dirs.size(); i++) {
+                        EditorInterface::get_singleton()->get_resource_filesystem()->update_file(import_dst_dirs[i]);
+                    }
+                    EditorInterface::get_singleton()->get_resource_filesystem()->scan();
+#else
+                    for (int i = 0; i < import_dst_dirs.size(); i++) {
+                        EditorInterface::get_singleton()->get_resource_file_system()->update_file(import_dst_dirs[i]);
+                    }
+                    EditorInterface::get_singleton()->get_resource_file_system()->scan();
+#endif
+                    import_dst_dirs.clear();
                     import_dialog = nullptr;
                     is_importing = false;
                     set_process(false);
-
-#if defined(SPRITESTUDIO_GODOT_EXTENSION) || (VERSION_MAJOR >= 4 && VERSION_MINOR >= 6)
-                    EditorInterface::get_singleton()->get_resource_filesystem()->scan();
-#else
-                    EditorInterface::get_singleton()->get_resource_file_system()->scan();
-#endif
                 }
             }
         } break;
@@ -338,6 +345,7 @@ void GdSsImportControl::_start_import(const Vector<String> &p_sspj_files) {
         void *ctx = process_file(global_src_file_path, global_dst_dir);
         print_line("GdSsImportControl: convert sspj file: " + src_file_path + ", to ssab files: " + dst_dir);
         import_contexts.push_back(ctx);
+        import_dst_dirs.push_back(dst_dir);
 
         _add_to_recent_files(src_file_path);
     }
