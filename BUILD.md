@@ -2,12 +2,10 @@
 
 # Overview
 
-Producing Godot binaries from this repository consists of a common preparation step followed by one of two build options:
+The flow for producing Godot binaries from this repository is as follows:
 
-1. **Prepare `libssruntime`** (common) — Obtain the SpriteStudio7-SDK release artifacts and place them under `gd_spritestudio/runtime/`.
-2. Link the runtime above and build Godot binaries. Choose one of:
-    - **2-A. Build the GDExtension**
-    - **2-B. Build the Custom-Module Godot Engine**
+1. **Prepare `libssruntime`** — Obtain the SpriteStudio7-SDK release artifacts and place them under `gd_spritestudio/runtime/`.
+2. Depending on how you want to consume the plugin, run **2-A. Build the GDExtension** or **2-B. Build the Custom-Module Godot Engine** to link the runtime above and produce Godot binaries.
 
 # Get the Source
 
@@ -27,8 +25,8 @@ The `godot-cpp` directory is required when building the GDExtension.
 
 For build tools (compiler, Python, SCons, etc.) on each platform, follow the official Godot compilation guides:
 
-- [Windows](https://docs.godotengine.org/en/stable/contributing/development/compiling/compiling_for_windows.html)
-- [macOS](https://docs.godotengine.org/en/4.x/contributing/development/compiling/compiling_for_macos.html)
+- [Windows](https://docs.godotengine.org/en/stable/engine_details/development/compiling/compiling_for_windows.html)
+- [macOS](https://docs.godotengine.org/en/stable/engine_details/development/compiling/compiling_for_macos.html)
 - Linux: T.B.D.
 
 ## Notes
@@ -76,15 +74,6 @@ $env:PYTHONUTF8=1
 
 Output is placed under `bin/<platform>/`, and `misc/ssplayer_godot_extension.gdextension` is copied to `examples/feature_test_gdextension/bin`.
 
-Main options (key=value form):
-
-| Key        | Default                            | Description                                                              |
-| ---------- | ---------------------------------- | ------------------------------------------------------------------------ |
-| `arch`     | host                               | Output architecture (`universal` produces `arm64+x86_64` on Android)     |
-| `platform` | host (`win`/`macos`/`linux`)       | Target platform                                                          |
-| `target`   | `editor`                           | `editor` / `template_debug` / `template_release`                         |
-| `cpus`     | auto-detected                      | `scons -j` parallelism                                                   |
-
 # 2-B. Build the Custom-Module Godot Engine
 
 Requires `godot` to be cloned at the `4.6` branch.
@@ -104,18 +93,6 @@ $env:PYTHONUTF8=1
 ```
 
 Output is placed under `godot/bin/`. On macOS, `godot/Godot.app` is also created.
-
-Main options:
-
-| Key        | Default   | Description                                                                            |
-| ---------- | --------- | -------------------------------------------------------------------------------------- |
-| `arch`     | host      | `arm64` / `x86_64` / `universal` (combined via `lipo` on macOS)                        |
-| `platform` | host      | Target platform                                                                        |
-| `target`   | `editor`  | `editor` / `template_debug` / `template_release`                                       |
-| `cpus`     | auto-detected | `scons -j` parallelism                                                             |
-| `ccache`   | `no`      | Set `yes` to enable `ccache` or `sccache` (applies a patch on macOS)                   |
-| `version`  | `4.6`     | Fallback when the version cannot be detected from a git branch/tag                     |
-| `strip`    | `no`      | Set `yes` to run `strip` on the output binaries                                        |
 
 # Release Builds
 
@@ -171,14 +148,6 @@ Running the script below builds the Rust runtime/converter and places the artifa
 ```powershell
 .\scripts\build-runtime.ps1
 ```
-
-Main options:
-
-| Key        | Default | Description                                                                          |
-| ---------- | ------- | ------------------------------------------------------------------------------------ |
-| `arch`     | host    | Output architecture (`arm64`, `x86_64`, `universal`, etc.)                           |
-| `platform` | host    | `windows` / `macos` / `linux` / `ios` / `web`                                        |
-| `build`    | `debug` | `debug` or `release` (`release` invokes the SDK-side `release-<platform>.sh`)        |
 
 ## Regenerating FlatBuffers headers
 

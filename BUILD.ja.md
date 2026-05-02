@@ -2,12 +2,10 @@
 
 # 概要
 
-本ブランチで Godot 用バイナリを得るまでの流れは「共通の準備」+「いずれかのビルド」の構成です。
+本ブランチで Godot 用バイナリを得るまでの流れは以下のとおりです。
 
-1. **`libssruntime` の用意** (共通) — SpriteStudio7-SDK のリリース成果物を取得し、`gd_spritestudio/runtime/` 配下に配置します。
-2. ランタイムをリンクして Godot 用バイナリを生成します。下記いずれかを選択:
-    - **2-A. GDExtension のビルド**
-    - **2-B. カスタムモジュール組み込み Godot Engine のビルド**
+1. **`libssruntime` の用意** — SpriteStudio7-SDK のリリース成果物を取得し、`gd_spritestudio/runtime/` 配下に配置します。
+2. 利用形態に応じて **2-A. GDExtension のビルド** または **2-B. カスタムモジュール組み込み Godot Engine のビルド** を実行し、上記ランタイムをリンクして Godot 用バイナリを生成します。
 
 # ソース取得
 
@@ -27,8 +25,8 @@ git clone https://github.com/godotengine/godot-cpp.git -b 4.5
 
 各プラットフォーム向けのビルドツール (コンパイラ・Python・SCons など) の準備は、Godot 公式のコンパイル手順を参照してください。
 
-- [Windows](https://docs.godotengine.org/en/stable/contributing/development/compiling/compiling_for_windows.html)
-- [macOS](https://docs.godotengine.org/ja/4.x/contributing/development/compiling/compiling_for_macos.html)
+- [Windows](https://docs.godotengine.org/en/stable/engine_details/development/compiling/compiling_for_windows.html)
+- [macOS](https://docs.godotengine.org/ja/stable/engine_details/development/compiling/compiling_for_macos.html)
 - Linux: T.B.D.
 
 ## 注意点
@@ -76,15 +74,6 @@ $env:PYTHONUTF8=1
 
 成果物は `bin/<platform>/` に配置され、`misc/ssplayer_godot_extension.gdextension` が `examples/feature_test_gdextension/bin` にコピーされます。
 
-主なオプション (key=value 形式)。
-
-| キー       | 既定値                          | 説明                                                              |
-| ---------- | ------------------------------- | ----------------------------------------------------------------- |
-| `arch`     | ホスト                          | 出力アーキテクチャ (`universal` 指定で Android は `arm64+x86_64`) |
-| `platform` | ホスト (`win`/`macos`/`linux`)  | ビルド対象プラットフォーム                                        |
-| `target`   | `editor`                        | `editor` / `template_debug` / `template_release`                  |
-| `cpus`     | 自動検出                        | `scons -j` の並列度                                               |
-
 # 2-B. カスタムモジュール組み込み Godot Engine のビルド
 
 `godot` を `4.6` ブランチで clone 済みであることが前提です。
@@ -104,18 +93,6 @@ $env:PYTHONUTF8=1
 ```
 
 成果物は `godot/bin/` に出力されます。macOS では `godot/Godot.app` が併せて作成されます。
-
-主なオプション。
-
-| キー       | 既定値    | 説明                                                                       |
-| ---------- | --------- | -------------------------------------------------------------------------- |
-| `arch`     | ホスト    | `arm64` / `x86_64` / `universal` (macOS のみ lipo で結合)                  |
-| `platform` | ホスト    | ビルド対象プラットフォーム                                                 |
-| `target`   | `editor`  | `editor` / `template_debug` / `template_release`                           |
-| `cpus`     | 自動検出  | `scons -j` の並列度                                                        |
-| `ccache`   | `no`      | `yes` を指定すると `ccache` または `sccache` を有効化 (macOS パッチを適用) |
-| `version`  | `4.6`     | git ブランチ/タグから検出できない場合のフォールバック                      |
-| `strip`    | `no`      | `yes` で生成バイナリに `strip` を実行                                      |
 
 # リリースビルド
 
@@ -171,14 +148,6 @@ FlatBuffers のヘッダを再生成する場合は別途 `flatc` (FlatBuffers �
 ```powershell
 .\scripts\build-runtime.ps1
 ```
-
-主なオプション。
-
-| キー       | 既定値  | 説明                                                                |
-| ---------- | ------- | ------------------------------------------------------------------- |
-| `arch`     | ホスト  | 出力アーキテクチャ (`arm64`, `x86_64`, `universal` など)            |
-| `platform` | ホスト  | `windows` / `macos` / `linux` / `ios` / `web`                       |
-| `build`    | `debug` | `debug` または `release` (`release` は SDK 側 `release-<platform>.sh` を呼ぶ) |
 
 ## FlatBuffers ヘッダの再生成
 

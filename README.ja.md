@@ -73,7 +73,7 @@ Windows / macOS でのビルドおよび実行を確認しています。
 
 ### 2. SSPlayerForGodot GDExtension の取得
 
-[SSPlayerForGodot の Releases ページ](https://github.com/SpriteStudio/SSPlayerForGodot/releases) から該当プラットフォーム向けの GDExtension 一式 (`.gdextension` + 各プラットフォームの共有ライブラリ) をダウンロードします。
+[SSPlayerForGodot の Releases ページ](https://github.com/SpriteStudio/SSPlayerForGodot/releases) から該当プラットフォーム向けの GDExtension 一式をダウンロードします。
 
 ### 3. プロジェクトへの配置
 
