@@ -77,7 +77,8 @@ Windows / macOS でのビルドおよび実行を確認しています。
 
 ### 3. プロジェクトへの配置
 
-ダウンロードした GDExtension 一式を `.gdextension` ファイル内のパス指定に合わせて Godot プロジェクト配下に展開します (本リポジトリのサンプルでは `bin/` を使用)。
+ダウンロードした GDExtension 一式（ZIP 内の `addons` フォルダ）を Godot プロジェクトのルートディレクトリにコピーします。
+正しく配置されると、`res://addons/spritestudio/spritestudio.gdextension` が存在する状態になります。
 Godot エディタを再起動すると `SpriteStudioPlayer2D` ノードや SS Import Dock が利用可能になります。
 
 ### 4. SpriteStudio データの変換と再生

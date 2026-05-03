@@ -77,7 +77,8 @@ Download the GDExtension package for your target platform from the [SSPlayerForG
 
 ### 3. Drop it into your project
 
-Extract the downloaded GDExtension files into your Godot project according to the paths declared in the `.gdextension` file (the sample projects in this repository use `bin/`).
+Copy the downloaded GDExtension files (the `addons` folder inside the ZIP) directly into your Godot project's root directory.
+When placed correctly, `res://addons/spritestudio/spritestudio.gdextension` should exist.
 After restarting the Godot editor, the `SpriteStudioPlayer2D` node and the SS Import Dock become available.
 
 ### 4. Convert and play SpriteStudio data
