@@ -56,7 +56,8 @@ pushd SpriteStudio7-SDK > /dev/null
 if [[ "${opts[build]}" == "release" ]]; then
     ./scripts/release-${opts[platform]}.sh
 else
-    cargo build -p ssconverter -p ssruntime
+    cargo build -p ssconverter
+    cargo build -p ssruntime --features libc_alloc,panic-handler
 fi
 popd > /dev/null
 

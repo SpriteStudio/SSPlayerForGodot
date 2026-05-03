@@ -42,7 +42,8 @@ pushd SpriteStudio7-SDK
 if ($opts.build -eq "release") {
     & ./scripts/release-windows.ps1
 } else {
-    & cargo build -p ssconverter -p ssruntime
+    & cargo build -p ssconverter
+    & cargo build -p ssruntime --features libc_alloc,panic-handler
 }
 popd
 
