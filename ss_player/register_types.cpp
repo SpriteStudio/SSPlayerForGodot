@@ -10,9 +10,9 @@ using namespace godot;
 #endif
 
 #ifdef TOOLS_ENABLED
-#include "gd_clickable_label.h"
-#include "gd_progress_dialog.h"
-#include "gd_ss_editor_plugin.h"
+#include "ss_clickable_label.h"
+#include "ss_progress_dialog.h"
+#include "ss_editor_plugin.h"
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
 #include <godot_cpp/classes/editor_plugin_registration.hpp>
@@ -21,61 +21,61 @@ using namespace godot;
 
 static void editor_init_callback() {
   EditorNode::get_singleton()->add_editor_plugin(
-      memnew(GdSsEditorPlugin(EditorNode::get_singleton())));
+      memnew(SSEditorPlugin(EditorNode::get_singleton())));
 }
 #endif
 #endif
 
-#include "gd_ssab_resource.h"
-#include "gd_ssplayer_node2d.h"
-#include "gd_ssqb_resource.h"
+#include "ssab_resource.h"
+#include "ss_player_node_2d.h"
+#include "ssqb_resource.h"
 
-static GdSsabResourceFormatLoader *ssab_loader = nullptr;
-static GdSsabResourceFormatSaver *ssab_saver = nullptr;
-static GdSsqbResourceFormatLoader *ssqb_loader = nullptr;
-static GdSsqbResourceFormatSaver *ssqb_saver = nullptr;
+static SSABResourceFormatLoader *ssab_loader = nullptr;
+static SSABResourceFormatSaver *ssab_saver = nullptr;
+static SSQBResourceFormatLoader *ssqb_loader = nullptr;
+static SSQBResourceFormatSaver *ssqb_saver = nullptr;
 
-void register_gd_spritestudio_types() {
+void register_ss_player_types() {
 
-  GDREGISTER_CLASS(GdSsabResource);
-  GDREGISTER_CLASS(GdSsabResourceFormatLoader);
-  GDREGISTER_CLASS(GdSsabResourceFormatSaver);
-  GDREGISTER_CLASS(GdSsqbResource);
-  GDREGISTER_CLASS(GdSsqbResourceFormatLoader);
-  GDREGISTER_CLASS(GdSsqbResourceFormatSaver);
+  GDREGISTER_CLASS(SSABResource);
+  GDREGISTER_CLASS(SSABResourceFormatLoader);
+  GDREGISTER_CLASS(SSABResourceFormatSaver);
+  GDREGISTER_CLASS(SSQBResource);
+  GDREGISTER_CLASS(SSQBResourceFormatLoader);
+  GDREGISTER_CLASS(SSQBResourceFormatSaver);
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
-  ssab_loader = memnew(GdSsabResourceFormatLoader);
+  ssab_loader = memnew(SSABResourceFormatLoader);
   ResourceLoader::get_singleton()->add_resource_format_loader(ssab_loader);
 
-  ssab_saver = memnew(GdSsabResourceFormatSaver);
+  ssab_saver = memnew(SSABResourceFormatSaver);
   ResourceSaver::get_singleton()->add_resource_format_saver(ssab_saver);
 
-  ssqb_loader = memnew(GdSsqbResourceFormatLoader);
+  ssqb_loader = memnew(SSQBResourceFormatLoader);
   ResourceLoader::get_singleton()->add_resource_format_loader(ssqb_loader);
 
-  ssqb_saver = memnew(GdSsqbResourceFormatSaver);
+  ssqb_saver = memnew(SSQBResourceFormatSaver);
   ResourceSaver::get_singleton()->add_resource_format_saver(ssqb_saver);
 
 #else
-  ssab_loader = memnew(GdSsabResourceFormatLoader);
+  ssab_loader = memnew(SSABResourceFormatLoader);
   ResourceLoader::add_resource_format_loader(ssab_loader);
 
-  ssab_saver = memnew(GdSsabResourceFormatSaver);
+  ssab_saver = memnew(SSABResourceFormatSaver);
   ResourceSaver::add_resource_format_saver(ssab_saver);
 
-  ssqb_loader = memnew(GdSsqbResourceFormatLoader);
+  ssqb_loader = memnew(SSQBResourceFormatLoader);
   ResourceLoader::add_resource_format_loader(ssqb_loader);
 
-  ssqb_saver = memnew(GdSsqbResourceFormatSaver);
+  ssqb_saver = memnew(SSQBResourceFormatSaver);
   ResourceSaver::add_resource_format_saver(ssqb_saver);
 
 #endif
 
-  GDREGISTER_CLASS(GdSsPlayerNode2D);
+  GDREGISTER_CLASS(SpriteStudioPlayer2D);
 }
 
-void unregister_gd_spritestudio_types() {
+void unregister_ss_player_types() {
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
   if (ssab_loader) {
     ResourceLoader::get_singleton()->remove_resource_format_loader(ssab_loader);
@@ -117,21 +117,21 @@ void unregister_gd_spritestudio_types() {
 #endif
 }
 
-void initialize_gd_spritestudio_module(ModuleInitializationLevel level) {
+void initialize_ss_player_module(ModuleInitializationLevel level) {
   if (level == MODULE_INITIALIZATION_LEVEL_SCENE) {
-    register_gd_spritestudio_types();
+    register_ss_player_types();
   }
 
 #ifdef TOOLS_ENABLED
   if (level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
 
-    GDREGISTER_CLASS(GdSsImportControl);
-    GDREGISTER_CLASS(GdClickableLabel);
-    GDREGISTER_CLASS(GdProgressDialog);
+    GDREGISTER_CLASS(SSImportControl);
+    GDREGISTER_CLASS(SSClickableLabel);
+    GDREGISTER_CLASS(SSProgressDialog);
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
-    GDREGISTER_CLASS(GdSsEditorPlugin);
-    EditorPlugins::add_by_type<GdSsEditorPlugin>();
+    GDREGISTER_CLASS(SSEditorPlugin);
+    EditorPlugins::add_by_type<SSEditorPlugin>();
 #else
     EditorNode::add_init_callback(editor_init_callback);
 #endif
@@ -139,21 +139,21 @@ void initialize_gd_spritestudio_module(ModuleInitializationLevel level) {
 #endif
 }
 
-void uninitialize_gd_spritestudio_module(ModuleInitializationLevel level) {
+void uninitialize_ss_player_module(ModuleInitializationLevel level) {
   if (level == MODULE_INITIALIZATION_LEVEL_SCENE) {
-    unregister_gd_spritestudio_types();
+    unregister_ss_player_types();
   }
 }
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
-extern "C" GDExtensionBool GDE_EXPORT spritestudio_godot_library_init(
+extern "C" GDExtensionBool GDE_EXPORT ss_player_library_init(
     GDExtensionInterfaceGetProcAddress p_get_proc_address,
     GDExtensionClassLibraryPtr p_library,
     GDExtensionInitialization *r_initialization) {
   godot::GDExtensionBinding::InitObject init_obj(p_get_proc_address, p_library,
                                                  r_initialization);
-  init_obj.register_initializer(initialize_gd_spritestudio_module);
-  init_obj.register_terminator(uninitialize_gd_spritestudio_module);
+  init_obj.register_initializer(initialize_ss_player_module);
+  init_obj.register_terminator(uninitialize_ss_player_module);
 
   init_obj.set_minimum_library_initialization_level(
       MODULE_INITIALIZATION_LEVEL_SCENE);

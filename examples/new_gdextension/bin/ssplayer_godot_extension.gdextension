@@ -1,6 +1,6 @@
 [configuration]
 
-entry_symbol = "spritestudio_godot_library_init"
+entry_symbol = "ss_player_library_init"
 compatibility_minimum = "4.4"
 
 [libraries]

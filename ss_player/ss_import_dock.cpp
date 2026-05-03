@@ -1,6 +1,6 @@
 #ifdef TOOLS_ENABLED
 
-#include "gd_macros.h"
+#include "ss_macros.h"
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
 #include <godot_cpp/classes/dir_access.hpp>
@@ -23,23 +23,23 @@ using namespace godot;
 #include "scene/main/window.h"
 #endif
 
-#include "gd_clickable_label.h"
-#include "gd_ss_import_dock.h"
-#include "gd_progress_dialog.h"
+#include "ss_clickable_label.h"
+#include "ss_import_dock.h"
+#include "ss_progress_dialog.h"
 #include "ssconverter.h"
 
-void GdSsImportControl::_bind_methods() {
-    ClassDB::bind_method(D_METHOD("_on_window_files_dropped", "files"), &GdSsImportControl::_on_window_files_dropped);
-    ClassDB::bind_method(D_METHOD("_on_line_edit_submitted", "text"), &GdSsImportControl::_on_line_edit_submitted);
-    ClassDB::bind_method(D_METHOD("_on_browse_button_pressed"), &GdSsImportControl::_on_browse_button_pressed);
-    ClassDB::bind_method(D_METHOD("_on_reset_button_pressed"), &GdSsImportControl::_on_reset_button_pressed);
-    ClassDB::bind_method(D_METHOD("_on_dir_selected"), &GdSsImportControl::_on_dir_selected);
-    ClassDB::bind_method(D_METHOD("_on_recent_file_pressed", "path"), &GdSsImportControl::_on_recent_file_pressed);
-    ClassDB::bind_method(D_METHOD("_on_clear_history_pressed"), &GdSsImportControl::_on_clear_history_pressed);
+void SSImportControl::_bind_methods() {
+    ClassDB::bind_method(D_METHOD("_on_window_files_dropped", "files"), &SSImportControl::_on_window_files_dropped);
+    ClassDB::bind_method(D_METHOD("_on_line_edit_submitted", "text"), &SSImportControl::_on_line_edit_submitted);
+    ClassDB::bind_method(D_METHOD("_on_browse_button_pressed"), &SSImportControl::_on_browse_button_pressed);
+    ClassDB::bind_method(D_METHOD("_on_reset_button_pressed"), &SSImportControl::_on_reset_button_pressed);
+    ClassDB::bind_method(D_METHOD("_on_dir_selected"), &SSImportControl::_on_dir_selected);
+    ClassDB::bind_method(D_METHOD("_on_recent_file_pressed", "path"), &SSImportControl::_on_recent_file_pressed);
+    ClassDB::bind_method(D_METHOD("_on_clear_history_pressed"), &SSImportControl::_on_clear_history_pressed);
 }
 
 
-GdSsImportControl::GdSsImportControl() {
+SSImportControl::SSImportControl() {
     set_h_size_flags(Control::SIZE_EXPAND_FILL);
     set_v_size_flags(Control::SIZE_EXPAND_FILL);
 
@@ -49,7 +49,7 @@ GdSsImportControl::GdSsImportControl() {
     label->set_text("converter version:");
     hbox->add_child(label);
 
-    GdClickableLabel *clickable_label = memnew(GdClickableLabel);
+    SSClickableLabel *clickable_label = memnew(SSClickableLabel);
     const char *v = ss_converter_version();
     String version = String(v);
     clickable_label->set_text(version);
@@ -79,7 +79,7 @@ GdSsImportControl::GdSsImportControl() {
     reset_button = memnew(Button);
     reset_button->set_text(L"⟲");
     reset_button->set_tooltip_text("Reset to default directory");
-    reset_button->connect("pressed", callable_mp(this, &GdSsImportControl::_on_reset_button_pressed));
+    reset_button->connect("pressed", callable_mp(this, &SSImportControl::_on_reset_button_pressed));
     hbox->add_child(reset_button);
 
     file_dialog = memnew(EditorFileDialog);
@@ -141,12 +141,12 @@ GdSsImportControl::GdSsImportControl() {
     _load_settings();
 }
 
-GdSsImportControl::~GdSsImportControl() {
+SSImportControl::~SSImportControl() {
     stop_intercepting();
 
 }
 
-void GdSsImportControl::_notification(int p_what) {
+void SSImportControl::_notification(int p_what) {
     switch(p_what) {
         case NOTIFICATION_ENTER_TREE: {
             start_intercepting();
@@ -210,7 +210,7 @@ void GdSsImportControl::_notification(int p_what) {
     }
 }
 
-void* GdSsImportControl::process_file(const String &source_sspj_path, const String &dst_dir_path) {
+void* SSImportControl::process_file(const String &source_sspj_path, const String &dst_dir_path) {
     auto ctx = ss_converter_create();
     
     // Keep CharString alive until the end of this function call
@@ -224,7 +224,7 @@ void* GdSsImportControl::process_file(const String &source_sspj_path, const Stri
     return ctx;
 }
 
-void GdSsImportControl::start_intercepting() {
+void SSImportControl::start_intercepting() {
     if (is_intercepting) return;
 
     auto window = get_window();
@@ -261,7 +261,7 @@ void GdSsImportControl::start_intercepting() {
     is_intercepting = true;
 }
 
-void GdSsImportControl::stop_intercepting() {
+void SSImportControl::stop_intercepting() {
     if (!is_intercepting) return;
 
     auto window = get_window();
@@ -281,9 +281,9 @@ void GdSsImportControl::stop_intercepting() {
 }
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
-void GdSsImportControl::_on_window_files_dropped(const PackedStringArray &p_files) {
+void SSImportControl::_on_window_files_dropped(const PackedStringArray &p_files) {
 #else
-void GdSsImportControl::_on_window_files_dropped(const Vector<String> &p_files) {
+void SSImportControl::_on_window_files_dropped(const Vector<String> &p_files) {
 #endif
     if (is_reemitting) return;
 
@@ -295,7 +295,7 @@ void GdSsImportControl::_on_window_files_dropped(const Vector<String> &p_files) 
     if (get_global_rect().has_point(get_global_mouse_position())) {
 
         if (is_importing) {
-            print_line("GdSsImportControl: Already importing. Please wait.");
+            print_line("SSImportControl: Already importing. Please wait.");
             return;
         }
 
@@ -313,7 +313,7 @@ void GdSsImportControl::_on_window_files_dropped(const Vector<String> &p_files) 
             }
         }
         if (sspj_files.is_empty()) {
-            print_line("GdSsImportControl: sspj files not found.");
+            print_line("SSImportControl: sspj files not found.");
             return;
         }
 
@@ -324,9 +324,9 @@ void GdSsImportControl::_on_window_files_dropped(const Vector<String> &p_files) 
 }
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
-void GdSsImportControl::_start_import(const PackedStringArray &p_sspj_files) {
+void SSImportControl::_start_import(const PackedStringArray &p_sspj_files) {
 #else
-void GdSsImportControl::_start_import(const Vector<String> &p_sspj_files) {
+void SSImportControl::_start_import(const Vector<String> &p_sspj_files) {
 #endif
     String output_dir = path_line_edit->get_text();
 
@@ -343,14 +343,14 @@ void GdSsImportControl::_start_import(const Vector<String> &p_sspj_files) {
         String global_dst_dir = ProjectSettings::get_singleton()->globalize_path(dst_dir);
         String global_src_file_path = ProjectSettings::get_singleton()->globalize_path(src_file_path);
         void *ctx = process_file(global_src_file_path, global_dst_dir);
-        print_line("GdSsImportControl: convert sspj file: " + src_file_path + ", to ssab files: " + dst_dir);
+        print_line("SSImportControl: convert sspj file: " + src_file_path + ", to ssab files: " + dst_dir);
         import_contexts.push_back(ctx);
         import_dst_dirs.push_back(dst_dir);
 
         _add_to_recent_files(src_file_path);
     }
 
-    import_dialog = memnew(GdProgressDialog);
+    import_dialog = memnew(SSProgressDialog);
     EditorInterface::get_singleton()->get_base_control()->add_child(import_dialog);
     import_dialog->show_progress("Importing SSPJ...", import_contexts.size());
 
@@ -363,10 +363,10 @@ void GdSsImportControl::_start_import(const Vector<String> &p_sspj_files) {
 }
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
-void GdSsImportControl::_perform_default_drop_logic(const PackedStringArray &p_files) {
+void SSImportControl::_perform_default_drop_logic(const PackedStringArray &p_files) {
 
 #else
-void GdSsImportControl::_perform_default_drop_logic(const Vector<String> &p_files) {
+void SSImportControl::_perform_default_drop_logic(const Vector<String> &p_files) {
 #endif
     Window *window = get_window();
     if (!window || !original_drop_handler.is_valid()) return;
@@ -386,11 +386,11 @@ void GdSsImportControl::_perform_default_drop_logic(const Vector<String> &p_file
     is_reemitting = false;
 }
 
-void GdSsImportControl::_on_line_edit_submitted(const String& p_path) {
+void SSImportControl::_on_line_edit_submitted(const String& p_path) {
     _save_settings();
 }
 
-void GdSsImportControl::_on_browse_button_pressed() {
+void SSImportControl::_on_browse_button_pressed() {
     auto p = path_line_edit->get_text();
     Ref<DirAccess> da = DirAccess::open("res://");
     String dir;
@@ -404,19 +404,19 @@ void GdSsImportControl::_on_browse_button_pressed() {
     file_dialog->popup_file_dialog();
 }
 
-void GdSsImportControl::_on_reset_button_pressed() {
+void SSImportControl::_on_reset_button_pressed() {
     path_line_edit->set_text(DEFAULT_PATH);
     _save_settings();
 }
 
-void GdSsImportControl::_on_dir_selected(const String &p_path) {
+void SSImportControl::_on_dir_selected(const String &p_path) {
     path_line_edit->set_text(p_path);
     _save_settings();
 }
 
-void GdSsImportControl::_on_recent_file_pressed(const String &p_path) {
+void SSImportControl::_on_recent_file_pressed(const String &p_path) {
     if (is_importing) {
-        print_line("GdSsImportControl: Already importing. Please wait.");
+        print_line("SSImportControl: Already importing. Please wait.");
         return;
     }
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
@@ -428,12 +428,12 @@ void GdSsImportControl::_on_recent_file_pressed(const String &p_path) {
     _start_import(files);
 }
 
-void GdSsImportControl::_on_clear_history_pressed() {
+void SSImportControl::_on_clear_history_pressed() {
     EditorInterface::get_singleton()->get_editor_settings()->set_project_metadata("spritestudio", "recent_files", PackedStringArray());
     _update_recent_files_ui();
 }
 
-void GdSsImportControl::_update_recent_files_ui() {
+void SSImportControl::_update_recent_files_ui() {
     // Clear existing buttons
     while (recent_vbox->get_child_count() > 0) {
         Node *child = recent_vbox->get_child(0);
@@ -455,13 +455,13 @@ void GdSsImportControl::_update_recent_files_ui() {
             btn->set_text(path.get_file());
             btn->set_tooltip_text(path);
             btn->set_text_alignment(HORIZONTAL_ALIGNMENT_LEFT);
-            btn->connect("pressed", callable_mp(this, &GdSsImportControl::_on_recent_file_pressed).bind(path));
+            btn->connect("pressed", callable_mp(this, &SSImportControl::_on_recent_file_pressed).bind(path));
             recent_vbox->add_child(btn);
         }
     }
 }
 
-void GdSsImportControl::_add_to_recent_files(const String &p_path) {
+void SSImportControl::_add_to_recent_files(const String &p_path) {
     Ref<EditorSettings> es = EditorInterface::get_singleton()->get_editor_settings();
     PackedStringArray recent_files = es->get_project_metadata("spritestudio", "recent_files", PackedStringArray());
 
@@ -485,7 +485,7 @@ void GdSsImportControl::_add_to_recent_files(const String &p_path) {
     _update_recent_files_ui();
 }
 
-void GdSsImportControl::_load_settings() {
+void SSImportControl::_load_settings() {
     ProjectSettings *ps = ProjectSettings::get_singleton();
     String path = DEFAULT_PATH;
 
@@ -500,7 +500,7 @@ void GdSsImportControl::_load_settings() {
     _update_recent_files_ui();
 }
 
-void GdSsImportControl::_save_settings() {
+void SSImportControl::_save_settings() {
     ProjectSettings *ps = ProjectSettings::get_singleton();
     ps->set_setting(SETTING_KEY, path_line_edit->get_text());
     ps->save();

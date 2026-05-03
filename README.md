@@ -35,8 +35,8 @@ graph LR
     end
 
     subgraph Runtime ["Godot runtime (playback)"]
-        BIN --> RES(" GdSsabResource ")
-        RES --> NODE(" GdSsPlayerNode2D ")
+        BIN --> RES(" SSABResource ")
+        RES --> NODE(" SpriteStudioPlayer2D ")
         NODE -.-> RT(" libssruntime ")
         IMG --> NODE
         NODE --> RENDER[[" Godot rendering "]]
@@ -46,13 +46,13 @@ graph LR
     class BIN generated;
 ```
 
-There are two ways to convert `.sspj` to `.ssab` / `.ssqb`. Files produced by either method are loaded as `GdSsabResource` / `GdSsqbResource` in Godot. See [USAGE.md](./USAGE.md) for details.
+There are two ways to convert `.sspj` to `.ssab` / `.ssqb`. Files produced by either method are loaded as `SSABResource` / `SSQBResource` in Godot. See [USAGE.md](./USAGE.md) for details.
 
 - Nodes
-    - `GdSsPlayerNode2D`: A `Node2D`-based node for playing back SS animations.
+    - `SpriteStudioPlayer2D`: A `Node2D`-based node for playing back SS animations.
 - Resources
-    - `GdSsabResource`: Resource representing a converted animation binary (`.ssab`).
-    - `GdSsqbResource`: Resource representing a converted sequence binary (`.ssqb`).
+    - `SSABResource`: Resource representing a converted animation binary (`.ssab`).
+    - `SSQBResource`: Resource representing a converted sequence binary (`.ssqb`).
 - Editor extension
     - `SS Import Dock`: An import control that converts `.sspj` to `.ssab` / `.ssqb` via `libssconverter`.
 
@@ -78,11 +78,11 @@ Download the GDExtension package for your target platform from the [SSPlayerForG
 ### 3. Drop it into your project
 
 Extract the downloaded GDExtension files into your Godot project according to the paths declared in the `.gdextension` file (the sample projects in this repository use `bin/`).
-After restarting the Godot editor, the `GdSsPlayerNode2D` node and the SS Import Dock become available.
+After restarting the Godot editor, the `SpriteStudioPlayer2D` node and the SS Import Dock become available.
 
 ### 4. Convert and play SpriteStudio data
 
-For converting `.sspj` and playing it back via `GdSsPlayerNode2D`, see [USAGE.md](./USAGE.md#importing-spritestudio-data).
+For converting `.sspj` and playing it back via `SpriteStudioPlayer2D`, see [USAGE.md](./USAGE.md#importing-spritestudio-data).
 
 ## Samples
 

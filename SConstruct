@@ -76,10 +76,10 @@ env = SConscript("godot-cpp/SConstruct", {"env": env, "customs": customs})
 
 # --- Source Files ---
 # Extension sources
-sources = Glob("gd_spritestudio/*.cpp")
+sources = Glob("ss_player/*.cpp")
 
 # FlatBuffers sources
-fb_src_dir = "gd_spritestudio/flatbuffers/src"
+fb_src_dir = "ss_player/flatbuffers/src"
 fb_sources = [
     "idl_parser.cpp",
     "idl_gen_text.cpp",
@@ -92,10 +92,10 @@ sources.extend([os.path.join(fb_src_dir, f) for f in fb_sources])
 env.Append(CPPDEFINES = "SPRITESTUDIO_GODOT_EXTENSION")
 env.Append(
     CPPPATH=[
-        "gd_spritestudio/flatbuffers/src",
-        "gd_spritestudio/flatbuffers/include",
-        "gd_spritestudio/format",
-        "gd_spritestudio/runtime/include",
+        "ss_player/flatbuffers/src",
+        "ss_player/flatbuffers/include",
+        "ss_player/format",
+        "ss_player/runtime/include",
     ]
 )
 
@@ -105,9 +105,9 @@ platform = env['platform']
 arch = env['arch']
 
 if platform == 'macos':
-    runtime_libpath = os.path.join(extension_path, "gd_spritestudio", "runtime", "libs", platform)
+    runtime_libpath = os.path.join(extension_path, "ss_player", "runtime", "libs", platform)
 else:
-    runtime_libpath = os.path.join(extension_path, "gd_spritestudio", "runtime", "libs", platform, arch)
+    runtime_libpath = os.path.join(extension_path, "ss_player", "runtime", "libs", platform, arch)
 
 env.Append(LIBPATH=[runtime_libpath])
 
@@ -131,8 +131,8 @@ if platform == "ios":
 # --- DocData Generation ---
 if env["target"] in ["editor", "template_debug"]:
     try:
-        # Output to gd_spritestudio/gen instead of src/gen
-        doc_data = env.GodotCPPDocData("gd_spritestudio/gen/doc_data.gen.cpp", source=Glob("doc_classes/*.xml"))
+        # Output to ss_player/gen instead of src/gen
+        doc_data = env.GodotCPPDocData("ss_player/gen/doc_data.gen.cpp", source=Glob("doc_classes/*.xml"))
         sources.append(doc_data)
     except AttributeError:
         print("Not including class reference as we're targeting a pre-4.3 baseline.")

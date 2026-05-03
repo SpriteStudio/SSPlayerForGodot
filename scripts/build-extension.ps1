@@ -92,6 +92,8 @@ mkdir "$BINDIR" -Force
 Invoke-Expression "scons $scons_command_opts"
 
 mkdir examples\feature_test_gdextension\bin -Force | Out-Null
-cp misc\ssplayer_godot_extension.gdextension examples\feature_test_gdextension\bin\ssplayer_godot_extension.gdextension
+Copy-Item misc\ssplayer_godot_extension.gdextension examples\feature_test_gdextension\bin\ssplayer_godot_extension.gdextension -Force
+mkdir examples\new_gdextension\bin -Force | Out-Null
+Copy-Item misc\ssplayer_godot_extension.gdextension examples\new_gdextension\bin\ssplayer_godot_extension.gdextension -Force
 
 popd

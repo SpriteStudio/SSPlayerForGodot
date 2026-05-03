@@ -135,6 +135,9 @@ for arch in $ARCHES; do
     fi
 done
 
-/bin/cp misc/ssplayer_godot_extension.gdextension ./examples/feature_test_gdextension/bin
+/bin/mkdir -p ./examples/feature_test_gdextension/bin
+/bin/cp misc/ssplayer_godot_extension.gdextension ./examples/feature_test_gdextension/bin/
+/bin/mkdir -p ./examples/new_gdextension/bin
+/bin/cp misc/ssplayer_godot_extension.gdextension ./examples/new_gdextension/bin/
 
 popd > /dev/null # ${ROOTDIR}

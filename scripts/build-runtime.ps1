@@ -37,7 +37,7 @@ foreach ($item in $Args) {
 $opts
 echo ""
 
-pushd $rootDirectory/gd_spritestudio
+pushd $rootDirectory/ss_player
 pushd SpriteStudio7-SDK
 if ($opts.build -eq "release") {
     & ./scripts/release-windows.ps1

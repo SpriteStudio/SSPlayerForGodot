@@ -1,21 +1,21 @@
 #ifdef TOOLS_ENABLED
 
-#include "gd_ss_editor_plugin.h"
+#include "ss_editor_plugin.h"
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
-GdSsEditorPlugin::GdSsEditorPlugin() {
+SSEditorPlugin::SSEditorPlugin() {
 }
 #else
 #include "editor/editor_node.h"
-GdSsEditorPlugin::GdSsEditorPlugin(EditorNode *node) {
+SSEditorPlugin::SSEditorPlugin(EditorNode *node) {
 }
 #endif
 
-void GdSsEditorPlugin::_notification(int what) {
+void SSEditorPlugin::_notification(int what) {
     switch (what) {
         case NOTIFICATION_ENTER_TREE: {
             if (this->import_dock == nullptr) {
-                this->import_dock = memnew(GdSsImportControl);
+                this->import_dock = memnew(SSImportControl);
                 this->import_dock->set_name(String::utf8("SSPJ"));
                 add_control_to_dock(EditorPlugin::DOCK_SLOT_RIGHT_BL, this->import_dock, Ref<Shortcut>());
             }

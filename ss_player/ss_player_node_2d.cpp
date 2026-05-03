@@ -1,4 +1,4 @@
-#include "gd_ssplayer_node2d.h"
+#include "ss_player_node_2d.h"
 #include "format/ssab.h"
 #include "ssruntime.h"
 #include "format/framedata.h"
@@ -15,18 +15,18 @@
 #endif
 
 
-GdSsPlayerNode2D::GdSsPlayerNode2D() {
+SpriteStudioPlayer2D::SpriteStudioPlayer2D() {
     runtime_ctx = ss_runtime_create();
     _reconfigure();
 }
 
-void GdSsPlayerNode2D::_reconfigure() {
+void SpriteStudioPlayer2D::_reconfigure() {
     if (runtime_ctx != nullptr) {
         ss_context_set_coordinate_system(runtime_ctx, 1);
     }
 }
 
-GdSsPlayerNode2D::~GdSsPlayerNode2D() {
+SpriteStudioPlayer2D::~SpriteStudioPlayer2D() {
     _clear_canvas_items();
     if (runtime_ctx != nullptr) {
         ss_runtime_destroy(runtime_ctx);
@@ -38,7 +38,7 @@ GdSsPlayerNode2D::~GdSsPlayerNode2D() {
     }
 }
 
-void GdSsPlayerNode2D::_clear_canvas_items() {
+void SpriteStudioPlayer2D::_clear_canvas_items() {
     RenderingServer *rs = RenderingServer::get_singleton();
     for (int i = 0; i < _canvas_items.size(); i++) {
         rs->free_rid(_canvas_items[i]);
@@ -47,14 +47,14 @@ void GdSsPlayerNode2D::_clear_canvas_items() {
     _blend_materials.clear();
 }
 
-void GdSsPlayerNode2D::setSsabResource( const Ref<GdSsabResource>& ssabRes ) {
+void SpriteStudioPlayer2D::setSSABResource( const Ref<SSABResource>& ssabRes ) {
 	_ssabRes = ssabRes;
     _strAnimationSelected = "";
 
     if ( !_ssabRes.is_null() ) {
         if (!_ssabRes->is_valid()) {
             ERR_PRINT("SSAB Error: Assigned resource is invalid (missing parts or animations).");
-            _ssabRes = Ref<GdSsabResource>(); // 無効な場合はリセット
+            _ssabRes = Ref<SSABResource>(); // 無効な場合はリセット
         } else {
             auto vecAnimeName = _ssabRes->get_animation_names();
             if ( vecAnimeName.size() > 0 )
@@ -67,11 +67,11 @@ void GdSsPlayerNode2D::setSsabResource( const Ref<GdSsabResource>& ssabRes ) {
 	NOTIFY_PROPERTY_LIST_CHANGED();
 }
 
-Ref<GdSsabResource> GdSsPlayerNode2D::getSsabResource() const {
+Ref<SSABResource> SpriteStudioPlayer2D::getSSABResource() const {
 	return	_ssabRes;
 }
 
-void GdSsPlayerNode2D::setAnimation( const String& strName ) {
+void SpriteStudioPlayer2D::setAnimation( const String& strName ) {
     _strAnimationSelected = strName;
 
     // postAnimationChanged( _strAnimationSelected );
@@ -80,15 +80,15 @@ void GdSsPlayerNode2D::setAnimation( const String& strName ) {
 	NOTIFY_PROPERTY_LIST_CHANGED();
 }
 
-String GdSsPlayerNode2D::getAnimation() const {
+String SpriteStudioPlayer2D::getAnimation() const {
     return	_strAnimationSelected;
 }
 
-bool GdSsPlayerNode2D::isPlaying() const {
+bool SpriteStudioPlayer2D::isPlaying() const {
     return ss_runtime_is_playing(runtime_ctx);
 }
 
-void GdSsPlayerNode2D::play( float p_start_frame ) {
+void SpriteStudioPlayer2D::play( float p_start_frame ) {
     if ( p_start_frame >= 0.0f ) {
         ss_runtime_play_with_start_frame(runtime_ctx, p_start_frame);
     } else {
@@ -96,28 +96,28 @@ void GdSsPlayerNode2D::play( float p_start_frame ) {
     }
 }
 
-bool GdSsPlayerNode2D::isPausing() const {
+bool SpriteStudioPlayer2D::isPausing() const {
     return ss_runtime_is_pausing(runtime_ctx);
 }
 
-void GdSsPlayerNode2D::pause() {
+void SpriteStudioPlayer2D::pause() {
     ss_runtime_pause(runtime_ctx);
 }
 
-void GdSsPlayerNode2D::stop() {
+void SpriteStudioPlayer2D::stop() {
     ss_runtime_stop(runtime_ctx);
 }
 
-void GdSsPlayerNode2D::setSpeed( float p_speed ) {
+void SpriteStudioPlayer2D::setSpeed( float p_speed ) {
     _speed_rate = p_speed;
     ss_runtime_set_animation_speed(runtime_ctx, p_speed);
 }
 
-float GdSsPlayerNode2D::getSpeed() const {
+float SpriteStudioPlayer2D::getSpeed() const {
     return _speed_rate;
 }
 
-void GdSsPlayerNode2D::setFrame( float p_frame ) {
+void SpriteStudioPlayer2D::setFrame( float p_frame ) {
     if (runtime_ctx) {
         ss_runtime_set_frame_no(runtime_ctx, p_frame);
         float frame_no = ss_runtime_get_frame_no(runtime_ctx);
@@ -127,63 +127,63 @@ void GdSsPlayerNode2D::setFrame( float p_frame ) {
     }
 }
 
-float GdSsPlayerNode2D::getFrame() const {
+float SpriteStudioPlayer2D::getFrame() const {
     return ss_runtime_get_frame_no(runtime_ctx);
 }
 
-int GdSsPlayerNode2D::getTotalFrames() const {
+int SpriteStudioPlayer2D::getTotalFrames() const {
     return ss_runtime_get_end_frame(runtime_ctx) - ss_runtime_get_start_frame(runtime_ctx) + 1;
 }
 
-void GdSsPlayerNode2D::setFrameRate( int p_fps ) {
+void SpriteStudioPlayer2D::setFrameRate( int p_fps ) {
     ss_runtime_set_frame_rate(runtime_ctx, p_fps);
 }
 
-int GdSsPlayerNode2D::getFrameRate() const {
+int SpriteStudioPlayer2D::getFrameRate() const {
     return ss_runtime_get_fps(runtime_ctx);
 }
 
-void GdSsPlayerNode2D::setAnimationSection( int p_start, int p_end ) {
+void SpriteStudioPlayer2D::setAnimationSection( int p_start, int p_end ) {
     ss_runtime_set_animation_section(runtime_ctx, p_start, p_end);
 }
 
-int GdSsPlayerNode2D::getAnimationSectionStart() const {
+int SpriteStudioPlayer2D::getAnimationSectionStart() const {
     return ss_runtime_get_start_frame(runtime_ctx);
 }
 
-int GdSsPlayerNode2D::getAnimationSectionEnd() const {
+int SpriteStudioPlayer2D::getAnimationSectionEnd() const {
     return ss_runtime_get_end_frame(runtime_ctx);
 }
 
-void GdSsPlayerNode2D::setPlaybackDirection( int p_direction, int p_style ) {
+void SpriteStudioPlayer2D::setPlaybackDirection( int p_direction, int p_style ) {
     ss_runtime_set_playback_direction(runtime_ctx, p_direction, p_style);
 }
 
-int GdSsPlayerNode2D::getPlaybackDirection() const {
+int SpriteStudioPlayer2D::getPlaybackDirection() const {
     return ss_runtime_get_playback_direction(runtime_ctx);
 }
 
-int GdSsPlayerNode2D::getPlaybackStyle() const {
+int SpriteStudioPlayer2D::getPlaybackStyle() const {
     return ss_runtime_get_playback_style(runtime_ctx);
 }
 
-void GdSsPlayerNode2D::setLoop( int p_count ) {
+void SpriteStudioPlayer2D::setLoop( int p_count ) {
     ss_runtime_set_loop(runtime_ctx, p_count);
 }
 
-int GdSsPlayerNode2D::getLoop() const {
+int SpriteStudioPlayer2D::getLoop() const {
     return ss_runtime_get_loops(runtime_ctx);
 }
 
-void GdSsPlayerNode2D::setSkipFrames( bool p_skip ) {
+void SpriteStudioPlayer2D::setSkipFrames( bool p_skip ) {
     ss_runtime_set_skip_frames(runtime_ctx, p_skip);
 }
 
-bool GdSsPlayerNode2D::isSkipFrames() const {
+bool SpriteStudioPlayer2D::isSkipFrames() const {
     return ss_runtime_get_skip_frames(runtime_ctx);
 }
 
-void GdSsPlayerNode2D::setSubFrameEnabled( bool p_enabled ) {
+void SpriteStudioPlayer2D::setSubFrameEnabled( bool p_enabled ) {
     _sub_frame_enabled = p_enabled;
     if (runtime_ctx) {
         float frame_no = ss_runtime_get_frame_no(runtime_ctx);
@@ -193,49 +193,49 @@ void GdSsPlayerNode2D::setSubFrameEnabled( bool p_enabled ) {
     }
 }
 
-bool GdSsPlayerNode2D::isSubFrameEnabled() const {
+bool SpriteStudioPlayer2D::isSubFrameEnabled() const {
     return _sub_frame_enabled;
 }
 
 
-void GdSsPlayerNode2D::_bind_methods() {
-    ClassDB::bind_method( D_METHOD( "set_ssab_resource", "res_ssab" ), &GdSsPlayerNode2D::setSsabResource );
-    ClassDB::bind_method( D_METHOD( "get_ssab_resource" ), &GdSsPlayerNode2D::getSsabResource );
-    ClassDB::bind_method( D_METHOD( "set_animation", "name" ), &GdSsPlayerNode2D::setAnimation );
-    ClassDB::bind_method( D_METHOD( "get_animation" ), &GdSsPlayerNode2D::getAnimation );
+void SpriteStudioPlayer2D::_bind_methods() {
+    ClassDB::bind_method( D_METHOD( "set_ssab_resource", "res_ssab" ), &SpriteStudioPlayer2D::setSSABResource );
+    ClassDB::bind_method( D_METHOD( "get_ssab_resource" ), &SpriteStudioPlayer2D::getSSABResource );
+    ClassDB::bind_method( D_METHOD( "set_animation", "name" ), &SpriteStudioPlayer2D::setAnimation );
+    ClassDB::bind_method( D_METHOD( "get_animation" ), &SpriteStudioPlayer2D::getAnimation );
 
-    ClassDB::bind_method( D_METHOD( "is_playing" ), &GdSsPlayerNode2D::isPlaying );
-    ClassDB::bind_method( D_METHOD( "play", "start_frame" ), &GdSsPlayerNode2D::play, DEFVAL(-1.0f) );
-    ClassDB::bind_method( D_METHOD( "is_pausing" ), &GdSsPlayerNode2D::isPausing );
-    ClassDB::bind_method( D_METHOD( "pause" ), &GdSsPlayerNode2D::pause );
-    ClassDB::bind_method( D_METHOD( "stop" ), &GdSsPlayerNode2D::stop );
+    ClassDB::bind_method( D_METHOD( "is_playing" ), &SpriteStudioPlayer2D::isPlaying );
+    ClassDB::bind_method( D_METHOD( "play", "start_frame" ), &SpriteStudioPlayer2D::play, DEFVAL(-1.0f) );
+    ClassDB::bind_method( D_METHOD( "is_pausing" ), &SpriteStudioPlayer2D::isPausing );
+    ClassDB::bind_method( D_METHOD( "pause" ), &SpriteStudioPlayer2D::pause );
+    ClassDB::bind_method( D_METHOD( "stop" ), &SpriteStudioPlayer2D::stop );
 
-    ClassDB::bind_method( D_METHOD( "set_speed", "speed" ), &GdSsPlayerNode2D::setSpeed );
-    ClassDB::bind_method( D_METHOD( "get_speed" ), &GdSsPlayerNode2D::getSpeed );
-    ClassDB::bind_method( D_METHOD( "set_frame", "frame" ), &GdSsPlayerNode2D::setFrame );
-    ClassDB::bind_method( D_METHOD( "get_frame" ), &GdSsPlayerNode2D::getFrame );
+    ClassDB::bind_method( D_METHOD( "set_speed", "speed" ), &SpriteStudioPlayer2D::setSpeed );
+    ClassDB::bind_method( D_METHOD( "get_speed" ), &SpriteStudioPlayer2D::getSpeed );
+    ClassDB::bind_method( D_METHOD( "set_frame", "frame" ), &SpriteStudioPlayer2D::setFrame );
+    ClassDB::bind_method( D_METHOD( "get_frame" ), &SpriteStudioPlayer2D::getFrame );
 
-    ClassDB::bind_method( D_METHOD( "get_total_frames" ), &GdSsPlayerNode2D::getTotalFrames );
+    ClassDB::bind_method( D_METHOD( "get_total_frames" ), &SpriteStudioPlayer2D::getTotalFrames );
 
-    ClassDB::bind_method( D_METHOD( "set_frame_rate", "fps" ), &GdSsPlayerNode2D::setFrameRate );
-    ClassDB::bind_method( D_METHOD( "get_frame_rate" ), &GdSsPlayerNode2D::getFrameRate );
+    ClassDB::bind_method( D_METHOD( "set_frame_rate", "fps" ), &SpriteStudioPlayer2D::setFrameRate );
+    ClassDB::bind_method( D_METHOD( "get_frame_rate" ), &SpriteStudioPlayer2D::getFrameRate );
 
-    ClassDB::bind_method( D_METHOD( "set_animation_section", "start", "end" ), &GdSsPlayerNode2D::setAnimationSection );
-    ClassDB::bind_method( D_METHOD( "get_animation_section_start" ), &GdSsPlayerNode2D::getAnimationSectionStart );
-    ClassDB::bind_method( D_METHOD( "get_animation_section_end" ), &GdSsPlayerNode2D::getAnimationSectionEnd );
+    ClassDB::bind_method( D_METHOD( "set_animation_section", "start", "end" ), &SpriteStudioPlayer2D::setAnimationSection );
+    ClassDB::bind_method( D_METHOD( "get_animation_section_start" ), &SpriteStudioPlayer2D::getAnimationSectionStart );
+    ClassDB::bind_method( D_METHOD( "get_animation_section_end" ), &SpriteStudioPlayer2D::getAnimationSectionEnd );
 
-    ClassDB::bind_method( D_METHOD( "set_playback_direction", "direction", "style" ), &GdSsPlayerNode2D::setPlaybackDirection );
-    ClassDB::bind_method( D_METHOD( "get_playback_direction" ), &GdSsPlayerNode2D::getPlaybackDirection );
-    ClassDB::bind_method( D_METHOD( "get_playback_style" ), &GdSsPlayerNode2D::getPlaybackStyle );
+    ClassDB::bind_method( D_METHOD( "set_playback_direction", "direction", "style" ), &SpriteStudioPlayer2D::setPlaybackDirection );
+    ClassDB::bind_method( D_METHOD( "get_playback_direction" ), &SpriteStudioPlayer2D::getPlaybackDirection );
+    ClassDB::bind_method( D_METHOD( "get_playback_style" ), &SpriteStudioPlayer2D::getPlaybackStyle );
 
-    ClassDB::bind_method( D_METHOD( "set_loop", "count" ), &GdSsPlayerNode2D::setLoop );
-    ClassDB::bind_method( D_METHOD( "get_loop" ), &GdSsPlayerNode2D::getLoop );
+    ClassDB::bind_method( D_METHOD( "set_loop", "count" ), &SpriteStudioPlayer2D::setLoop );
+    ClassDB::bind_method( D_METHOD( "get_loop" ), &SpriteStudioPlayer2D::getLoop );
 
-    ClassDB::bind_method( D_METHOD( "set_skip_frames", "skip" ), &GdSsPlayerNode2D::setSkipFrames );
-    ClassDB::bind_method( D_METHOD( "is_skip_frames" ), &GdSsPlayerNode2D::isSkipFrames );
+    ClassDB::bind_method( D_METHOD( "set_skip_frames", "skip" ), &SpriteStudioPlayer2D::setSkipFrames );
+    ClassDB::bind_method( D_METHOD( "is_skip_frames" ), &SpriteStudioPlayer2D::isSkipFrames );
 
-    ClassDB::bind_method( D_METHOD( "set_sub_frame_enabled", "enabled" ), &GdSsPlayerNode2D::setSubFrameEnabled );
-    ClassDB::bind_method( D_METHOD( "is_sub_frame_enabled" ), &GdSsPlayerNode2D::isSubFrameEnabled );
+    ClassDB::bind_method( D_METHOD( "set_sub_frame_enabled", "enabled" ), &SpriteStudioPlayer2D::setSubFrameEnabled );
+    ClassDB::bind_method( D_METHOD( "is_sub_frame_enabled" ), &SpriteStudioPlayer2D::isSubFrameEnabled );
 
 	ADD_SIGNAL(
 		MethodInfo(
@@ -281,7 +281,7 @@ void GdSsPlayerNode2D::_bind_methods() {
 			Variant::OBJECT,
 			"ssab",
 			PropertyHint::PROPERTY_HINT_RESOURCE_TYPE,
-			"GdSsabResource"
+			"SSABResource"
 		),
 		"set_ssab_resource",
 		"get_ssab_resource"
@@ -326,7 +326,7 @@ void GdSsPlayerNode2D::_bind_methods() {
 	ADD_GROUP( "Animation Settings", "" );
 }
 
-bool GdSsPlayerNode2D::_set( const StringName& p_name, const Variant& p_property ) {
+bool SpriteStudioPlayer2D::_set( const StringName& p_name, const Variant& p_property ) {
 	if ( p_name == StringName("animation")) {
 		setAnimation( p_property );
 
@@ -363,7 +363,7 @@ bool GdSsPlayerNode2D::_set( const StringName& p_name, const Variant& p_property
 	return	false;
 }
 
-bool GdSsPlayerNode2D::_get( const StringName& p_name, Variant& r_property ) const {
+bool SpriteStudioPlayer2D::_get( const StringName& p_name, Variant& r_property ) const {
     if ( p_name == StringName("animation")) {
         r_property = getAnimation();
 
@@ -397,7 +397,7 @@ bool GdSsPlayerNode2D::_get( const StringName& p_name, Variant& r_property ) con
     return	false;
 }
 
-void GdSsPlayerNode2D::_get_property_list( List<PropertyInfo>* p_list ) const {
+void SpriteStudioPlayer2D::_get_property_list( List<PropertyInfo>* p_list ) const {
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
 	PackedStringArray vecAnimeName;
 #else
@@ -439,7 +439,7 @@ void GdSsPlayerNode2D::_get_property_list( List<PropertyInfo>* p_list ) const {
 
 }
 
-void GdSsPlayerNode2D::_notification( int p_notification ) {
+void SpriteStudioPlayer2D::_notification( int p_notification ) {
     switch ( p_notification ) {
  	case NOTIFICATION_READY:
         set_process_internal( true );
@@ -454,7 +454,7 @@ void GdSsPlayerNode2D::_notification( int p_notification ) {
 	}
 }
 
-void GdSsPlayerNode2D::loadTextures(const Ref<GdSsabResource>& ssabRes) {
+void SpriteStudioPlayer2D::loadTextures(const Ref<SSABResource>& ssabRes) {
     auto a = ssabRes->get_ss_anime_binary();
     _textures.clear();
     if (a->cellmaps() != nullptr) {
@@ -566,7 +566,7 @@ namespace {
     }
 }
 
-void GdSsPlayerNode2D::updateAnimation( float delta ) {
+void SpriteStudioPlayer2D::updateAnimation( float delta ) {
     if (ss_runtime_is_playing(runtime_ctx)) {
         auto d = delta * 1000.0f;
         float frame_no = ss_runtime_update(runtime_ctx, d);
@@ -610,7 +610,7 @@ void GdSsPlayerNode2D::updateAnimation( float delta ) {
     }
 }
 
-void GdSsPlayerNode2D::drawAnimation(float frame_no) {
+void SpriteStudioPlayer2D::drawAnimation(float frame_no) {
     unsigned char *data = nullptr;
     uintptr_t len = 0;
     ss_runtime_get_frame_data(runtime_ctx, frame_no, &data, &len);
@@ -673,7 +673,7 @@ void GdSsPlayerNode2D::drawAnimation(float frame_no) {
     }
 }
 
-void GdSsPlayerNode2D::_draw_part(RenderingServer *rs, RID ci, const ss::runtime::FrameData *frameData, const ss::runtime::PartState *part, const ss::format::PartData *partBinary, const Ref<Texture2D> &tex, const ss::format::Cell *cell, const float *draw_m) {
+void SpriteStudioPlayer2D::_draw_part(RenderingServer *rs, RID ci, const ss::runtime::FrameData *frameData, const ss::runtime::PartState *part, const ss::format::PartData *partBinary, const Ref<Texture2D> &tex, const ss::format::Cell *cell, const float *draw_m) {
     // 1. Blend Mode
     ss::format::BlendType ss_blend = partBinary->blend_type();
     if (!_blend_materials.has((int)ss_blend)) {
@@ -784,7 +784,7 @@ void GdSsPlayerNode2D::_draw_part(RenderingServer *rs, RID ci, const ss::runtime
     }
 }
 
-void GdSsPlayerNode2D::fetchAnimation() {
+void SpriteStudioPlayer2D::fetchAnimation() {
 	if ( _strAnimationSelected.is_empty() || _ssabRes.is_null() ) {
         ss_runtime_reset(runtime_ctx);
         _reconfigure();

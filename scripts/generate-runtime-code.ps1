@@ -4,7 +4,7 @@ $ErrorActionPreference = "Stop"
 $baseDirectory = Split-Path -Parent $PSCommandPath
 $rootDirectory = Split-Path -Parent $baseDirectory
 
-pushd $rootDirectory/gd_spritestudio
+pushd $rootDirectory/ss_player
 
 $FLATC_CMD = "flatc"
 

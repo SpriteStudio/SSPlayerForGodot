@@ -4,7 +4,7 @@
 
 本ブランチで Godot 用バイナリを得るまでの流れは以下のとおりです。
 
-1. **`libssruntime` の用意** — SpriteStudio7-SDK のリリース成果物を取得し、`gd_spritestudio/runtime/` 配下に配置します。
+1. **`libssruntime` の用意** — SpriteStudio7-SDK のリリース成果物を取得し、`ss_player/runtime/` 配下に配置します。
 2. 利用形態に応じて **2-A. GDExtension のビルド** または **2-B. カスタムモジュール組み込み Godot Engine のビルド** を実行し、上記ランタイムをリンクして Godot 用バイナリを生成します。
 
 # ソース取得
@@ -37,7 +37,7 @@ Homebrew で配布されている `molten-vk` はホストアーキ向けのバ�
 
 # 1. libssruntime の用意
 
-`gd_spritestudio/SDK_VERSION.txt` で指定されたバージョンの SDK パッケージを取得・展開します。
+`ss_player/SDK_VERSION.txt` で指定されたバージョンの SDK パッケージを取得・展開します。
 
 **macOS / Linux**
 
@@ -77,7 +77,7 @@ $env:PYTHONUTF8=1
 # 2-B. カスタムモジュール組み込み Godot Engine のビルド
 
 `godot` を `4.6` ブランチで clone 済みであることが前提です。
-`build.sh` / `build.ps1` は `custom_modules=../gd_spritestudio` を指定して `scons` を実行します。
+`build.sh` / `build.ps1` は `custom_modules=../ss_player` を指定して `scons` を実行します。
 
 **macOS / Linux**
 
@@ -134,8 +134,8 @@ FlatBuffers のヘッダを再生成する場合は別途 `flatc` (FlatBuffers �
 
 ## libssruntime を自前でビルドする
 
-[ソース取得](#ソース取得) の段階で SS7-SDK サブモジュール (`gd_spritestudio/SpriteStudio7-SDK/`) が初期化済みであることが前提です。
-以下を実行すると Rust ランタイム/コンバータがビルドされ、`gd_spritestudio/runtime/` 配下に成果物が自動配置されます。
+[ソース取得](#ソース取得) の段階で SS7-SDK サブモジュール (`ss_player/SpriteStudio7-SDK/`) が初期化済みであることが前提です。
+以下を実行すると Rust ランタイム/コンバータがビルドされ、`ss_player/runtime/` 配下に成果物が自動配置されます。
 
 **macOS / Linux**
 
@@ -151,7 +151,7 @@ FlatBuffers のヘッダを再生成する場合は別途 `flatc` (FlatBuffers �
 
 ## FlatBuffers ヘッダの再生成
 
-SS7-SDK の `.fbs` を変更した場合は、以下で `gd_spritestudio/format/` 配下のヘッダを再生成します (`flatc` が必要)。
+SS7-SDK の `.fbs` を変更した場合は、以下で `ss_player/format/` 配下のヘッダを再生成します (`flatc` が必要)。
 
 **macOS / Linux**
 
@@ -169,4 +169,4 @@ SS7-SDK の `.fbs` を変更した場合は、以下で `gd_spritestudio/format/
 
 サブモジュール初期化済みであれば、ランタイムの内部仕様や移植時の注意点は以下を参照できます。
 
-- `gd_spritestudio/SpriteStudio7-SDK/libs/ssruntime/docs/README.ja.md`
+- `ss_player/SpriteStudio7-SDK/libs/ssruntime/docs/README.ja.md`

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "gd_macros.h"
+#include "ss_macros.h"
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
 #include <godot_cpp/classes/resource.hpp>
@@ -17,8 +17,8 @@ using namespace godot;
 
 #include "format/ssab.h"
 
-class GdSsabResource : public Resource {
-  GDCLASS(GdSsabResource, Resource);
+class SSABResource : public Resource {
+  GDCLASS(SSABResource, Resource);
 
 protected:
   static void _bind_methods();
@@ -53,8 +53,8 @@ private:
     String _parent_dir;
 };
 
-class GdSsabResourceFormatLoader : public ResourceFormatLoader {
-  GDCLASS(GdSsabResourceFormatLoader, ResourceFormatLoader);
+class SSABResourceFormatLoader : public ResourceFormatLoader {
+  GDCLASS(SSABResourceFormatLoader, ResourceFormatLoader);
 
 public:
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
@@ -81,8 +81,8 @@ public:
 #endif
 };
 
-class GdSsabResourceFormatSaver : public ResourceFormatSaver {
-  GDCLASS(GdSsabResourceFormatSaver, ResourceFormatSaver);
+class SSABResourceFormatSaver : public ResourceFormatSaver {
+  GDCLASS(SSABResourceFormatSaver, ResourceFormatSaver);
 
 public:
 #ifdef SPRITESTUDIO_GODOT_EXTENSION

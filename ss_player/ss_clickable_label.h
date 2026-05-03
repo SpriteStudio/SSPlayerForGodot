@@ -12,14 +12,14 @@ using namespace godot;
 #include "core/input/input_event.h"
 #endif
 
-class GdClickableLabel : public Label {
-    GDCLASS(GdClickableLabel, Label);
+class SSClickableLabel : public Label {
+    GDCLASS(SSClickableLabel, Label);
 
 protected:
     static void _bind_methods();
 
 public:
-    GdClickableLabel();
+    SSClickableLabel();
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
     virtual void _gui_input(const Ref<InputEvent> &p_event) override;

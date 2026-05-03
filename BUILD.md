@@ -4,7 +4,7 @@
 
 The flow for producing Godot binaries from this repository is as follows:
 
-1. **Prepare `libssruntime`** — Obtain the SpriteStudio7-SDK release artifacts and place them under `gd_spritestudio/runtime/`.
+1. **Prepare `libssruntime`** — Obtain the SpriteStudio7-SDK release artifacts and place them under `ss_player/runtime/`.
 2. Depending on how you want to consume the plugin, run **2-A. Build the GDExtension** or **2-B. Build the Custom-Module Godot Engine** to link the runtime above and produce Godot binaries.
 
 # Get the Source
@@ -37,7 +37,7 @@ The `molten-vk` package distributed via Homebrew only provides binaries for the 
 
 # 1. Prepare libssruntime
 
-Fetches and extracts the SDK package version pinned in `gd_spritestudio/SDK_VERSION.txt`.
+Fetches and extracts the SDK package version pinned in `ss_player/SDK_VERSION.txt`.
 
 **macOS / Linux**
 
@@ -77,7 +77,7 @@ Output is placed under `bin/<platform>/`, and `misc/ssplayer_godot_extension.gde
 # 2-B. Build the Custom-Module Godot Engine
 
 Requires `godot` to be cloned at the `4.6` branch.
-`build.sh` / `build.ps1` invoke `scons` with `custom_modules=../gd_spritestudio`.
+`build.sh` / `build.ps1` invoke `scons` with `custom_modules=../ss_player`.
 
 **macOS / Linux**
 
@@ -134,8 +134,8 @@ If you also need to regenerate FlatBuffers headers, install `flatc` (the FlatBuf
 
 ## Building libssruntime from source
 
-Requires the SS7-SDK submodule (`gd_spritestudio/SpriteStudio7-SDK/`) to be initialized at the [Get the Source](#get-the-source) step.
-Running the script below builds the Rust runtime/converter and places the artifacts under `gd_spritestudio/runtime/` automatically.
+Requires the SS7-SDK submodule (`ss_player/SpriteStudio7-SDK/`) to be initialized at the [Get the Source](#get-the-source) step.
+Running the script below builds the Rust runtime/converter and places the artifacts under `ss_player/runtime/` automatically.
 
 **macOS / Linux**
 
@@ -151,7 +151,7 @@ Running the script below builds the Rust runtime/converter and places the artifa
 
 ## Regenerating FlatBuffers headers
 
-When `.fbs` files in SS7-SDK have changed, regenerate the headers under `gd_spritestudio/format/` (requires `flatc`).
+When `.fbs` files in SS7-SDK have changed, regenerate the headers under `ss_player/format/` (requires `flatc`).
 
 **macOS / Linux**
 
@@ -169,4 +169,4 @@ When `.fbs` files in SS7-SDK have changed, regenerate the headers under `gd_spri
 
 Once the submodule is initialized, internal runtime specifications and porting notes are available at:
 
-- `gd_spritestudio/SpriteStudio7-SDK/libs/ssruntime/docs/README.ja.md`
+- `ss_player/SpriteStudio7-SDK/libs/ssruntime/docs/README.ja.md`

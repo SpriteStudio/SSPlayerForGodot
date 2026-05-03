@@ -1,9 +1,9 @@
 /*!
-* \file		gd_macros.h
+* \file		ss_macros.h
 * \author	CRI Middleware Co., Ltd.
 */
-#ifndef GD_MACROS_H
-#define GD_MACROS_H
+#ifndef SS_MACROS_H
+#define SS_MACROS_H
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
   #include <godot_cpp/core/version.hpp>
@@ -22,4 +22,4 @@
   #endif
 #endif
 
-#endif // GD_MACROS_H
+#endif // SS_MACROS_H

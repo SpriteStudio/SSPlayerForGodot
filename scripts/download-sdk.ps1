@@ -2,7 +2,7 @@ $ErrorActionPreference = "Stop"
 
 $baseDirectory = Split-Path -Parent $PSCommandPath
 $rootDirectory = Split-Path -Parent $baseDirectory
-$targetDir = "$rootDirectory/gd_spritestudio"
+$targetDir = "$rootDirectory/ss_player"
 $versionFile = "$targetDir/SDK_VERSION.txt"
 $currentVersionFile = "$targetDir/runtime/VERSION"
 

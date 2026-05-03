@@ -51,7 +51,7 @@ for key value in ${(kv)opts}; do
 done
 echo ""
 
-pushd ${ROOTDIR}/gd_spritestudio > /dev/null
+pushd ${ROOTDIR}/ss_player > /dev/null
 pushd SpriteStudio7-SDK > /dev/null
 if [[ "${opts[build]}" == "release" ]]; then
     ./scripts/release-${opts[platform]}.sh

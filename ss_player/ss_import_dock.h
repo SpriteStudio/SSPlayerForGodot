@@ -2,7 +2,7 @@
 
 #ifdef TOOLS_ENABLED
 
-#include "gd_macros.h"
+#include "ss_macros.h"
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
 #include <godot_cpp/classes/control.hpp>
@@ -32,15 +32,15 @@ using namespace godot;
 #include "scene/gui/scroll_container.h"
 #endif
 
-class GdSsImportControl : public VBoxContainer {
-  GDCLASS(GdSsImportControl, VBoxContainer)
+class SSImportControl : public VBoxContainer {
+  GDCLASS(SSImportControl, VBoxContainer)
 
 protected:
   static void _bind_methods();
 
 public:
-  GdSsImportControl();
-  ~GdSsImportControl();
+  SSImportControl();
+  ~SSImportControl();
 
   void _notification(int p_what);
 
@@ -56,7 +56,7 @@ private:
 
   Vector<void*> import_contexts;
   Vector<String> import_dst_dirs;
-  class GdProgressDialog* import_dialog = nullptr;
+  class SSProgressDialog* import_dialog = nullptr;
   Vector<bool> import_finished_contexts;
   int import_prev_num = 0;
   bool is_importing = false;

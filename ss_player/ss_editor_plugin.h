@@ -10,12 +10,12 @@ using namespace godot;
 #include "editor/editor_node.h"
 #endif
 
-#include "gd_ss_import_dock.h"
+#include "ss_import_dock.h"
 
-class GdSsEditorPlugin : public EditorPlugin {
-    GDCLASS(GdSsEditorPlugin, EditorPlugin)
+class SSEditorPlugin : public EditorPlugin {
+    GDCLASS(SSEditorPlugin, EditorPlugin)
 
-    GdSsImportControl *import_dock = nullptr;
+    SSImportControl *import_dock = nullptr;
 
 protected:
     static void _bind_methods() {}
@@ -23,9 +23,9 @@ protected:
 
 public:
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
-    explicit GdSsEditorPlugin();
+    explicit SSEditorPlugin();
 #else
-    explicit GdSsEditorPlugin(EditorNode *node);
+    explicit SSEditorPlugin(EditorNode *node);
 #endif
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
