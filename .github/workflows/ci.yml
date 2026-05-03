@@ -1,0 +1,41 @@
+name: CI (develop)
+
+on:
+  push:
+    branches: [ develop ]
+  pull_request:
+    branches: [ develop ]
+  workflow_dispatch:
+
+env:
+  GODOT_VERSION_4: "4.5" # not release 4.6 branch yet
+
+jobs:
+  build-linux:
+    name: 🐧 Linux Build Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - name: clone Godot Cpp repository
+        uses: GuillaumeFalourd/clone-github-repo-action@v2.3
+        with:
+          depth: 1
+          branch: ${{ env.GODOT_VERSION_4 }}
+          owner: 'godotengine'
+          repository: 'godot-cpp'
+
+      - name: setup for gdextension
+        uses: ./.github/actions/setup-extension
+        with:
+          platform: linux
+          os: ubuntu-latest
+
+      - name: build Linux (GDExtension)
+        shell: zsh {0}
+        run: |
+          ./scripts/build-extension.sh platform=linux target=editor compiledb=no strip=yes
+          ./scripts/build-extension.sh platform=linux target=template_debug compiledb=no strip=yes
