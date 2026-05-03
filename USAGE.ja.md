@@ -11,7 +11,8 @@
 
 1. [公式サイト](https://godotengine.org/download/) より対応するバージョンの Godot Engine をダウンロードします。
 2. [SSPlayerForGodot の Releases](https://github.com/SpriteStudio/SSPlayerForGodot/releases) から該当プラットフォーム向けの GDExtension 一式をダウンロードします (自前でビルドする場合は [BUILD.ja.md](BUILD.ja.md) を参照)。
-3. ダウンロードした GDExtension 一式を、`.gdextension` ファイル内のパス指定に合わせて Godot プロジェクト配下に展開します (本リポジトリのサンプルでは `bin/` を使用)。
+3. ダウンロードした ZIP を解凍し、中にある `addons` フォルダをそのまま Godot プロジェクトのルートディレクトリにコピー（上書きマージ）します。
+   * 正しく配置されると、`res://addons/spritestudio/spritestudio.gdextension` が存在する状態になります。
 
 ## B. SSPlayerForGodot のカスタムモジュールを組み込んだ Godot Engine を利用する
 

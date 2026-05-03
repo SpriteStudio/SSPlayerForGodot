@@ -72,7 +72,7 @@ $env:PYTHONUTF8=1
 .\scripts\build-extension.ps1
 ```
 
-Output is placed under `bin/<platform>/`, and `misc/ssplayer_godot_extension.gdextension` is copied to `examples/feature_test_gdextension/bin`.
+Output is placed under `bin/<platform>/`, and the GDExtension package (including `misc/spritestudio.gdextension`) is installed into the sample projects (`examples/*/addons/spritestudio/`).
 
 # 2-B. Build the Custom-Module Godot Engine
 

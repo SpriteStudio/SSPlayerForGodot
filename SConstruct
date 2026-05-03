@@ -172,16 +172,25 @@ if platform in ["macos", "ios"]:
 
 # --- Installation & Default Target ---
 project_dir = env["target_path"]
+addons_dir = "addons/spritestudio"
 install_targets = [library]
 
-# Copy library to project
-copy_lib = env.InstallAs("{}/{}".format(project_dir, library_output), library)
+# Copy library to project (following addons/spritestudio structure)
+library_install_path = "{}/{}/{}".format(project_dir, addons_dir, library_output.replace("bin/", "bin/"))
+copy_lib = env.InstallAs(library_install_path, library)
 install_targets.append(copy_lib)
 
 # Copy Plist if applicable
 if plist_target:
-    copy_plist = env.InstallAs("{}/{}".format(project_dir, plist_file), plist_target)
+    plist_install_path = "{}/{}/{}".format(project_dir, addons_dir, plist_file.replace("bin/", "bin/"))
+    copy_plist = env.InstallAs(plist_install_path, plist_target)
     install_targets.append(copy_plist)
+
+# Copy .gdextension file to addons/spritestudio
+gdextension_src = "misc/spritestudio.gdextension"
+gdextension_dest = "{}/{}/spritestudio.gdextension".format(project_dir, addons_dir)
+copy_gdextension = env.InstallAs(gdextension_dest, gdextension_src)
+install_targets.append(copy_gdextension)
 
 if localEnv.get("compiledb", False):
     install_targets.append(compilation_db)

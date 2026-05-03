@@ -124,10 +124,6 @@ fi
 for arch in $ARCHES; do
     echo "scons command build target arch: $arch"
     scons_macro arch=$arch
-    # TODO
-    # if [[ ${opts[strip]} == "yes" ]]; then
-    #     strip ${BINDIR}/libSSGodot.macos.${opts[target]}
-    # fi
     if [[ ${opts[platform]} == "ios" ]] && [[ ${opts[ios_simulator]} == "yes" ]]; then
         pushd ${BINDIR} > /dev/null
         mv libSSGodot.${opts[platform]}.${opts[target]}.framework libSSGodot.${opts[platform]}.${opts[target]}.simulator.framework
@@ -135,9 +131,11 @@ for arch in $ARCHES; do
     fi
 done
 
-/bin/mkdir -p ./examples/feature_test_gdextension/bin
-/bin/cp misc/ssplayer_godot_extension.gdextension ./examples/feature_test_gdextension/bin/
-/bin/mkdir -p ./examples/new_gdextension/bin
-/bin/cp misc/ssplayer_godot_extension.gdextension ./examples/new_gdextension/bin/
+# Copy .gdextension to example projects in the idiomatic addons structure
+for project in "feature_test_gdextension" "new_gdextension"; do
+    DEST_DIR="./examples/${project}/addons/spritestudio"
+    /bin/mkdir -p "${DEST_DIR}"
+    /bin/cp misc/spritestudio.gdextension "${DEST_DIR}/"
+done
 
 popd > /dev/null # ${ROOTDIR}

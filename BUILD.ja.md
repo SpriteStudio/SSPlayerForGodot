@@ -72,7 +72,7 @@ $env:PYTHONUTF8=1
 .\scripts\build-extension.ps1
 ```
 
-成果物は `bin/<platform>/` に配置され、`misc/ssplayer_godot_extension.gdextension` が `examples/feature_test_gdextension/bin` にコピーされます。
+成果物は `bin/<platform>/` に配置され、`misc/spritestudio.gdextension` を含む GDExtension 一式が各サンプルプロジェクト（`examples/*/addons/spritestudio/`）にインストールされます。
 
 # 2-B. カスタムモジュール組み込み Godot Engine のビルド
 
