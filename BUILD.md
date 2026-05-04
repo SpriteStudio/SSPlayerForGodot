@@ -140,14 +140,21 @@ Running the script below builds the Rust runtime/converter and places the artifa
 **macOS / Linux**
 
 ```sh
-./scripts/build-runtime.sh
+./scripts/build-runtime.sh [platform=<platform>] [arch=<arch>] [build=<build>] [ios_simulator=<yes|no>]
 ```
 
 **Windows (PowerShell)**
 
 ```powershell
-.\scripts\build-runtime.ps1
+.\scripts\build-runtime.ps1 [platform=<platform>] [arch=<arch>] [build=<build>] [ios_simulator=<yes|no>]
 ```
+
+| Option | Values | Default |
+| --- | --- | --- |
+| `platform` | `windows`, `macos`, `linux`, `android`, `ios`, `web` | Host OS |
+| `arch` | `x86_64`, `arm64`, `universal`, `wasm32`, etc. | Host Arch |
+| `build` | `debug`, `release` | `debug` |
+| `ios_simulator` | `yes`, `no` | `no` |
 
 ## Regenerating FlatBuffers headers
 

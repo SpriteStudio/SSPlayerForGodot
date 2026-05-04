@@ -10,7 +10,7 @@ macos.debug = "bin/macos/libSSGodot.macos.template_debug.framework"
 macos.release = "bin/macos/libSSGodot.macos.template_release.framework"
 
 ios.debug = "bin/ios/libSSGodot.ios.template_debug.framework"
-ios.release = "bin/ios/libSSGodot.ios.template_debug.framework"
+ios.release = "bin/ios/libSSGodot.ios.template_release.framework"
 
 windows.editor.x86_64 = "bin/windows/libSSGodot.windows.editor.x86_64.dll"
 windows.debug.x86_64 = "bin/windows/libSSGodot.windows.template_debug.x86_64.dll"
@@ -24,9 +24,6 @@ android.release.arm32 = "bin/android/libSSGodot.android.template_release.arm32.s
 
 android.debug.arm64 = "bin/android/libSSGodot.android.template_debug.arm64.so"
 android.release.arm64 = "bin/android/libSSGodot.android.template_release.arm64.so"
-
-web.debug.threads.wasm32 = "bin/web/libSSGodot.web.template_debug.wasm32.wasm"
-web.release.threads.wasm32 = "bin/web/libSSGodot.web.template_release.wasm32.wasm"
 
 web.debug.wasm32 = "bin/web/libSSGodot.web.template_debug.wasm32.nothreads.wasm"
 web.release.wasm32 = "bin/web/libSSGodot.web.template_release.wasm32.nothreads.wasm"

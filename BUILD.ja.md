@@ -140,14 +140,21 @@ FlatBuffers のヘッダを再生成する場合は別途 `flatc` (FlatBuffers �
 **macOS / Linux**
 
 ```sh
-./scripts/build-runtime.sh
+./scripts/build-runtime.sh [platform=<platform>] [arch=<arch>] [build=<build>] [ios_simulator=<yes|no>]
 ```
 
 **Windows (PowerShell)**
 
 ```powershell
-.\scripts\build-runtime.ps1
+.\scripts\build-runtime.ps1 [platform=<platform>] [arch=<arch>] [build=<build>] [ios_simulator=<yes|no>]
 ```
+
+| オプション | 値 | デフォルト |
+| --- | --- | --- |
+| `platform` | `windows`, `macos`, `linux`, `android`, `ios`, `web` | ホストOS |
+| `arch` | `x86_64`, `arm64`, `universal`, `wasm32` など | ホストアーキ |
+| `build` | `debug`, `release` | `debug` |
+| `ios_simulator` | `yes`, `no` | `no` |
 
 ## FlatBuffers ヘッダの再生成
 
