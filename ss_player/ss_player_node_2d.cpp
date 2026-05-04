@@ -487,47 +487,10 @@ void SpriteStudioPlayer2D::loadTextures(const Ref<SSABResource>& ssabRes) {
 
 
 namespace {
-    struct SsVertexComputeParams {
-        Vector2 size;
-        Vector2 pivot;
-        bool flip_h = false;
-        bool flip_v = false;
-        bool has_deform = false;
-        Vector2 deform_lt, deform_rt, deform_lb, deform_rb;
-    };
-
     constexpr int CORNERS_COUNT = 4;
     constexpr int MAX_VERTICES_COUNT = 5;
     constexpr int INDICES_COUNT_PENTAGON = 12;
-
-    bool compute_vertices(const SsVertexComputeParams& params, float* out_x, float* out_y) {
-        float deform_x[4], deform_y[4];
-        const float *p_dx = nullptr, *p_dy = nullptr;
-        if (params.has_deform) {
-            deform_x[0] = params.deform_lt.x; deform_x[1] = params.deform_rt.x;
-            deform_x[2] = params.deform_lb.x; deform_x[3] = params.deform_rb.x;
-            deform_y[0] = -params.deform_lt.y; deform_y[1] = -params.deform_rt.y;
-            deform_y[2] = -params.deform_lb.y; deform_y[3] = -params.deform_rb.y;
-            p_dx = deform_x; p_dy = deform_y;
-        }
-
-        bool success = ss_vertex_compute_local(
-            params.size.x, params.size.y,
-            params.pivot.x, params.pivot.y,
-            0, 0, // pivot_offset
-            params.flip_h, params.flip_v,
-            p_dx, p_dy,
-            out_x, out_y
-        );
-
-        if (success) {
-            // Convert from Y-up (ssruntime) to Y-down (Godot)
-            for (int i = 0; i < MAX_VERTICES_COUNT; i++) {
-                out_y[i] = -out_y[i];
-            }
-        }
-        return success;
-    }
+    constexpr int INDICES_COUNT_QUAD = 6;
 
     struct SsUvComputeParams {
         Rect2 src_rect;
@@ -710,37 +673,56 @@ void SpriteStudioPlayer2D::_draw_part(RenderingServer *rs, RID ci, const ss::run
     } else if (partBinary->part_type_type() != ss::format::PartType_PartTypeMesh) {
         rs->canvas_item_set_transform(ci, Transform2D());
 
-        float out_x[MAX_VERTICES_COUNT], out_y[MAX_VERTICES_COUNT];
-        SsVertexComputeParams params;
-        params.size = src_rect.size;
-        params.pivot = Vector2(pivot->v1(), pivot->v2());
-        params.flip_h = part->flip_h();
-        params.flip_v = part->flip_v();
+        // Use the 5-vertex triangle fan around the center only when needed
+        // (per-vertex deform or per-vertex parts color). Otherwise the cheaper
+        // 4-vertex 2-triangle quad is enough — center vertex is unused / zero
+        // in the FrameData for those parts.
+        const bool needs_center = (flags & (ss::runtime::UpdateAttributeFlags_AttributeVertex | ss::runtime::UpdateAttributeFlags_AttributePartColor)) != 0;
+        const int vert_count = needs_center ? MAX_VERTICES_COUNT : CORNERS_COUNT;
 
-        if (flags & ss::runtime::UpdateAttributeFlags_AttributeVertex) {
-            auto vd = frameData->vertices()->Get(part->vertex());
-            params.has_deform = true;
-            params.deform_lt = Vector2(vd->lt().x(), vd->lt().y());
-            params.deform_rt = Vector2(vd->rt().x(), vd->rt().y());
-            params.deform_lb = Vector2(vd->lb().x(), vd->lb().y());
-            params.deform_rb = Vector2(vd->rb().x(), vd->rb().y());
-        }
-
-        if (!compute_vertices(params, out_x, out_y)) {
-            return;
-        }
-
+        // Triangle fan around center vertex (LT=0, RT=1, LB=2, RB=3, Center=4).
+        // Constant per build, so initialize once via function-local static.
         #ifdef SPRITESTUDIO_GODOT_EXTENSION
-        PackedVector2Array p_verts; p_verts.resize(MAX_VERTICES_COUNT);
-        PackedVector2Array p_uvs; p_uvs.resize(MAX_VERTICES_COUNT);
-        PackedColorArray p_colors; p_colors.resize(MAX_VERTICES_COUNT);
-        PackedInt32Array p_indices; p_indices.resize(INDICES_COUNT_PENTAGON);
+        static const PackedInt32Array INDICES_FAN_5 = []() {
+            PackedInt32Array a; a.resize(INDICES_COUNT_PENTAGON);
+            const int idxs[INDICES_COUNT_PENTAGON] = { 0,1,4, 1,3,4, 3,2,4, 2,0,4 };
+            for (int k = 0; k < INDICES_COUNT_PENTAGON; k++) a.set(k, idxs[k]);
+            return a;
+        }();
+        // 2-triangle quad split (LT-RT-LB and RT-RB-LB).
+        static const PackedInt32Array INDICES_QUAD_4 = []() {
+            PackedInt32Array a; a.resize(INDICES_COUNT_QUAD);
+            const int idxs[INDICES_COUNT_QUAD] = { 0,1,2, 1,3,2 };
+            for (int k = 0; k < INDICES_COUNT_QUAD; k++) a.set(k, idxs[k]);
+            return a;
+        }();
+        PackedVector2Array p_verts; p_verts.resize(vert_count);
+        PackedVector2Array p_uvs; p_uvs.resize(vert_count);
+        PackedColorArray p_colors; p_colors.resize(vert_count);
         #else
-        Vector<Vector2> p_verts; p_verts.resize(MAX_VERTICES_COUNT);
-        Vector<Vector2> p_uvs; p_uvs.resize(MAX_VERTICES_COUNT);
-        Vector<Color> p_colors; p_colors.resize(MAX_VERTICES_COUNT);
-        Vector<int> p_indices; p_indices.resize(INDICES_COUNT_PENTAGON);
+        static const Vector<int> INDICES_FAN_5 = []() {
+            Vector<int> a; a.resize(INDICES_COUNT_PENTAGON);
+            const int idxs[INDICES_COUNT_PENTAGON] = { 0,1,4, 1,3,4, 3,2,4, 2,0,4 };
+            for (int k = 0; k < INDICES_COUNT_PENTAGON; k++) a.set(k, idxs[k]);
+            return a;
+        }();
+        static const Vector<int> INDICES_QUAD_4 = []() {
+            Vector<int> a; a.resize(INDICES_COUNT_QUAD);
+            const int idxs[INDICES_COUNT_QUAD] = { 0,1,2, 1,3,2 };
+            for (int k = 0; k < INDICES_COUNT_QUAD; k++) a.set(k, idxs[k]);
+            return a;
+        }();
+        Vector<Vector2> p_verts; p_verts.resize(vert_count);
+        Vector<Vector2> p_uvs; p_uvs.resize(vert_count);
+        Vector<Color> p_colors; p_colors.resize(vert_count);
         #endif
+
+        // Pre-computed local vertices come directly from the Brain; pivot, size,
+        // image-flip, and raw deform offsets are already applied. Center is only
+        // populated by the Brain when needs_center is true.
+        const ss::runtime::PartAttributeVertex* vd = frameData->vertices()->Get(part->vertex());
+        const float out_x[MAX_VERTICES_COUNT] = { vd->lt().x(), vd->rt().x(), vd->lb().x(), vd->rb().x(), vd->center().x() };
+        const float out_y[MAX_VERTICES_COUNT] = { vd->lt().y(), vd->rt().y(), vd->lb().y(), vd->rb().y(), vd->center().y() };
 
         float out_u[MAX_VERTICES_COUNT], out_v[MAX_VERTICES_COUNT];
         SsUvComputeParams uv_params;
@@ -762,7 +744,8 @@ void SpriteStudioPlayer2D::_draw_part(RenderingServer *rs, RID ci, const ss::run
         Color corner_colors[CORNERS_COUNT] = { Color(1, 1, 1, part->alpha()), Color(1, 1, 1, part->alpha()), Color(1, 1, 1, part->alpha()), Color(1, 1, 1, part->alpha()) };
         if (flags & ss::runtime::UpdateAttributeFlags_AttributePartColor) {
             auto pc = frameData->parts_color()->Get(part->part_color());
-            auto to_color = [&](const ss::runtime::SsAttributePartColorKeyValueColor &c) { return Color(c.rgba().r()/255.0f, c.rgba().g()/255.0f, c.rgba().b()/255.0f, (c.rgba().a()/255.0f)*part->alpha()); };
+            // The hierarchical alpha is already pre-multiplied into c.rgba().a() by the Brain.
+            auto to_color = [](const ss::runtime::SsAttributePartColorKeyValueColor &c) { return Color(c.rgba().r()/255.0f, c.rgba().g()/255.0f, c.rgba().b()/255.0f, c.rgba().a()/255.0f); };
             corner_colors[0] = to_color(pc->lt()); corner_colors[1] = to_color(pc->rt()); corner_colors[2] = to_color(pc->lb()); corner_colors[3] = to_color(pc->rb());
         }
 
@@ -774,13 +757,13 @@ void SpriteStudioPlayer2D::_draw_part(RenderingServer *rs, RID ci, const ss::run
             p_colors.set(j, corner_colors[j]);
         }
 
-        p_verts.set(CORNERS_COUNT, draw_transform.xform(Vector2(out_x[CORNERS_COUNT], out_y[CORNERS_COUNT])));
-        p_uvs.set(CORNERS_COUNT, Vector2(out_u[CORNERS_COUNT] / tex_size.x, out_v[CORNERS_COUNT] / tex_size.y));
-        p_colors.set(CORNERS_COUNT, (corner_colors[0] + corner_colors[1] + corner_colors[2] + corner_colors[3]) * 0.25f);
-        int idxs[] = { 0,1,4, 1,3,4, 3,2,4, 2,0,4 };
-        for(int k=0; k<INDICES_COUNT_PENTAGON; k++) p_indices.set(k, idxs[k]);
+        if (needs_center) {
+            p_verts.set(CORNERS_COUNT, draw_transform.xform(Vector2(out_x[CORNERS_COUNT], out_y[CORNERS_COUNT])));
+            p_uvs.set(CORNERS_COUNT, Vector2(out_u[CORNERS_COUNT] / tex_size.x, out_v[CORNERS_COUNT] / tex_size.y));
+            p_colors.set(CORNERS_COUNT, (corner_colors[0] + corner_colors[1] + corner_colors[2] + corner_colors[3]) * 0.25f);
+        }
 
-        rs->canvas_item_add_triangle_array(ci, p_indices, p_verts, p_colors, p_uvs, {}, {}, tex->get_rid());
+        rs->canvas_item_add_triangle_array(ci, needs_center ? INDICES_FAN_5 : INDICES_QUAD_4, p_verts, p_colors, p_uvs, {}, {}, tex->get_rid());
     }
 }
 
