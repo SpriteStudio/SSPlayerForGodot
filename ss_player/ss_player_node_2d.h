@@ -23,6 +23,7 @@ struct PartState;
 namespace format {
 struct PartData;
 struct Cell;
+struct SsAnimeBinary;
 }
 }
 
@@ -94,7 +95,8 @@ private:
     void updateAnimation(float delta);
     void fetchAnimation();
     void drawAnimation(float frame_no);
-    void _draw_part(RenderingServer *rs, RID ci, const ss::runtime::FrameData *frameData, const ss::runtime::PartState *part, const ss::format::PartData *partBinary, const Ref<Texture2D> &tex, const ss::format::Cell *cell, const float *draw_m);
+    void _draw_part(RenderingServer *rs, RID ci, const ss::runtime::FrameData *frameData, const ss::runtime::PartState *part, const ss::format::PartData *partBinary, const ss::format::SsAnimeBinary *binary, const float *draw_m, const float *part_uvs);
+    void _draw_part_normal(RenderingServer *rs, RID ci, const ss::runtime::FrameData *frameData, const ss::runtime::PartState *part, const ss::format::PartData *partBinary, const ss::format::SsAnimeBinary *binary, const float *draw_m, const float *part_uvs);
 
     void _reconfigure();
     void _clear_canvas_items();

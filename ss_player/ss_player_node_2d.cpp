@@ -492,34 +492,6 @@ namespace {
     constexpr int INDICES_COUNT_PENTAGON = 12;
     constexpr int INDICES_COUNT_QUAD = 6;
 
-    struct SsUvComputeParams {
-        Rect2 src_rect;
-        Vector2 uv_translation;
-        float uv_rotation_z = 0.0f;
-        Vector2 uv_scale;
-        bool part_flip_h = false;
-        bool part_flip_v = false;
-        bool img_flip_h = false;
-        bool img_flip_v = false;
-        bool rotated = false;
-    };
-
-    bool compute_uvs(const SsUvComputeParams& params, float* out_u, float* out_v) {
-        return ss_uv_compute_local(
-            params.src_rect.position.x, params.src_rect.position.y,
-            params.src_rect.position.x + params.src_rect.size.x,
-            params.src_rect.position.y + params.src_rect.size.y,
-            params.uv_translation.x * params.src_rect.size.x,
-            params.uv_translation.y * params.src_rect.size.y,
-            Math::rad_to_deg(params.uv_rotation_z),
-            params.uv_scale.x, params.uv_scale.y,
-            params.part_flip_h, params.part_flip_v,
-            params.img_flip_h, params.img_flip_v,
-            params.rotated,
-            out_u, out_v
-        );
-    }
-
     Transform2D matrix_to_transform2d(const float* m) {
         Transform2D t;
         t.columns[0] = Vector2(m[0], m[1]);
@@ -587,6 +559,10 @@ void SpriteStudioPlayer2D::drawAnimation(float frame_no) {
     uintptr_t z_order_len = 0;
     ss_runtime_get_z_order(runtime_ctx, &z_order, &z_order_len);
 
+    const float *local_uvs = nullptr;
+    uintptr_t local_uvs_len = 0;
+    ss_runtime_get_local_uvs(runtime_ctx, &local_uvs, &local_uvs_len);
+
     auto frameData = ss::runtime::GetFrameData(data);
     auto parts = frameData->parts();
     if (!parts) return;
@@ -621,23 +597,69 @@ void SpriteStudioPlayer2D::drawAnimation(float frame_no) {
 
         auto partBinary = binary->parts()->Get(p_idx);
 
-        auto frameDataCellIndex = part->cell();
-        auto frameDataCell = frameData->cells()->Get(frameDataCellIndex);
-        auto cellmap = binary->cellmaps()->Get(frameDataCell->map_id());
+        const float *part_uvs = nullptr;
+        if (local_uvs && (uintptr_t)p_idx * 10 + 10 <= local_uvs_len) {
+            part_uvs = local_uvs + (p_idx * 10);
+        }
 
-        uint32_t texHash = cellmap->name_hash();
-        if (!_textures.has(texHash)) continue;
-        Ref<Texture2D> tex = _textures[texHash];
-
-        auto cell = cellmap->cells()->LookupByKey(frameDataCell->name_hash());
-        if (!cell) continue;
-
-        _draw_part(rs, ci, frameData, part, partBinary, tex, cell, drawing_m);
+        _draw_part(rs, ci, frameData, part, partBinary, binary, drawing_m, part_uvs);
     }
 }
 
-void SpriteStudioPlayer2D::_draw_part(RenderingServer *rs, RID ci, const ss::runtime::FrameData *frameData, const ss::runtime::PartState *part, const ss::format::PartData *partBinary, const Ref<Texture2D> &tex, const ss::format::Cell *cell, const float *draw_m) {
-    // 1. Blend Mode
+void SpriteStudioPlayer2D::_draw_part(RenderingServer *rs, RID ci, const ss::runtime::FrameData *frameData, const ss::runtime::PartState *part, const ss::format::PartData *partBinary, const ss::format::SsAnimeBinary *binary, const float *draw_m, const float *part_uvs) {
+    switch (partBinary->part_type_type()) {
+        case ss::format::PartType_PartTypeNormal:
+            _draw_part_normal(rs, ci, frameData, part, partBinary, binary, draw_m, part_uvs);
+            return;
+
+        // No drawing role — matrix-only / skinning graph / host systems.
+        case ss::format::PartType_PartTypeNull:
+        case ss::format::PartType_PartTypeArmature:
+        case ss::format::PartType_PartTypeJoint:
+        case ss::format::PartType_PartTypeMovenode:
+        case ss::format::PartType_PartTypeConstraint:
+        case ss::format::PartType_PartTypeBonepoint:
+        case ss::format::PartType_PartTypeTransformConstraint:
+        case ss::format::PartType_PartTypeCamera:
+        case ss::format::PartType_PartTypeAudio:
+            return;
+
+        // TODO: not yet implemented in this player. Add a dedicated
+        // _draw_part_<type>() and dispatch here when each is built out.
+        case ss::format::PartType_PartTypeShape:
+        case ss::format::PartType_PartTypeText:
+        case ss::format::PartType_PartTypeNines:
+        case ss::format::PartType_PartTypeMesh:
+        case ss::format::PartType_PartTypeMask:
+            return;
+
+        // TODO: requires per-frame child Player synchronization
+        // (ss_util_calculate_instance_frame / ss_effect_update). The runtime
+        // exposes the APIs but this player does not yet wire them up.
+        case ss::format::PartType_PartTypeInstance:
+        case ss::format::PartType_PartTypeEffect:
+            return;
+
+        default:
+            return;
+    }
+}
+
+void SpriteStudioPlayer2D::_draw_part_normal(RenderingServer *rs, RID ci, const ss::runtime::FrameData *frameData, const ss::runtime::PartState *part, const ss::format::PartData *partBinary, const ss::format::SsAnimeBinary *binary, const float *draw_m, const float *part_uvs) {
+    // 1. Cell / texture lookup.
+    const auto frameDataCellIndex = part->cell();
+    if (frameDataCellIndex < 0) return;
+    auto frameDataCell = frameData->cells()->Get(frameDataCellIndex);
+    if (!frameDataCell) return;
+    auto cellmap = binary->cellmaps()->Get(frameDataCell->map_id());
+    if (!cellmap) return;
+    uint32_t texHash = cellmap->name_hash();
+    if (!_textures.has(texHash)) return;
+    Ref<Texture2D> tex = _textures[texHash];
+    auto cell = cellmap->cells()->LookupByKey(frameDataCell->name_hash());
+    if (!cell) return;
+
+    // 2. Blend Mode
     ss::format::BlendType ss_blend = partBinary->blend_type();
     if (!_blend_materials.has((int)ss_blend)) {
         Ref<CanvasItemMaterial> mat; mat.instantiate();
@@ -652,7 +674,7 @@ void SpriteStudioPlayer2D::_draw_part(RenderingServer *rs, RID ci, const ss::run
     }
     rs->canvas_item_set_material(ci, _blend_materials[(int)ss_blend]->get_rid());
 
-    // 2. Matrix Calculation (Hierarchy aware)
+    // 3. Vertex / UV / color preparation.
     uint64_t flags = part->update_flag();
     auto rect = cell->rectangle();
     auto pivot = cell->pivot();
@@ -661,27 +683,25 @@ void SpriteStudioPlayer2D::_draw_part(RenderingServer *rs, RID ci, const ss::run
     bool use_advanced = (flags & (ss::runtime::UpdateAttributeFlags_AttributeVertex | ss::runtime::UpdateAttributeFlags_AttributePartColor |
                                   ss::runtime::UpdateAttributeFlags_AttributeUvtX | ss::runtime::UpdateAttributeFlags_AttributeUvtY |
                                   ss::runtime::UpdateAttributeFlags_AttributeUvrZ | ss::runtime::UpdateAttributeFlags_AttributeUvsX |
-                                  ss::runtime::UpdateAttributeFlags_AttributeUvsY));
+                                  ss::runtime::UpdateAttributeFlags_AttributeUvsY |
+                                  ss::runtime::UpdateAttributeFlags_AttributeFlipH | ss::runtime::UpdateAttributeFlags_AttributeFlipV |
+                                  ss::runtime::UpdateAttributeFlags_AttributeImgFlipH | ss::runtime::UpdateAttributeFlags_AttributeImgFlipV |
+                                  ss::runtime::UpdateAttributeFlags_AttributeSizeX | ss::runtime::UpdateAttributeFlags_AttributeSizeY |
+                                  ss::runtime::UpdateAttributeFlags_AttributePivotX | ss::runtime::UpdateAttributeFlags_AttributePivotY));
 
-    if (!use_advanced && partBinary->part_type_type() != ss::format::PartType_PartTypeMesh) {
+    if (!use_advanced) {
         Transform2D t = matrix_to_transform2d(draw_m);
         rs->canvas_item_set_transform(ci, t);
 
         Vector2 draw_pos = Vector2(-src_rect.size.x * (pivot->v1() + 0.5f),
                                    -src_rect.size.y * (0.5f - pivot->v2()));
         rs->canvas_item_add_texture_rect_region(ci, Rect2(draw_pos, src_rect.size), tex->get_rid(), src_rect, Color(1, 1, 1, part->alpha()));
-    } else if (partBinary->part_type_type() != ss::format::PartType_PartTypeMesh) {
+    } else {
         rs->canvas_item_set_transform(ci, Transform2D());
 
-        // Use the 5-vertex triangle fan around the center only when needed
-        // (per-vertex deform or per-vertex parts color). Otherwise the cheaper
-        // 4-vertex 2-triangle quad is enough — center vertex is unused / zero
-        // in the FrameData for those parts.
         const bool needs_center = (flags & (ss::runtime::UpdateAttributeFlags_AttributeVertex | ss::runtime::UpdateAttributeFlags_AttributePartColor)) != 0;
         const int vert_count = needs_center ? MAX_VERTICES_COUNT : CORNERS_COUNT;
 
-        // Triangle fan around center vertex (LT=0, RT=1, LB=2, RB=3, Center=4).
-        // Constant per build, so initialize once via function-local static.
         #ifdef SPRITESTUDIO_GODOT_EXTENSION
         static const PackedInt32Array INDICES_FAN_5 = []() {
             PackedInt32Array a; a.resize(INDICES_COUNT_PENTAGON);
@@ -689,7 +709,7 @@ void SpriteStudioPlayer2D::_draw_part(RenderingServer *rs, RID ci, const ss::run
             for (int k = 0; k < INDICES_COUNT_PENTAGON; k++) a.set(k, idxs[k]);
             return a;
         }();
-        // 2-triangle quad split (LT-RT-LB and RT-RB-LB).
+
         static const PackedInt32Array INDICES_QUAD_4 = []() {
             PackedInt32Array a; a.resize(INDICES_COUNT_QUAD);
             const int idxs[INDICES_COUNT_QUAD] = { 0,1,2, 1,3,2 };
@@ -717,33 +737,21 @@ void SpriteStudioPlayer2D::_draw_part(RenderingServer *rs, RID ci, const ss::run
         Vector<Color> p_colors; p_colors.resize(vert_count);
         #endif
 
-        // Pre-computed local vertices come directly from the Brain; pivot, size,
-        // image-flip, and raw deform offsets are already applied. Center is only
-        // populated by the Brain when needs_center is true.
-        const ss::runtime::PartAttributeVertex* vd = frameData->vertices()->Get(part->vertex());
+        const auto vertexIndex = part->vertex();
+        if (vertexIndex < 0) return;
+        const ss::runtime::PartAttributeVertex* vd = frameData->vertices()->Get(vertexIndex);
         const float out_x[MAX_VERTICES_COUNT] = { vd->lt().x(), vd->rt().x(), vd->lb().x(), vd->rb().x(), vd->center().x() };
         const float out_y[MAX_VERTICES_COUNT] = { vd->lt().y(), vd->rt().y(), vd->lb().y(), vd->rb().y(), vd->center().y() };
 
-        float out_u[MAX_VERTICES_COUNT], out_v[MAX_VERTICES_COUNT];
-        SsUvComputeParams uv_params;
-        uv_params.src_rect = src_rect;
-        uv_params.uv_translation = Vector2(part->uv_translation_x(), part->uv_translation_y());
-        uv_params.uv_rotation_z = part->uv_rotation_z();
-        uv_params.uv_scale = Vector2(part->uv_scale_x(), part->uv_scale_y());
-        uv_params.part_flip_h = part->flip_h();
-        uv_params.part_flip_v = part->flip_v();
-        uv_params.img_flip_h = part->img_flip_h();
-        uv_params.img_flip_v = part->img_flip_v();
-        uv_params.rotated = cell->rotated();
-
-        if (!compute_uvs(uv_params, out_u, out_v)) {
-            return;
-        }
+        if (!part_uvs) return;
+        const float out_u[MAX_VERTICES_COUNT] = { part_uvs[0], part_uvs[2], part_uvs[4], part_uvs[6], part_uvs[8] };
+        const float out_v[MAX_VERTICES_COUNT] = { part_uvs[1], part_uvs[3], part_uvs[5], part_uvs[7], part_uvs[9] };
 
         Vector2 tex_size = tex->get_size();
         Color corner_colors[CORNERS_COUNT] = { Color(1, 1, 1, part->alpha()), Color(1, 1, 1, part->alpha()), Color(1, 1, 1, part->alpha()), Color(1, 1, 1, part->alpha()) };
-        if (flags & ss::runtime::UpdateAttributeFlags_AttributePartColor) {
-            auto pc = frameData->parts_color()->Get(part->part_color());
+        const auto partColorIndex = part->part_color();
+        if ((flags & ss::runtime::UpdateAttributeFlags_AttributePartColor) && partColorIndex >= 0) {
+            auto pc = frameData->parts_color()->Get(partColorIndex);
             // The hierarchical alpha is already pre-multiplied into c.rgba().a() by the Brain.
             auto to_color = [](const ss::runtime::SsAttributePartColorKeyValueColor &c) { return Color(c.rgba().r()/255.0f, c.rgba().g()/255.0f, c.rgba().b()/255.0f, c.rgba().a()/255.0f); };
             corner_colors[0] = to_color(pc->lt()); corner_colors[1] = to_color(pc->rt()); corner_colors[2] = to_color(pc->lb()); corner_colors[3] = to_color(pc->rb());
