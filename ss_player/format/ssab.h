@@ -4030,7 +4030,8 @@ struct PartAttributeInstance FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Ta
     VT_START_OFFSET = 12,
     VT_END_LABEL_HASH = 14,
     VT_END_OFFSET = 16,
-    VT_SPEED = 18
+    VT_SPEED = 18,
+    VT_REVERSE = 20
   };
   bool pingpong() const {
     return GetField<uint8_t>(VT_PINGPONG, 0) != 0;
@@ -4056,6 +4057,9 @@ struct PartAttributeInstance FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Ta
   float speed() const {
     return GetField<float>(VT_SPEED, 0.0f);
   }
+  bool reverse() const {
+    return GetField<uint8_t>(VT_REVERSE, 0) != 0;
+  }
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
@@ -4067,6 +4071,7 @@ struct PartAttributeInstance FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Ta
            VerifyField<uint32_t>(verifier, VT_END_LABEL_HASH, 4) &&
            VerifyField<int32_t>(verifier, VT_END_OFFSET, 4) &&
            VerifyField<float>(verifier, VT_SPEED, 4) &&
+           VerifyField<uint8_t>(verifier, VT_REVERSE, 1) &&
            verifier.EndTable();
   }
 };
@@ -4099,6 +4104,9 @@ struct PartAttributeInstanceBuilder {
   void add_speed(float speed) {
     fbb_.AddElement<float>(PartAttributeInstance::VT_SPEED, speed, 0.0f);
   }
+  void add_reverse(bool reverse) {
+    fbb_.AddElement<uint8_t>(PartAttributeInstance::VT_REVERSE, static_cast<uint8_t>(reverse), 0);
+  }
   explicit PartAttributeInstanceBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
@@ -4119,7 +4127,8 @@ inline ::flatbuffers::Offset<PartAttributeInstance> CreatePartAttributeInstance(
     int32_t start_offset = 0,
     uint32_t end_label_hash = 0,
     int32_t end_offset = 0,
-    float speed = 0.0f) {
+    float speed = 0.0f,
+    bool reverse = false) {
   PartAttributeInstanceBuilder builder_(_fbb);
   builder_.add_speed(speed);
   builder_.add_end_offset(end_offset);
@@ -4127,6 +4136,7 @@ inline ::flatbuffers::Offset<PartAttributeInstance> CreatePartAttributeInstance(
   builder_.add_start_offset(start_offset);
   builder_.add_start_label_hash(start_label_hash);
   builder_.add_loop_num(loop_num);
+  builder_.add_reverse(reverse);
   builder_.add_independent(independent);
   builder_.add_pingpong(pingpong);
   return builder_.Finish();

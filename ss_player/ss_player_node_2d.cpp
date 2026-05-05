@@ -63,6 +63,13 @@ void SpriteStudioPlayer2D::setSSABResource( const Ref<SSABResource>& ssabRes ) {
         }
     }
 
+    // Resolve external instance dependencies so _setup_instance_players
+    // (called from fetchAnimation below) can find ref animations that live
+    // in sibling .ssab files.
+    if (!_instance_child_mode) {
+        _load_external_ssabs();
+    }
+
 	fetchAnimation();
 	NOTIFY_PROPERTY_LIST_CHANGED();
 }
@@ -120,6 +127,16 @@ float SpriteStudioPlayer2D::getSpeed() const {
 void SpriteStudioPlayer2D::setFrame( float p_frame ) {
     if (runtime_ctx) {
         ss_runtime_set_frame_no(runtime_ctx, p_frame);
+        float frame_no = ss_runtime_get_frame_no(runtime_ctx);
+        float draw_frame = _sub_frame_enabled ? frame_no : (float)((int)frame_no);
+        previous_frame_no = draw_frame;
+        drawAnimation(draw_frame);
+    }
+}
+
+void SpriteStudioPlayer2D::setFrameRelative( float p_diff ) {
+    if (runtime_ctx) {
+        ss_runtime_set_frame_relative(runtime_ctx, p_diff);
         float frame_no = ss_runtime_get_frame_no(runtime_ctx);
         float draw_frame = _sub_frame_enabled ? frame_no : (float)((int)frame_no);
         previous_frame_no = draw_frame;
@@ -213,6 +230,7 @@ void SpriteStudioPlayer2D::_bind_methods() {
     ClassDB::bind_method( D_METHOD( "set_speed", "speed" ), &SpriteStudioPlayer2D::setSpeed );
     ClassDB::bind_method( D_METHOD( "get_speed" ), &SpriteStudioPlayer2D::getSpeed );
     ClassDB::bind_method( D_METHOD( "set_frame", "frame" ), &SpriteStudioPlayer2D::setFrame );
+    ClassDB::bind_method( D_METHOD( "set_frame_relative", "diff" ), &SpriteStudioPlayer2D::setFrameRelative );
     ClassDB::bind_method( D_METHOD( "get_frame" ), &SpriteStudioPlayer2D::getFrame );
 
     ClassDB::bind_method( D_METHOD( "get_total_frames" ), &SpriteStudioPlayer2D::getTotalFrames );
@@ -442,7 +460,10 @@ void SpriteStudioPlayer2D::_get_property_list( List<PropertyInfo>* p_list ) cons
 void SpriteStudioPlayer2D::_notification( int p_notification ) {
     switch ( p_notification ) {
  	case NOTIFICATION_READY:
-        set_process_internal( true );
+        // Instance child Players are driven by the parent Player via
+        // setFrameRelative every frame, so skip the per-process auto-update
+        // they would otherwise do — running both would race the controller.
+        set_process_internal( !_instance_child_mode );
 
         break;
     case NOTIFICATION_INTERNAL_PROCESS:
@@ -452,6 +473,13 @@ void SpriteStudioPlayer2D::_notification( int p_notification ) {
     default:
         break;
 	}
+}
+
+void SpriteStudioPlayer2D::setInstanceChildMode( bool p_enabled ) {
+    _instance_child_mode = p_enabled;
+    if (is_inside_tree()) {
+        set_process_internal( !_instance_child_mode );
+    }
 }
 
 void SpriteStudioPlayer2D::loadTextures(const Ref<SSABResource>& ssabRes) {
@@ -555,6 +583,7 @@ void SpriteStudioPlayer2D::drawAnimation(float frame_no) {
     f.rs = RenderingServer::get_singleton();
     f.frameData = ss::runtime::GetFrameData(data);
     f.binary = _ssabRes->get_ss_anime_binary();
+    f.frame_no = frame_no;
     ss_runtime_get_world_matrices(runtime_ctx, &f.world_matrices, &f.world_matrices_len);
     ss_runtime_get_local_uvs(runtime_ctx, &f.local_uvs, &f.local_uvs_len);
     ss_runtime_get_cell_meta(runtime_ctx, &f.cell_meta, &f.cell_meta_len);
@@ -631,16 +660,325 @@ void SpriteStudioPlayer2D::_draw_part(const DrawFrame &f, RID ci, int p_idx, con
         case ss::format::PartType_PartTypeMask:
             return;
 
-        // TODO: requires per-frame child Player synchronization
-        // (ss_util_calculate_instance_frame / ss_effect_update). The runtime
-        // exposes the APIs but this player does not yet wire them up.
         case ss::format::PartType_PartTypeInstance:
+            _draw_part_instance(f, ci, p_idx, part, partBinary, draw_m);
+            return;
+
+        // TODO: effect part wiring shares the deterministic resolve_frame
+        // pattern but needs an effect-specific child Context. Not yet
+        // implemented in this Player.
         case ss::format::PartType_PartTypeEffect:
             return;
 
         default:
             return;
     }
+}
+
+// fnv1a 32-bit byte-wise hash matching libssconverter's
+// `crate::utils::fnv1a_hash_str`, which is what the converter uses to
+// compute `ref_anime_hash` from the animation name.
+static uint32_t fnv1a_hash_str_c(const String& s) {
+    CharString cs = s.utf8();
+    uint32_t hash = 2166136261u;
+    const uint32_t prime = 16777619u;
+    for (int i = 0; i < cs.length(); i++) {
+        hash ^= (uint8_t)cs[i];
+        hash *= prime;
+    }
+    return hash;
+}
+
+// Searches `res` for an animation whose `name_hash` matches. Returns the
+// utf8 name (empty when not found).
+static String find_anim_name_in(const Ref<SSABResource>& res, uint32_t name_hash) {
+    if (res.is_null()) return String();
+    auto binary = res->get_ss_anime_binary();
+    if (!binary || !binary->animations()) return String();
+    auto anims = binary->animations();
+    for (uint32_t i = 0; i < anims->size(); i++) {
+        auto a = anims->Get(i);
+        if (a && a->name_hash() == name_hash) {
+            return a->name() ? String::utf8(a->name()->c_str()) : String();
+        }
+    }
+    return String();
+}
+
+String SpriteStudioPlayer2D::_resolve_animation_by_hash(uint32_t name_hash, Ref<SSABResource>& out_source) const {
+    out_source = Ref<SSABResource>();
+
+    // SS7's PartTypeInstance only carries `ref_anime_hash` (= fnv1a of the
+    // anime name), not the owning pack name. When the parent and an
+    // external SSAB both happen to define an animation with the same name
+    // (and therefore the same hash), we have to disambiguate using the
+    // parent's `external_instances` list, which encodes the intended
+    // `<pack>/<anime>` pair the part is referring to. Prefer a match there
+    // over a self-match — the converter only writes an entry when the part
+    // explicitly points outside the pack.
+    if (!_ssabRes.is_null()) {
+        auto binary = _ssabRes->get_ss_anime_binary();
+        if (binary && binary->external_instances()) {
+            auto exts = binary->external_instances();
+            for (uint32_t i = 0; i < exts->size(); i++) {
+                auto entry = exts->Get(i);
+                if (!entry) continue;
+                String s = String::utf8(entry->c_str());
+                int slash = s.find("/");
+                if (slash < 0) continue;
+                String pack = s.substr(0, slash);
+                String anime = s.substr(slash + 1, -1);
+                if (fnv1a_hash_str_c(anime) != name_hash) continue;
+
+                for (int j = 0; j < _external_ssabs.size(); j++) {
+                    const Ref<SSABResource>& ext = _external_ssabs[j];
+                    if (ext.is_null()) continue;
+                    auto eb = ext->get_ss_anime_binary();
+                    if (!eb || !eb->name()) continue;
+                    if (String::utf8(eb->name()->c_str()) != pack) continue;
+                    String found = find_anim_name_in(ext, name_hash);
+                    if (!found.is_empty()) {
+                        out_source = ext;
+                        return found;
+                    }
+                }
+            }
+        }
+    }
+
+    // Fallback: search self, then external SSABs in order. Hits when the
+    // part references a same-pack animation (no external_instances entry)
+    // or when the external lookup above could not find a matching pack.
+    String found = find_anim_name_in(_ssabRes, name_hash);
+    if (!found.is_empty()) {
+        out_source = _ssabRes;
+        return found;
+    }
+    for (int i = 0; i < _external_ssabs.size(); i++) {
+        const Ref<SSABResource>& ext = _external_ssabs[i];
+        found = find_anim_name_in(ext, name_hash);
+        if (!found.is_empty()) {
+            out_source = ext;
+            return found;
+        }
+    }
+    return String();
+}
+
+void SpriteStudioPlayer2D::_load_external_ssabs() {
+    _external_ssabs.clear();
+    if (_ssabRes.is_null()) return;
+    auto binary = _ssabRes->get_ss_anime_binary();
+    if (!binary) return;
+    if (!binary->external_instances() || binary->external_instances()->size() == 0) return;
+
+    // libssconverter writes one .ssab per ssae alongside the project's other
+    // outputs. external_instances entries are "<pack>/<anime>" — we only
+    // need the unique pack names to know which sibling .ssab files to load.
+    HashMap<String, bool> seen;
+    auto exts = binary->external_instances();
+    String parent_dir = _ssabRes->get_parent_dir();
+    for (uint32_t i = 0; i < exts->size(); i++) {
+        auto entry = exts->Get(i);
+        if (!entry) continue;
+        String s = String::utf8(entry->c_str());
+        int slash = s.find("/");
+        String pack = (slash >= 0) ? s.substr(0, slash) : s;
+        if (pack.is_empty() || seen.has(pack)) continue;
+        seen[pack] = true;
+
+        String path = parent_dir.path_join(pack + ".ssab");
+        Ref<Resource> res =
+        #ifdef SPRITESTUDIO_GODOT_EXTENSION
+            ResourceLoader::get_singleton()->load(path, "", ResourceLoader::CACHE_MODE_REUSE);
+        #else
+            ResourceLoader::load(path, "", ResourceFormatLoader::CACHE_MODE_REUSE, nullptr);
+        #endif
+        Ref<SSABResource> ssab = res;
+        if (ssab.is_null()) {
+            ERR_PRINT(vformat("[SS] external SSAB load failed: %s", path));
+            continue;
+        }
+        if (!ssab->is_valid()) {
+            ERR_PRINT(vformat("[SS] external SSAB invalid: %s", path));
+            continue;
+        }
+        _external_ssabs.push_back(ssab);
+    }
+}
+
+void SpriteStudioPlayer2D::_clear_instance_players() {
+    for (int i = 0; i < _instance_players.size(); i++) {
+        SpriteStudioPlayer2D *child = _instance_players[i];
+        if (child) {
+            // remove_child detaches without freeing; queue_free defers actual
+            // delete to a safe point, which avoids destruction during the
+            // current process tick.
+            remove_child(child);
+            child->queue_free();
+        }
+    }
+    _instance_players.clear();
+}
+
+void SpriteStudioPlayer2D::_setup_instance_players() {
+    _clear_instance_players();
+    if (_ssabRes.is_null()) return;
+    auto binary = _ssabRes->get_ss_anime_binary();
+    if (!binary || !binary->parts()) return;
+
+    auto parts = binary->parts();
+    _instance_players.resize(parts->size());
+    for (int i = 0; i < (int)parts->size(); i++) {
+        _instance_players.set(i, nullptr);
+    }
+    for (int i = 0; i < (int)parts->size(); i++) {
+        auto p = parts->Get(i);
+        if (!p) continue;
+        if (p->part_type_type() != ss::format::PartType_PartTypeInstance) continue;
+        auto pt = p->part_type_as_PartTypeInstance();
+        if (!pt) continue;
+
+        Ref<SSABResource> source;
+        uint32_t ref_hash = pt->ref_anime_hash();
+        String anim_name = _resolve_animation_by_hash(ref_hash, source);
+        if (anim_name.is_empty() || source.is_null()) {
+            ERR_PRINT(vformat("[SS] instance part %d: ref_anime_hash=0x%x not found in current or external SSABs", i, ref_hash));
+            continue;
+        }
+
+        SpriteStudioPlayer2D *child = memnew(SpriteStudioPlayer2D);
+        child->setInstanceChildMode(true);
+        add_child(child);
+        // Hand the child the SSAB that actually contains the referenced
+        // animation — this may be the parent's own resource OR an external
+        // one auto-loaded from the parent's directory.
+        child->setSSABResource(source);
+        child->setAnimation(anim_name);
+        // Pause the controller so its play-state doesn't interfere with the
+        // parent-driven setFrameRelative path; we still call drawAnimation
+        // explicitly each frame.
+        child->stop();
+        _instance_players.set(i, child);
+    }
+}
+
+void SpriteStudioPlayer2D::_draw_part_instance(const DrawFrame &f, RID ci, int p_idx, const ss::runtime::PartState *part, const ss::format::PartData *partBinary, const float *draw_m) {
+    if (p_idx < 0 || p_idx >= _instance_players.size()) return;
+    SpriteStudioPlayer2D *child = _instance_players[p_idx];
+    if (!child) return;
+
+    // Find the active EventInstance for this part:
+    //   1. Walk EventsPerFrame backward for the latest entry with
+    //      frame_index <= parent_frame whose `instances` array contains an
+    //      EventInstance matching this part_index.
+    //   2. If none found, fall back to AnimationData.initial_events[p_idx]
+    //      — SS7 stores per-part frame-0 setup (instance, effect, audio,
+    //      user, signal) in this array indexed by array position == part_index.
+    //   3. If still no attr, the instance has not been triggered on the
+    //      parent's timeline; skip rendering.
+    if (!_currentAnimationData) {
+        child->set_visible(false);
+        return;
+    }
+    int parent_frame_int = (int)f.frame_no;
+
+    const ss::format::PartAttributeInstance *active_attr = nullptr;
+    int active_event_frame = 0;
+    if (auto events = _currentAnimationData->events()) {
+        for (int i = (int)events->size() - 1; i >= 0; i--) {
+            auto epf = events->Get(i);
+            if (!epf) continue;
+            int frame_index = epf->frame_index();
+            if (frame_index > parent_frame_int) continue;
+            if (!epf->instances()) continue;
+            for (uint32_t j = 0; j < epf->instances()->size(); j++) {
+                auto ev = epf->instances()->Get(j);
+                if (!ev || ev->part_index() != (uint16_t)p_idx) continue;
+                active_attr = ev->value();
+                active_event_frame = frame_index;
+                break;
+            }
+            if (active_attr) break;
+        }
+    }
+    if (!active_attr) {
+        if (auto inits = _currentAnimationData->initial_events()) {
+            if ((uint32_t)p_idx < inits->size()) {
+                auto entry = inits->Get(p_idx);
+                if (entry && entry->instance()) {
+                    active_attr = entry->instance();
+                    active_event_frame = 0;
+                }
+            }
+        }
+    }
+
+    // Default playback config used when no EventInstance / InitialEvent entry
+    // exists. Matches the default-constructed `SsInstanceAttr` in SS6
+    // (sstypes.h:1294): loopNum=1, infinity=false, full "_start".."_end"
+    // range, speed=1, curKeyframe=0. This makes the instance play through
+    // once and clamp at end_frame (animedecode.cpp:1670 clamps `reftime` to
+    // `inst_scale - 1` once `nowloop >= loopNum`), rather than looping.
+    int child_total = child->getTotalFrames();
+    int default_end = child_total > 0 ? child_total - 1 : 0;
+
+    int start_frame = 0;
+    int end_frame = default_end;
+    int loops = 1;
+    bool pingpong = false;
+    bool reverse = false;
+    float speed = 1.0f;
+
+    if (active_attr) {
+        // Resolve the play range. Label hash 0 (or unresolved) falls back
+        // to the referenced animation's own start/end. start_offset /
+        // end_offset apply to the resolved label time.
+        auto resolve_label = [&](uint32_t label_hash, int fallback) -> int {
+            if (label_hash == 0) return fallback;
+            auto child_res = child->getSSABResource();
+            if (child_res.is_null()) return fallback;
+            auto child_anim_name = child->getAnimation();
+            auto child_binary = child_res->get_ss_anime_binary();
+            if (!child_binary || !child_binary->animations()) return fallback;
+            for (uint32_t i = 0; i < child_binary->animations()->size(); i++) {
+                auto a = child_binary->animations()->Get(i);
+                if (!a || !a->name()) continue;
+                if (String::utf8(a->name()->c_str()) != child_anim_name) continue;
+                if (!a->labels()) return fallback;
+                for (uint32_t k = 0; k < a->labels()->size(); k++) {
+                    auto lab = a->labels()->Get(k);
+                    if (lab && lab->name_hash() == label_hash) return lab->time();
+                }
+                return fallback;
+            }
+            return fallback;
+        };
+
+        start_frame = resolve_label(active_attr->start_label_hash(), 0) + active_attr->start_offset();
+        end_frame = resolve_label(active_attr->end_label_hash(), default_end) + active_attr->end_offset();
+        if (end_frame < start_frame) end_frame = start_frame;
+
+        loops = active_attr->loop_num();
+        pingpong = active_attr->pingpong();
+        reverse = active_attr->reverse();
+        speed = active_attr->speed();
+    }
+
+    child->setAnimationSection(start_frame, end_frame);
+    child->setLoop(loops);
+    // The runtime FFI's convention is `direction == 0 => Forward,
+    // anything-non-zero => Backward`, *not* the values of the Rust
+    // `PlaybackDirection` enum (Forward=1, Backward=-1). Pass 0/1 here so
+    // forward-playing instances don't get silently flipped.
+    // PlaybackStyle: 0 = Normal, 1 = PingPong.
+    child->setPlaybackDirection(reverse ? 1 : 0, pingpong ? 1 : 0);
+
+    float diff = (f.frame_no - (float)active_event_frame) * speed;
+    Transform2D xf = matrix_to_transform2d(draw_m);
+    child->set_transform(xf);
+    child->set_visible(true);
+    child->setFrameRelative(diff);
 }
 
 void SpriteStudioPlayer2D::_draw_part_normal(const DrawFrame &f, RID ci, int p_idx, const ss::runtime::PartState *part, const ss::format::PartData *partBinary, const float *draw_m) {
@@ -872,6 +1210,7 @@ void SpriteStudioPlayer2D::fetchAnimation() {
         }
         _currentAnimationData = nullptr;
         _clear_canvas_items();
+        _clear_instance_players();
         return;
     }
 
@@ -916,6 +1255,15 @@ void SpriteStudioPlayer2D::fetchAnimation() {
         if ( !setup ) {
             ERR_PRINT( "SSAB Setup Animation Failed: " + _strAnimationSelected );
             return;
+        }
+
+        // Build the per-Instance-part child Players before the first draw —
+        // _draw_part_instance assumes _instance_players is sized to parts.
+        // Skip when this Player is itself an instance child to cap recursion
+        // at depth 1 — nested Instance parts are not yet supported and would
+        // self-reference / cycle through the same SSABResource.
+        if (!_instance_child_mode) {
+            _setup_instance_players();
         }
 
         float frame_no = ss_runtime_get_frame_no(runtime_ctx);

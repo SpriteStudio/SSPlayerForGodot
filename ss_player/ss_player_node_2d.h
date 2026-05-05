@@ -54,7 +54,14 @@ public:
     void setSpeed( float p_speed );
     float getSpeed() const;
     void setFrame( float p_frame );
+    void setFrameRelative( float p_diff );
     float getFrame() const;
+
+    // Marks this Player as a child of an Instance part on its parent Player
+    // so it skips its own auto-update — the parent will drive it via
+    // setFrameRelative every frame. Defaults to false (root Players run
+    // their own playback).
+    void setInstanceChildMode( bool p_enabled );
 
     int getTotalFrames() const;
 
@@ -90,6 +97,19 @@ private:
     float previous_frame_no = -1.0f;
     float _speed_rate = 1.0f;
     bool _sub_frame_enabled = false;
+    bool _instance_child_mode = false;
+
+    // One Player per Instance part on this Player, indexed by part_index.
+    // Slots for non-Instance parts hold nullptr. The parent owns the
+    // children via Godot's node tree (added with add_child); cleared and
+    // rebuilt every fetchAnimation.
+    Vector<SpriteStudioPlayer2D*> _instance_players;
+    // Externally-referenced SSAB resources discovered through the parent's
+    // `external_instances` array. Auto-loaded from the parent's directory
+    // (libssconverter places one .ssab per ssae alongside each other) so a
+    // PartTypeInstance whose ref_anime lives in another file can still be
+    // resolved without the user wiring it manually.
+    Vector<Ref<SSABResource>> _external_ssabs;
 
     // Per-frame draw context: SoA pointers and frame-shared bindings fetched
     // once at the top of `drawAnimation`. Each `_draw_part_TYPE` extracts its
@@ -98,6 +118,10 @@ private:
         RenderingServer *rs;
         const ss::runtime::FrameData *frameData;
         const ss::format::SsAnimeBinary *binary;
+        // Parent's current frame, needed by _draw_part_instance to compute
+        // diff = (parent_frame - event_frame) * speed before driving the
+        // child Player via setFrameRelative.
+        float frame_no;
 
         const float *world_matrices;         uintptr_t world_matrices_len;
         const float *local_uvs;              uintptr_t local_uvs_len;
@@ -116,6 +140,21 @@ private:
     void _draw_part(const DrawFrame &f, RID ci, int p_idx, const ss::runtime::PartState *part, const ss::format::PartData *partBinary, const float *draw_m);
     void _draw_part_normal(const DrawFrame &f, RID ci, int p_idx, const ss::runtime::PartState *part, const ss::format::PartData *partBinary, const float *draw_m);
     void _draw_part_shape(const DrawFrame &f, RID ci, int p_idx, const ss::runtime::PartState *part, const ss::format::PartData *partBinary, const float *draw_m);
+    void _draw_part_instance(const DrawFrame &f, RID ci, int p_idx, const ss::runtime::PartState *part, const ss::format::PartData *partBinary, const float *draw_m);
+
+    // Setup / teardown of the per-Instance-part child Players. Called from
+    // fetchAnimation; results are stored in `_instance_players`.
+    void _setup_instance_players();
+    void _clear_instance_players();
+    // Auto-load every SSAB referenced by `_ssabRes->external_instances` from
+    // the same directory as the parent file. Cleared and rebuilt on every
+    // setSSABResource.
+    void _load_external_ssabs();
+    // Searches `_ssabRes` first, then `_external_ssabs`, for an animation
+    // whose `name_hash` matches. Sets `out_source` to the SSAB containing
+    // the match (null when not found). Returns the animation name as
+    // utf8 String (empty when not found).
+    String _resolve_animation_by_hash(uint32_t name_hash, Ref<SSABResource>& out_source) const;
     void _apply_blend_material(RenderingServer *rs, RID ci, ss::format::BlendType blend_type);
 
     void _reconfigure();
