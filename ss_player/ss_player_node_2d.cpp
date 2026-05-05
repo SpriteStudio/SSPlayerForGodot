@@ -559,6 +559,7 @@ void SpriteStudioPlayer2D::drawAnimation(float frame_no) {
     ss_runtime_get_local_uvs(runtime_ctx, &f.local_uvs, &f.local_uvs_len);
     ss_runtime_get_cell_meta(runtime_ctx, &f.cell_meta, &f.cell_meta_len);
     ss_runtime_get_cell_texture_hashes(runtime_ctx, &f.cell_texture_hashes, &f.cell_texture_hashes_len);
+    ss_runtime_get_local_vertices(runtime_ctx, &f.local_vertices, &f.local_vertices_len);
     ss_runtime_get_shape_vertices(runtime_ctx, &f.shape_vertices, &f.shape_vertices_len);
     ss_runtime_get_shape_vertex_box_coords(runtime_ctx, &f.shape_box_coords, &f.shape_box_coords_len);
     ss_runtime_get_shape_vertex_counts(runtime_ctx, &f.shape_vertex_counts, &f.shape_vertex_counts_len);
@@ -653,12 +654,16 @@ void SpriteStudioPlayer2D::_draw_part_normal(const DrawFrame &f, RID ci, int p_i
     if (f.local_uvs && (uintptr_t)p_idx * 10 + 10 <= f.local_uvs_len) {
         part_uvs = f.local_uvs + (p_idx * 10);
     }
+    const float *part_verts = nullptr;
+    if (f.local_vertices && (uintptr_t)p_idx * 10 + 10 <= f.local_vertices_len) {
+        part_verts = f.local_vertices + (p_idx * 10);
+    }
 
     // 1. Cell / texture lookup. The runtime exposes the owning cellmap's
     //    name_hash directly via `cell_texture_hashes`, so the player can
     //    skip walking `FrameData::cells` and `SsAnimeBinary::cellmaps` per
     //    frame; non-zero hash implies a resolvable cell.
-    if (!part_cell_meta) return;
+    if (!part_cell_meta || !part_verts) return;
     if (!f.cell_texture_hashes || (uintptr_t)p_idx >= f.cell_texture_hashes_len) return;
     const uint32_t texHash = f.cell_texture_hashes[p_idx];
     if (texHash == 0) return;
@@ -668,10 +673,11 @@ void SpriteStudioPlayer2D::_draw_part_normal(const DrawFrame &f, RID ci, int p_i
     // 2. Blend Mode
     _apply_blend_material(rs, ci, partBinary->blend_type());
 
-    // 3. Vertex / UV / color preparation.
+    // 3. Vertex / UV / color preparation. The runtime hands us pre-pivot,
+    //    pre-coord-system local vertices via `local_vertices` (5 verts:
+    //    lt, rt, lb, rb, center), so the player just multiplies them by
+    //    the world matrix.
     uint64_t flags = part->update_flag();
-    const float pivot_x_norm = part_cell_meta[0];
-    const float pivot_y_norm = part_cell_meta[1];
     Rect2 src_rect(part_cell_meta[4], part_cell_meta[5], part_cell_meta[2], part_cell_meta[3]);
 
     bool use_advanced = (flags & (ss::runtime::UpdateAttributeFlags_AttributeVertex | ss::runtime::UpdateAttributeFlags_AttributePartColor |
@@ -687,8 +693,7 @@ void SpriteStudioPlayer2D::_draw_part_normal(const DrawFrame &f, RID ci, int p_i
         Transform2D t = matrix_to_transform2d(draw_m);
         rs->canvas_item_set_transform(ci, t);
 
-        Vector2 draw_pos = Vector2(-src_rect.size.x * (pivot_x_norm + 0.5f),
-                                   -src_rect.size.y * (0.5f - pivot_y_norm));
+        Vector2 draw_pos(part_verts[0], part_verts[1]);
         rs->canvas_item_add_texture_rect_region(ci, Rect2(draw_pos, src_rect.size), tex->get_rid(), src_rect, Color(1, 1, 1, part->alpha()));
     } else {
         rs->canvas_item_set_transform(ci, Transform2D());
@@ -731,11 +736,8 @@ void SpriteStudioPlayer2D::_draw_part_normal(const DrawFrame &f, RID ci, int p_i
         Vector<Color> p_colors; p_colors.resize(vert_count);
         #endif
 
-        const auto vertexIndex = part->vertex();
-        if (vertexIndex < 0) return;
-        const ss::runtime::PartAttributeVertex* vd = f.frameData->vertices()->Get(vertexIndex);
-        const float out_x[MAX_VERTICES_COUNT] = { vd->lt().x(), vd->rt().x(), vd->lb().x(), vd->rb().x(), vd->center().x() };
-        const float out_y[MAX_VERTICES_COUNT] = { vd->lt().y(), vd->rt().y(), vd->lb().y(), vd->rb().y(), vd->center().y() };
+        const float out_x[MAX_VERTICES_COUNT] = { part_verts[0], part_verts[2], part_verts[4], part_verts[6], part_verts[8] };
+        const float out_y[MAX_VERTICES_COUNT] = { part_verts[1], part_verts[3], part_verts[5], part_verts[7], part_verts[9] };
 
         if (!part_uvs) return;
         const float out_u[MAX_VERTICES_COUNT] = { part_uvs[0], part_uvs[2], part_uvs[4], part_uvs[6], part_uvs[8] };

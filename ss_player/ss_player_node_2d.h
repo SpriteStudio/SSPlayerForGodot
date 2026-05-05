@@ -103,6 +103,7 @@ private:
         const float *local_uvs;              uintptr_t local_uvs_len;
         const float *cell_meta;              uintptr_t cell_meta_len;
         const uint32_t *cell_texture_hashes; uintptr_t cell_texture_hashes_len;
+        const float *local_vertices;         uintptr_t local_vertices_len;
         const float *shape_vertices;         uintptr_t shape_vertices_len;
         const float *shape_box_coords;       uintptr_t shape_box_coords_len;
         const int32_t *shape_vertex_counts;  uintptr_t shape_vertex_counts_len;
