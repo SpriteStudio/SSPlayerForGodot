@@ -101,6 +101,7 @@ void SpriteStudioPlayer2D::play( float p_start_frame ) {
     } else {
         ss_runtime_play(runtime_ctx);
     }
+    emit_signal("animation_started", _strAnimationSelected);
 }
 
 bool SpriteStudioPlayer2D::isPausing() const {
@@ -128,7 +129,7 @@ void SpriteStudioPlayer2D::setFrame( float p_frame ) {
     if (runtime_ctx) {
         ss_runtime_set_frame_no(runtime_ctx, p_frame);
         float frame_no = ss_runtime_get_frame_no(runtime_ctx);
-        float draw_frame = _sub_frame_enabled ? frame_no : (float)((int)frame_no);
+        float draw_frame = _sub_frame_enabled ? frame_no : floorf(frame_no);
         previous_frame_no = draw_frame;
         drawAnimation(draw_frame);
     }
@@ -138,7 +139,7 @@ void SpriteStudioPlayer2D::setFrameRelative( float p_diff ) {
     if (runtime_ctx) {
         ss_runtime_set_frame_relative(runtime_ctx, p_diff);
         float frame_no = ss_runtime_get_frame_no(runtime_ctx);
-        float draw_frame = _sub_frame_enabled ? frame_no : (float)((int)frame_no);
+        float draw_frame = _sub_frame_enabled ? frame_no : floorf(frame_no);
         previous_frame_no = draw_frame;
         drawAnimation(draw_frame);
     }
@@ -204,7 +205,7 @@ void SpriteStudioPlayer2D::setSubFrameEnabled( bool p_enabled ) {
     _sub_frame_enabled = p_enabled;
     if (runtime_ctx) {
         float frame_no = ss_runtime_get_frame_no(runtime_ctx);
-        float draw_frame = _sub_frame_enabled ? frame_no : (float)((int)frame_no);
+        float draw_frame = _sub_frame_enabled ? frame_no : floorf(frame_no);
         previous_frame_no = draw_frame;
         drawAnimation(draw_frame);
     }
@@ -293,6 +294,10 @@ void SpriteStudioPlayer2D::_bind_methods() {
 			)
 		)
 	);
+
+	ADD_SIGNAL(MethodInfo("animation_started", PropertyInfo(Variant::STRING, "anim_name")));
+	ADD_SIGNAL(MethodInfo("animation_finished", PropertyInfo(Variant::STRING, "anim_name")));
+	ADD_SIGNAL(MethodInfo("animation_looped", PropertyInfo(Variant::STRING, "anim_name")));
 
 	ADD_PROPERTY(
 		PropertyInfo(
@@ -534,40 +539,68 @@ void SpriteStudioPlayer2D::updateAnimation( float delta ) {
         auto d = delta * 1000.0f;
         float frame_no = ss_runtime_update(runtime_ctx, d);
 
-        float draw_frame = _sub_frame_enabled ? frame_no : (float)((int)frame_no);
+        // Check for loop
+        if (ss_runtime_is_looped(runtime_ctx)) {
+            emit_signal("animation_looped", _strAnimationSelected);
+        }
+
+        // Check for finish
+        if (ss_runtime_is_end_frame_reached(runtime_ctx)) {
+            emit_signal("animation_finished", _strAnimationSelected);
+        }
+
+        float draw_frame = _sub_frame_enabled ? frame_no : floorf(frame_no);
 
         if (previous_frame_no == draw_frame) {
             return;
         }
 
-        // TODO: implement event handling
-        /*
-        if (_currentAnimationData->events() != nullptr) {
+        if (_currentAnimationData && _currentAnimationData->events() != nullptr) {
             int event_count = ss_runtime_get_passed_event_count(runtime_ctx);
             for (int i = 0; i < event_count; i++) {
                 int event_idx = ss_runtime_get_passed_event_index(runtime_ctx, i);
+
                 auto events_per_frame = _currentAnimationData->events()->Get(event_idx);
 
                 if (auto users = events_per_frame->users()) {
-                    for (auto user : *users) {
-                        // TODO: impl
-                    }
-                }
+                    for (uint32_t j = 0; j < users->size(); j++) {
+                        auto user = users->Get(j);
+                        if (!user || !user->value()) continue;
+                        auto val = user->value();
 
-                if (auto signals = events_per_frame->signals()) {
-                    for (auto signal : *signals) {
-                        // TODO: impl
+                        int flag = 0;
+                        int int_val = 0;
+                        Rect2 rect_val;
+                        Vector2 point_val;
+                        String str_val;
+
+                        if (val->integer()) {
+                            flag |= 1; // Bit for Integer? Usually flag is a separate field but in SS7 it might be implied.
+                            int_val = val->integer()->value();
+                        }
+                        if (val->rect()) {
+                            flag |= 2;
+                            rect_val = Rect2(val->rect()->x1(), val->rect()->y1(), val->rect()->x2() - val->rect()->x1(), val->rect()->y2() - val->rect()->y1());
+                        }
+                        if (val->point()) {
+                            flag |= 4;
+                            point_val = Vector2(val->point()->v1(), val->point()->v2());
+                        }
+                        if (val->str()) {
+                            flag |= 8;
+                            str_val = String::utf8(val->str()->c_str());
+                        }
+
+                        emit_signal("user_data", flag, int_val, rect_val, point_val, str_val);
                     }
                 }
 
                 if (auto audios = events_per_frame->audios()) {
-                    for (auto audio : *audios) {
-                        // TODO: impl
-                    }
+                    // TODO: Audio integration
                 }
             }
         }
-        */
+
         previous_frame_no = draw_frame;
         drawAnimation(draw_frame);
     }
@@ -1267,7 +1300,7 @@ void SpriteStudioPlayer2D::fetchAnimation() {
         }
 
         float frame_no = ss_runtime_get_frame_no(runtime_ctx);
-        float draw_frame = _sub_frame_enabled ? frame_no : (float)((int)frame_no);
+        float draw_frame = _sub_frame_enabled ? frame_no : floorf(frame_no);
         previous_frame_no = draw_frame;
         drawAnimation(draw_frame);
 }
