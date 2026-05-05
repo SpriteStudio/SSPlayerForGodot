@@ -551,33 +551,28 @@ void SpriteStudioPlayer2D::drawAnimation(float frame_no) {
     ss_runtime_get_frame_data(runtime_ctx, frame_no, &data, &len);
     if (!data) return;
 
-    const float *world_matrices = nullptr;
-    uintptr_t world_matrices_len = 0;
-    ss_runtime_get_world_matrices(runtime_ctx, &world_matrices, &world_matrices_len);
+    DrawFrame f = {};
+    f.rs = RenderingServer::get_singleton();
+    f.frameData = ss::runtime::GetFrameData(data);
+    f.binary = _ssabRes->get_ss_anime_binary();
+    ss_runtime_get_world_matrices(runtime_ctx, &f.world_matrices, &f.world_matrices_len);
+    ss_runtime_get_local_uvs(runtime_ctx, &f.local_uvs, &f.local_uvs_len);
+    ss_runtime_get_cell_meta(runtime_ctx, &f.cell_meta, &f.cell_meta_len);
+    ss_runtime_get_shape_vertices(runtime_ctx, &f.shape_vertices, &f.shape_vertices_len);
+    ss_runtime_get_shape_vertex_box_coords(runtime_ctx, &f.shape_box_coords, &f.shape_box_coords_len);
+    ss_runtime_get_shape_vertex_counts(runtime_ctx, &f.shape_vertex_counts, &f.shape_vertex_counts_len);
 
     const int32_t *z_order = nullptr;
     uintptr_t z_order_len = 0;
     ss_runtime_get_z_order(runtime_ctx, &z_order, &z_order_len);
 
-    const float *local_uvs = nullptr;
-    uintptr_t local_uvs_len = 0;
-    ss_runtime_get_local_uvs(runtime_ctx, &local_uvs, &local_uvs_len);
-
-    const float *cell_meta = nullptr;
-    uintptr_t cell_meta_len = 0;
-    ss_runtime_get_cell_meta(runtime_ctx, &cell_meta, &cell_meta_len);
-
-    auto frameData = ss::runtime::GetFrameData(data);
-    auto parts = frameData->parts();
+    auto parts = f.frameData->parts();
     if (!parts) return;
 
-    RenderingServer *rs = RenderingServer::get_singleton();
     // Clear all canvas items once per frame to ensure a clean state
     for (RID ci : _canvas_items) {
-        rs->canvas_item_clear(ci);
+        f.rs->canvas_item_clear(ci);
     }
-
-    auto binary = _ssabRes->get_ss_anime_binary();
 
     for (uint32_t i = 0; i < parts->size(); i++) {
         auto part = parts->Get(i);
@@ -587,38 +582,27 @@ void SpriteStudioPlayer2D::drawAnimation(float frame_no) {
         RID ci = _canvas_items[p_idx];
         // Use the Z-order rank provided by the runtime to strictly enforce the determined order
         if (z_order && (uintptr_t)p_idx < z_order_len) {
-            rs->canvas_item_set_z_index(ci, z_order[p_idx]);
+            f.rs->canvas_item_set_z_index(ci, z_order[p_idx]);
         }
 
         if (part->hide()) continue;
 
         const float *drawing_m = nullptr;
-        if (world_matrices && ((uintptr_t)p_idx * 16 < world_matrices_len)) {
-            drawing_m = world_matrices + (p_idx * 16);
+        if (f.world_matrices && ((uintptr_t)p_idx * 16 < f.world_matrices_len)) {
+            drawing_m = f.world_matrices + (p_idx * 16);
         } else {
             continue;
         }
 
-        auto partBinary = binary->parts()->Get(p_idx);
-
-        const float *part_uvs = nullptr;
-        if (local_uvs && (uintptr_t)p_idx * 10 + 10 <= local_uvs_len) {
-            part_uvs = local_uvs + (p_idx * 10);
-        }
-
-        const float *part_cell_meta = nullptr;
-        if (cell_meta && (uintptr_t)p_idx * 6 + 6 <= cell_meta_len) {
-            part_cell_meta = cell_meta + (p_idx * 6);
-        }
-
-        _draw_part(rs, ci, frameData, part, partBinary, binary, drawing_m, part_uvs, part_cell_meta);
+        auto partBinary = f.binary->parts()->Get(p_idx);
+        _draw_part(f, ci, p_idx, part, partBinary, drawing_m);
     }
 }
 
-void SpriteStudioPlayer2D::_draw_part(RenderingServer *rs, RID ci, const ss::runtime::FrameData *frameData, const ss::runtime::PartState *part, const ss::format::PartData *partBinary, const ss::format::SsAnimeBinary *binary, const float *draw_m, const float *part_uvs, const float *part_cell_meta) {
+void SpriteStudioPlayer2D::_draw_part(const DrawFrame &f, RID ci, int p_idx, const ss::runtime::PartState *part, const ss::format::PartData *partBinary, const float *draw_m) {
     switch (partBinary->part_type_type()) {
         case ss::format::PartType_PartTypeNormal:
-            _draw_part_normal(rs, ci, frameData, part, partBinary, binary, draw_m, part_uvs, part_cell_meta);
+            _draw_part_normal(f, ci, p_idx, part, partBinary, draw_m);
             return;
 
         // No drawing role — matrix-only / skinning graph / host systems.
@@ -633,9 +617,12 @@ void SpriteStudioPlayer2D::_draw_part(RenderingServer *rs, RID ci, const ss::run
         case ss::format::PartType_PartTypeAudio:
             return;
 
+        case ss::format::PartType_PartTypeShape:
+            _draw_part_shape(f, ci, p_idx, part, partBinary, draw_m);
+            return;
+
         // TODO: not yet implemented in this player. Add a dedicated
         // _draw_part_<type>() and dispatch here when each is built out.
-        case ss::format::PartType_PartTypeShape:
         case ss::format::PartType_PartTypeText:
         case ss::format::PartType_PartTypeNines:
         case ss::format::PartType_PartTypeMesh:
@@ -654,33 +641,32 @@ void SpriteStudioPlayer2D::_draw_part(RenderingServer *rs, RID ci, const ss::run
     }
 }
 
-void SpriteStudioPlayer2D::_draw_part_normal(RenderingServer *rs, RID ci, const ss::runtime::FrameData *frameData, const ss::runtime::PartState *part, const ss::format::PartData *partBinary, const ss::format::SsAnimeBinary *binary, const float *draw_m, const float *part_uvs, const float *part_cell_meta) {
+void SpriteStudioPlayer2D::_draw_part_normal(const DrawFrame &f, RID ci, int p_idx, const ss::runtime::PartState *part, const ss::format::PartData *partBinary, const float *draw_m) {
+    RenderingServer *rs = f.rs;
+
+    const float *part_cell_meta = nullptr;
+    if (f.cell_meta && (uintptr_t)p_idx * 6 + 6 <= f.cell_meta_len) {
+        part_cell_meta = f.cell_meta + (p_idx * 6);
+    }
+    const float *part_uvs = nullptr;
+    if (f.local_uvs && (uintptr_t)p_idx * 10 + 10 <= f.local_uvs_len) {
+        part_uvs = f.local_uvs + (p_idx * 10);
+    }
+
     // 1. Cell / texture lookup.
     const auto frameDataCellIndex = part->cell();
     if (frameDataCellIndex < 0) return;
     if (!part_cell_meta) return;
-    auto frameDataCell = frameData->cells()->Get(frameDataCellIndex);
+    auto frameDataCell = f.frameData->cells()->Get(frameDataCellIndex);
     if (!frameDataCell) return;
-    auto cellmap = binary->cellmaps()->Get(frameDataCell->map_id());
+    auto cellmap = f.binary->cellmaps()->Get(frameDataCell->map_id());
     if (!cellmap) return;
     uint32_t texHash = cellmap->name_hash();
     if (!_textures.has(texHash)) return;
     Ref<Texture2D> tex = _textures[texHash];
 
     // 2. Blend Mode
-    ss::format::BlendType ss_blend = partBinary->blend_type();
-    if (!_blend_materials.has((int)ss_blend)) {
-        Ref<CanvasItemMaterial> mat; mat.instantiate();
-        switch (ss_blend) {
-            case ss::format::BlendType_Mix: mat->set_blend_mode(CanvasItemMaterial::BLEND_MODE_MIX); break;
-            case ss::format::BlendType_Add: mat->set_blend_mode(CanvasItemMaterial::BLEND_MODE_ADD); break;
-            case ss::format::BlendType_Sub: mat->set_blend_mode(CanvasItemMaterial::BLEND_MODE_SUB); break;
-            case ss::format::BlendType_Mul: mat->set_blend_mode(CanvasItemMaterial::BLEND_MODE_MUL); break;
-            default: mat->set_blend_mode(CanvasItemMaterial::BLEND_MODE_MIX); break;
-        }
-        _blend_materials[(int)ss_blend] = mat;
-    }
-    rs->canvas_item_set_material(ci, _blend_materials[(int)ss_blend]->get_rid());
+    _apply_blend_material(rs, ci, partBinary->blend_type());
 
     // 3. Vertex / UV / color preparation.
     uint64_t flags = part->update_flag();
@@ -747,7 +733,7 @@ void SpriteStudioPlayer2D::_draw_part_normal(RenderingServer *rs, RID ci, const 
 
         const auto vertexIndex = part->vertex();
         if (vertexIndex < 0) return;
-        const ss::runtime::PartAttributeVertex* vd = frameData->vertices()->Get(vertexIndex);
+        const ss::runtime::PartAttributeVertex* vd = f.frameData->vertices()->Get(vertexIndex);
         const float out_x[MAX_VERTICES_COUNT] = { vd->lt().x(), vd->rt().x(), vd->lb().x(), vd->rb().x(), vd->center().x() };
         const float out_y[MAX_VERTICES_COUNT] = { vd->lt().y(), vd->rt().y(), vd->lb().y(), vd->rb().y(), vd->center().y() };
 
@@ -759,7 +745,7 @@ void SpriteStudioPlayer2D::_draw_part_normal(RenderingServer *rs, RID ci, const 
         Color corner_colors[CORNERS_COUNT] = { Color(1, 1, 1, part->alpha()), Color(1, 1, 1, part->alpha()), Color(1, 1, 1, part->alpha()), Color(1, 1, 1, part->alpha()) };
         const auto partColorIndex = part->part_color();
         if ((flags & ss::runtime::UpdateAttributeFlags_AttributePartColor) && partColorIndex >= 0) {
-            auto pc = frameData->parts_color()->Get(partColorIndex);
+            auto pc = f.frameData->parts_color()->Get(partColorIndex);
             // The hierarchical alpha is already pre-multiplied into c.rgba().a() by the Brain.
             auto to_color = [](const ss::runtime::SsAttributePartColorKeyValueColor &c) { return Color(c.rgba().r()/255.0f, c.rgba().g()/255.0f, c.rgba().b()/255.0f, c.rgba().a()/255.0f); };
             corner_colors[0] = to_color(pc->lt()); corner_colors[1] = to_color(pc->rt()); corner_colors[2] = to_color(pc->lb()); corner_colors[3] = to_color(pc->rb());
@@ -781,6 +767,97 @@ void SpriteStudioPlayer2D::_draw_part_normal(RenderingServer *rs, RID ci, const 
 
         rs->canvas_item_add_triangle_array(ci, needs_center ? INDICES_FAN_5 : INDICES_QUAD_4, p_verts, p_colors, p_uvs, {}, {}, tex->get_rid());
     }
+}
+
+void SpriteStudioPlayer2D::_apply_blend_material(RenderingServer *rs, RID ci, ss::format::BlendType ss_blend) {
+    if (!_blend_materials.has((int)ss_blend)) {
+        Ref<CanvasItemMaterial> mat; mat.instantiate();
+        switch (ss_blend) {
+            case ss::format::BlendType_Mix: mat->set_blend_mode(CanvasItemMaterial::BLEND_MODE_MIX); break;
+            case ss::format::BlendType_Add: mat->set_blend_mode(CanvasItemMaterial::BLEND_MODE_ADD); break;
+            case ss::format::BlendType_Sub: mat->set_blend_mode(CanvasItemMaterial::BLEND_MODE_SUB); break;
+            case ss::format::BlendType_Mul: mat->set_blend_mode(CanvasItemMaterial::BLEND_MODE_MUL); break;
+            default: mat->set_blend_mode(CanvasItemMaterial::BLEND_MODE_MIX); break;
+        }
+        _blend_materials[(int)ss_blend] = mat;
+    }
+    rs->canvas_item_set_material(ci, _blend_materials[(int)ss_blend]->get_rid());
+}
+
+void SpriteStudioPlayer2D::_draw_part_shape(const DrawFrame &f, RID ci, int p_idx, const ss::runtime::PartState *part, const ss::format::PartData *partBinary, const float *draw_m) {
+    RenderingServer *rs = f.rs;
+
+    const float *part_shape_verts = nullptr;
+    const float *part_shape_box_coords = nullptr;
+    int32_t part_shape_count = 0;
+    if (f.shape_vertices && (uintptr_t)p_idx * 24 + 24 <= f.shape_vertices_len) {
+        part_shape_verts = f.shape_vertices + (p_idx * 24);
+    }
+    if (f.shape_box_coords && (uintptr_t)p_idx * 24 + 24 <= f.shape_box_coords_len) {
+        part_shape_box_coords = f.shape_box_coords + (p_idx * 24);
+    }
+    if (f.shape_vertex_counts && (uintptr_t)p_idx < f.shape_vertex_counts_len) {
+        part_shape_count = f.shape_vertex_counts[p_idx];
+    }
+    if (!part_shape_verts || !part_shape_box_coords || part_shape_count < 3) return;
+
+    _apply_blend_material(rs, ci, partBinary->blend_type());
+
+    // Corner colors (LT, RT, LB, RB) for bilinear interpolation across the
+    // shape's bounding box. The runtime hands us pre-pivot, pre-coord-system
+    // box coordinates per vertex, so we just blend the corners by them.
+    const uint64_t flags = part->update_flag();
+    Color corner_colors[CORNERS_COUNT] = { Color(1, 1, 1, part->alpha()), Color(1, 1, 1, part->alpha()), Color(1, 1, 1, part->alpha()), Color(1, 1, 1, part->alpha()) };
+    const auto partColorIndex = part->part_color();
+    if ((flags & ss::runtime::UpdateAttributeFlags_AttributePartColor) && partColorIndex >= 0) {
+        auto pc = f.frameData->parts_color()->Get(partColorIndex);
+        auto to_color = [](const ss::runtime::SsAttributePartColorKeyValueColor &c) { return Color(c.rgba().r()/255.0f, c.rgba().g()/255.0f, c.rgba().b()/255.0f, c.rgba().a()/255.0f); };
+        corner_colors[0] = to_color(pc->lt()); corner_colors[1] = to_color(pc->rt()); corner_colors[2] = to_color(pc->lb()); corner_colors[3] = to_color(pc->rb());
+    }
+
+    Transform2D draw_transform = matrix_to_transform2d(draw_m);
+    rs->canvas_item_set_transform(ci, Transform2D());
+
+    #ifdef SPRITESTUDIO_GODOT_EXTENSION
+    PackedVector2Array p_verts; p_verts.resize(part_shape_count);
+    PackedColorArray  p_colors; p_colors.resize(part_shape_count);
+    PackedInt32Array  p_indices;
+    #else
+    Vector<Vector2> p_verts; p_verts.resize(part_shape_count);
+    Vector<Color>   p_colors; p_colors.resize(part_shape_count);
+    Vector<int>     p_indices;
+    #endif
+
+    for (int i = 0; i < part_shape_count; i++) {
+        const float vx = part_shape_verts[i * 2 + 0];
+        const float vy = part_shape_verts[i * 2 + 1];
+        const float fx = part_shape_box_coords[i * 2 + 0];
+        const float fy = part_shape_box_coords[i * 2 + 1];
+        const float wLT = (1.0f - fx) * (1.0f - fy);
+        const float wRT =          fx * (1.0f - fy);
+        const float wLB = (1.0f - fx) *          fy;
+        const float wRB =          fx *          fy;
+        p_colors.set(i, corner_colors[0] * wLT + corner_colors[1] * wRT + corner_colors[2] * wLB + corner_colors[3] * wRB);
+        p_verts.set(i, draw_transform.xform(Vector2(vx, vy)));
+    }
+
+    if (part_shape_count == 4) {
+        // Rectangle: vertex layout is [LT=0, RT=1, LB=2, RB=3].
+        const int idx[6] = { 0,1,2, 1,3,2 };
+        p_indices.resize(6);
+        for (int i = 0; i < 6; i++) p_indices.set(i, idx[i]);
+    } else {
+        // Triangle / Star / Arrow: TRIANGLE_FAN topology with vertex 0 as fan apex.
+        const int tri_count = part_shape_count - 2;
+        p_indices.resize(tri_count * 3);
+        for (int i = 0; i < tri_count; i++) {
+            p_indices.set(i*3 + 0, 0);
+            p_indices.set(i*3 + 1, i + 1);
+            p_indices.set(i*3 + 2, i + 2);
+        }
+    }
+
+    rs->canvas_item_add_triangle_array(ci, p_indices, p_verts, p_colors);
 }
 
 void SpriteStudioPlayer2D::fetchAnimation() {

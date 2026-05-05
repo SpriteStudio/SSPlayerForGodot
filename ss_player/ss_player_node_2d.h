@@ -91,12 +91,30 @@ private:
     float _speed_rate = 1.0f;
     bool _sub_frame_enabled = false;
 
+    // Per-frame draw context: SoA pointers and frame-shared bindings fetched
+    // once at the top of `drawAnimation`. Each `_draw_part_TYPE` extracts its
+    // own per-part slice from this struct so dispatch arguments stay flat.
+    struct DrawFrame {
+        RenderingServer *rs;
+        const ss::runtime::FrameData *frameData;
+        const ss::format::SsAnimeBinary *binary;
+
+        const float *world_matrices;        uintptr_t world_matrices_len;
+        const float *local_uvs;             uintptr_t local_uvs_len;
+        const float *cell_meta;             uintptr_t cell_meta_len;
+        const float *shape_vertices;        uintptr_t shape_vertices_len;
+        const float *shape_box_coords;      uintptr_t shape_box_coords_len;
+        const int32_t *shape_vertex_counts; uintptr_t shape_vertex_counts_len;
+    };
+
     void loadTextures(const Ref<SSABResource>& ssabRes);
     void updateAnimation(float delta);
     void fetchAnimation();
     void drawAnimation(float frame_no);
-    void _draw_part(RenderingServer *rs, RID ci, const ss::runtime::FrameData *frameData, const ss::runtime::PartState *part, const ss::format::PartData *partBinary, const ss::format::SsAnimeBinary *binary, const float *draw_m, const float *part_uvs, const float *part_cell_meta);
-    void _draw_part_normal(RenderingServer *rs, RID ci, const ss::runtime::FrameData *frameData, const ss::runtime::PartState *part, const ss::format::PartData *partBinary, const ss::format::SsAnimeBinary *binary, const float *draw_m, const float *part_uvs, const float *part_cell_meta);
+    void _draw_part(const DrawFrame &f, RID ci, int p_idx, const ss::runtime::PartState *part, const ss::format::PartData *partBinary, const float *draw_m);
+    void _draw_part_normal(const DrawFrame &f, RID ci, int p_idx, const ss::runtime::PartState *part, const ss::format::PartData *partBinary, const float *draw_m);
+    void _draw_part_shape(const DrawFrame &f, RID ci, int p_idx, const ss::runtime::PartState *part, const ss::format::PartData *partBinary, const float *draw_m);
+    void _apply_blend_material(RenderingServer *rs, RID ci, ss::format::BlendType blend_type);
 
     void _reconfigure();
     void _clear_canvas_items();
