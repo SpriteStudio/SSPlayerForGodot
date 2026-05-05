@@ -558,6 +558,7 @@ void SpriteStudioPlayer2D::drawAnimation(float frame_no) {
     ss_runtime_get_world_matrices(runtime_ctx, &f.world_matrices, &f.world_matrices_len);
     ss_runtime_get_local_uvs(runtime_ctx, &f.local_uvs, &f.local_uvs_len);
     ss_runtime_get_cell_meta(runtime_ctx, &f.cell_meta, &f.cell_meta_len);
+    ss_runtime_get_cell_texture_hashes(runtime_ctx, &f.cell_texture_hashes, &f.cell_texture_hashes_len);
     ss_runtime_get_shape_vertices(runtime_ctx, &f.shape_vertices, &f.shape_vertices_len);
     ss_runtime_get_shape_vertex_box_coords(runtime_ctx, &f.shape_box_coords, &f.shape_box_coords_len);
     ss_runtime_get_shape_vertex_counts(runtime_ctx, &f.shape_vertex_counts, &f.shape_vertex_counts_len);
@@ -653,15 +654,14 @@ void SpriteStudioPlayer2D::_draw_part_normal(const DrawFrame &f, RID ci, int p_i
         part_uvs = f.local_uvs + (p_idx * 10);
     }
 
-    // 1. Cell / texture lookup.
-    const auto frameDataCellIndex = part->cell();
-    if (frameDataCellIndex < 0) return;
+    // 1. Cell / texture lookup. The runtime exposes the owning cellmap's
+    //    name_hash directly via `cell_texture_hashes`, so the player can
+    //    skip walking `FrameData::cells` and `SsAnimeBinary::cellmaps` per
+    //    frame; non-zero hash implies a resolvable cell.
     if (!part_cell_meta) return;
-    auto frameDataCell = f.frameData->cells()->Get(frameDataCellIndex);
-    if (!frameDataCell) return;
-    auto cellmap = f.binary->cellmaps()->Get(frameDataCell->map_id());
-    if (!cellmap) return;
-    uint32_t texHash = cellmap->name_hash();
+    if (!f.cell_texture_hashes || (uintptr_t)p_idx >= f.cell_texture_hashes_len) return;
+    const uint32_t texHash = f.cell_texture_hashes[p_idx];
+    if (texHash == 0) return;
     if (!_textures.has(texHash)) return;
     Ref<Texture2D> tex = _textures[texHash];
 
