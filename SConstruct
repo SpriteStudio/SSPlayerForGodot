@@ -18,6 +18,10 @@ def validate_parent_dir(key, val, env):
 # --- Environment Setup ---
 localEnv = Environment(tools=["default"], PLATFORM="")
 
+# Import shared source definitions
+sys.path.append(os.path.join(str(Dir("#").abspath), "ss_player"))
+import sources
+
 customs = ["custom.py"]
 customs = [os.path.abspath(path) for path in customs]
 
@@ -76,38 +80,25 @@ env = SConscript("godot-cpp/SConstruct", {"env": env, "customs": customs})
 
 # --- Source Files ---
 # Extension sources
-sources = Glob("gd_spritestudio/*.cpp")
+sources_list = Glob("ss_player/*.cpp")
 
 # FlatBuffers sources
-fb_src_dir = "gd_spritestudio/flatbuffers/src"
-fb_sources = [
-    "idl_parser.cpp",
-    "idl_gen_text.cpp",
-    "reflection.cpp",
-    "util.cpp",
-]
-sources.extend([os.path.join(fb_src_dir, f) for f in fb_sources])
+sources_list.extend(sources.get_fb_sources("ss_player"))
 
 # --- Compilation Flags & Includes ---
 env.Append(CPPDEFINES = "SPRITESTUDIO_GODOT_EXTENSION")
-env.Append(
-    CPPPATH=[
-        "gd_spritestudio/flatbuffers/src",
-        "gd_spritestudio/flatbuffers/include",
-        "gd_spritestudio/format",
-        "gd_spritestudio/runtime/include",
-    ]
-)
+env.Append(CPPPATH=sources.get_include_paths("ss_player"))
+
+if env["platform"] in ["macos", "linux", "ios", "android"]:
+    env.Append(CCFLAGS=["-fvisibility=hidden"])
+    env.Append(CXXFLAGS=["-fvisibility=hidden"])
 
 # --- Libraries & Library Paths ---
 extension_path = env.Dir('.').abspath
 platform = env['platform']
 arch = env['arch']
 
-if platform == 'macos':
-    runtime_libpath = os.path.join(extension_path, "gd_spritestudio", "runtime", "libs", platform)
-else:
-    runtime_libpath = os.path.join(extension_path, "gd_spritestudio", "runtime", "libs", platform, arch)
+runtime_libpath = sources.get_runtime_lib_path(os.path.join(extension_path, "ss_player"), platform, arch)
 
 env.Append(LIBPATH=[runtime_libpath])
 
@@ -131,9 +122,9 @@ if platform == "ios":
 # --- DocData Generation ---
 if env["target"] in ["editor", "template_debug"]:
     try:
-        # Output to gd_spritestudio/gen instead of src/gen
-        doc_data = env.GodotCPPDocData("gd_spritestudio/gen/doc_data.gen.cpp", source=Glob("doc_classes/*.xml"))
-        sources.append(doc_data)
+        # Output to ss_player/gen instead of src/gen
+        doc_data = env.GodotCPPDocData("ss_player/gen/doc_data.gen.cpp", source=Glob("doc_classes/*.xml"))
+        sources_list.append(doc_data)
     except AttributeError:
         print("Not including class reference as we're targeting a pre-4.3 baseline.")
 
@@ -149,7 +140,7 @@ if platform in ["macos", "ios"]:
     env.Append(LINKFLAGS=["-Wl,-install_name,@rpath/{}{}".format(framework_path, file_name)])
 
 library_output = "bin/{}/{}{}".format(platform, framework_path, file_name)
-library = env.SharedLibrary(library_output, source=sources)
+library = env.SharedLibrary(library_output, source=sources_list)
 
 # --- macOS / iOS Framework Bundles ---
 plist_target = None
@@ -181,16 +172,25 @@ if platform in ["macos", "ios"]:
 
 # --- Installation & Default Target ---
 project_dir = env["target_path"]
+addons_dir = "addons/spritestudio"
 install_targets = [library]
 
-# Copy library to project
-copy_lib = env.InstallAs("{}/{}".format(project_dir, library_output), library)
+# Copy library to project (following addons/spritestudio structure)
+library_install_path = "{}/{}/{}".format(project_dir, addons_dir, library_output.replace("bin/", "bin/"))
+copy_lib = env.InstallAs(library_install_path, library)
 install_targets.append(copy_lib)
 
 # Copy Plist if applicable
 if plist_target:
-    copy_plist = env.InstallAs("{}/{}".format(project_dir, plist_file), plist_target)
+    plist_install_path = "{}/{}/{}".format(project_dir, addons_dir, plist_file.replace("bin/", "bin/"))
+    copy_plist = env.InstallAs(plist_install_path, plist_target)
     install_targets.append(copy_plist)
+
+# Copy .gdextension file to addons/spritestudio
+gdextension_src = "misc/spritestudio.gdextension"
+gdextension_dest = "{}/{}/spritestudio.gdextension".format(project_dir, addons_dir)
+copy_gdextension = env.InstallAs(gdextension_dest, gdextension_src)
+install_targets.append(copy_gdextension)
 
 if localEnv.get("compiledb", False):
     install_targets.append(compilation_db)

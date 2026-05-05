@@ -389,19 +389,22 @@ FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(4) PartAttributeVertex FLATBUFFERS_FINAL_CLA
   ss::runtime::Vec2 rt_;
   ss::runtime::Vec2 lb_;
   ss::runtime::Vec2 rb_;
+  ss::runtime::Vec2 center_;
 
  public:
   PartAttributeVertex()
       : lt_(),
         rt_(),
         lb_(),
-        rb_() {
+        rb_(),
+        center_() {
   }
-  PartAttributeVertex(const ss::runtime::Vec2 &_lt, const ss::runtime::Vec2 &_rt, const ss::runtime::Vec2 &_lb, const ss::runtime::Vec2 &_rb)
+  PartAttributeVertex(const ss::runtime::Vec2 &_lt, const ss::runtime::Vec2 &_rt, const ss::runtime::Vec2 &_lb, const ss::runtime::Vec2 &_rb, const ss::runtime::Vec2 &_center)
       : lt_(_lt),
         rt_(_rt),
         lb_(_lb),
-        rb_(_rb) {
+        rb_(_rb),
+        center_(_center) {
   }
   const ss::runtime::Vec2 &lt() const {
     return lt_;
@@ -415,8 +418,11 @@ FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(4) PartAttributeVertex FLATBUFFERS_FINAL_CLA
   const ss::runtime::Vec2 &rb() const {
     return rb_;
   }
+  const ss::runtime::Vec2 &center() const {
+    return center_;
+  }
 };
-FLATBUFFERS_STRUCT_END(PartAttributeVertex, 32);
+FLATBUFFERS_STRUCT_END(PartAttributeVertex, 40);
 
 FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(4) PartAttributeShader FLATBUFFERS_FINAL_CLASS {
  private:

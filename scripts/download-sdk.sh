@@ -2,7 +2,7 @@
 set -e
 BASEDIR=$(dirname $0)
 ROOTDIR=$(cd "$BASEDIR/.." && pwd -P)
-TARGET_DIR="${ROOTDIR}/gd_spritestudio"
+TARGET_DIR="${ROOTDIR}/ss_player"
 VERSION_FILE="${TARGET_DIR}/SDK_VERSION.txt"
 CURRENT_VERSION_FILE="${TARGET_DIR}/runtime/VERSION"
 

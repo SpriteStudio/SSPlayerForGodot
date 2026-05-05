@@ -1,7 +1,7 @@
 #ifdef TOOLS_ENABLED
 
-#include "gd_macros.h"
-#include "gd_clickable_label.h"
+#include "ss_macros.h"
+#include "ss_clickable_label.h"
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
 #include <godot_cpp/classes/display_server.hpp>
@@ -19,20 +19,20 @@ using namespace godot;
 
 #endif
 
-void GdClickableLabel::_bind_methods() {
+void SSClickableLabel::_bind_methods() {
     ADD_SIGNAL(MethodInfo("text_copied"));
 }
 
-GdClickableLabel::GdClickableLabel() {
+SSClickableLabel::SSClickableLabel() {
     set_mouse_filter(MOUSE_FILTER_STOP);
 
     set_default_cursor_shape(CURSOR_POINTING_HAND);
 }
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
-void GdClickableLabel::_gui_input(const Ref<InputEvent> &p_event) {
+void SSClickableLabel::_gui_input(const Ref<InputEvent> &p_event) {
 #else
-void GdClickableLabel::gui_input(const Ref<InputEvent> &p_event) {
+void SSClickableLabel::gui_input(const Ref<InputEvent> &p_event) {
 #endif
     Ref<InputEventMouseButton> mb = p_event;
 

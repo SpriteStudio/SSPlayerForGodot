@@ -30,7 +30,7 @@ declare -A scons_default_opts=(
     [platform]=${PLATFORM}
     [target]="editor"
     [compiledb]="yes"
-    [custom_modules]="../gd_spritestudio"
+    [custom_modules]="../ss_player"
 )
 
 # build default options

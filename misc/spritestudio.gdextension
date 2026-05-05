@@ -1,0 +1,33 @@
+[configuration]
+
+entry_symbol = "ss_player_library_init"
+compatibility_minimum = "4.4"
+
+[libraries]
+
+macos.editor = "bin/macos/libSSGodot.macos.editor.framework"
+macos.debug = "bin/macos/libSSGodot.macos.template_debug.framework"
+macos.release = "bin/macos/libSSGodot.macos.template_release.framework"
+
+ios.debug = "bin/ios/libSSGodot.ios.template_debug.framework"
+ios.release = "bin/ios/libSSGodot.ios.template_release.framework"
+
+windows.editor.x86_64 = "bin/windows/libSSGodot.windows.editor.x86_64.dll"
+windows.debug.x86_64 = "bin/windows/libSSGodot.windows.template_debug.x86_64.dll"
+windows.release.x86_64 = "bin/windows/libSSGodot.windows.template_release.x86_64.dll"
+
+android.debug.x86_64 = "bin/android/libSSGodot.android.template_debug.x86_64.so"
+android.release.x86_64 = "bin/android/libSSGodot.android.template_release.x86_64.so"
+
+android.debug.arm32 = "bin/android/libSSGodot.android.template_debug.arm32.so"
+android.release.arm32 = "bin/android/libSSGodot.android.template_release.arm32.so"
+
+android.debug.arm64 = "bin/android/libSSGodot.android.template_debug.arm64.so"
+android.release.arm64 = "bin/android/libSSGodot.android.template_release.arm64.so"
+
+web.debug.wasm32 = "bin/web/libSSGodot.web.template_debug.wasm32.nothreads.wasm"
+web.release.wasm32 = "bin/web/libSSGodot.web.template_release.wasm32.nothreads.wasm"
+
+linux.editor.x86_64 = "bin/linux/libSSGodot.linux.editor.x86_64.so"
+linux.debug.x86_64 = "bin/linux/libSSGodot.linux.template_debug.x86_64.so"
+linux.release.x86_64 = "bin/linux/libSSGodot.linux.template_release.x86_64.so"

@@ -30,7 +30,7 @@ $scons_default_opts = @{
     vsproj = "no"
     target = "editor"
     compiledb = "yes"
-    custom_modules = "../gd_spritestudio"
+    custom_modules = "../ss_player"
 }
 
 # winbuild default options

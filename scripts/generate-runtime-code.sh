@@ -5,7 +5,7 @@ BASEDIR=$(cd $BASEDIR && pwd -P)
 ROOTDIR=${BASEDIR}/..
 ROOTDIR=$(cd $ROOTDIR && pwd -P)
 
-pushd ${ROOTDIR}/gd_spritestudio > /dev/null
+pushd ${ROOTDIR}/ss_player > /dev/null
 FLATC=flatc
 
 /bin/mkdir -p format

@@ -19,8 +19,8 @@
 #endif
 
 
-class GdProgressDialog : public Window {
-    GDCLASS(GdProgressDialog, Window);
+class SSProgressDialog : public Window {
+    GDCLASS(SSProgressDialog, Window);
 
 private:
     VBoxContainer *vbox = nullptr;
@@ -36,7 +36,7 @@ protected:
     // void _on_cancel_pressed();
 
     public:
-    GdProgressDialog();
+    SSProgressDialog();
 
     void show_progress(const String &title, int total_steps);
     void step(const String &message, int step_value);    

@@ -35,8 +35,8 @@ graph LR
     end
 
     subgraph Runtime ["Godot ランタイム (再生時)"]
-        BIN --> RES(" GdSsabResource ")
-        RES --> NODE(" GdSsPlayerNode2D ")
+        BIN --> RES(" SSABResource ")
+        RES --> NODE(" SpriteStudioPlayer2D ")
         NODE -.-> RT(" libssruntime ")
         IMG --> NODE
         NODE --> RENDER[[" Godot レンダリング "]]
@@ -46,13 +46,13 @@ graph LR
     class BIN generated;
 ```
 
-`.sspj` → `.ssab` / `.ssqb` への変換は2通りの方法があり、いずれの方法で生成したファイルも同じく `GdSsabResource` / `GdSsqbResource` として Godot から読み込めます。詳細は [USAGE.ja.md](./USAGE.ja.md) を参照してください。
+`.sspj` → `.ssab` / `.ssqb` への変換は2通りの方法があり、いずれの方法で生成したファイルも同じく `SSABResource` / `SSQBResource` として Godot から読み込めます。詳細は [USAGE.ja.md](./USAGE.ja.md) を参照してください。
 
 - ノード
-    - `GdSsPlayerNode2D`: SS アニメーションを再生する `Node2D` ベースのノード。
+    - `SpriteStudioPlayer2D`: SS アニメーションを再生する `Node2D` ベースのノード。
 - リソース
-    - `GdSsabResource`: 変換後のアニメバイナリ (`.ssab`) を表すリソース。
-    - `GdSsqbResource`: 変換後のシーケンスバイナリ (`.ssqb`) を表すリソース。
+    - `SSABResource`: 変換後のアニメバイナリ (`.ssab`) を表すリソース。
+    - `SSQBResource`: 変換後のシーケンスバイナリ (`.ssqb`) を表すリソース。
 - エディタ拡張
     - `SS Import Dock`: `.sspj` を `libssconverter` で `.ssab` / `.ssqb` へ変換するインポートコントロール。
 
@@ -77,12 +77,13 @@ Windows / macOS でのビルドおよび実行を確認しています。
 
 ### 3. プロジェクトへの配置
 
-ダウンロードした GDExtension 一式を `.gdextension` ファイル内のパス指定に合わせて Godot プロジェクト配下に展開します (本リポジトリのサンプルでは `bin/` を使用)。
-Godot エディタを再起動すると `GdSsPlayerNode2D` ノードや SS Import Dock が利用可能になります。
+ダウンロードした GDExtension 一式（ZIP 内の `addons` フォルダ）を Godot プロジェクトのルートディレクトリにコピーします。
+正しく配置されると、`res://addons/spritestudio/spritestudio.gdextension` が存在する状態になります。
+Godot エディタを再起動すると `SpriteStudioPlayer2D` ノードや SS Import Dock が利用可能になります。
 
 ### 4. SpriteStudio データの変換と再生
 
-`.sspj` の変換から `GdSsPlayerNode2D` での再生まで一通りの利用方法は [USAGE.ja.md](./USAGE.ja.md#spritestudio-データのインポート) を参照してください。
+`.sspj` の変換から `SpriteStudioPlayer2D` での再生まで一通りの利用方法は [USAGE.ja.md](./USAGE.ja.md#spritestudio-データのインポート) を参照してください。
 
 ## サンプル
 

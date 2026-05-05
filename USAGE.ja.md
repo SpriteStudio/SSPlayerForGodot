@@ -11,7 +11,8 @@
 
 1. [公式サイト](https://godotengine.org/download/) より対応するバージョンの Godot Engine をダウンロードします。
 2. [SSPlayerForGodot の Releases](https://github.com/SpriteStudio/SSPlayerForGodot/releases) から該当プラットフォーム向けの GDExtension 一式をダウンロードします (自前でビルドする場合は [BUILD.ja.md](BUILD.ja.md) を参照)。
-3. ダウンロードした GDExtension 一式を、`.gdextension` ファイル内のパス指定に合わせて Godot プロジェクト配下に展開します (本リポジトリのサンプルでは `bin/` を使用)。
+3. ダウンロードした ZIP を解凍し、中にある `addons` フォルダをそのまま Godot プロジェクトのルートディレクトリにコピー（上書きマージ）します。
+   * 正しく配置されると、`res://addons/spritestudio/spritestudio.gdextension` が存在する状態になります。
 
 ## B. SSPlayerForGodot のカスタムモジュールを組み込んだ Godot Engine を利用する
 
@@ -19,8 +20,8 @@
 
 # SpriteStudio データのインポート
 
-SpriteStudio のプロジェクト (`.sspj`) は **`.ssab` (アニメバイナリ)** および **`.ssqb` (シーケンスバイナリ)** へ変換し、Godot プロジェクト配下に配置することで `GdSsPlayerNode2D` から利用できます。
-変換方法は以下の2通りです。どちらの方法で生成したファイルも同じく `GdSsabResource` / `GdSsqbResource` として読み込めます。
+SpriteStudio のプロジェクト (`.sspj`) は **`.ssab` (アニメバイナリ)** および **`.ssqb` (シーケンスバイナリ)** へ変換し、Godot プロジェクト配下に配置することで `SpriteStudioPlayer2D` から利用できます。
+変換方法は以下の2通りです。どちらの方法で生成したファイルも同じく `SSABResource` / `SSQBResource` として読み込めます。
 
 ## 方法 A: Godot エディタの SS Import Dock を使う
 
@@ -54,14 +55,14 @@ SpriteStudio のプロジェクト (`.sspj`) は **`.ssab` (アニメバイナ�
 ```
 
 変換結果は `.sspj` と同じディレクトリの `<sspj 名>_ssab/` 配下に `.ssab` / `.ssqb` として生成されます。
-このディレクトリ名を変更して Godot プロジェクト配下にコピーすると、`GdSsabResource` / `GdSsqbResource` として読み込めるようになります。
+このディレクトリ名を変更して Godot プロジェクト配下にコピーすると、`SSABResource` / `SSQBResource` として読み込めるようになります。
 
 CI / ビルドパイプラインに変換処理を組み込みたい場合や、Godot エディタを起動せずに変換のみを行いたい場合に便利です。`ssconverter-cli` の詳細なオプションは [`SpriteStudio7-SDK/cli/README.ja.md`](https://github.com/SpriteStudio/SpriteStudio7-SDK/blob/main/cli/README.ja.md) を参照してください。
 
 # SpriteStudio ノードの作成
 
-1. シーンに **`GdSsPlayerNode2D`** ノードを追加します (Node2D 系)。
-2. インスペクタの **Ssab Resource** プロパティに、インポート済みの `.ssab` ファイルを指定します (`Load` から選択)。
+1. シーンに **`SpriteStudioPlayer2D`** ノードを追加します (Node2D 系)。
+2. インスペクタの **SSAB Resource** プロパティに、インポート済みの `.ssab` ファイルを指定します (`Load` から選択)。
 3. **Animation** プロパティに再生したいアニメーション名を指定します。`.ssab` に含まれるアニメーション名がドロップダウンで選択できます。
 4. インスペクタの再生関連プロパティ (Frame, Speed, Loop, Playing 等) を調整するとプレビューできます。
 
@@ -69,7 +70,7 @@ CI / ビルドパイプラインに変換処理を組み込みたい場合や、
 
 | プロパティ                | 型     | 説明                                                                |
 | -------------------------- | ------ | ------------------------------------------------------------------- |
-| `Ssab Resource`           | Resource | 再生対象の `GdSsabResource` (`.ssab` ファイル)                     |
+| `SSAB Resource`           | Resource | 再生対象の `SSABResource` (`.ssab` ファイル)                     |
 | `Animation`                | String | 選択中のアニメーション名                                            |
 | `Frame`                    | float  | 現在のフレーム位置                                                  |
 | `Speed`                    | float  | 再生速度倍率 (既定: 1.0)                                            |
@@ -83,7 +84,7 @@ CI / ビルドパイプラインに変換処理を組み込みたい場合や、
 | `Skip Frames`              | bool   | 描画間隔がフレーム間隔を超えた際にフレームを飛ばすか                |
 | `Sub Frame Enabled`        | bool   | サブフレーム補間を有効化するか                                      |
 
-実際の挙動・引数のとり得る値は `gd_spritestudio/gd_ssplayer_node2d.h` を参照してください。
+実際の挙動・引数のとり得る値は `ss_player/ss_player_node_2d.h` を参照してください。
 
 # クラス
 
@@ -92,9 +93,9 @@ GDScript からコントロールできる主なクラスです。
 
 ## リソース管理クラス
 
-Godot の `Resource` を継承しているため、複数の `GdSsPlayerNode2D` から同じリソースを参照する場合は **Local To Scene** フラグを `True` に設定すると個別に状態を持たせられます。
+Godot の `Resource` を継承しているため、複数の `SpriteStudioPlayer2D` から同じリソースを参照する場合は **Local To Scene** フラグを `True` に設定すると個別に状態を持たせられます。
 
-### [GdSsabResource](./gd_spritestudio/gd_ssab_resource.h)
+### [SSABResource](./ss_player/ssab_resource.h)
 
 `.ssab` (アニメバイナリ) に対応するリソースクラスです。
 
@@ -106,7 +107,7 @@ Godot の `Resource` を継承しているため、複数の `GdSsPlayerNode2D` 
 * `get_animation_count() -> int`
 * `get_animation_names() -> PackedStringArray`
 
-### [GdSsqbResource](./gd_spritestudio/gd_ssqb_resource.h)
+### [SSQBResource](./ss_player/ssqb_resource.h)
 
 `.ssqb` (シーケンスバイナリ) に対応するリソースクラスです。
 
@@ -115,17 +116,17 @@ Godot の `Resource` を継承しているため、複数の `GdSsPlayerNode2D` 
 * `load_from_file(path: String) -> Error`
 * `save_to_file(path: String) -> Error`
 
-## 再生クラス: [GdSsPlayerNode2D](./gd_spritestudio/gd_ssplayer_node2d.h)
+## 再生クラス: [SpriteStudioPlayer2D](./ss_player/ss_player_node_2d.h)
 
 `Node2D` を継承する再生用ノードです。
 リソースとアニメーションを指定して再生を行います。
 
 ```gdscript
-@onready var ssnode: GdSsPlayerNode2D = $target
+@onready var ssnode: SpriteStudioPlayer2D = $target
 
 func _ready() -> void:
     # .ssab を読み込んでリソースを指定
-    var ssab: GdSsabResource = ResourceLoader.load("res://ssab_generated/Sample.ssab")
+    var ssab: SSABResource = ResourceLoader.load("res://ssab_generated/Sample.ssab")
     ssnode.set_ssab_resource(ssab)
 
     # アニメーション名を指定
@@ -139,7 +140,7 @@ func _ready() -> void:
 
 主なメソッド:
 
-* `set_ssab_resource(res: GdSsabResource)` / `get_ssab_resource() -> GdSsabResource`
+* `set_ssab_resource(res: SSABResource)` / `get_ssab_resource() -> SSABResource`
 * `set_animation(name: String)` / `get_animation() -> String`
 * `play(start_frame: float = -1.0)` / `pause()` / `stop()`
 * `is_playing() -> bool` / `is_pausing() -> bool`

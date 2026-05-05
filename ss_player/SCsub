@@ -1,42 +1,42 @@
 #!/usr/bin/env python
 import os
+import sys
+
+# Import shared source definitions
+# In SCons, __file__ is not defined. Use Dir('.').abspath to get the directory of the current SCsub.
+sys.path.append(str(Dir('.').abspath))
+import sources
+
 Import("env")
 Import("env_modules")
 
 env_ss = env_modules.Clone()
+
+# --- Compilation Flags ---
+if env_ss.get("platform") in ["macos", "linux", "ios", "android"]:
+    env_ss.Append(CCFLAGS=["-fvisibility=hidden"])
+    env_ss.Append(CXXFLAGS=["-fvisibility=hidden"])
+
+if not env_ss.msvc:
+    env_ss.Append(CXXFLAGS=["-Wno-inconsistent-missing-override"])
 
 # --- Source Files ---
 # Extension sources
 env_ss.add_source_files(env.modules_sources, "*.cpp")
 
 # FlatBuffers sources
-fb_src_dir = "flatbuffers/src"
-fb_sources = [
-    "idl_parser.cpp",
-    "idl_gen_text.cpp",
-    "reflection.cpp",
-    "util.cpp",
-]
-for f in fb_sources:
-    env_ss.add_source_files(env.modules_sources, os.path.join(fb_src_dir, f))
+for f in sources.get_fb_sources():
+    env_ss.add_source_files(env.modules_sources, f)
 
 # --- Includes ---
-env_ss.Append(
-    CPPPATH=[
-        "flatbuffers/src",
-        "flatbuffers/include",
-        "format",
-        "runtime/include",
-    ]
-)
+env_ss.Append(CPPPATH=sources.get_include_paths())
 
 # --- Libraries & Library Paths ---
 module_path = env.Dir('.').abspath
 platform = env['platform']
+arch = env['arch']
 
-runtime_libpath = os.path.join(module_path, "runtime", "libs", platform)
-if platform not in ['macos', 'ios', 'web']:
-    runtime_libpath = os.path.join(runtime_libpath, env['arch'])
+runtime_libpath = sources.get_runtime_lib_path(module_path, platform, arch)
 
 env.Append(LIBPATH=[runtime_libpath])
 

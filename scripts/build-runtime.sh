@@ -7,91 +7,164 @@ ROOTDIR=${BASEDIR}/..
 ROOTDIR=$(cd $ROOTDIR && pwd -P)
 
 if [ "$OSTYPE" = "msys" ]; then
-    PLATFORM=windows
+    HOST_PLATFORM=windows
 elif [[ "$OSTYPE" = "darwin"* ]]; then
-    PLATFORM=macos
+    HOST_PLATFORM=macos
 else
-    PLATFORM=linux
+    HOST_PLATFORM=linux
 fi
 HOST_ARCH=$(uname -m)
+[[ "$HOST_ARCH" == "aarch64" ]] && HOST_ARCH="arm64"
 
-declare -A default_opts=(
-    [arch]=${HOST_ARCH}
-    [platform]=${PLATFORM}
-    [build]="debug"
+typeset -A default_opts
+default_opts=(
+    arch "${HOST_ARCH}"
+    platform "${HOST_PLATFORM}"
+    build "debug"
+    ios_simulator "no"
 )
 
-declare -A opts=(
-    ${(kv)default_opts}
-)
+typeset -A opts
+for k v in "${(@kv)default_opts}"; do
+    opts[$k]=$v
+done
 
 APP=$(basename $0)
 func usage() {
     echo "Usage: $APP [options]"
+    echo "Options:"
+    echo "  platform=<platform>    Target platform (windows, macos, linux, android, ios, web)"
+    echo "  arch=<arch>            Target architecture (x86_64, arm64, universal, etc.)"
+    echo "  build=<build>          Build mode (debug, release)"
+    echo "  ios_simulator=<yes|no> Build for iOS simulator (default: no)"
 }
 
 while (( $# > 0 )); do
     item="$1"
     shift
-
     if [[ $item = *"="* ]]; then
         kv=(${(@s/=/)item})
-        key=$kv[1]
-        value=${kv[2]:l}
-        opts[$key]=$value
+        opts[$kv[1]]=$kv[2]:l
     elif [[ $item = *"help"* || $item == "-h" || $item == "--h" ]]; then
         usage
         exit 0
     fi
 done
 
-echo "options"
-for key value in ${(kv)opts}; do
-    echo "  $key => $value"
-done
-echo ""
-
-pushd ${ROOTDIR}/gd_spritestudio > /dev/null
-pushd SpriteStudio7-SDK > /dev/null
-if [[ "${opts[build]}" == "release" ]]; then
-    ./scripts/release-${opts[platform]}.sh
-else
-    cargo build -p ssconverter
-    cargo build -p ssruntime --features libc_alloc,panic-handler
-fi
-popd > /dev/null
-
-INPUT=SpriteStudio7-SDK
-OUTPUT=runtime/include
-/bin/mkdir -p ${OUTPUT}
-/bin/cp ${INPUT}/libs/ssconverter/target/ssconverter.h ${OUTPUT}/
-/bin/cp ${INPUT}/libs/ssruntime/target/ssruntime.h ${OUTPUT}/
-
-INPUT=SpriteStudio7-SDK/target
 PLATFORM=${opts[platform]}
 ARCH=${opts[arch]}
+BUILD_MODE=${opts[build]}
+IOS_SIMULATOR=${opts[ios_simulator]}
 
-if [[ "$PLATFORM" == "macos" || "$PLATFORM" == "ios" || "$PLATFORM" == "web" ]]; then
-    OUTPUT=runtime/libs/${PLATFORM}
-else
-    OUTPUT=runtime/libs/${PLATFORM}/${ARCH}
+IS_HOST_BUILD=false
+if [[ "$PLATFORM" == "$HOST_PLATFORM" && "$ARCH" == "$HOST_ARCH" ]]; then
+    IS_HOST_BUILD=true
 fi
-/bin/mkdir -p ${OUTPUT}
 
-if [[ "${opts[build]}" == "release" ]]; then
+echo "Building for $PLATFORM ($ARCH) in $BUILD_MODE mode (iOS Sim: $IOS_SIMULATOR, Host Build: $IS_HOST_BUILD)..."
+
+SDK_DIR=${ROOTDIR}/ss_player/SpriteStudio7-SDK
+pushd ${SDK_DIR} > /dev/null
+
+CARGO_FLAGS=""
+[[ "$BUILD_MODE" == "release" ]] && CARGO_FLAGS="--release"
+
+# 1. Build Phase
+if [[ "$IS_HOST_BUILD" == "true" ]]; then
     if [[ "$PLATFORM" == "macos" ]]; then
-        /bin/cp ${INPUT}/universal-apple-darwin/libssruntime.a ${OUTPUT}/
-        /bin/cp ${INPUT}/universal-apple-darwin/libssconverter.a ${OUTPUT}/
-    elif [[ "$PLATFORM" == "ios" ]]; then
-        /bin/cp ${INPUT}/universal-apple-ios/libssruntime.a ${OUTPUT}/
-        /bin/cp ${INPUT}/universal-apple-ios/libssconverter.a ${OUTPUT}/
-    else
-        /bin/cp ${INPUT}/release/libssruntime.a ${OUTPUT}/
-        /bin/cp ${INPUT}/release/libssconverter.a ${OUTPUT}/
+        cargo build $CARGO_FLAGS
+        cargo build $CARGO_FLAGS -p ssruntime --features libc_alloc,panic-handler
+    elif [[ "$PLATFORM" == "linux" ]]; then
+        ./scripts/release-linux.sh $BUILD_MODE
+    elif [[ "$PLATFORM" == "windows" ]]; then
+        cargo build $CARGO_FLAGS
+        cargo build $CARGO_FLAGS -p ssruntime --features libc_alloc,panic-handler
     fi
+    SRC_DIR="target/$BUILD_MODE"
 else
-    /bin/cp ${INPUT}/${opts[build]}/libssruntime.a ${OUTPUT}/
-    /bin/cp ${INPUT}/${opts[build]}/libssconverter.a ${OUTPUT}/
+    # クロスコンパイルまたは特殊なビルド
+    case "$PLATFORM" in
+        macos)
+            ./scripts/release-macos.sh $BUILD_MODE
+            SRC_DIR="target/universal-apple-darwin/$BUILD_MODE"
+            ;;
+        ios)
+            if [[ "$IOS_SIMULATOR" == "yes" ]]; then
+                ./scripts/release-ios-sim.sh $BUILD_MODE
+                SRC_DIR="target/universal-apple-ios-sim/$BUILD_MODE"
+            else
+                ./scripts/release-ios.sh $BUILD_MODE
+                SRC_DIR="target/universal-apple-ios/$BUILD_MODE"
+            fi
+            ;;
+        android)
+            ./scripts/release-android.sh $BUILD_MODE
+            case "$ARCH" in
+                arm64|arm64-v8a) RUST_TARGET="aarch64-linux-android" ;;
+                arm32|armv7|armeabi-v7a) RUST_TARGET="armv7-linux-androideabi" ;;
+                x86_64) RUST_TARGET="x86_64-linux-android" ;;
+                x86_32|x86) RUST_TARGET="i686-linux-android" ;;
+            esac
+            SRC_DIR="target/$RUST_TARGET/$BUILD_MODE"
+            ;;
+        linux)
+            ./scripts/release-linux.sh $BUILD_MODE
+            SRC_DIR="target/$BUILD_MODE"
+            ;;
+        web)
+            ./scripts/release-wasm.sh $BUILD_MODE
+            SRC_DIR="target/wasm32-unknown-unknown/$BUILD_MODE"
+            ;;
+        windows)
+            if command -v pwsh &> /dev/null; then
+                pwsh ./scripts/release-windows.ps1 $BUILD_MODE
+            fi
+            SRC_DIR="target/x86_64-pc-windows-msvc/$BUILD_MODE"
+            ;;
+    esac
 fi
 
 popd > /dev/null
+
+# 2. Artifact Collection Phase
+echo "Collecting artifacts from $SRC_DIR..."
+RUNTIME_DIR=${ROOTDIR}/ss_player/runtime
+
+# Headers
+mkdir -p ${RUNTIME_DIR}/include
+cp ${SDK_DIR}/libs/ssruntime/target/ssruntime.h ${RUNTIME_DIR}/include/
+if [[ "$PLATFORM" == "macos" || "$PLATFORM" == "windows" || "$PLATFORM" == "linux" ]]; then
+    cp ${SDK_DIR}/libs/ssconverter/target/ssconverter.h ${RUNTIME_DIR}/include/
+fi
+
+# Libs Destination
+if [[ "$PLATFORM" == "macos" || "$PLATFORM" == "ios" || "$PLATFORM" == "web" ]]; then
+    LIB_OUT_DIR=${RUNTIME_DIR}/libs/${PLATFORM}
+else
+    LIB_OUT_DIR=${RUNTIME_DIR}/libs/${PLATFORM}/${ARCH}
+fi
+mkdir -p ${LIB_OUT_DIR}
+
+# Copy function
+function copy_lib() {
+    local src_name=$1
+    local dest_name=$2
+    local full_src="${SDK_DIR}/${SRC_DIR}/${src_name}"
+    if [[ -f "${full_src}" ]]; then
+        cp "${full_src}" "${LIB_OUT_DIR}/${dest_name}"
+        return 0
+    fi
+    return 1
+}
+
+if [[ "$PLATFORM" == "windows" ]]; then
+    copy_lib "ssruntime.lib" "ssruntime.lib" || copy_lib "libssruntime.a" "ssruntime.lib"
+    copy_lib "ssconverter.lib" "ssconverter.lib" || copy_lib "libssconverter.a" "ssconverter.lib"
+else
+    copy_lib "libssruntime.a" "libssruntime.a"
+    if [[ "$PLATFORM" == "macos" || "$PLATFORM" == "linux" ]]; then
+        copy_lib "libssconverter.a" "libssconverter.a"
+    fi
+fi
+
+echo "Done."

@@ -1,7 +1,7 @@
 #ifdef TOOLS_ENABLED
 
-#include "gd_macros.h"
-#include "gd_progress_dialog.h"
+#include "ss_macros.h"
+#include "ss_progress_dialog.h"
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
     #include <godot_cpp/classes/display_server.hpp>
@@ -25,11 +25,11 @@
     #include "core/object/message_queue.h"
 #endif
 
-void GdProgressDialog::_bind_methods() {
-    // ClassDB::bind_method(D_METHOD("_on_cancel_pressed"), &GdProgressDialog::_on_cancel_pressed);
+void SSProgressDialog::_bind_methods() {
+    // ClassDB::bind_method(D_METHOD("_on_cancel_pressed"), &SSProgressDialog::_on_cancel_pressed);
 }
 
-GdProgressDialog::GdProgressDialog() {
+SSProgressDialog::SSProgressDialog() {
     set_wrap_controls(true);
     set_visible(false);
     set_transient(true);
@@ -75,7 +75,7 @@ GdProgressDialog::GdProgressDialog() {
 }
 
 
-void GdProgressDialog::show_progress(const String &title, int total_steps) {
+void SSProgressDialog::show_progress(const String &title, int total_steps) {
     // canceled = false;
     // cancel_button->set_disabled(false);
     set_title(title);
@@ -85,22 +85,22 @@ void GdProgressDialog::show_progress(const String &title, int total_steps) {
     popup_centered();
 }
 
-void GdProgressDialog::step(const String &message, int step_value) {
+void SSProgressDialog::step(const String &message, int step_value) {
     status_label->set_text(message);
     progress_bar->set_value(step_value);
 }
 
-// void GdProgressDialog::_on_cancel_pressed() {
+// void SSProgressDialog::_on_cancel_pressed() {
 //     canceled = true;
 //     status_label->set_text("Canceling...");
 //     cancel_button->set_disabled(true); // 二重押し防止
 // }
 
-// bool GdProgressDialog::is_canceled() const {
+// bool SSProgressDialog::is_canceled() const {
 //     return canceled;
 // }
 
-void GdProgressDialog::finish() {
+void SSProgressDialog::finish() {
     hide();
     queue_free();
 }
