@@ -563,6 +563,10 @@ void SpriteStudioPlayer2D::drawAnimation(float frame_no) {
     uintptr_t local_uvs_len = 0;
     ss_runtime_get_local_uvs(runtime_ctx, &local_uvs, &local_uvs_len);
 
+    const float *cell_meta = nullptr;
+    uintptr_t cell_meta_len = 0;
+    ss_runtime_get_cell_meta(runtime_ctx, &cell_meta, &cell_meta_len);
+
     auto frameData = ss::runtime::GetFrameData(data);
     auto parts = frameData->parts();
     if (!parts) return;
@@ -602,14 +606,19 @@ void SpriteStudioPlayer2D::drawAnimation(float frame_no) {
             part_uvs = local_uvs + (p_idx * 10);
         }
 
-        _draw_part(rs, ci, frameData, part, partBinary, binary, drawing_m, part_uvs);
+        const float *part_cell_meta = nullptr;
+        if (cell_meta && (uintptr_t)p_idx * 6 + 6 <= cell_meta_len) {
+            part_cell_meta = cell_meta + (p_idx * 6);
+        }
+
+        _draw_part(rs, ci, frameData, part, partBinary, binary, drawing_m, part_uvs, part_cell_meta);
     }
 }
 
-void SpriteStudioPlayer2D::_draw_part(RenderingServer *rs, RID ci, const ss::runtime::FrameData *frameData, const ss::runtime::PartState *part, const ss::format::PartData *partBinary, const ss::format::SsAnimeBinary *binary, const float *draw_m, const float *part_uvs) {
+void SpriteStudioPlayer2D::_draw_part(RenderingServer *rs, RID ci, const ss::runtime::FrameData *frameData, const ss::runtime::PartState *part, const ss::format::PartData *partBinary, const ss::format::SsAnimeBinary *binary, const float *draw_m, const float *part_uvs, const float *part_cell_meta) {
     switch (partBinary->part_type_type()) {
         case ss::format::PartType_PartTypeNormal:
-            _draw_part_normal(rs, ci, frameData, part, partBinary, binary, draw_m, part_uvs);
+            _draw_part_normal(rs, ci, frameData, part, partBinary, binary, draw_m, part_uvs, part_cell_meta);
             return;
 
         // No drawing role — matrix-only / skinning graph / host systems.
@@ -645,10 +654,11 @@ void SpriteStudioPlayer2D::_draw_part(RenderingServer *rs, RID ci, const ss::run
     }
 }
 
-void SpriteStudioPlayer2D::_draw_part_normal(RenderingServer *rs, RID ci, const ss::runtime::FrameData *frameData, const ss::runtime::PartState *part, const ss::format::PartData *partBinary, const ss::format::SsAnimeBinary *binary, const float *draw_m, const float *part_uvs) {
+void SpriteStudioPlayer2D::_draw_part_normal(RenderingServer *rs, RID ci, const ss::runtime::FrameData *frameData, const ss::runtime::PartState *part, const ss::format::PartData *partBinary, const ss::format::SsAnimeBinary *binary, const float *draw_m, const float *part_uvs, const float *part_cell_meta) {
     // 1. Cell / texture lookup.
     const auto frameDataCellIndex = part->cell();
     if (frameDataCellIndex < 0) return;
+    if (!part_cell_meta) return;
     auto frameDataCell = frameData->cells()->Get(frameDataCellIndex);
     if (!frameDataCell) return;
     auto cellmap = binary->cellmaps()->Get(frameDataCell->map_id());
@@ -656,8 +666,6 @@ void SpriteStudioPlayer2D::_draw_part_normal(RenderingServer *rs, RID ci, const 
     uint32_t texHash = cellmap->name_hash();
     if (!_textures.has(texHash)) return;
     Ref<Texture2D> tex = _textures[texHash];
-    auto cell = cellmap->cells()->LookupByKey(frameDataCell->name_hash());
-    if (!cell) return;
 
     // 2. Blend Mode
     ss::format::BlendType ss_blend = partBinary->blend_type();
@@ -676,9 +684,9 @@ void SpriteStudioPlayer2D::_draw_part_normal(RenderingServer *rs, RID ci, const 
 
     // 3. Vertex / UV / color preparation.
     uint64_t flags = part->update_flag();
-    auto rect = cell->rectangle();
-    auto pivot = cell->pivot();
-    Rect2 src_rect(rect->x1(), rect->y1(), rect->x2(), rect->y2());
+    const float pivot_x_norm = part_cell_meta[0];
+    const float pivot_y_norm = part_cell_meta[1];
+    Rect2 src_rect(part_cell_meta[4], part_cell_meta[5], part_cell_meta[2], part_cell_meta[3]);
 
     bool use_advanced = (flags & (ss::runtime::UpdateAttributeFlags_AttributeVertex | ss::runtime::UpdateAttributeFlags_AttributePartColor |
                                   ss::runtime::UpdateAttributeFlags_AttributeUvtX | ss::runtime::UpdateAttributeFlags_AttributeUvtY |
@@ -693,8 +701,8 @@ void SpriteStudioPlayer2D::_draw_part_normal(RenderingServer *rs, RID ci, const 
         Transform2D t = matrix_to_transform2d(draw_m);
         rs->canvas_item_set_transform(ci, t);
 
-        Vector2 draw_pos = Vector2(-src_rect.size.x * (pivot->v1() + 0.5f),
-                                   -src_rect.size.y * (0.5f - pivot->v2()));
+        Vector2 draw_pos = Vector2(-src_rect.size.x * (pivot_x_norm + 0.5f),
+                                   -src_rect.size.y * (0.5f - pivot_y_norm));
         rs->canvas_item_add_texture_rect_region(ci, Rect2(draw_pos, src_rect.size), tex->get_rid(), src_rect, Color(1, 1, 1, part->alpha()));
     } else {
         rs->canvas_item_set_transform(ci, Transform2D());
