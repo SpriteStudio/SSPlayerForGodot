@@ -48,6 +48,11 @@ void SpriteStudioPlayer2D::_clear_canvas_items() {
 }
 
 void SpriteStudioPlayer2D::setSSABResource( const Ref<SSABResource>& ssabRes ) {
+    Callable changed_cb = callable_mp(this, &SpriteStudioPlayer2D::_on_ssab_changed);
+    if (_ssabRes.is_valid() && _ssabRes->is_connected("changed", changed_cb)) {
+        _ssabRes->disconnect("changed", changed_cb);
+    }
+
 	_ssabRes = ssabRes;
     _strAnimationSelected = "";
 
@@ -72,6 +77,29 @@ void SpriteStudioPlayer2D::setSSABResource( const Ref<SSABResource>& ssabRes ) {
 
 	fetchAnimation();
 	NOTIFY_PROPERTY_LIST_CHANGED();
+
+    if (_ssabRes.is_valid() && !_ssabRes->is_connected("changed", changed_cb)) {
+        _ssabRes->connect("changed", changed_cb);
+    }
+}
+
+void SpriteStudioPlayer2D::_on_ssab_changed() {
+    // Preserve the currently selected animation name (if it still exists in
+    // the new binary) so the user doesn't lose their selection on hot-reload.
+    String prev_anim = _strAnimationSelected;
+
+    Ref<SSABResource> current = _ssabRes;
+    setSSABResource(current);
+
+    if (!prev_anim.is_empty() && _ssabRes.is_valid()) {
+        auto names = _ssabRes->get_animation_names();
+        for (int i = 0; i < names.size(); i++) {
+            if (names[i] == prev_anim) {
+                setAnimation(prev_anim);
+                break;
+            }
+        }
+    }
 }
 
 Ref<SSABResource> SpriteStudioPlayer2D::getSSABResource() const {
@@ -446,12 +474,6 @@ void SpriteStudioPlayer2D::_get_property_list( List<PropertyInfo>* p_list ) cons
     animasPropertyInfo.usage = PROPERTY_USAGE_EDITOR | PROPERTY_USAGE_STORAGE;
     animasPropertyInfo.hint = PROPERTY_HINT_NONE;
 	p_list->push_back( animasPropertyInfo );
-
-    animasPropertyInfo.name = "sub_frame_enabled";
-    animasPropertyInfo.type = Variant::BOOL;
-    animasPropertyInfo.usage = PROPERTY_USAGE_EDITOR | PROPERTY_USAGE_STORAGE;
-    animasPropertyInfo.hint = PROPERTY_HINT_NONE;
-    p_list->push_back( animasPropertyInfo );
 
     animasPropertyInfo.name = "frame";
     animasPropertyInfo.type = Variant::FLOAT;
