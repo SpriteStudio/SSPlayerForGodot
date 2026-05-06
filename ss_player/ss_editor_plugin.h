@@ -11,11 +11,13 @@ using namespace godot;
 #endif
 
 #include "ss_import_dock.h"
+#include "ss_importer.h"
 
 class SSEditorPlugin : public EditorPlugin {
     GDCLASS(SSEditorPlugin, EditorPlugin)
 
     SSImportControl *import_dock = nullptr;
+    SSImporter *importer = nullptr;
 
 protected:
     static void _bind_methods() {}

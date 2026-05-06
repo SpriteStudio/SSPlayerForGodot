@@ -14,9 +14,16 @@ SSEditorPlugin::SSEditorPlugin(EditorNode *node) {
 void SSEditorPlugin::_notification(int what) {
     switch (what) {
         case NOTIFICATION_ENTER_TREE: {
+            if (this->importer == nullptr) {
+                this->importer = memnew(SSImporter);
+                this->importer->set_name(String::utf8("SSImporter"));
+                add_child(this->importer);
+            }
+
             if (this->import_dock == nullptr) {
                 this->import_dock = memnew(SSImportControl);
                 this->import_dock->set_name(String::utf8("SSPJ"));
+                this->import_dock->set_importer(this->importer);
                 add_control_to_dock(EditorPlugin::DOCK_SLOT_RIGHT_BL, this->import_dock, Ref<Shortcut>());
             }
         } break;
@@ -26,6 +33,11 @@ void SSEditorPlugin::_notification(int what) {
                 remove_control_from_docks(this->import_dock);
                 this->import_dock->queue_free();
                 this->import_dock = nullptr;
+            }
+            if (this->importer) {
+                remove_child(this->importer);
+                this->importer->queue_free();
+                this->importer = nullptr;
             }
         } break;
     }

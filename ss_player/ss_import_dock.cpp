@@ -6,26 +6,18 @@
 #include <godot_cpp/classes/dir_access.hpp>
 #include <godot_cpp/classes/editor_interface.hpp>
 #include <godot_cpp/classes/editor_settings.hpp>
-#include <godot_cpp/classes/editor_file_system.hpp>
 #include <godot_cpp/classes/window.hpp>
 using namespace godot;
 #else
 #include "core/io/dir_access.h"
 #include "editor/editor_interface.h"
 #include "editor/settings/editor_settings.h"
-#if VERSION_MAJOR >= 4
-    #if VERSION_MINOR >= 5
-    #include "editor/file_system/editor_file_system.h"
-    #else
-    #include "editor/editor_file_system.h"
-    #endif
-#endif
 #include "scene/main/window.h"
 #endif
 
 #include "ss_clickable_label.h"
 #include "ss_import_dock.h"
-#include "ss_progress_dialog.h"
+#include "ss_importer.h"
 #include "ssconverter.h"
 
 void SSImportControl::_bind_methods() {
@@ -116,7 +108,7 @@ SSImportControl::SSImportControl() {
     background_panel->set_v_size_flags(Control::SIZE_EXPAND_FILL);
     background_panel->set_h_size_flags(Control::SIZE_EXPAND_FILL);
     background_panel->set_mouse_filter(Control::MOUSE_FILTER_IGNORE);
-    
+
     Ref<StyleBoxFlat> panel_style = memnew(StyleBoxFlat);
     panel_style->set_bg_color(Color(0.2, 0.2, 0.25, 0.6));
     panel_style->set_border_width_all(2);
@@ -127,7 +119,7 @@ SSImportControl::SSImportControl() {
 #else
     background_panel->add_theme_style_override("panel", panel_style);
 #endif
-    
+
     add_child(background_panel);
 
     instruction_label = memnew(Label);
@@ -154,74 +146,7 @@ void SSImportControl::_notification(int p_what) {
         case NOTIFICATION_EXIT_TREE: {
             stop_intercepting();
         } break;
-        case NOTIFICATION_PROCESS: {
-            if (is_importing) {
-                bool wait_for_finish = false;
-
-                for (size_t i = 0; i < import_contexts.size(); ++i) {
-                    void* ctx = import_contexts[i];
-                    bool ret = ss_converter_is_finished((Context *)ctx);
-                    if (!ret) {
-                        wait_for_finish = true;
-                    } else {
-                        import_finished_contexts.set(i, true);
-                    }
-                }
-                
-                int finished_num = 0;
-                for (size_t i = 0; i < import_finished_contexts.size(); ++i) {
-                    if (import_finished_contexts[i]) {
-                        finished_num++;
-                    }
-                }
-                
-                if (finished_num != import_prev_num) {
-                    import_dialog->step(vformat("Importing SSPJ: %d/%d", finished_num, import_finished_contexts.size()), finished_num);
-                    import_prev_num = finished_num;
-                }
-
-                if (!wait_for_finish) {
-                    import_dialog->finish();
-                    for (size_t i = 0; i < import_contexts.size(); ++i) {
-                        void* ctx = import_contexts[i];
-                        ss_converter_destroy((Context*)ctx);
-                    }
-                    import_contexts.clear();
-                    import_finished_contexts.clear();
-
-#if defined(SPRITESTUDIO_GODOT_EXTENSION) || (VERSION_MAJOR >= 4 && VERSION_MINOR >= 6)
-                    for (int i = 0; i < import_dst_dirs.size(); i++) {
-                        EditorInterface::get_singleton()->get_resource_filesystem()->update_file(import_dst_dirs[i]);
-                    }
-                    EditorInterface::get_singleton()->get_resource_filesystem()->scan();
-#else
-                    for (int i = 0; i < import_dst_dirs.size(); i++) {
-                        EditorInterface::get_singleton()->get_resource_file_system()->update_file(import_dst_dirs[i]);
-                    }
-                    EditorInterface::get_singleton()->get_resource_file_system()->scan();
-#endif
-                    import_dst_dirs.clear();
-                    import_dialog = nullptr;
-                    is_importing = false;
-                    set_process(false);
-                }
-            }
-        } break;
     }
-}
-
-void* SSImportControl::process_file(const String &source_sspj_path, const String &dst_dir_path) {
-    auto ctx = ss_converter_create();
-    
-    // Keep CharString alive until the end of this function call
-    CharString src_utf8 = source_sspj_path.utf8();
-    CharString dst_utf8 = dst_dir_path.utf8();
-    
-    ss_converter_convert(ctx, src_utf8.get_data(), dst_utf8.get_data(), [](const char *msg){
-        print_line(String::utf8(msg));
-    });
-
-    return ctx;
 }
 
 void SSImportControl::start_intercepting() {
@@ -294,7 +219,7 @@ void SSImportControl::_on_window_files_dropped(const Vector<String> &p_files) {
 
     if (get_global_rect().has_point(get_global_mouse_position())) {
 
-        if (is_importing) {
+        if (importer && importer->is_importing()) {
             print_line("SSImportControl: Already importing. Please wait.");
             return;
         }
@@ -328,38 +253,18 @@ void SSImportControl::_start_import(const PackedStringArray &p_sspj_files) {
 #else
 void SSImportControl::_start_import(const Vector<String> &p_sspj_files) {
 #endif
+    if (!importer) {
+        print_line("SSImportControl: importer is not set.");
+        return;
+    }
+
     String output_dir = path_line_edit->get_text();
 
-    Ref<DirAccess> da = DirAccess::open("res://");
-    if (!da->dir_exists(output_dir)) {
-        da->make_dir_recursive(output_dir);
-    }
-
     for (int i = 0; i < p_sspj_files.size(); i++) {
-        String src_file_path = p_sspj_files[i];
-        String src_file = src_file_path.get_file();
-        String src_stem = src_file.get_basename();
-        String dst_dir = output_dir.path_join(src_stem);
-        String global_dst_dir = ProjectSettings::get_singleton()->globalize_path(dst_dir);
-        String global_src_file_path = ProjectSettings::get_singleton()->globalize_path(src_file_path);
-        void *ctx = process_file(global_src_file_path, global_dst_dir);
-        print_line("SSImportControl: convert sspj file: " + src_file_path + ", to ssab files: " + dst_dir);
-        import_contexts.push_back(ctx);
-        import_dst_dirs.push_back(dst_dir);
-
-        _add_to_recent_files(src_file_path);
+        _add_to_recent_files(p_sspj_files[i]);
     }
 
-    import_dialog = memnew(SSProgressDialog);
-    EditorInterface::get_singleton()->get_base_control()->add_child(import_dialog);
-    import_dialog->show_progress("Importing SSPJ...", import_contexts.size());
-
-    import_finished_contexts.resize(import_contexts.size());
-    import_prev_num = 0;
-    is_importing = true;
-    import_dialog->step(vformat("Importing SSPJ: %d/%d", 0, import_finished_contexts.size()), 0);
-
-    set_process(true);
+    importer->queue_import(p_sspj_files, output_dir);
 }
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
@@ -415,7 +320,7 @@ void SSImportControl::_on_dir_selected(const String &p_path) {
 }
 
 void SSImportControl::_on_recent_file_pressed(const String &p_path) {
-    if (is_importing) {
+    if (importer && importer->is_importing()) {
         print_line("SSImportControl: Already importing. Please wait.");
         return;
     }

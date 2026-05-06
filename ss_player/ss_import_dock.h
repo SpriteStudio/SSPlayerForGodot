@@ -10,7 +10,7 @@
 #include <godot_cpp/classes/label.hpp>
 #include <godot_cpp/classes/style_box_flat.hpp>
 
-#include <godot_cpp/classes/v_box_container.hpp> 
+#include <godot_cpp/classes/v_box_container.hpp>
 #include <godot_cpp/classes/h_box_container.hpp>
 #include <godot_cpp/classes/line_edit.hpp>
 #include <godot_cpp/classes/button.hpp>
@@ -32,6 +32,8 @@ using namespace godot;
 #include "scene/gui/scroll_container.h"
 #endif
 
+class SSImporter;
+
 class SSImportControl : public VBoxContainer {
   GDCLASS(SSImportControl, VBoxContainer)
 
@@ -44,22 +46,17 @@ public:
 
   void _notification(int p_what);
 
-  void* process_file(const String &source_sspj_path, const String &dst_dir_path);
+  void set_importer(SSImporter *p_importer) { importer = p_importer; }
 
   void start_intercepting();
   void stop_intercepting();
 
 private:
+  SSImporter *importer = nullptr;
+
   Callable original_drop_handler;
   bool is_intercepting = false;
   bool is_reemitting = false;
-
-  Vector<void*> import_contexts;
-  Vector<String> import_dst_dirs;
-  class SSProgressDialog* import_dialog = nullptr;
-  Vector<bool> import_finished_contexts;
-  int import_prev_num = 0;
-  bool is_importing = false;
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
   void _on_window_files_dropped(const PackedStringArray &p_files);

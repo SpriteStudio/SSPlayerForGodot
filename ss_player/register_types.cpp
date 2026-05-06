@@ -12,6 +12,7 @@ using namespace godot;
 #ifdef TOOLS_ENABLED
 #include "ss_clickable_label.h"
 #include "ss_progress_dialog.h"
+#include "ss_importer.h"
 #include "ss_editor_plugin.h"
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
@@ -125,6 +126,7 @@ void initialize_ss_player_module(ModuleInitializationLevel level) {
 #ifdef TOOLS_ENABLED
   if (level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
 
+    GDREGISTER_CLASS(SSImporter);
     GDREGISTER_CLASS(SSImportControl);
     GDREGISTER_CLASS(SSClickableLabel);
     GDREGISTER_CLASS(SSProgressDialog);
