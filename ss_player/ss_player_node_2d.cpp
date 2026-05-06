@@ -475,12 +475,6 @@ void SpriteStudioPlayer2D::_get_property_list( List<PropertyInfo>* p_list ) cons
     animasPropertyInfo.hint = PROPERTY_HINT_NONE;
 	p_list->push_back( animasPropertyInfo );
 
-    animasPropertyInfo.name = "sub_frame_enabled";
-    animasPropertyInfo.type = Variant::BOOL;
-    animasPropertyInfo.usage = PROPERTY_USAGE_EDITOR | PROPERTY_USAGE_STORAGE;
-    animasPropertyInfo.hint = PROPERTY_HINT_NONE;
-    p_list->push_back( animasPropertyInfo );
-
     animasPropertyInfo.name = "frame";
     animasPropertyInfo.type = Variant::FLOAT;
     animasPropertyInfo.usage = PROPERTY_USAGE_EDITOR;

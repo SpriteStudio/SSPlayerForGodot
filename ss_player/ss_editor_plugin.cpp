@@ -32,9 +32,20 @@ void SSEditorPlugin::_notification(int what) {
                 filesystem_menu->set_importer(this->importer);
                 add_context_menu_plugin(EditorContextMenuPlugin::CONTEXT_SLOT_FILESYSTEM, filesystem_menu);
             }
+
+            if (inspector_plugin.is_null()) {
+                inspector_plugin.instantiate();
+                inspector_plugin->set_importer(this->importer);
+                inspector_plugin->set_context_menu(filesystem_menu.ptr());
+                add_inspector_plugin(inspector_plugin);
+            }
         } break;
 
         case NOTIFICATION_EXIT_TREE: {
+            if (inspector_plugin.is_valid()) {
+                remove_inspector_plugin(inspector_plugin);
+                inspector_plugin.unref();
+            }
             if (filesystem_menu.is_valid()) {
                 remove_context_menu_plugin(filesystem_menu);
                 filesystem_menu.unref();

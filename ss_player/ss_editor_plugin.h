@@ -13,6 +13,7 @@ using namespace godot;
 #include "ss_filesystem_menu.h"
 #include "ss_import_dock.h"
 #include "ss_importer.h"
+#include "ss_resource_inspector.h"
 
 class SSEditorPlugin : public EditorPlugin {
     GDCLASS(SSEditorPlugin, EditorPlugin)
@@ -20,6 +21,7 @@ class SSEditorPlugin : public EditorPlugin {
     SSImportControl *import_dock = nullptr;
     SSImporter *importer = nullptr;
     Ref<SSFileSystemContextMenu> filesystem_menu;
+    Ref<SSResourceInspectorPlugin> inspector_plugin;
 
 protected:
     static void _bind_methods() {}
