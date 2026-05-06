@@ -68,7 +68,7 @@ void SSImporter::_notification(int p_what) {
             }
 
             if (finished_num != _import_prev_num) {
-                _import_dialog->step(vformat("Importing SSPJ: %d/%d", finished_num, _import_finished_contexts.size()), finished_num);
+                _import_dialog->step(vformat("%s %d/%d", _session_title, finished_num, _import_finished_contexts.size()), finished_num);
                 _import_prev_num = finished_num;
             }
 
@@ -157,11 +157,14 @@ void SSImporter::_record_ssabs_in_dir(Dictionary &p_map, const String &p_dst_dir
     da->list_dir_begin();
     String fname = da->get_next();
     while (!fname.is_empty()) {
-        if (!da->current_is_dir() && fname.get_extension() == "ssab") {
-            String ssab_path = p_dst_dir.path_join(fname);
-            // Re-insert to bump to most-recent in iteration order.
-            p_map.erase(ssab_path);
-            p_map[ssab_path] = p_sspj_path;
+        if (!da->current_is_dir()) {
+            String ext = fname.get_extension();
+            if (ext == "ssab" || ext == "ssqb") {
+                String output_path = p_dst_dir.path_join(fname);
+                // Re-insert to bump to most-recent in iteration order.
+                p_map.erase(output_path);
+                p_map[output_path] = p_sspj_path;
+            }
         }
         fname = da->get_next();
     }
@@ -186,6 +189,32 @@ String SSImporter::lookup_sspj_for_ssab(const String &p_ssab_path) const {
     return String();
 }
 
+void SSImporter::_enqueue_one(const String &p_sspj_path, const String &p_dst_dir) {
+    String global_dst_dir = ProjectSettings::get_singleton()->globalize_path(p_dst_dir);
+    String global_src_file_path = ProjectSettings::get_singleton()->globalize_path(p_sspj_path);
+    void *ctx = _process_file(global_src_file_path, global_dst_dir);
+    print_line("SSImporter: convert sspj file: " + p_sspj_path + ", to ssab files: " + p_dst_dir);
+    _import_contexts.push_back(ctx);
+    _import_dst_dirs.push_back(p_dst_dir);
+    _import_src_files.push_back(global_src_file_path);
+}
+
+void SSImporter::_start_session(const String &p_dialog_title) {
+    _session_title = p_dialog_title;
+    _import_dialog = memnew(SSProgressDialog);
+    EditorInterface::get_singleton()->get_base_control()->add_child(_import_dialog);
+    _import_dialog->show_progress(p_dialog_title, _import_contexts.size());
+
+    _import_finished_contexts.resize(_import_contexts.size());
+    _import_prev_num = 0;
+    _is_importing = true;
+    _import_dialog->step(vformat("%s %d/%d", _session_title, 0, _import_finished_contexts.size()), 0);
+
+    set_process(true);
+
+    emit_signal("import_started");
+}
+
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
 void SSImporter::queue_import(const PackedStringArray &p_sspj_files, const String &p_output_dir) {
 #else
@@ -206,30 +235,45 @@ void SSImporter::queue_import(const Vector<String> &p_sspj_files, const String &
 
     for (int i = 0; i < p_sspj_files.size(); i++) {
         String src_file_path = p_sspj_files[i];
-        String src_file = src_file_path.get_file();
-        String src_stem = src_file.get_basename();
+        String src_stem = src_file_path.get_file().get_basename();
         String dst_dir = p_output_dir.path_join(src_stem);
-        String global_dst_dir = ProjectSettings::get_singleton()->globalize_path(dst_dir);
-        String global_src_file_path = ProjectSettings::get_singleton()->globalize_path(src_file_path);
-        void *ctx = _process_file(global_src_file_path, global_dst_dir);
-        print_line("SSImporter: convert sspj file: " + src_file_path + ", to ssab files: " + dst_dir);
-        _import_contexts.push_back(ctx);
-        _import_dst_dirs.push_back(dst_dir);
-        _import_src_files.push_back(global_src_file_path);
+        _enqueue_one(src_file_path, dst_dir);
     }
 
-    _import_dialog = memnew(SSProgressDialog);
-    EditorInterface::get_singleton()->get_base_control()->add_child(_import_dialog);
-    _import_dialog->show_progress("Importing SSPJ...", _import_contexts.size());
+    _start_session("Importing SSPJ:");
+}
 
-    _import_finished_contexts.resize(_import_contexts.size());
-    _import_prev_num = 0;
-    _is_importing = true;
-    _import_dialog->step(vformat("Importing SSPJ: %d/%d", 0, _import_finished_contexts.size()), 0);
+void SSImporter::queue_reconvert(const PackedStringArray &p_sspj_files, const PackedStringArray &p_dst_dirs) {
+    if (_is_importing) {
+        print_line("SSImporter: Already importing. Please wait.");
+        return;
+    }
+    if (p_sspj_files.is_empty() || p_sspj_files.size() != p_dst_dirs.size()) {
+        return;
+    }
 
-    set_process(true);
+    Ref<DirAccess> da = DirAccess::open("res://");
+    for (int i = 0; i < p_dst_dirs.size(); i++) {
+        if (!da->dir_exists(p_dst_dirs[i])) {
+            da->make_dir_recursive(p_dst_dirs[i]);
+        }
+    }
 
-    emit_signal("import_started");
+    for (int i = 0; i < p_sspj_files.size(); i++) {
+        _enqueue_one(p_sspj_files[i], p_dst_dirs[i]);
+    }
+    _start_session("Reconverting SSPJ:");
+}
+
+void SSImporter::record_ssab_source(const String &p_ssab_path, const String &p_sspj_path) {
+    if (p_ssab_path.is_empty() || p_sspj_path.is_empty()) {
+        return;
+    }
+    Dictionary map = _load_source_map();
+    map.erase(p_ssab_path);
+    map[p_ssab_path] = p_sspj_path;
+    _evict_lru(map);
+    _save_source_map(map);
 }
 
 #endif // #ifdef TOOLS_ENABLED

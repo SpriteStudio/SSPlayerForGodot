@@ -10,6 +10,7 @@ using namespace godot;
 #include "editor/editor_node.h"
 #endif
 
+#include "ss_filesystem_menu.h"
 #include "ss_import_dock.h"
 #include "ss_importer.h"
 
@@ -18,6 +19,7 @@ class SSEditorPlugin : public EditorPlugin {
 
     SSImportControl *import_dock = nullptr;
     SSImporter *importer = nullptr;
+    Ref<SSFileSystemContextMenu> filesystem_menu;
 
 protected:
     static void _bind_methods() {}
