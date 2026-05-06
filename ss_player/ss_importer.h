@@ -7,12 +7,14 @@
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
 #include <godot_cpp/classes/node.hpp>
 #include <godot_cpp/templates/vector.hpp>
+#include <godot_cpp/variant/dictionary.hpp>
 #include <godot_cpp/variant/packed_string_array.hpp>
 #include <godot_cpp/variant/string.hpp>
 using namespace godot;
 #else
 #include "core/string/ustring.h"
 #include "core/templates/vector.h"
+#include "core/variant/dictionary.h"
 #include "scene/main/node.h"
 #endif
 
@@ -38,9 +40,16 @@ public:
   void queue_import(const Vector<String> &p_sspj_files, const String &p_output_dir);
 #endif
 
+  // Returns the sspj path previously recorded for the given ssab path,
+  // or an empty String if no record exists.
+  String lookup_sspj_for_ssab(const String &p_ssab_path) const;
+
 private:
+  static const int MAX_SOURCE_MAP_ENTRIES = 500;
+
   Vector<void *> _import_contexts;
   Vector<String> _import_dst_dirs;
+  Vector<String> _import_src_files;
   SSProgressDialog *_import_dialog = nullptr;
   Vector<bool> _import_finished_contexts;
   int _import_prev_num = 0;
@@ -48,6 +57,11 @@ private:
 
   void *_process_file(const String &source_sspj_path, const String &dst_dir_path);
   void _finalize_import();
+
+  Dictionary _load_source_map() const;
+  void _save_source_map(const Dictionary &p_map);
+  void _record_ssabs_in_dir(Dictionary &p_map, const String &p_dst_dir, const String &p_sspj_path);
+  void _evict_lru(Dictionary &p_map);
 };
 
 #endif // #ifdef TOOLS_ENABLED

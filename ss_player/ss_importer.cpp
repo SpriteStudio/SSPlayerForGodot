@@ -9,6 +9,7 @@
 #include <godot_cpp/classes/dir_access.hpp>
 #include <godot_cpp/classes/editor_file_system.hpp>
 #include <godot_cpp/classes/editor_interface.hpp>
+#include <godot_cpp/classes/editor_settings.hpp>
 #include <godot_cpp/classes/project_settings.hpp>
 #include <godot_cpp/core/class_db.hpp>
 #include <godot_cpp/variant/utility_functions.hpp>
@@ -17,6 +18,7 @@ using namespace godot;
 #include "core/config/project_settings.h"
 #include "core/io/dir_access.h"
 #include "editor/editor_interface.h"
+#include "editor/settings/editor_settings.h"
 #if VERSION_MAJOR >= 4
     #if VERSION_MINOR >= 5
     #include "editor/file_system/editor_file_system.h"
@@ -92,12 +94,30 @@ void *SSImporter::_process_file(const String &source_sspj_path, const String &ds
 
 void SSImporter::_finalize_import() {
     _import_dialog->finish();
+
+    Dictionary source_map = _load_source_map();
+    bool any_success = false;
+
     for (size_t i = 0; i < _import_contexts.size(); ++i) {
         void *ctx = _import_contexts[i];
+        CConverterError result = ss_converter_get_result((Context *)ctx);
+        if (result == CConverterError::Success) {
+            _record_ssabs_in_dir(source_map, _import_dst_dirs[i], _import_src_files[i]);
+            any_success = true;
+        } else {
+            print_line(vformat("SSImporter: convert failed for %s (error %d)", _import_src_files[i], (int)result));
+        }
         ss_converter_destroy((Context *)ctx);
     }
+
+    if (any_success) {
+        _evict_lru(source_map);
+        _save_source_map(source_map);
+    }
+
     _import_contexts.clear();
     _import_finished_contexts.clear();
+    _import_src_files.clear();
 
 #if defined(SPRITESTUDIO_GODOT_EXTENSION) || (VERSION_MAJOR >= 4 && VERSION_MINOR >= 6)
     for (int i = 0; i < _import_dst_dirs.size(); i++) {
@@ -116,6 +136,54 @@ void SSImporter::_finalize_import() {
     set_process(false);
 
     emit_signal("import_finished");
+}
+
+Dictionary SSImporter::_load_source_map() const {
+    Ref<EditorSettings> es = EditorInterface::get_singleton()->get_editor_settings();
+    return es->get_project_metadata("spritestudio", "ssab_sources", Dictionary());
+}
+
+void SSImporter::_save_source_map(const Dictionary &p_map) {
+    Ref<EditorSettings> es = EditorInterface::get_singleton()->get_editor_settings();
+    es->set_project_metadata("spritestudio", "ssab_sources", p_map);
+}
+
+void SSImporter::_record_ssabs_in_dir(Dictionary &p_map, const String &p_dst_dir, const String &p_sspj_path) {
+    Ref<DirAccess> da = DirAccess::open(p_dst_dir);
+    if (da.is_null()) {
+        return;
+    }
+
+    da->list_dir_begin();
+    String fname = da->get_next();
+    while (!fname.is_empty()) {
+        if (!da->current_is_dir() && fname.get_extension() == "ssab") {
+            String ssab_path = p_dst_dir.path_join(fname);
+            // Re-insert to bump to most-recent in iteration order.
+            p_map.erase(ssab_path);
+            p_map[ssab_path] = p_sspj_path;
+        }
+        fname = da->get_next();
+    }
+    da->list_dir_end();
+}
+
+void SSImporter::_evict_lru(Dictionary &p_map) {
+    while (p_map.size() > MAX_SOURCE_MAP_ENTRIES) {
+        Array keys = p_map.keys();
+        if (keys.is_empty()) {
+            break;
+        }
+        p_map.erase(keys[0]);
+    }
+}
+
+String SSImporter::lookup_sspj_for_ssab(const String &p_ssab_path) const {
+    Dictionary map = _load_source_map();
+    if (map.has(p_ssab_path)) {
+        return map[p_ssab_path];
+    }
+    return String();
 }
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
@@ -147,6 +215,7 @@ void SSImporter::queue_import(const Vector<String> &p_sspj_files, const String &
         print_line("SSImporter: convert sspj file: " + src_file_path + ", to ssab files: " + dst_dir);
         _import_contexts.push_back(ctx);
         _import_dst_dirs.push_back(dst_dir);
+        _import_src_files.push_back(global_src_file_path);
     }
 
     _import_dialog = memnew(SSProgressDialog);
