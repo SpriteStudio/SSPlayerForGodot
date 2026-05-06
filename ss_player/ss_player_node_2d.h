@@ -155,6 +155,10 @@ private:
     // the match (null when not found). Returns the animation name as
     // utf8 String (empty when not found).
     String _resolve_animation_by_hash(uint32_t name_hash, Ref<SSABResource>& out_source) const;
+    // Re-applies `_ssabRes` after its underlying binary changes on disk
+    // (e.g. user reconverted the source sspj). Connected to the
+    // Resource::changed signal in setSSABResource.
+    void _on_ssab_changed();
     void _apply_blend_material(RenderingServer *rs, RID ci, ss::format::BlendType blend_type);
 
     void _reconfigure();

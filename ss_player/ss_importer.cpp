@@ -11,12 +11,15 @@
 #include <godot_cpp/classes/editor_interface.hpp>
 #include <godot_cpp/classes/editor_settings.hpp>
 #include <godot_cpp/classes/project_settings.hpp>
+#include <godot_cpp/classes/resource.hpp>
+#include <godot_cpp/classes/resource_loader.hpp>
 #include <godot_cpp/core/class_db.hpp>
 #include <godot_cpp/variant/utility_functions.hpp>
 using namespace godot;
 #else
 #include "core/config/project_settings.h"
 #include "core/io/dir_access.h"
+#include "core/io/resource.h"
 #include "editor/editor_interface.h"
 #include "editor/settings/editor_settings.h"
 #if VERSION_MAJOR >= 4
@@ -164,11 +167,32 @@ void SSImporter::_record_ssabs_in_dir(Dictionary &p_map, const String &p_dst_dir
                 // Re-insert to bump to most-recent in iteration order.
                 p_map.erase(output_path);
                 p_map[output_path] = p_sspj_path;
+                _refresh_cached_output(output_path);
             }
         }
         fname = da->get_next();
     }
     da->list_dir_end();
+}
+
+void SSImporter::_refresh_cached_output(const String &p_output_path) {
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+    if (!ResourceLoader::get_singleton()->has_cached(p_output_path)) {
+        return;
+    }
+    Ref<Resource> existing = ResourceLoader::get_singleton()->load(p_output_path, "", ResourceLoader::CACHE_MODE_REUSE);
+#else
+    if (!ResourceCache::has(p_output_path)) {
+        return;
+    }
+    Ref<Resource> existing = ResourceCache::get_ref(p_output_path);
+#endif
+    if (existing.is_null()) {
+        return;
+    }
+    // Both SSABResource and SSQBResource expose load_from_file via ClassDB.
+    existing->call("load_from_file", p_output_path);
+    existing->emit_changed();
 }
 
 void SSImporter::_evict_lru(Dictionary &p_map) {

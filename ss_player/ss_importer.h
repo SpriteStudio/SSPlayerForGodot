@@ -75,6 +75,10 @@ private:
   void _save_source_map(const Dictionary &p_map);
   void _record_ssabs_in_dir(Dictionary &p_map, const String &p_dst_dir, const String &p_sspj_path);
   void _evict_lru(Dictionary &p_map);
+  // Refreshes the in-memory cached resource (SSABResource / SSQBResource) so
+  // any active SpriteStudioPlayer2D referencing it picks up the new binary
+  // without requiring a scene reload. No-op if the resource is not cached.
+  void _refresh_cached_output(const String &p_output_path);
 };
 
 #endif // #ifdef TOOLS_ENABLED
