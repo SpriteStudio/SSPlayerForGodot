@@ -3,17 +3,12 @@
 $baseDirectory = Split-Path -Parent $PSCommandPath
 $rootDirectory = Split-Path -Parent $baseDirectory
 $rawArch = (Get-Item Env:PROCESSOR_ARCHITECTURE).Value
-if ($rawArch -match "AMD64") {
-    $HOST_ARCH = "x86_64"
-    $HOST_PLATFORM = "windows"
-} elseif ($rawArch -match "ARM64") {
+if ($rawArch -match "ARM64") {
     $HOST_ARCH = "arm64"
-    $HOST_PLATFORM = "windows"
 } else {
-    # Fallback for non-Windows host (if pwsh is running elsewhere)
     $HOST_ARCH = "x86_64"
-    $HOST_PLATFORM = "linux"
 }
+$HOST_PLATFORM = "windows"
 
 # Godot options
 $default_opts = @{
@@ -62,33 +57,27 @@ echo ""
 $SDK_DIR = "$rootDirectory/ss_player/SpriteStudio7-SDK"
 
 pushd $SDK_DIR
-if ($BUILD_MODE -eq "release") {
-    $script = "./scripts/release-$PLATFORM.ps1"
-    if ($PLATFORM -eq "ios" -and $IOS_SIMULATOR -eq "yes") {
-        $script = "./scripts/release-ios-sim.sh"
-    } elseif (-not (Test-Path $script)) {
-        # Fallback to shell script via sh if ps1 doesn't exist (cross-platform support)
-        $script = "./scripts/release-$PLATFORM.sh"
-    }
-    
-    if ($script -match "\.sh$") {
-        echo "Executing $script $BUILD_MODE..."
-        & sh $script $BUILD_MODE
-    } else {
+
+$CARGO_FLAGS = @()
+if ($BUILD_MODE -eq "release") { $CARGO_FLAGS = @("--release") }
+
+if ($IS_HOST_BUILD) {
+    # Windows host: invoke cargo directly so artifacts land in target/$BUILD_MODE/
+    & cargo build @CARGO_FLAGS
+    & cargo build @CARGO_FLAGS -p ssruntime --features libc_alloc,panic-handler
+} else {
+    # Cross-compilation: dispatch to SDK release scripts
+    if ($PLATFORM -eq "windows") {
+        $script = "./scripts/release-windows.ps1"
+        if ($ARCH -eq "arm64") { $script = "./scripts/release-windows-arm64.ps1" }
         echo "Executing $script $BUILD_MODE..."
         & $script $BUILD_MODE
-    }
-} else {
-    # In debug mode, we can build directly or use sdk scripts if they support it
-    if ($PLATFORM -eq "android" -or $PLATFORM -eq "web" -or $PLATFORM -eq "ios") {
-        $script = "./scripts/release-$PLATFORM.sh"
-        if ($PLATFORM -eq "ios" -and $IOS_SIMULATOR -eq "yes") {
-            $script = "./scripts/release-ios-sim.sh"
-        }
-        & sh $script debug
+    } elseif ($PLATFORM -eq "ios" -and $IOS_SIMULATOR -eq "yes") {
+        & sh ./scripts/release-ios-sim.sh $BUILD_MODE
+    } elseif ($PLATFORM -eq "web") {
+        & sh ./scripts/release-wasm.sh $BUILD_MODE
     } else {
-        & cargo build -p ssconverter
-        & cargo build -p ssruntime --features libc_alloc,panic-handler
+        & sh "./scripts/release-$PLATFORM.sh" $BUILD_MODE
     }
 }
 popd
