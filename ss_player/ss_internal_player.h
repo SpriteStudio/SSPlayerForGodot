@@ -109,6 +109,10 @@ public:
     int getAnimationSectionStart() const;
     int getAnimationSectionEnd() const;
 
+    // Direction encoding follows the FFI convention: 0 = Forward,
+    // non-zero = Backward. Style: 0 = Normal, 1 = PingPong. Note this is
+    // distinct from the Rust PlaybackDirection enum's int values
+    // (Forward=1, Backward=-1) — pass 0/1 here.
     void setPlaybackDirection(int p_direction, int p_style);
     int getPlaybackDirection() const;
     int getPlaybackStyle() const;
@@ -156,7 +160,7 @@ private:
     String _strAnimationSelected;
     const ss::format::AnimationData* _currentAnimationData = nullptr;
     void* runtime_ctx = nullptr;
-    void* rutime_res = nullptr;
+    void* runtime_res = nullptr;
     float previous_frame_no = -1.0f;
     float _speed_rate = 1.0f;
     bool _sub_frame_enabled = false;

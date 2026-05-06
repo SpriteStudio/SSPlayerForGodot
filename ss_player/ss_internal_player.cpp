@@ -38,9 +38,9 @@ SsInternalPlayer::~SsInternalPlayer() {
         ss_runtime_destroy(runtime_ctx);
         runtime_ctx = nullptr;
     }
-    if (rutime_res != nullptr) {
-        ss_resource_destroy(rutime_res);
-        rutime_res = nullptr;
+    if (runtime_res != nullptr) {
+        ss_resource_destroy(runtime_res);
+        runtime_res = nullptr;
     }
 }
 
@@ -947,9 +947,9 @@ void SsInternalPlayer::_fetchAnimation() {
     if (_strAnimationSelected.is_empty() || _ssabRes.is_null()) {
         ss_runtime_reset(runtime_ctx);
         _reconfigure();
-        if (rutime_res != nullptr) {
-            ss_resource_destroy(rutime_res);
-            rutime_res = nullptr;
+        if (runtime_res != nullptr) {
+            ss_resource_destroy(runtime_res);
+            runtime_res = nullptr;
         }
         _currentAnimationData = nullptr;
         // Free instance children before their parent canvas items — each
@@ -964,18 +964,18 @@ void SsInternalPlayer::_fetchAnimation() {
     _clear_instance_players();
     _clear_canvas_items();
 
-    if (rutime_res != nullptr) {
-        ss_resource_destroy(rutime_res);
-        rutime_res = nullptr;
+    if (runtime_res != nullptr) {
+        ss_resource_destroy(runtime_res);
+        runtime_res = nullptr;
     }
 
-    rutime_res = ss_resource_create_borrow(_ssabRes->get_data_ptr(), _ssabRes->get_data_size());
-    if (rutime_res == nullptr) {
+    runtime_res = ss_resource_create_borrow(_ssabRes->get_data_ptr(), _ssabRes->get_data_size());
+    if (runtime_res == nullptr) {
         ERR_PRINT("SSAB Resource Create Failed");
         return;
     }
 
-    bool binded = ss_runtime_bind_resource(runtime_ctx, rutime_res);
+    bool binded = ss_runtime_bind_resource(runtime_ctx, runtime_res);
     if (!binded) {
         ERR_PRINT("SSAB Resource Bind Failed");
         return;

@@ -297,6 +297,13 @@ void SpriteStudioPlayer2D::_notification(int p_notification) {
             _internal->setParentCanvasItem(get_canvas_item());
             break;
 
+        case NOTIFICATION_EXIT_TREE:
+            // Detach before our canvas item is freed by Node2D — otherwise
+            // _root_ci would briefly point at a dangling parent RID until
+            // the next ENTER_TREE / dtor.
+            _internal->setParentCanvasItem(RID());
+            break;
+
         case NOTIFICATION_READY:
             set_process_internal(true);
             break;
