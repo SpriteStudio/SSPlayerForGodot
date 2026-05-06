@@ -77,27 +77,27 @@ void SSResourceInspectorPlugin::parse_begin(Object *p_object) {
 
 void SSResourceInspectorPlugin::_add_action_buttons(const String &p_path) {
     String sspj = importer ? importer->lookup_sspj_for_ssab(p_path) : String();
-    String missing_tip = "No source SSPJ recorded yet — clicking will prompt to choose one.";
+    String missing_tip = tr("No source SSPJ recorded yet — clicking will prompt to choose one.");
 
     HBoxContainer *hbox = memnew(HBoxContainer);
 
     if (!_is_unsupported_for_editor()) {
         Button *open_btn = memnew(Button);
-        open_btn->set_text("Open Source SSPJ");
+        open_btn->set_text(tr("Open Source SSPJ"));
         open_btn->set_tooltip_text(sspj.is_empty() ? missing_tip : sspj);
         open_btn->connect("pressed", callable_mp(this, &SSResourceInspectorPlugin::_on_open_pressed).bind(p_path));
         hbox->add_child(open_btn);
     }
 
     Button *reconvert_btn = memnew(Button);
-    reconvert_btn->set_text("Reconvert");
-    reconvert_btn->set_tooltip_text(sspj.is_empty() ? missing_tip : "Reconvert from " + sspj);
+    reconvert_btn->set_text(tr("Reconvert"));
+    reconvert_btn->set_tooltip_text(sspj.is_empty() ? missing_tip : tr("Reconvert from") + " " + sspj);
     reconvert_btn->connect("pressed", callable_mp(this, &SSResourceInspectorPlugin::_on_reconvert_pressed).bind(p_path));
     hbox->add_child(reconvert_btn);
 
     Button *reveal_btn = memnew(Button);
-    reveal_btn->set_text("Reveal");
-    reveal_btn->set_tooltip_text("Show this file in the OS file manager.");
+    reveal_btn->set_text(tr("Reveal"));
+    reveal_btn->set_tooltip_text(tr("Show this file in the OS file manager."));
     reveal_btn->connect("pressed", callable_mp(this, &SSResourceInspectorPlugin::_on_reveal_pressed).bind(p_path));
     hbox->add_child(reveal_btn);
 

@@ -50,6 +50,11 @@ public:
   // or an empty String if no record exists.
   String lookup_sspj_for_ssab(const String &p_ssab_path) const;
 
+  // Returns the output directory for a previously imported sspj, derived
+  // from the parent dir of the most recently inserted ssab/ssqb keyed to
+  // this sspj. Returns an empty String when no record exists.
+  String lookup_output_dir_for_sspj(const String &p_sspj_path) const;
+
   // Inserts (or updates) a single ssab → sspj entry. Used by the right-click
   // file-dialog fallback when no existing record is found.
   void record_ssab_source(const String &p_ssab_path, const String &p_sspj_path);

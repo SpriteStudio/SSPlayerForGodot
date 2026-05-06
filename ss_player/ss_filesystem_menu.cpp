@@ -66,9 +66,9 @@ void SSFileSystemContextMenu::get_options(const Vector<String> &p_paths) {
     }
 
     if (!_is_unsupported_for_editor()) {
-        add_context_menu_item("Open Source SSPJ", Callable(this, "_on_open_in_editor"), Ref<Texture2D>());
+        add_context_menu_item(tr("Open Source SSPJ"), Callable(this, "_on_open_in_editor"), Ref<Texture2D>());
     }
-    add_context_menu_item("Reconvert from SSPJ", Callable(this, "_on_convert"), Ref<Texture2D>());
+    add_context_menu_item(tr("Reconvert"), Callable(this, "_on_convert"), Ref<Texture2D>());
 }
 
 void SSFileSystemContextMenu::_on_open_in_editor(const PackedStringArray &p_paths) {

@@ -213,6 +213,24 @@ String SSImporter::lookup_sspj_for_ssab(const String &p_ssab_path) const {
     return String();
 }
 
+String SSImporter::lookup_output_dir_for_sspj(const String &p_sspj_path) const {
+    if (p_sspj_path.is_empty()) {
+        return String();
+    }
+    Dictionary map = _load_source_map();
+    Array keys = map.keys();
+    // Iterate from most-recently-inserted backward so the latest known
+    // location for this sspj wins.
+    for (int i = keys.size() - 1; i >= 0; i--) {
+        String ssab_path = keys[i];
+        String sspj = map[ssab_path];
+        if (sspj == p_sspj_path) {
+            return ssab_path.get_base_dir();
+        }
+    }
+    return String();
+}
+
 void SSImporter::_enqueue_one(const String &p_sspj_path, const String &p_dst_dir) {
     String global_dst_dir = ProjectSettings::get_singleton()->globalize_path(p_dst_dir);
     String global_src_file_path = ProjectSettings::get_singleton()->globalize_path(p_sspj_path);
