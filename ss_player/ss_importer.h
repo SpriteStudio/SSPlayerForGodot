@@ -65,6 +65,7 @@ private:
   Vector<void *> _import_contexts;
   Vector<String> _import_dst_dirs;
   Vector<String> _import_src_files;
+  Vector<String> _import_generated_files;
   SSProgressDialog *_import_dialog = nullptr;
   String _session_title;
   Vector<bool> _import_finished_contexts;

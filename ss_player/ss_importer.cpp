@@ -123,17 +123,20 @@ void SSImporter::_finalize_import() {
     _import_src_files.clear();
 
 #if defined(SPRITESTUDIO_GODOT_EXTENSION) || (VERSION_MAJOR >= 4 && VERSION_MINOR >= 6)
-    for (int i = 0; i < _import_dst_dirs.size(); i++) {
-        EditorInterface::get_singleton()->get_resource_filesystem()->update_file(_import_dst_dirs[i]);
-    }
-    EditorInterface::get_singleton()->get_resource_filesystem()->scan();
+    auto *efs = EditorInterface::get_singleton()->get_resource_filesystem();
 #else
-    for (int i = 0; i < _import_dst_dirs.size(); i++) {
-        EditorInterface::get_singleton()->get_resource_file_system()->update_file(_import_dst_dirs[i]);
+    auto *efs = EditorInterface::get_singleton()->get_resource_file_system();
+#endif
+    for (int i = 0; i < _import_generated_files.size(); i++) {
+        efs->update_file(_import_generated_files[i]);
     }
-    EditorInterface::get_singleton()->get_resource_file_system()->scan();
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+    efs->scan_sources();
+#else
+    efs->scan_changes();
 #endif
     _import_dst_dirs.clear();
+    _import_generated_files.clear();
     _import_dialog = nullptr;
     _is_importing = false;
     set_process(false);
@@ -168,6 +171,7 @@ void SSImporter::_record_ssabs_in_dir(Dictionary &p_map, const String &p_dst_dir
                 p_map.erase(output_path);
                 p_map[output_path] = p_sspj_path;
                 _refresh_cached_output(output_path);
+                _import_generated_files.push_back(output_path);
             }
         }
         fname = da->get_next();
