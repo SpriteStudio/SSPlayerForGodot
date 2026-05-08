@@ -226,6 +226,9 @@ struct AnimationDataBuilder;
 struct ExternalTexture;
 struct ExternalTextureBuilder;
 
+struct ExternalInstance;
+struct ExternalInstanceBuilder;
+
 struct EmbeddedAsset;
 struct EmbeddedAssetBuilder;
 
@@ -8009,6 +8012,102 @@ inline ::flatbuffers::Offset<ExternalTexture> CreateExternalTextureDirect(
       name__);
 }
 
+struct ExternalInstance FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef ExternalInstanceBuilder Builder;
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
+    VT_ANIME_NAME_HASH = 4,
+    VT_ANIME_PACK_NAME_HASH = 6,
+    VT_ANIME_PACK_NAME = 8,
+    VT_ANIME_NAME = 10
+  };
+  uint32_t anime_name_hash() const {
+    return GetField<uint32_t>(VT_ANIME_NAME_HASH, 0);
+  }
+  bool KeyCompareLessThan(const ExternalInstance * const o) const {
+    return anime_name_hash() < o->anime_name_hash();
+  }
+  int KeyCompareWithValue(uint32_t _anime_name_hash) const {
+    return static_cast<int>(anime_name_hash() > _anime_name_hash) - static_cast<int>(anime_name_hash() < _anime_name_hash);
+  }
+  uint32_t anime_pack_name_hash() const {
+    return GetField<uint32_t>(VT_ANIME_PACK_NAME_HASH, 0);
+  }
+  const ::flatbuffers::String *anime_pack_name() const {
+    return GetPointer<const ::flatbuffers::String *>(VT_ANIME_PACK_NAME);
+  }
+  const ::flatbuffers::String *anime_name() const {
+    return GetPointer<const ::flatbuffers::String *>(VT_ANIME_NAME);
+  }
+  template <bool B = false>
+  bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyField<uint32_t>(verifier, VT_ANIME_NAME_HASH, 4) &&
+           VerifyField<uint32_t>(verifier, VT_ANIME_PACK_NAME_HASH, 4) &&
+           VerifyOffset(verifier, VT_ANIME_PACK_NAME) &&
+           verifier.VerifyString(anime_pack_name()) &&
+           VerifyOffset(verifier, VT_ANIME_NAME) &&
+           verifier.VerifyString(anime_name()) &&
+           verifier.EndTable();
+  }
+};
+
+struct ExternalInstanceBuilder {
+  typedef ExternalInstance Table;
+  ::flatbuffers::FlatBufferBuilder &fbb_;
+  ::flatbuffers::uoffset_t start_;
+  void add_anime_name_hash(uint32_t anime_name_hash) {
+    fbb_.AddElement<uint32_t>(ExternalInstance::VT_ANIME_NAME_HASH, anime_name_hash, 0);
+  }
+  void add_anime_pack_name_hash(uint32_t anime_pack_name_hash) {
+    fbb_.AddElement<uint32_t>(ExternalInstance::VT_ANIME_PACK_NAME_HASH, anime_pack_name_hash, 0);
+  }
+  void add_anime_pack_name(::flatbuffers::Offset<::flatbuffers::String> anime_pack_name) {
+    fbb_.AddOffset(ExternalInstance::VT_ANIME_PACK_NAME, anime_pack_name);
+  }
+  void add_anime_name(::flatbuffers::Offset<::flatbuffers::String> anime_name) {
+    fbb_.AddOffset(ExternalInstance::VT_ANIME_NAME, anime_name);
+  }
+  explicit ExternalInstanceBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  ::flatbuffers::Offset<ExternalInstance> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = ::flatbuffers::Offset<ExternalInstance>(end);
+    return o;
+  }
+};
+
+inline ::flatbuffers::Offset<ExternalInstance> CreateExternalInstance(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    uint32_t anime_name_hash = 0,
+    uint32_t anime_pack_name_hash = 0,
+    ::flatbuffers::Offset<::flatbuffers::String> anime_pack_name = 0,
+    ::flatbuffers::Offset<::flatbuffers::String> anime_name = 0) {
+  ExternalInstanceBuilder builder_(_fbb);
+  builder_.add_anime_name(anime_name);
+  builder_.add_anime_pack_name(anime_pack_name);
+  builder_.add_anime_pack_name_hash(anime_pack_name_hash);
+  builder_.add_anime_name_hash(anime_name_hash);
+  return builder_.Finish();
+}
+
+inline ::flatbuffers::Offset<ExternalInstance> CreateExternalInstanceDirect(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    uint32_t anime_name_hash = 0,
+    uint32_t anime_pack_name_hash = 0,
+    const char *anime_pack_name = nullptr,
+    const char *anime_name = nullptr) {
+  auto anime_pack_name__ = anime_pack_name ? _fbb.CreateString(anime_pack_name) : 0;
+  auto anime_name__ = anime_name ? _fbb.CreateString(anime_name) : 0;
+  return ss::format::CreateExternalInstance(
+      _fbb,
+      anime_name_hash,
+      anime_pack_name_hash,
+      anime_pack_name__,
+      anime_name__);
+}
+
 struct EmbeddedAsset FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   typedef EmbeddedAssetBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
@@ -8139,8 +8238,8 @@ struct SsAnimeBinary FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::ExternalTexture>> *external_textures() const {
     return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::ExternalTexture>> *>(VT_EXTERNAL_TEXTURES);
   }
-  const ::flatbuffers::Vector<::flatbuffers::Offset<::flatbuffers::String>> *external_instances() const {
-    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<::flatbuffers::String>> *>(VT_EXTERNAL_INSTANCES);
+  const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::ExternalInstance>> *external_instances() const {
+    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::ExternalInstance>> *>(VT_EXTERNAL_INSTANCES);
   }
   const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::EmbeddedAsset>> *embedded_assets() const {
     return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::EmbeddedAsset>> *>(VT_EMBEDDED_ASSETS);
@@ -8175,7 +8274,7 @@ struct SsAnimeBinary FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            verifier.VerifyVectorOfTables(external_textures()) &&
            VerifyOffset(verifier, VT_EXTERNAL_INSTANCES) &&
            verifier.VerifyVector(external_instances()) &&
-           verifier.VerifyVectorOfStrings(external_instances()) &&
+           verifier.VerifyVectorOfTables(external_instances()) &&
            VerifyOffset(verifier, VT_EMBEDDED_ASSETS) &&
            verifier.VerifyVector(embedded_assets()) &&
            verifier.VerifyVectorOfTables(embedded_assets()) &&
@@ -8217,7 +8316,7 @@ struct SsAnimeBinaryBuilder {
   void add_external_textures(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::ExternalTexture>>> external_textures) {
     fbb_.AddOffset(SsAnimeBinary::VT_EXTERNAL_TEXTURES, external_textures);
   }
-  void add_external_instances(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<::flatbuffers::String>>> external_instances) {
+  void add_external_instances(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::ExternalInstance>>> external_instances) {
     fbb_.AddOffset(SsAnimeBinary::VT_EXTERNAL_INSTANCES, external_instances);
   }
   void add_embedded_assets(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::EmbeddedAsset>>> embedded_assets) {
@@ -8246,7 +8345,7 @@ inline ::flatbuffers::Offset<SsAnimeBinary> CreateSsAnimeBinary(
     ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::SoundList>>> sound_lists = 0,
     ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::FontBitmap>>> font_bitmaps = 0,
     ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::ExternalTexture>>> external_textures = 0,
-    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<::flatbuffers::String>>> external_instances = 0,
+    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::ExternalInstance>>> external_instances = 0,
     ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::EmbeddedAsset>>> embedded_assets = 0) {
   SsAnimeBinaryBuilder builder_(_fbb);
   builder_.add_embedded_assets(embedded_assets);
@@ -8276,7 +8375,7 @@ inline ::flatbuffers::Offset<SsAnimeBinary> CreateSsAnimeBinaryDirect(
     std::vector<::flatbuffers::Offset<ss::format::SoundList>> *sound_lists = nullptr,
     std::vector<::flatbuffers::Offset<ss::format::FontBitmap>> *font_bitmaps = nullptr,
     std::vector<::flatbuffers::Offset<ss::format::ExternalTexture>> *external_textures = nullptr,
-    const std::vector<::flatbuffers::Offset<::flatbuffers::String>> *external_instances = nullptr,
+    std::vector<::flatbuffers::Offset<ss::format::ExternalInstance>> *external_instances = nullptr,
     std::vector<::flatbuffers::Offset<ss::format::EmbeddedAsset>> *embedded_assets = nullptr) {
   auto name__ = name ? _fbb.CreateString(name) : 0;
   auto parts__ = parts ? _fbb.CreateVector<::flatbuffers::Offset<ss::format::PartData>>(*parts) : 0;
@@ -8286,7 +8385,7 @@ inline ::flatbuffers::Offset<SsAnimeBinary> CreateSsAnimeBinaryDirect(
   auto sound_lists__ = sound_lists ? _fbb.CreateVectorOfSortedTables<ss::format::SoundList>(sound_lists) : 0;
   auto font_bitmaps__ = font_bitmaps ? _fbb.CreateVectorOfSortedTables<ss::format::FontBitmap>(font_bitmaps) : 0;
   auto external_textures__ = external_textures ? _fbb.CreateVectorOfSortedTables<ss::format::ExternalTexture>(external_textures) : 0;
-  auto external_instances__ = external_instances ? _fbb.CreateVector<::flatbuffers::Offset<::flatbuffers::String>>(*external_instances) : 0;
+  auto external_instances__ = external_instances ? _fbb.CreateVectorOfSortedTables<ss::format::ExternalInstance>(external_instances) : 0;
   auto embedded_assets__ = embedded_assets ? _fbb.CreateVectorOfSortedTables<ss::format::EmbeddedAsset>(embedded_assets) : 0;
   return ss::format::CreateSsAnimeBinary(
       _fbb,

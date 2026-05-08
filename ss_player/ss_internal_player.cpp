@@ -463,20 +463,6 @@ void SsInternalPlayer::_draw_part(const DrawFrame& f, RID ci, int p_idx, const s
     }
 }
 
-// fnv1a 32-bit byte-wise hash matching libssconverter's
-// `crate::utils::fnv1a_hash_str`, used by the converter to derive
-// `ref_anime_hash` from the animation name.
-static uint32_t fnv1a_hash_str_c(const String& s) {
-    CharString cs = s.utf8();
-    uint32_t hash = 2166136261u;
-    const uint32_t prime = 16777619u;
-    for (int i = 0; i < cs.length(); i++) {
-        hash ^= (uint8_t)cs[i];
-        hash *= prime;
-    }
-    return hash;
-}
-
 static String find_anim_name_in(const Ref<SSABResource>& res, uint32_t name_hash) {
     if (res.is_null()) return String();
     auto binary = res->get_ss_anime_binary();
@@ -497,23 +483,17 @@ String SsInternalPlayer::_resolve_animation_by_hash(uint32_t name_hash, Ref<SSAB
     if (!_ssabRes.is_null()) {
         auto binary = _ssabRes->get_ss_anime_binary();
         if (binary && binary->external_instances()) {
-            auto exts = binary->external_instances();
-            for (uint32_t i = 0; i < exts->size(); i++) {
-                auto entry = exts->Get(i);
-                if (!entry) continue;
-                String s = String::utf8(entry->c_str());
-                int slash = s.find("/");
-                if (slash < 0) continue;
-                String pack = s.substr(0, slash);
-                String anime = s.substr(slash + 1, -1);
-                if (fnv1a_hash_str_c(anime) != name_hash) continue;
-
+            // external_instances is sorted by anime_name_hash so we can
+            // binary-search the hint, then resolve the owning pack by hash.
+            const auto* entry = binary->external_instances()->LookupByKey(name_hash);
+            if (entry) {
+                const uint32_t pack_hash = entry->anime_pack_name_hash();
                 for (int j = 0; j < _external_ssabs.size(); j++) {
                     const Ref<SSABResource>& ext = _external_ssabs[j];
                     if (ext.is_null()) continue;
                     auto eb = ext->get_ss_anime_binary();
-                    if (!eb || !eb->name()) continue;
-                    if (String::utf8(eb->name()->c_str()) != pack) continue;
+                    if (!eb) continue;
+                    if (eb->name_hash() != pack_hash) continue;
                     String found = find_anim_name_in(ext, name_hash);
                     if (!found.is_empty()) {
                         out_source = ext;
@@ -547,18 +527,18 @@ void SsInternalPlayer::_load_external_ssabs() {
     if (!binary) return;
     if (!binary->external_instances() || binary->external_instances()->size() == 0) return;
 
-    HashMap<String, bool> seen;
+    HashMap<uint32_t, bool> seen;
     auto exts = binary->external_instances();
     String parent_dir = _ssabRes->get_parent_dir();
     for (uint32_t i = 0; i < exts->size(); i++) {
         auto entry = exts->Get(i);
-        if (!entry) continue;
-        String s = String::utf8(entry->c_str());
-        int slash = s.find("/");
-        String pack = (slash >= 0) ? s.substr(0, slash) : s;
-        if (pack.is_empty() || seen.has(pack)) continue;
-        seen[pack] = true;
+        if (!entry || !entry->anime_pack_name()) continue;
+        const uint32_t pack_hash = entry->anime_pack_name_hash();
+        if (seen.has(pack_hash)) continue;
+        seen[pack_hash] = true;
 
+        String pack = String::utf8(entry->anime_pack_name()->c_str());
+        if (pack.is_empty()) continue;
         String path = parent_dir.path_join(pack + ".ssab");
         Ref<Resource> res =
         #ifdef SPRITESTUDIO_GODOT_EXTENSION
