@@ -5,6 +5,7 @@
 #include <godot_cpp/classes/rendering_server.hpp>
 #include <godot_cpp/classes/texture2d.hpp>
 #include <godot_cpp/templates/hash_map.hpp>
+#include <godot_cpp/templates/local_vector.hpp>
 #include <godot_cpp/templates/vector.hpp>
 #include <godot_cpp/variant/dictionary.hpp>
 #include <godot_cpp/variant/rect2.hpp>
@@ -17,6 +18,7 @@ using namespace godot;
 #include "core/object/ref_counted.h"
 #include "core/string/ustring.h"
 #include "core/templates/hash_map.h"
+#include "core/templates/local_vector.h"
 #include "core/templates/vector.h"
 #include "core/variant/dictionary.h"
 #include "scene/resources/canvas_item_material.h"
@@ -153,6 +155,16 @@ public:
     void onSSABReloaded();
 
 private:
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+    using SsVec2Array = PackedVector2Array;
+    using SsColorArray = PackedColorArray;
+    using SsIntArray = PackedInt32Array;
+#else
+    using SsVec2Array = Vector<Vector2>;
+    using SsColorArray = Vector<Color>;
+    using SsIntArray = Vector<int>;
+#endif
+
     // Root canvas item that all per-batch canvas items hang off. Created in
     // ctor, freed in dtor; transform / visibility / parent on this RID is
     // what makes Node-less hierarchical composition work.
@@ -165,6 +177,7 @@ private:
     // across frames; pool grows monotonically to peak batch count, unused
     // entries are hidden rather than freed.
     Vector<RID> _batch_canvas_items;
+    LocalVector<const ss::runtime::PartState*> _parts_by_idx;
     String _strAnimationSelected;
     const ss::format::AnimationData* _currentAnimationData = nullptr;
     void* runtime_ctx = nullptr;
@@ -204,35 +217,11 @@ private:
         const int32_t* shape_vertex_counts;  uintptr_t shape_vertex_counts_len;
     };
 
-    // Per-part geometry buffers in world space, concatenated across the
-    // parts in a Normal batch into a single `canvas_item_add_triangle_array`
-    // call. The build helpers below produce these without touching any RID.
-    struct NormalBuffers {
-        int vert_count;          // 4 (quad) or 5 (pentagon fan w/ center)
-        // Texture is resolved by the caller (from `DrawBatch.texture_hash` for
-        // batched draws); not stored here.
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
-        PackedVector2Array verts;
-        PackedVector2Array uvs;
-        PackedColorArray colors;
-#else
-        Vector<Vector2> verts;
-        Vector<Vector2> uvs;
-        Vector<Color> colors;
-#endif
-    };
-
     struct ShapeGeometryBuffers {
         int vert_count;          // 3..12, derived from runtime shape_vertex_counts
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
-        PackedVector2Array verts;
-        PackedColorArray colors;
-        PackedInt32Array indices;
-#else
-        Vector<Vector2> verts;
-        Vector<Color> colors;
-        Vector<int> indices;
-#endif
+        SsVec2Array verts;
+        SsColorArray colors;
+        SsIntArray indices;
     };
 
     void _reconfigure();
@@ -244,14 +233,14 @@ private:
     void _draw_part_shape(const DrawFrame& f, RID ci, int p_idx, const ss::runtime::PartState* part, const ss::format::PartData* partBinary, const float* draw_m);
     void _draw_part_instance(const DrawFrame& f, RID ci, int p_idx, const ss::runtime::PartState* part, const ss::format::PartData* partBinary, const float* draw_m);
 
-    // Geometry-build helpers — fill `out` with world-space verts/uvs/colors
-    // for a single part. Return false when the part should be skipped (no
-    // texture / no cell / out-of-range buffers / etc.). No RID side effects.
-    bool _build_normal(const DrawFrame& f, int p_idx,
-                                const ss::runtime::PartState* part,
-                                const float* draw_m,
-                                const Vector2& tex_size,
-                                NormalBuffers& out);
+    int _build_normal(const DrawFrame& f, int p_idx,
+                      const ss::runtime::PartState* part,
+                      const float* draw_m,
+                      const Vector2& tex_size,
+                      SsVec2Array& verts,
+                      SsVec2Array& uvs,
+                      SsColorArray& colors,
+                      int vbase);
     bool _build_shape_geometry(const DrawFrame& f, int p_idx,
                                const ss::runtime::PartState* part,
                                const float* draw_m,
@@ -263,8 +252,7 @@ private:
     // single canvas_item_add_triangle_array call.
     void _emit_normal_batch(const DrawFrame& f, RID ci,
                             const ss::runtime::DrawBatch* batch,
-                            const uint16_t* draw_order_data,
-                            const Vector<const ss::runtime::PartState*>& parts_by_idx);
+                            const uint16_t* draw_order_data);
     void _emit_shape_singleton(const DrawFrame& f, RID ci, int p_idx,
                                const ss::runtime::PartState* part);
 

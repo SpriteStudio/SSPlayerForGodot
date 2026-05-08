@@ -403,17 +403,14 @@ void SsInternalPlayer::_drawAnimation(float frame_no) {
     auto draw_batches = f.frameData->draw_batches();
     if (!parts || !draw_order || !draw_batches) return;
 
-    // PartState lookup by part_idx (parts iter order is not guaranteed to be
-    // part_index order). Built once per frame.
-    Vector<const ss::runtime::PartState*> parts_by_idx;
     {
         const int total = f.binary->parts() ? (int)f.binary->parts()->size() : 0;
-        parts_by_idx.resize(total);
-        for (int i = 0; i < total; i++) parts_by_idx.set(i, nullptr);
+        _parts_by_idx.resize(total);
+        for (int i = 0; i < total; i++) _parts_by_idx[i] = nullptr;
         for (uint32_t i = 0; i < parts->size(); i++) {
             auto p = parts->Get(i);
             int idx = p->part_index();
-            if (idx >= 0 && idx < total) parts_by_idx.set(idx, p);
+            if (idx >= 0 && idx < total) _parts_by_idx[idx] = p;
         }
     }
 
@@ -435,14 +432,14 @@ void SsInternalPlayer::_drawAnimation(float frame_no) {
 
         const auto kind = batch->kind();
         if (kind == ss::runtime::DrawBatchKind_Normal) {
-            _emit_normal_batch(f, ci, batch, draw_order_data, parts_by_idx);
+            _emit_normal_batch(f, ci, batch, draw_order_data);
         } else if (kind == ss::runtime::DrawBatchKind_Shape) {
             int p_idx = (int)draw_order_data[batch->start_rank()];
-            const auto* part = (p_idx >= 0 && p_idx < parts_by_idx.size()) ? parts_by_idx[p_idx] : nullptr;
+            const auto* part = (p_idx >= 0 && p_idx < (int)_parts_by_idx.size()) ? _parts_by_idx[p_idx] : nullptr;
             if (part) _emit_shape_singleton(f, ci, p_idx, part);
         } else if (kind == ss::runtime::DrawBatchKind_Instance) {
             int p_idx = (int)draw_order_data[batch->start_rank()];
-            const auto* part = (p_idx >= 0 && p_idx < parts_by_idx.size()) ? parts_by_idx[p_idx] : nullptr;
+            const auto* part = (p_idx >= 0 && p_idx < (int)_parts_by_idx.size()) ? _parts_by_idx[p_idx] : nullptr;
             if (!part) continue;
             const float* drawing_m = (f.world_matrices && (uintptr_t)p_idx * 16 < f.world_matrices_len)
                 ? f.world_matrices + (p_idx * 16) : nullptr;
@@ -698,11 +695,15 @@ void SsInternalPlayer::_draw_part_instance(const DrawFrame& f, RID ci, int p_idx
     child->setFrameRelative(diff);
 }
 
-bool SsInternalPlayer::_build_normal(const DrawFrame& f, int p_idx,
-                                              const ss::runtime::PartState* part,
-                                              const float* draw_m,
-                                              const Vector2& tex_size,
-                                              NormalBuffers& out) {
+int SsInternalPlayer::_build_normal(const DrawFrame& f, int p_idx,
+                                    const ss::runtime::PartState* part,
+                                    const float* draw_m,
+                                    const Vector2& tex_size,
+                                    SsVec2Array& verts,
+                                    SsVec2Array& uvs,
+                                    SsColorArray& colors,
+                                    int vbase)
+{
     const float* part_cell_meta = nullptr;
     if (f.cell_meta && (uintptr_t)p_idx * 6 + 6 <= f.cell_meta_len) {
         part_cell_meta = f.cell_meta + (p_idx * 6);
@@ -715,15 +716,11 @@ bool SsInternalPlayer::_build_normal(const DrawFrame& f, int p_idx,
     if (f.local_vertices && (uintptr_t)p_idx * 10 + 10 <= f.local_vertices_len) {
         part_verts = f.local_vertices + (p_idx * 10);
     }
-    if (!part_cell_meta || !part_uvs || !part_verts) return false;
+    if (!part_cell_meta || !part_uvs || !part_verts) return 0;
 
     const uint64_t flags = part->update_flag();
     const bool needs_center = (flags & (ss::runtime::UpdateAttributeFlags_AttributeVertex | ss::runtime::UpdateAttributeFlags_AttributePartColor)) != 0;
-    out.vert_count = needs_center ? MAX_VERTICES_COUNT : CORNERS_COUNT;
-
-    out.verts.resize(out.vert_count);
-    out.uvs.resize(out.vert_count);
-    out.colors.resize(out.vert_count);
+    const int vert_count = needs_center ? MAX_VERTICES_COUNT : CORNERS_COUNT;
 
     const float out_x[MAX_VERTICES_COUNT] = { part_verts[0], part_verts[2], part_verts[4], part_verts[6], part_verts[8] };
     const float out_y[MAX_VERTICES_COUNT] = { part_verts[1], part_verts[3], part_verts[5], part_verts[7], part_verts[9] };
@@ -741,16 +738,16 @@ bool SsInternalPlayer::_build_normal(const DrawFrame& f, int p_idx,
     Transform2D draw_transform = matrix_to_transform2d(draw_m);
 
     for (int j = 0; j < CORNERS_COUNT; j++) {
-        out.verts.set(j, draw_transform.xform(Vector2(out_x[j], out_y[j])));
-        out.uvs.set(j, Vector2(out_u[j] / tex_size.x, out_v[j] / tex_size.y));
-        out.colors.set(j, corner_colors[j]);
+        verts.set(vbase + j, draw_transform.xform(Vector2(out_x[j], out_y[j])));
+        uvs.set(vbase + j, Vector2(out_u[j] / tex_size.x, out_v[j] / tex_size.y));
+        colors.set(vbase + j, corner_colors[j]);
     }
     if (needs_center) {
-        out.verts.set(CORNERS_COUNT, draw_transform.xform(Vector2(out_x[CORNERS_COUNT], out_y[CORNERS_COUNT])));
-        out.uvs.set(CORNERS_COUNT, Vector2(out_u[CORNERS_COUNT] / tex_size.x, out_v[CORNERS_COUNT] / tex_size.y));
-        out.colors.set(CORNERS_COUNT, (corner_colors[0] + corner_colors[1] + corner_colors[2] + corner_colors[3]) * 0.25f);
+        verts.set(vbase + CORNERS_COUNT, draw_transform.xform(Vector2(out_x[CORNERS_COUNT], out_y[CORNERS_COUNT])));
+        uvs.set(vbase + CORNERS_COUNT, Vector2(out_u[CORNERS_COUNT] / tex_size.x, out_v[CORNERS_COUNT] / tex_size.y));
+        colors.set(vbase + CORNERS_COUNT, (corner_colors[0] + corner_colors[1] + corner_colors[2] + corner_colors[3]) * 0.25f);
     }
-    return true;
+    return vert_count;
 }
 
 void SsInternalPlayer::_apply_blend_material(RenderingServer* rs, RID ci, ss::format::BlendType ss_blend) {
@@ -844,8 +841,7 @@ bool SsInternalPlayer::_build_shape_geometry(const DrawFrame& f, int p_idx,
 
 void SsInternalPlayer::_emit_normal_batch(const DrawFrame& f, RID ci,
                                           const ss::runtime::DrawBatch* batch,
-                                          const uint16_t* draw_order_data,
-                                          const Vector<const ss::runtime::PartState*>& parts_by_idx) {
+                                          const uint16_t* draw_order_data) {
     if (!batch || !draw_order_data) return;
     const uint16_t count = batch->count();
     if (count == 0) return;
@@ -862,17 +858,10 @@ void SsInternalPlayer::_emit_normal_batch(const DrawFrame& f, RID ci,
     if (tex.is_null()) return;
     const Vector2 tex_size = tex->get_size();
 
-    #ifdef SPRITESTUDIO_GODOT_EXTENSION
-    PackedVector2Array verts; verts.resize((int)batch->vertex_count());
-    PackedVector2Array uvs;   uvs.resize((int)batch->vertex_count());
-    PackedColorArray   colors; colors.resize((int)batch->vertex_count());
-    PackedInt32Array   indices; indices.resize((int)batch->index_count());
-    #else
-    Vector<Vector2> verts; verts.resize((int)batch->vertex_count());
-    Vector<Vector2> uvs;   uvs.resize((int)batch->vertex_count());
-    Vector<Color>   colors; colors.resize((int)batch->vertex_count());
-    Vector<int>     indices; indices.resize((int)batch->index_count());
-    #endif
+    SsVec2Array  verts;   verts.resize((int)batch->vertex_count());
+    SsVec2Array  uvs;     uvs.resize((int)batch->vertex_count());
+    SsColorArray colors;  colors.resize((int)batch->vertex_count());
+    SsIntArray   indices; indices.resize((int)batch->index_count());
 
     int vbase = 0;
     int ibase = 0;
@@ -880,8 +869,8 @@ void SsInternalPlayer::_emit_normal_batch(const DrawFrame& f, RID ci,
 
     for (uint16_t k = 0; k < count; k++) {
         int p_idx = (int)draw_order_data[batch->start_rank() + k];
-        if (p_idx < 0 || p_idx >= parts_by_idx.size()) continue;
-        const auto* part = parts_by_idx[p_idx];
+        if (p_idx < 0 || p_idx >= (int)_parts_by_idx.size()) continue;
+        const auto* part = _parts_by_idx[p_idx];
         if (!part) continue;
 
         const float* drawing_m = nullptr;
@@ -890,17 +879,12 @@ void SsInternalPlayer::_emit_normal_batch(const DrawFrame& f, RID ci,
         }
         if (!drawing_m) continue;
 
-        NormalBuffers bufs;
-        if (!_build_normal(f, p_idx, part, drawing_m, tex_size, bufs)) continue;
+        const int vert_count = _build_normal(f, p_idx, part, drawing_m, tex_size,
+                                             verts, uvs, colors, vbase);
+        if (vert_count == 0) continue;
 
-        // Append per-part verts/uvs/colors.
-        for (int j = 0; j < bufs.vert_count && vbase + j < verts.size(); j++) {
-            verts.set(vbase + j, bufs.verts[j]);
-            uvs.set(vbase + j, bufs.uvs[j]);
-            colors.set(vbase + j, bufs.colors[j]);
-        }
         // Append per-part indices with vertex base offset.
-        if (bufs.vert_count == MAX_VERTICES_COUNT) {
+        if (vert_count == MAX_VERTICES_COUNT) {
             const int p[INDICES_COUNT_PENTAGON] = { 0,1,4, 1,3,4, 3,2,4, 2,0,4 };
             for (int j = 0; j < INDICES_COUNT_PENTAGON && ibase + j < indices.size(); j++) {
                 indices.set(ibase + j, vbase + p[j]);
@@ -913,7 +897,7 @@ void SsInternalPlayer::_emit_normal_batch(const DrawFrame& f, RID ci,
             }
             ibase += INDICES_COUNT_QUAD;
         }
-        vbase += bufs.vert_count;
+        vbase += vert_count;
         any_emitted = true;
     }
 
