@@ -5,6 +5,7 @@
 #include <godot_cpp/classes/rendering_server.hpp>
 #include <godot_cpp/classes/texture2d.hpp>
 #include <godot_cpp/templates/hash_map.hpp>
+#include <godot_cpp/templates/local_vector.hpp>
 #include <godot_cpp/templates/vector.hpp>
 #include <godot_cpp/variant/dictionary.hpp>
 #include <godot_cpp/variant/rect2.hpp>
@@ -17,6 +18,7 @@ using namespace godot;
 #include "core/object/ref_counted.h"
 #include "core/string/ustring.h"
 #include "core/templates/hash_map.h"
+#include "core/templates/local_vector.h"
 #include "core/templates/vector.h"
 #include "core/variant/dictionary.h"
 #include "scene/resources/canvas_item_material.h"
@@ -30,6 +32,7 @@ namespace ss {
 namespace runtime {
 struct FrameData;
 struct PartState;
+struct DrawBatch;
 }
 namespace format {
 struct PartData;
@@ -54,10 +57,10 @@ public:
 };
 
 // Engine-integration-agnostic SpriteStudio player core. Owns the
-// libssruntime context, an SSAB binding, the per-part canvas items, and a
+// libssruntime context, an SSAB binding, the per-batch canvas items, and a
 // recursive `Vector<SsInternalPlayer*>` of children for Instance parts. Has
 // no Node tree dependency: a single `_root_ci` canvas item carries this
-// player's transform / visibility, and all per-part canvas items hang off it
+// player's transform / visibility, and all per-batch canvas items hang off it
 // via `canvas_item_set_parent`. Hosts (Node2D, editor previews, ...) wrap
 // it and provide a parent canvas RID + an event sink.
 class SsInternalPlayer {
@@ -152,7 +155,17 @@ public:
     void onSSABReloaded();
 
 private:
-    // Root canvas item that all per-part canvas items hang off. Created in
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+    using SsVec2Array = PackedVector2Array;
+    using SsColorArray = PackedColorArray;
+    using SsIntArray = PackedInt32Array;
+#else
+    using SsVec2Array = Vector<Vector2>;
+    using SsColorArray = Vector<Color>;
+    using SsIntArray = Vector<int>;
+#endif
+
+    // Root canvas item that all per-batch canvas items hang off. Created in
     // ctor, freed in dtor; transform / visibility / parent on this RID is
     // what makes Node-less hierarchical composition work.
     RID _root_ci;
@@ -160,7 +173,11 @@ private:
     Ref<SSABResource> _ssabRes;
     HashMap<uint32_t, Ref<Texture2D>> _textures;
     HashMap<int, Ref<CanvasItemMaterial>> _blend_materials;
-    Vector<RID> _canvas_items;
+    // Per-batch canvas_item pool. Index == draw_batches[i] order. Recyclable
+    // across frames; pool grows monotonically to peak batch count, unused
+    // entries are hidden rather than freed.
+    Vector<RID> _batch_canvas_items;
+    LocalVector<const ss::runtime::PartState*> _parts_by_idx;
     String _strAnimationSelected;
     const ss::format::AnimationData* _currentAnimationData = nullptr;
     void* runtime_ctx = nullptr;
@@ -194,21 +211,53 @@ private:
         const float* world_matrices;         uintptr_t world_matrices_len;
         const float* local_uvs;              uintptr_t local_uvs_len;
         const float* cell_meta;              uintptr_t cell_meta_len;
-        const uint32_t* cell_texture_hashes; uintptr_t cell_texture_hashes_len;
         const float* local_vertices;         uintptr_t local_vertices_len;
         const float* shape_vertices;         uintptr_t shape_vertices_len;
         const float* shape_box_coords;       uintptr_t shape_box_coords_len;
         const int32_t* shape_vertex_counts;  uintptr_t shape_vertex_counts_len;
     };
 
+    struct ShapeGeometryBuffers {
+        int vert_count;          // 3..12, derived from runtime shape_vertex_counts
+        SsVec2Array verts;
+        SsColorArray colors;
+        SsIntArray indices;
+    };
+
     void _reconfigure();
     void _loadTextures(const Ref<SSABResource>& res);
     void _fetchAnimation();
     void _drawAnimation(float frame_no);
-    void _draw_part(const DrawFrame& f, RID ci, int p_idx, const ss::runtime::PartState* part, const ss::format::PartData* partBinary, const float* draw_m);
-    void _draw_part_normal(const DrawFrame& f, RID ci, int p_idx, const ss::runtime::PartState* part, const ss::format::PartData* partBinary, const float* draw_m);
+    // Per-part-type emit. Normal is consumed by `_emit_normal_batch` directly
+    // through the geometry helper, so no `_draw_part_normal` exists.
     void _draw_part_shape(const DrawFrame& f, RID ci, int p_idx, const ss::runtime::PartState* part, const ss::format::PartData* partBinary, const float* draw_m);
     void _draw_part_instance(const DrawFrame& f, RID ci, int p_idx, const ss::runtime::PartState* part, const ss::format::PartData* partBinary, const float* draw_m);
+
+    int _build_normal(const DrawFrame& f, int p_idx,
+                      const ss::runtime::PartState* part,
+                      const float* draw_m,
+                      const Vector2& tex_size,
+                      SsVec2Array& verts,
+                      SsVec2Array& uvs,
+                      SsColorArray& colors,
+                      int vbase);
+    bool _build_shape_geometry(const DrawFrame& f, int p_idx,
+                               const ss::runtime::PartState* part,
+                               const float* draw_m,
+                               ShapeGeometryBuffers& out);
+
+    // Per-batch emit helpers. `ci` is the batch's canvas_item from
+    // `_batch_canvas_items`; caller has already cleared it and set z_index.
+    // For Normal batches multiple parts' geometry is concatenated into a
+    // single canvas_item_add_triangle_array call.
+    void _emit_normal_batch(const DrawFrame& f, RID ci,
+                            const ss::runtime::DrawBatch* batch,
+                            const uint16_t* draw_order_data);
+    void _emit_shape_singleton(const DrawFrame& f, RID ci, int p_idx,
+                               const ss::runtime::PartState* part);
+
+    // Pool helpers
+    RID _ensure_batch_ci(int batch_idx);
 
     void _setup_instance_players();
     void _clear_instance_players();
@@ -216,5 +265,5 @@ private:
     String _resolve_animation_by_hash(uint32_t name_hash, Ref<SSABResource>& out_source) const;
     void _apply_blend_material(RenderingServer* rs, RID ci, ss::format::BlendType blend_type);
 
-    void _clear_canvas_items();
+    void _clear_batch_canvas_items();
 };

@@ -35,6 +35,8 @@ struct PartAttributeShader;
 
 struct PartState;
 
+struct DrawBatch;
+
 struct FrameData;
 struct FrameDataBuilder;
 
@@ -227,6 +229,54 @@ inline const char *EnumNameUpdateAttributeFlags(UpdateAttributeFlags e) {
     case UpdateAttributeFlags_AttributeTexture: return "AttributeTexture";
     default: return "";
   }
+}
+
+enum DrawBatchKind : uint8_t {
+  DrawBatchKind_Normal = 0,
+  DrawBatchKind_Shape = 1,
+  DrawBatchKind_Instance = 2,
+  DrawBatchKind_Effect = 3,
+  DrawBatchKind_Mesh = 4,
+  DrawBatchKind_Text = 5,
+  DrawBatchKind_Nines = 6,
+  DrawBatchKind_Mask = 7,
+  DrawBatchKind_MIN = DrawBatchKind_Normal,
+  DrawBatchKind_MAX = DrawBatchKind_Mask
+};
+
+inline const DrawBatchKind (&EnumValuesDrawBatchKind())[8] {
+  static const DrawBatchKind values[] = {
+    DrawBatchKind_Normal,
+    DrawBatchKind_Shape,
+    DrawBatchKind_Instance,
+    DrawBatchKind_Effect,
+    DrawBatchKind_Mesh,
+    DrawBatchKind_Text,
+    DrawBatchKind_Nines,
+    DrawBatchKind_Mask
+  };
+  return values;
+}
+
+inline const char * const *EnumNamesDrawBatchKind() {
+  static const char * const names[9] = {
+    "Normal",
+    "Shape",
+    "Instance",
+    "Effect",
+    "Mesh",
+    "Text",
+    "Nines",
+    "Mask",
+    nullptr
+  };
+  return names;
+}
+
+inline const char *EnumNameDrawBatchKind(DrawBatchKind e) {
+  if (::flatbuffers::IsOutRange(e, DrawBatchKind_Normal, DrawBatchKind_Mask)) return "";
+  const size_t index = static_cast<size_t>(e);
+  return EnumNamesDrawBatchKind()[index];
 }
 
 FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(4) PartAttributeCell FLATBUFFERS_FINAL_CLASS {
@@ -779,6 +829,71 @@ FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(8) PartState FLATBUFFERS_FINAL_CLASS {
 };
 FLATBUFFERS_STRUCT_END(PartState, 144);
 
+FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(4) DrawBatch FLATBUFFERS_FINAL_CLASS {
+ private:
+  uint16_t start_rank_;
+  uint16_t count_;
+  uint32_t texture_hash_;
+  uint16_t vertex_count_;
+  uint16_t index_count_;
+  uint8_t blend_type_;
+  uint8_t kind_;
+  uint8_t flags_;
+  uint8_t _reserved_;
+
+ public:
+  DrawBatch()
+      : start_rank_(0),
+        count_(0),
+        texture_hash_(0),
+        vertex_count_(0),
+        index_count_(0),
+        blend_type_(0),
+        kind_(0),
+        flags_(0),
+        _reserved_(0) {
+  }
+  DrawBatch(uint16_t _start_rank, uint16_t _count, uint32_t _texture_hash, uint16_t _vertex_count, uint16_t _index_count, ss::runtime::BlendType _blend_type, ss::runtime::DrawBatchKind _kind, uint8_t _flags, uint8_t __reserved)
+      : start_rank_(::flatbuffers::EndianScalar(_start_rank)),
+        count_(::flatbuffers::EndianScalar(_count)),
+        texture_hash_(::flatbuffers::EndianScalar(_texture_hash)),
+        vertex_count_(::flatbuffers::EndianScalar(_vertex_count)),
+        index_count_(::flatbuffers::EndianScalar(_index_count)),
+        blend_type_(::flatbuffers::EndianScalar(static_cast<uint8_t>(_blend_type))),
+        kind_(::flatbuffers::EndianScalar(static_cast<uint8_t>(_kind))),
+        flags_(::flatbuffers::EndianScalar(_flags)),
+        _reserved_(::flatbuffers::EndianScalar(__reserved)) {
+  }
+  uint16_t start_rank() const {
+    return ::flatbuffers::EndianScalar(start_rank_);
+  }
+  uint16_t count() const {
+    return ::flatbuffers::EndianScalar(count_);
+  }
+  uint32_t texture_hash() const {
+    return ::flatbuffers::EndianScalar(texture_hash_);
+  }
+  uint16_t vertex_count() const {
+    return ::flatbuffers::EndianScalar(vertex_count_);
+  }
+  uint16_t index_count() const {
+    return ::flatbuffers::EndianScalar(index_count_);
+  }
+  ss::runtime::BlendType blend_type() const {
+    return static_cast<ss::runtime::BlendType>(::flatbuffers::EndianScalar(blend_type_));
+  }
+  ss::runtime::DrawBatchKind kind() const {
+    return static_cast<ss::runtime::DrawBatchKind>(::flatbuffers::EndianScalar(kind_));
+  }
+  uint8_t flags() const {
+    return ::flatbuffers::EndianScalar(flags_);
+  }
+  uint8_t _reserved() const {
+    return ::flatbuffers::EndianScalar(_reserved_);
+  }
+};
+FLATBUFFERS_STRUCT_END(DrawBatch, 16);
+
 struct PartAttributeDeform FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   typedef PartAttributeDeformBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
@@ -853,7 +968,10 @@ struct FrameData FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
     VT_PARTS_COLOR = 8,
     VT_SHADERS = 10,
     VT_VERTICES = 12,
-    VT_DEFORMS = 14
+    VT_DEFORMS = 14,
+    VT_DRAW_ORDER = 16,
+    VT_DRAW_BATCHES = 18,
+    VT_MASK_INDICES = 20
   };
   const ::flatbuffers::Vector<const ss::runtime::PartState *> *parts() const {
     return GetPointer<const ::flatbuffers::Vector<const ss::runtime::PartState *> *>(VT_PARTS);
@@ -873,6 +991,15 @@ struct FrameData FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   const ::flatbuffers::Vector<::flatbuffers::Offset<ss::runtime::PartAttributeDeform>> *deforms() const {
     return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<ss::runtime::PartAttributeDeform>> *>(VT_DEFORMS);
   }
+  const ::flatbuffers::Vector<uint16_t> *draw_order() const {
+    return GetPointer<const ::flatbuffers::Vector<uint16_t> *>(VT_DRAW_ORDER);
+  }
+  const ::flatbuffers::Vector<const ss::runtime::DrawBatch *> *draw_batches() const {
+    return GetPointer<const ::flatbuffers::Vector<const ss::runtime::DrawBatch *> *>(VT_DRAW_BATCHES);
+  }
+  const ::flatbuffers::Vector<uint16_t> *mask_indices() const {
+    return GetPointer<const ::flatbuffers::Vector<uint16_t> *>(VT_MASK_INDICES);
+  }
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
@@ -889,6 +1016,12 @@ struct FrameData FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyOffset(verifier, VT_DEFORMS) &&
            verifier.VerifyVector(deforms()) &&
            verifier.VerifyVectorOfTables(deforms()) &&
+           VerifyOffset(verifier, VT_DRAW_ORDER) &&
+           verifier.VerifyVector(draw_order()) &&
+           VerifyOffset(verifier, VT_DRAW_BATCHES) &&
+           verifier.VerifyVector(draw_batches()) &&
+           VerifyOffset(verifier, VT_MASK_INDICES) &&
+           verifier.VerifyVector(mask_indices()) &&
            verifier.EndTable();
   }
 };
@@ -915,6 +1048,15 @@ struct FrameDataBuilder {
   void add_deforms(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::runtime::PartAttributeDeform>>> deforms) {
     fbb_.AddOffset(FrameData::VT_DEFORMS, deforms);
   }
+  void add_draw_order(::flatbuffers::Offset<::flatbuffers::Vector<uint16_t>> draw_order) {
+    fbb_.AddOffset(FrameData::VT_DRAW_ORDER, draw_order);
+  }
+  void add_draw_batches(::flatbuffers::Offset<::flatbuffers::Vector<const ss::runtime::DrawBatch *>> draw_batches) {
+    fbb_.AddOffset(FrameData::VT_DRAW_BATCHES, draw_batches);
+  }
+  void add_mask_indices(::flatbuffers::Offset<::flatbuffers::Vector<uint16_t>> mask_indices) {
+    fbb_.AddOffset(FrameData::VT_MASK_INDICES, mask_indices);
+  }
   explicit FrameDataBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
@@ -933,8 +1075,14 @@ inline ::flatbuffers::Offset<FrameData> CreateFrameData(
     ::flatbuffers::Offset<::flatbuffers::Vector<const ss::runtime::PartAttributePartColor *>> parts_color = 0,
     ::flatbuffers::Offset<::flatbuffers::Vector<const ss::runtime::PartAttributeShader *>> shaders = 0,
     ::flatbuffers::Offset<::flatbuffers::Vector<const ss::runtime::PartAttributeVertex *>> vertices = 0,
-    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::runtime::PartAttributeDeform>>> deforms = 0) {
+    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::runtime::PartAttributeDeform>>> deforms = 0,
+    ::flatbuffers::Offset<::flatbuffers::Vector<uint16_t>> draw_order = 0,
+    ::flatbuffers::Offset<::flatbuffers::Vector<const ss::runtime::DrawBatch *>> draw_batches = 0,
+    ::flatbuffers::Offset<::flatbuffers::Vector<uint16_t>> mask_indices = 0) {
   FrameDataBuilder builder_(_fbb);
+  builder_.add_mask_indices(mask_indices);
+  builder_.add_draw_batches(draw_batches);
+  builder_.add_draw_order(draw_order);
   builder_.add_deforms(deforms);
   builder_.add_vertices(vertices);
   builder_.add_shaders(shaders);
@@ -951,13 +1099,19 @@ inline ::flatbuffers::Offset<FrameData> CreateFrameDataDirect(
     const std::vector<ss::runtime::PartAttributePartColor> *parts_color = nullptr,
     const std::vector<ss::runtime::PartAttributeShader> *shaders = nullptr,
     const std::vector<ss::runtime::PartAttributeVertex> *vertices = nullptr,
-    const std::vector<::flatbuffers::Offset<ss::runtime::PartAttributeDeform>> *deforms = nullptr) {
+    const std::vector<::flatbuffers::Offset<ss::runtime::PartAttributeDeform>> *deforms = nullptr,
+    const std::vector<uint16_t> *draw_order = nullptr,
+    const std::vector<ss::runtime::DrawBatch> *draw_batches = nullptr,
+    const std::vector<uint16_t> *mask_indices = nullptr) {
   auto parts__ = parts ? _fbb.CreateVectorOfStructs<ss::runtime::PartState>(*parts) : 0;
   auto cells__ = cells ? _fbb.CreateVectorOfStructs<ss::runtime::PartAttributeCell>(*cells) : 0;
   auto parts_color__ = parts_color ? _fbb.CreateVectorOfStructs<ss::runtime::PartAttributePartColor>(*parts_color) : 0;
   auto shaders__ = shaders ? _fbb.CreateVectorOfStructs<ss::runtime::PartAttributeShader>(*shaders) : 0;
   auto vertices__ = vertices ? _fbb.CreateVectorOfStructs<ss::runtime::PartAttributeVertex>(*vertices) : 0;
   auto deforms__ = deforms ? _fbb.CreateVector<::flatbuffers::Offset<ss::runtime::PartAttributeDeform>>(*deforms) : 0;
+  auto draw_order__ = draw_order ? _fbb.CreateVector<uint16_t>(*draw_order) : 0;
+  auto draw_batches__ = draw_batches ? _fbb.CreateVectorOfStructs<ss::runtime::DrawBatch>(*draw_batches) : 0;
+  auto mask_indices__ = mask_indices ? _fbb.CreateVector<uint16_t>(*mask_indices) : 0;
   return ss::runtime::CreateFrameData(
       _fbb,
       parts__,
@@ -965,7 +1119,10 @@ inline ::flatbuffers::Offset<FrameData> CreateFrameDataDirect(
       parts_color__,
       shaders__,
       vertices__,
-      deforms__);
+      deforms__,
+      draw_order__,
+      draw_batches__,
+      mask_indices__);
 }
 
 inline const ss::runtime::FrameData *GetFrameData(const void *buf) {
