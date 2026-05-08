@@ -970,7 +970,8 @@ struct FrameData FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
     VT_VERTICES = 12,
     VT_DEFORMS = 14,
     VT_DRAW_ORDER = 16,
-    VT_DRAW_BATCHES = 18
+    VT_DRAW_BATCHES = 18,
+    VT_MASK_INDICES = 20
   };
   const ::flatbuffers::Vector<const ss::runtime::PartState *> *parts() const {
     return GetPointer<const ::flatbuffers::Vector<const ss::runtime::PartState *> *>(VT_PARTS);
@@ -996,6 +997,9 @@ struct FrameData FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   const ::flatbuffers::Vector<const ss::runtime::DrawBatch *> *draw_batches() const {
     return GetPointer<const ::flatbuffers::Vector<const ss::runtime::DrawBatch *> *>(VT_DRAW_BATCHES);
   }
+  const ::flatbuffers::Vector<uint16_t> *mask_indices() const {
+    return GetPointer<const ::flatbuffers::Vector<uint16_t> *>(VT_MASK_INDICES);
+  }
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
@@ -1016,6 +1020,8 @@ struct FrameData FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            verifier.VerifyVector(draw_order()) &&
            VerifyOffset(verifier, VT_DRAW_BATCHES) &&
            verifier.VerifyVector(draw_batches()) &&
+           VerifyOffset(verifier, VT_MASK_INDICES) &&
+           verifier.VerifyVector(mask_indices()) &&
            verifier.EndTable();
   }
 };
@@ -1048,6 +1054,9 @@ struct FrameDataBuilder {
   void add_draw_batches(::flatbuffers::Offset<::flatbuffers::Vector<const ss::runtime::DrawBatch *>> draw_batches) {
     fbb_.AddOffset(FrameData::VT_DRAW_BATCHES, draw_batches);
   }
+  void add_mask_indices(::flatbuffers::Offset<::flatbuffers::Vector<uint16_t>> mask_indices) {
+    fbb_.AddOffset(FrameData::VT_MASK_INDICES, mask_indices);
+  }
   explicit FrameDataBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
@@ -1068,8 +1077,10 @@ inline ::flatbuffers::Offset<FrameData> CreateFrameData(
     ::flatbuffers::Offset<::flatbuffers::Vector<const ss::runtime::PartAttributeVertex *>> vertices = 0,
     ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::runtime::PartAttributeDeform>>> deforms = 0,
     ::flatbuffers::Offset<::flatbuffers::Vector<uint16_t>> draw_order = 0,
-    ::flatbuffers::Offset<::flatbuffers::Vector<const ss::runtime::DrawBatch *>> draw_batches = 0) {
+    ::flatbuffers::Offset<::flatbuffers::Vector<const ss::runtime::DrawBatch *>> draw_batches = 0,
+    ::flatbuffers::Offset<::flatbuffers::Vector<uint16_t>> mask_indices = 0) {
   FrameDataBuilder builder_(_fbb);
+  builder_.add_mask_indices(mask_indices);
   builder_.add_draw_batches(draw_batches);
   builder_.add_draw_order(draw_order);
   builder_.add_deforms(deforms);
@@ -1090,7 +1101,8 @@ inline ::flatbuffers::Offset<FrameData> CreateFrameDataDirect(
     const std::vector<ss::runtime::PartAttributeVertex> *vertices = nullptr,
     const std::vector<::flatbuffers::Offset<ss::runtime::PartAttributeDeform>> *deforms = nullptr,
     const std::vector<uint16_t> *draw_order = nullptr,
-    const std::vector<ss::runtime::DrawBatch> *draw_batches = nullptr) {
+    const std::vector<ss::runtime::DrawBatch> *draw_batches = nullptr,
+    const std::vector<uint16_t> *mask_indices = nullptr) {
   auto parts__ = parts ? _fbb.CreateVectorOfStructs<ss::runtime::PartState>(*parts) : 0;
   auto cells__ = cells ? _fbb.CreateVectorOfStructs<ss::runtime::PartAttributeCell>(*cells) : 0;
   auto parts_color__ = parts_color ? _fbb.CreateVectorOfStructs<ss::runtime::PartAttributePartColor>(*parts_color) : 0;
@@ -1099,6 +1111,7 @@ inline ::flatbuffers::Offset<FrameData> CreateFrameDataDirect(
   auto deforms__ = deforms ? _fbb.CreateVector<::flatbuffers::Offset<ss::runtime::PartAttributeDeform>>(*deforms) : 0;
   auto draw_order__ = draw_order ? _fbb.CreateVector<uint16_t>(*draw_order) : 0;
   auto draw_batches__ = draw_batches ? _fbb.CreateVectorOfStructs<ss::runtime::DrawBatch>(*draw_batches) : 0;
+  auto mask_indices__ = mask_indices ? _fbb.CreateVector<uint16_t>(*mask_indices) : 0;
   return ss::runtime::CreateFrameData(
       _fbb,
       parts__,
@@ -1108,7 +1121,8 @@ inline ::flatbuffers::Offset<FrameData> CreateFrameDataDirect(
       vertices__,
       deforms__,
       draw_order__,
-      draw_batches__);
+      draw_batches__,
+      mask_indices__);
 }
 
 inline const ss::runtime::FrameData *GetFrameData(const void *buf) {

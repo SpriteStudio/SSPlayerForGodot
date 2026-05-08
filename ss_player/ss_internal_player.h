@@ -55,10 +55,10 @@ public:
 };
 
 // Engine-integration-agnostic SpriteStudio player core. Owns the
-// libssruntime context, an SSAB binding, the per-part canvas items, and a
+// libssruntime context, an SSAB binding, the per-batch canvas items, and a
 // recursive `Vector<SsInternalPlayer*>` of children for Instance parts. Has
 // no Node tree dependency: a single `_root_ci` canvas item carries this
-// player's transform / visibility, and all per-part canvas items hang off it
+// player's transform / visibility, and all per-batch canvas items hang off it
 // via `canvas_item_set_parent`. Hosts (Node2D, editor previews, ...) wrap
 // it and provide a parent canvas RID + an event sink.
 class SsInternalPlayer {
@@ -153,7 +153,7 @@ public:
     void onSSABReloaded();
 
 private:
-    // Root canvas item that all per-part canvas items hang off. Created in
+    // Root canvas item that all per-batch canvas items hang off. Created in
     // ctor, freed in dtor; transform / visibility / parent on this RID is
     // what makes Node-less hierarchical composition work.
     RID _root_ci;
@@ -204,12 +204,10 @@ private:
         const int32_t* shape_vertex_counts;  uintptr_t shape_vertex_counts_len;
     };
 
-    // Per-part geometry buffers in world space, ready to be consumed by either
-    // a single-part `canvas_item_add_triangle_array` call (current per-part
-    // path) or concatenated across multiple parts in a future per-batch path.
-    // The build helpers below produce these without touching any RID, so they
-    // are reusable from both paths.
-    struct NormalAdvancedBuffers {
+    // Per-part geometry buffers in world space, concatenated across the
+    // parts in a Normal batch into a single `canvas_item_add_triangle_array`
+    // call. The build helpers below produce these without touching any RID.
+    struct NormalBuffers {
         int vert_count;          // 4 (quad) or 5 (pentagon fan w/ center)
         // Texture is resolved by the caller (from `DrawBatch.texture_hash` for
         // batched draws); not stored here.
@@ -249,11 +247,11 @@ private:
     // Geometry-build helpers — fill `out` with world-space verts/uvs/colors
     // for a single part. Return false when the part should be skipped (no
     // texture / no cell / out-of-range buffers / etc.). No RID side effects.
-    bool _build_normal_advanced(const DrawFrame& f, int p_idx,
+    bool _build_normal(const DrawFrame& f, int p_idx,
                                 const ss::runtime::PartState* part,
                                 const float* draw_m,
                                 const Vector2& tex_size,
-                                NormalAdvancedBuffers& out);
+                                NormalBuffers& out);
     bool _build_shape_geometry(const DrawFrame& f, int p_idx,
                                const ss::runtime::PartState* part,
                                const float* draw_m,

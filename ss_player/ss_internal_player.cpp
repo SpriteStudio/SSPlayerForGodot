@@ -16,8 +16,8 @@ SsInternalPlayer::SsInternalPlayer() {
     runtime_ctx = ss_runtime_create();
     _reconfigure();
 
-    // _root_ci anchors all per-part canvas items so the host can move /
-    // hide / re-parent the whole player without touching individual parts.
+    // _root_ci anchors all per-batch canvas items so the host can move /
+    // hide / re-parent the whole player without touching individual batches.
     // Re-parenting happens via setParentCanvasItem; until then it floats
     // free of any canvas (which is fine — invisible until attached).
     RenderingServer* rs = RenderingServer::get_singleton();
@@ -698,11 +698,11 @@ void SsInternalPlayer::_draw_part_instance(const DrawFrame& f, RID ci, int p_idx
     child->setFrameRelative(diff);
 }
 
-bool SsInternalPlayer::_build_normal_advanced(const DrawFrame& f, int p_idx,
+bool SsInternalPlayer::_build_normal(const DrawFrame& f, int p_idx,
                                               const ss::runtime::PartState* part,
                                               const float* draw_m,
                                               const Vector2& tex_size,
-                                              NormalAdvancedBuffers& out) {
+                                              NormalBuffers& out) {
     const float* part_cell_meta = nullptr;
     if (f.cell_meta && (uintptr_t)p_idx * 6 + 6 <= f.cell_meta_len) {
         part_cell_meta = f.cell_meta + (p_idx * 6);
@@ -890,8 +890,8 @@ void SsInternalPlayer::_emit_normal_batch(const DrawFrame& f, RID ci,
         }
         if (!drawing_m) continue;
 
-        NormalAdvancedBuffers bufs;
-        if (!_build_normal_advanced(f, p_idx, part, drawing_m, tex_size, bufs)) continue;
+        NormalBuffers bufs;
+        if (!_build_normal(f, p_idx, part, drawing_m, tex_size, bufs)) continue;
 
         // Append per-part verts/uvs/colors.
         for (int j = 0; j < bufs.vert_count && vbase + j < verts.size(); j++) {
