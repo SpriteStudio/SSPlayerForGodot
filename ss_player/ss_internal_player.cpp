@@ -483,20 +483,15 @@ String SsInternalPlayer::_resolve_animation_by_hash(uint32_t name_hash, Ref<SSAB
     if (!_ssabRes.is_null()) {
         auto binary = _ssabRes->get_ss_anime_binary();
         if (binary && binary->external_instances()) {
-            // external_instances is sorted by anime_name_hash so we can
-            // binary-search the hint, then resolve the owning pack by hash.
+            // external_instances is sorted by anime_name_hash, so binary-search
+            // for the hint, then resolve the owning pack via the pack_hash map.
             const auto* entry = binary->external_instances()->LookupByKey(name_hash);
             if (entry) {
                 const uint32_t pack_hash = entry->anime_pack_name_hash();
-                for (int j = 0; j < _external_ssabs.size(); j++) {
-                    const Ref<SSABResource>& ext = _external_ssabs[j];
-                    if (ext.is_null()) continue;
-                    auto eb = ext->get_ss_anime_binary();
-                    if (!eb) continue;
-                    if (eb->name_hash() != pack_hash) continue;
-                    String found = find_anim_name_in(ext, name_hash);
+                if (auto* ext_ptr = _external_ssabs_by_pack_hash.getptr(pack_hash)) {
+                    String found = find_anim_name_in(*ext_ptr, name_hash);
                     if (!found.is_empty()) {
-                        out_source = ext;
+                        out_source = *ext_ptr;
                         return found;
                     }
                 }
@@ -522,20 +517,19 @@ String SsInternalPlayer::_resolve_animation_by_hash(uint32_t name_hash, Ref<SSAB
 
 void SsInternalPlayer::_load_external_ssabs() {
     _external_ssabs.clear();
+    _external_ssabs_by_pack_hash.clear();
     if (_ssabRes.is_null()) return;
     auto binary = _ssabRes->get_ss_anime_binary();
     if (!binary) return;
     if (!binary->external_instances() || binary->external_instances()->size() == 0) return;
 
-    HashMap<uint32_t, bool> seen;
     auto exts = binary->external_instances();
     String parent_dir = _ssabRes->get_parent_dir();
     for (uint32_t i = 0; i < exts->size(); i++) {
         auto entry = exts->Get(i);
         if (!entry || !entry->anime_pack_name()) continue;
         const uint32_t pack_hash = entry->anime_pack_name_hash();
-        if (seen.has(pack_hash)) continue;
-        seen[pack_hash] = true;
+        if (_external_ssabs_by_pack_hash.has(pack_hash)) continue;
 
         String pack = String::utf8(entry->anime_pack_name()->c_str());
         if (pack.is_empty()) continue;
@@ -556,6 +550,7 @@ void SsInternalPlayer::_load_external_ssabs() {
             continue;
         }
         _external_ssabs.push_back(ssab);
+        _external_ssabs_by_pack_hash[pack_hash] = ssab;
     }
 }
 
@@ -675,25 +670,16 @@ void SsInternalPlayer::_draw_part_instance(const DrawFrame& f, RID ci, int p_idx
     float speed = 1.0f;
 
     if (active_attr) {
+        // The child has already resolved its selected animation in
+        // _fetchAnimation(); reuse that pointer instead of scanning the child's
+        // animations array by name. Labels are sorted by name_hash (ssab schema
+        // marks `Label.name_hash (key)`), so LookupByKey gives us O(log n).
+        const ss::format::AnimationData* child_anim = child->getCurrentAnimationData();
         auto resolve_label = [&](uint32_t label_hash, int fallback) -> int {
             if (label_hash == 0) return fallback;
-            auto child_res = child->getSSABResource();
-            if (child_res.is_null()) return fallback;
-            auto child_anim_name = child->getAnimation();
-            auto child_binary = child_res->get_ss_anime_binary();
-            if (!child_binary || !child_binary->animations()) return fallback;
-            for (uint32_t i = 0; i < child_binary->animations()->size(); i++) {
-                auto a = child_binary->animations()->Get(i);
-                if (!a || !a->name()) continue;
-                if (String::utf8(a->name()->c_str()) != child_anim_name) continue;
-                if (!a->labels()) return fallback;
-                for (uint32_t k = 0; k < a->labels()->size(); k++) {
-                    auto lab = a->labels()->Get(k);
-                    if (lab && lab->name_hash() == label_hash) return lab->time();
-                }
-                return fallback;
-            }
-            return fallback;
+            if (!child_anim || !child_anim->labels()) return fallback;
+            const auto* lab = child_anim->labels()->LookupByKey(label_hash);
+            return lab ? lab->time() : fallback;
         };
 
         start_frame = resolve_label(active_attr->start_label_hash(), 0) + active_attr->start_offset();
