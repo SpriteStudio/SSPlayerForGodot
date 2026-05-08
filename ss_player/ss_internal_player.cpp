@@ -631,20 +631,8 @@ void SsInternalPlayer::_draw_part_instance(const DrawFrame& f, RID ci, int p_idx
             if (active_attr) break;
         }
     }
-    if (!active_attr) {
-        if (auto inits = _currentAnimationData->initial_events()) {
-            if ((uint32_t)p_idx < inits->size()) {
-                auto entry = inits->Get(p_idx);
-                if (entry && entry->instance()) {
-                    active_attr = entry->instance();
-                    active_event_frame = 0;
-                }
-            }
-        }
-    }
-
-    // Default playback config used when no EventInstance / InitialEvent entry
-    // exists. Matches the default-constructed `SsInstanceAttr` in SS6
+    // Default playback config used when no EventInstance has fired yet for this
+    // slot. Matches the default-constructed `SsInstanceAttr` in SS6
     // (sstypes.h:1294): loopNum=1, infinity=false, full "_start".."_end"
     // range, speed=1, curKeyframe=0. This makes the instance play through
     // once and clamp at end_frame (animedecode.cpp:1670 clamps `reftime` to
@@ -684,8 +672,6 @@ void SsInternalPlayer::_draw_part_instance(const DrawFrame& f, RID ci, int p_idx
 
     child->setAnimationSection(start_frame, end_frame);
     child->setLoop(loops);
-    // FFI convention: direction == 0 -> Forward, non-zero -> Backward.
-    // PlaybackStyle: 0 = Normal, 1 = PingPong.
     child->setPlaybackDirection(reverse ? 1 : 0, pingpong ? 1 : 0);
 
     float diff = (f.frame_no - (float)active_event_frame) * speed;
