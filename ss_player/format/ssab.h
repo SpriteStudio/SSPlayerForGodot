@@ -2936,9 +2936,10 @@ struct EffectNode FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
     VT_INDEX = 4,
     VT_PARENT_INDEX = 6,
     VT_EFFECT_NODE_TYPE = 8,
-    VT_CELL_INDEX = 10,
-    VT_BLEND_TYPE = 12,
-    VT_BEHAVIOR = 14
+    VT_CELL_NAME_HASH = 10,
+    VT_CELL_MAP_NAME_HASH = 12,
+    VT_BLEND_TYPE = 14,
+    VT_BEHAVIOR = 16
   };
   int16_t index() const {
     return GetField<int16_t>(VT_INDEX, 0);
@@ -2949,8 +2950,11 @@ struct EffectNode FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   ss::format::EffectNodeType effect_node_type() const {
     return static_cast<ss::format::EffectNodeType>(GetField<uint8_t>(VT_EFFECT_NODE_TYPE, 0));
   }
-  int16_t cell_index() const {
-    return GetField<int16_t>(VT_CELL_INDEX, 0);
+  uint32_t cell_name_hash() const {
+    return GetField<uint32_t>(VT_CELL_NAME_HASH, 0);
+  }
+  uint32_t cell_map_name_hash() const {
+    return GetField<uint32_t>(VT_CELL_MAP_NAME_HASH, 0);
   }
   ss::format::RenderBlendType blend_type() const {
     return static_cast<ss::format::RenderBlendType>(GetField<uint8_t>(VT_BLEND_TYPE, 0));
@@ -2964,7 +2968,8 @@ struct EffectNode FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyField<int16_t>(verifier, VT_INDEX, 2) &&
            VerifyField<int16_t>(verifier, VT_PARENT_INDEX, 2) &&
            VerifyField<uint8_t>(verifier, VT_EFFECT_NODE_TYPE, 1) &&
-           VerifyField<int16_t>(verifier, VT_CELL_INDEX, 2) &&
+           VerifyField<uint32_t>(verifier, VT_CELL_NAME_HASH, 4) &&
+           VerifyField<uint32_t>(verifier, VT_CELL_MAP_NAME_HASH, 4) &&
            VerifyField<uint8_t>(verifier, VT_BLEND_TYPE, 1) &&
            VerifyOffset(verifier, VT_BEHAVIOR) &&
            verifier.VerifyVector(behavior()) &&
@@ -2986,8 +2991,11 @@ struct EffectNodeBuilder {
   void add_effect_node_type(ss::format::EffectNodeType effect_node_type) {
     fbb_.AddElement<uint8_t>(EffectNode::VT_EFFECT_NODE_TYPE, static_cast<uint8_t>(effect_node_type), 0);
   }
-  void add_cell_index(int16_t cell_index) {
-    fbb_.AddElement<int16_t>(EffectNode::VT_CELL_INDEX, cell_index, 0);
+  void add_cell_name_hash(uint32_t cell_name_hash) {
+    fbb_.AddElement<uint32_t>(EffectNode::VT_CELL_NAME_HASH, cell_name_hash, 0);
+  }
+  void add_cell_map_name_hash(uint32_t cell_map_name_hash) {
+    fbb_.AddElement<uint32_t>(EffectNode::VT_CELL_MAP_NAME_HASH, cell_map_name_hash, 0);
   }
   void add_blend_type(ss::format::RenderBlendType blend_type) {
     fbb_.AddElement<uint8_t>(EffectNode::VT_BLEND_TYPE, static_cast<uint8_t>(blend_type), 0);
@@ -3011,12 +3019,14 @@ inline ::flatbuffers::Offset<EffectNode> CreateEffectNode(
     int16_t index = 0,
     int16_t parent_index = 0,
     ss::format::EffectNodeType effect_node_type = ss::format::EffectNodeType_Root,
-    int16_t cell_index = 0,
+    uint32_t cell_name_hash = 0,
+    uint32_t cell_map_name_hash = 0,
     ss::format::RenderBlendType blend_type = ss::format::RenderBlendType_Mix,
     ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::EffectNodeBehaviorWrapper>>> behavior = 0) {
   EffectNodeBuilder builder_(_fbb);
   builder_.add_behavior(behavior);
-  builder_.add_cell_index(cell_index);
+  builder_.add_cell_map_name_hash(cell_map_name_hash);
+  builder_.add_cell_name_hash(cell_name_hash);
   builder_.add_parent_index(parent_index);
   builder_.add_index(index);
   builder_.add_blend_type(blend_type);
@@ -3029,7 +3039,8 @@ inline ::flatbuffers::Offset<EffectNode> CreateEffectNodeDirect(
     int16_t index = 0,
     int16_t parent_index = 0,
     ss::format::EffectNodeType effect_node_type = ss::format::EffectNodeType_Root,
-    int16_t cell_index = 0,
+    uint32_t cell_name_hash = 0,
+    uint32_t cell_map_name_hash = 0,
     ss::format::RenderBlendType blend_type = ss::format::RenderBlendType_Mix,
     const std::vector<::flatbuffers::Offset<ss::format::EffectNodeBehaviorWrapper>> *behavior = nullptr) {
   auto behavior__ = behavior ? _fbb.CreateVector<::flatbuffers::Offset<ss::format::EffectNodeBehaviorWrapper>>(*behavior) : 0;
@@ -3038,7 +3049,8 @@ inline ::flatbuffers::Offset<EffectNode> CreateEffectNodeDirect(
       index,
       parent_index,
       effect_node_type,
-      cell_index,
+      cell_name_hash,
+      cell_map_name_hash,
       blend_type,
       behavior__);
 }
@@ -3756,11 +3768,11 @@ inline ::flatbuffers::Offset<FontBitmap> CreateFontBitmapDirect(
 struct PartAttributeCell FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   typedef PartAttributeCellBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
-    VT_MAP_ID = 4,
+    VT_CELLMAP_NAME_HASH = 4,
     VT_NAME_HASH = 6
   };
-  int32_t map_id() const {
-    return GetField<int32_t>(VT_MAP_ID, 0);
+  uint32_t cellmap_name_hash() const {
+    return GetField<uint32_t>(VT_CELLMAP_NAME_HASH, 0);
   }
   uint32_t name_hash() const {
     return GetField<uint32_t>(VT_NAME_HASH, 0);
@@ -3768,7 +3780,7 @@ struct PartAttributeCell FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table 
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<int32_t>(verifier, VT_MAP_ID, 4) &&
+           VerifyField<uint32_t>(verifier, VT_CELLMAP_NAME_HASH, 4) &&
            VerifyField<uint32_t>(verifier, VT_NAME_HASH, 4) &&
            verifier.EndTable();
   }
@@ -3778,8 +3790,8 @@ struct PartAttributeCellBuilder {
   typedef PartAttributeCell Table;
   ::flatbuffers::FlatBufferBuilder &fbb_;
   ::flatbuffers::uoffset_t start_;
-  void add_map_id(int32_t map_id) {
-    fbb_.AddElement<int32_t>(PartAttributeCell::VT_MAP_ID, map_id, 0);
+  void add_cellmap_name_hash(uint32_t cellmap_name_hash) {
+    fbb_.AddElement<uint32_t>(PartAttributeCell::VT_CELLMAP_NAME_HASH, cellmap_name_hash, 0);
   }
   void add_name_hash(uint32_t name_hash) {
     fbb_.AddElement<uint32_t>(PartAttributeCell::VT_NAME_HASH, name_hash, 0);
@@ -3797,11 +3809,11 @@ struct PartAttributeCellBuilder {
 
 inline ::flatbuffers::Offset<PartAttributeCell> CreatePartAttributeCell(
     ::flatbuffers::FlatBufferBuilder &_fbb,
-    int32_t map_id = 0,
+    uint32_t cellmap_name_hash = 0,
     uint32_t name_hash = 0) {
   PartAttributeCellBuilder builder_(_fbb);
   builder_.add_name_hash(name_hash);
-  builder_.add_map_id(map_id);
+  builder_.add_cellmap_name_hash(cellmap_name_hash);
   return builder_.Finish();
 }
 
@@ -4148,7 +4160,8 @@ struct PartAttributeEffect FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Tabl
     VT_CUR_KEYFRAME = 4,
     VT_START_TIME = 6,
     VT_SPEED = 8,
-    VT_LOOPFLAG = 10
+    VT_LOOPFLAG = 10,
+    VT_INDEPENDENT = 12
   };
   int32_t cur_keyframe() const {
     return GetField<int32_t>(VT_CUR_KEYFRAME, 0);
@@ -4162,6 +4175,9 @@ struct PartAttributeEffect FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Tabl
   int32_t loopflag() const {
     return GetField<int32_t>(VT_LOOPFLAG, 0);
   }
+  bool independent() const {
+    return GetField<uint8_t>(VT_INDEPENDENT, 0) != 0;
+  }
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
@@ -4169,6 +4185,7 @@ struct PartAttributeEffect FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Tabl
            VerifyField<int32_t>(verifier, VT_START_TIME, 4) &&
            VerifyField<float>(verifier, VT_SPEED, 4) &&
            VerifyField<int32_t>(verifier, VT_LOOPFLAG, 4) &&
+           VerifyField<uint8_t>(verifier, VT_INDEPENDENT, 1) &&
            verifier.EndTable();
   }
 };
@@ -4189,6 +4206,9 @@ struct PartAttributeEffectBuilder {
   void add_loopflag(int32_t loopflag) {
     fbb_.AddElement<int32_t>(PartAttributeEffect::VT_LOOPFLAG, loopflag, 0);
   }
+  void add_independent(bool independent) {
+    fbb_.AddElement<uint8_t>(PartAttributeEffect::VT_INDEPENDENT, static_cast<uint8_t>(independent), 0);
+  }
   explicit PartAttributeEffectBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
@@ -4205,12 +4225,14 @@ inline ::flatbuffers::Offset<PartAttributeEffect> CreatePartAttributeEffect(
     int32_t cur_keyframe = 0,
     int32_t start_time = 0,
     float speed = 0.0f,
-    int32_t loopflag = 0) {
+    int32_t loopflag = 0,
+    bool independent = false) {
   PartAttributeEffectBuilder builder_(_fbb);
   builder_.add_loopflag(loopflag);
   builder_.add_speed(speed);
   builder_.add_start_time(start_time);
   builder_.add_cur_keyframe(cur_keyframe);
+  builder_.add_independent(independent);
   return builder_.Finish();
 }
 
@@ -4294,9 +4316,9 @@ struct PartAttributeShader FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Tabl
     VT_PARAM5 = 18,
     VT_PARAM6 = 20,
     VT_PARAM7 = 22,
-    VT_MAP0_ID = 24,
+    VT_MAP0_CELLMAP_NAME_HASH = 24,
     VT_MAP0_NAME_HASH = 26,
-    VT_MAP1_ID = 28,
+    VT_MAP1_CELLMAP_NAME_HASH = 28,
     VT_MAP1_NAME_HASH = 30
   };
   const ::flatbuffers::String *id() const {
@@ -4329,14 +4351,14 @@ struct PartAttributeShader FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Tabl
   float param7() const {
     return GetField<float>(VT_PARAM7, 0.0f);
   }
-  int32_t map0_id() const {
-    return GetField<int32_t>(VT_MAP0_ID, 0);
+  uint32_t map0_cellmap_name_hash() const {
+    return GetField<uint32_t>(VT_MAP0_CELLMAP_NAME_HASH, 0);
   }
   uint32_t map0_name_hash() const {
     return GetField<uint32_t>(VT_MAP0_NAME_HASH, 0);
   }
-  int32_t map1_id() const {
-    return GetField<int32_t>(VT_MAP1_ID, 0);
+  uint32_t map1_cellmap_name_hash() const {
+    return GetField<uint32_t>(VT_MAP1_CELLMAP_NAME_HASH, 0);
   }
   uint32_t map1_name_hash() const {
     return GetField<uint32_t>(VT_MAP1_NAME_HASH, 0);
@@ -4355,9 +4377,9 @@ struct PartAttributeShader FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Tabl
            VerifyField<float>(verifier, VT_PARAM5, 4) &&
            VerifyField<float>(verifier, VT_PARAM6, 4) &&
            VerifyField<float>(verifier, VT_PARAM7, 4) &&
-           VerifyField<int32_t>(verifier, VT_MAP0_ID, 4) &&
+           VerifyField<uint32_t>(verifier, VT_MAP0_CELLMAP_NAME_HASH, 4) &&
            VerifyField<uint32_t>(verifier, VT_MAP0_NAME_HASH, 4) &&
-           VerifyField<int32_t>(verifier, VT_MAP1_ID, 4) &&
+           VerifyField<uint32_t>(verifier, VT_MAP1_CELLMAP_NAME_HASH, 4) &&
            VerifyField<uint32_t>(verifier, VT_MAP1_NAME_HASH, 4) &&
            verifier.EndTable();
   }
@@ -4397,14 +4419,14 @@ struct PartAttributeShaderBuilder {
   void add_param7(float param7) {
     fbb_.AddElement<float>(PartAttributeShader::VT_PARAM7, param7, 0.0f);
   }
-  void add_map0_id(int32_t map0_id) {
-    fbb_.AddElement<int32_t>(PartAttributeShader::VT_MAP0_ID, map0_id, 0);
+  void add_map0_cellmap_name_hash(uint32_t map0_cellmap_name_hash) {
+    fbb_.AddElement<uint32_t>(PartAttributeShader::VT_MAP0_CELLMAP_NAME_HASH, map0_cellmap_name_hash, 0);
   }
   void add_map0_name_hash(uint32_t map0_name_hash) {
     fbb_.AddElement<uint32_t>(PartAttributeShader::VT_MAP0_NAME_HASH, map0_name_hash, 0);
   }
-  void add_map1_id(int32_t map1_id) {
-    fbb_.AddElement<int32_t>(PartAttributeShader::VT_MAP1_ID, map1_id, 0);
+  void add_map1_cellmap_name_hash(uint32_t map1_cellmap_name_hash) {
+    fbb_.AddElement<uint32_t>(PartAttributeShader::VT_MAP1_CELLMAP_NAME_HASH, map1_cellmap_name_hash, 0);
   }
   void add_map1_name_hash(uint32_t map1_name_hash) {
     fbb_.AddElement<uint32_t>(PartAttributeShader::VT_MAP1_NAME_HASH, map1_name_hash, 0);
@@ -4432,15 +4454,15 @@ inline ::flatbuffers::Offset<PartAttributeShader> CreatePartAttributeShader(
     float param5 = 0.0f,
     float param6 = 0.0f,
     float param7 = 0.0f,
-    int32_t map0_id = 0,
+    uint32_t map0_cellmap_name_hash = 0,
     uint32_t map0_name_hash = 0,
-    int32_t map1_id = 0,
+    uint32_t map1_cellmap_name_hash = 0,
     uint32_t map1_name_hash = 0) {
   PartAttributeShaderBuilder builder_(_fbb);
   builder_.add_map1_name_hash(map1_name_hash);
-  builder_.add_map1_id(map1_id);
+  builder_.add_map1_cellmap_name_hash(map1_cellmap_name_hash);
   builder_.add_map0_name_hash(map0_name_hash);
-  builder_.add_map0_id(map0_id);
+  builder_.add_map0_cellmap_name_hash(map0_cellmap_name_hash);
   builder_.add_param7(param7);
   builder_.add_param6(param6);
   builder_.add_param5(param5);
@@ -4466,9 +4488,9 @@ inline ::flatbuffers::Offset<PartAttributeShader> CreatePartAttributeShaderDirec
     float param5 = 0.0f,
     float param6 = 0.0f,
     float param7 = 0.0f,
-    int32_t map0_id = 0,
+    uint32_t map0_cellmap_name_hash = 0,
     uint32_t map0_name_hash = 0,
-    int32_t map1_id = 0,
+    uint32_t map1_cellmap_name_hash = 0,
     uint32_t map1_name_hash = 0) {
   auto id__ = id ? _fbb.CreateString(id) : 0;
   return ss::format::CreatePartAttributeShader(
@@ -4483,9 +4505,9 @@ inline ::flatbuffers::Offset<PartAttributeShader> CreatePartAttributeShaderDirec
       param5,
       param6,
       param7,
-      map0_id,
+      map0_cellmap_name_hash,
       map0_name_hash,
-      map1_id,
+      map1_cellmap_name_hash,
       map1_name_hash);
 }
 
@@ -5789,8 +5811,9 @@ struct PartData FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
     VT_PARENT_INDEX = 6,
     VT_BOUNDS_TYPE = 8,
     VT_BLEND_TYPE = 10,
-    VT_PART_TYPE_TYPE = 12,
-    VT_PART_TYPE = 14
+    VT_MASK_INFLUENCE = 12,
+    VT_PART_TYPE_TYPE = 14,
+    VT_PART_TYPE = 16
   };
   const ::flatbuffers::String *name() const {
     return GetPointer<const ::flatbuffers::String *>(VT_NAME);
@@ -5803,6 +5826,9 @@ struct PartData FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   }
   ss::format::BlendType blend_type() const {
     return static_cast<ss::format::BlendType>(GetField<uint8_t>(VT_BLEND_TYPE, 0));
+  }
+  bool mask_influence() const {
+    return GetField<uint8_t>(VT_MASK_INFLUENCE, 0) != 0;
   }
   ss::format::PartType part_type_type() const {
     return static_cast<ss::format::PartType>(GetField<uint8_t>(VT_PART_TYPE_TYPE, 0));
@@ -5869,6 +5895,7 @@ struct PartData FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyField<int16_t>(verifier, VT_PARENT_INDEX, 2) &&
            VerifyField<uint8_t>(verifier, VT_BOUNDS_TYPE, 1) &&
            VerifyField<uint8_t>(verifier, VT_BLEND_TYPE, 1) &&
+           VerifyField<uint8_t>(verifier, VT_MASK_INFLUENCE, 1) &&
            VerifyField<uint8_t>(verifier, VT_PART_TYPE_TYPE, 1) &&
            VerifyOffset(verifier, VT_PART_TYPE) &&
            VerifyPartType(verifier, part_type(), part_type_type()) &&
@@ -5891,6 +5918,9 @@ struct PartDataBuilder {
   }
   void add_blend_type(ss::format::BlendType blend_type) {
     fbb_.AddElement<uint8_t>(PartData::VT_BLEND_TYPE, static_cast<uint8_t>(blend_type), 0);
+  }
+  void add_mask_influence(bool mask_influence) {
+    fbb_.AddElement<uint8_t>(PartData::VT_MASK_INFLUENCE, static_cast<uint8_t>(mask_influence), 0);
   }
   void add_part_type_type(ss::format::PartType part_type_type) {
     fbb_.AddElement<uint8_t>(PartData::VT_PART_TYPE_TYPE, static_cast<uint8_t>(part_type_type), 0);
@@ -5915,6 +5945,7 @@ inline ::flatbuffers::Offset<PartData> CreatePartData(
     int16_t parent_index = 0,
     ss::format::BoundsType bounds_type = ss::format::BoundsType_None,
     ss::format::BlendType blend_type = ss::format::BlendType_Mix,
+    bool mask_influence = false,
     ss::format::PartType part_type_type = ss::format::PartType_NONE,
     ::flatbuffers::Offset<void> part_type = 0) {
   PartDataBuilder builder_(_fbb);
@@ -5922,6 +5953,7 @@ inline ::flatbuffers::Offset<PartData> CreatePartData(
   builder_.add_name(name);
   builder_.add_parent_index(parent_index);
   builder_.add_part_type_type(part_type_type);
+  builder_.add_mask_influence(mask_influence);
   builder_.add_blend_type(blend_type);
   builder_.add_bounds_type(bounds_type);
   return builder_.Finish();
@@ -5933,6 +5965,7 @@ inline ::flatbuffers::Offset<PartData> CreatePartDataDirect(
     int16_t parent_index = 0,
     ss::format::BoundsType bounds_type = ss::format::BoundsType_None,
     ss::format::BlendType blend_type = ss::format::BlendType_Mix,
+    bool mask_influence = false,
     ss::format::PartType part_type_type = ss::format::PartType_NONE,
     ::flatbuffers::Offset<void> part_type = 0) {
   auto name__ = name ? _fbb.CreateString(name) : 0;
@@ -5942,6 +5975,7 @@ inline ::flatbuffers::Offset<PartData> CreatePartDataDirect(
       parent_index,
       bounds_type,
       blend_type,
+      mask_influence,
       part_type_type,
       part_type);
 }
