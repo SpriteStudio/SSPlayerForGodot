@@ -85,6 +85,10 @@ public:
     Ref<SSABResource> getSSABResource() const { return _ssabRes; }
     void setAnimation(const String& p_name);
     String getAnimation() const { return _strAnimationSelected; }
+    // Cached AnimationData* for the currently selected animation. Null until
+    // setAnimation+_fetchAnimation succeed; lets callers skip a redundant
+    // name->AnimationData lookup in their own binary.
+    const ss::format::AnimationData* getCurrentAnimationData() const { return _currentAnimationData; }
 
     // Playback control — 1:1 mirror of the previous SpriteStudioPlayer2D API.
     bool isPlaying() const;
@@ -175,6 +179,9 @@ private:
     // External SSAB resources auto-loaded from the parent's directory based
     // on `external_instances`. Cleared and rebuilt on every setSSABResource.
     Vector<Ref<SSABResource>> _external_ssabs;
+    // Same set as `_external_ssabs`, keyed by SsAnimeBinary.name_hash so
+    // hash-based pack resolution is O(1). Built by `_load_external_ssabs`.
+    HashMap<uint32_t, Ref<SSABResource>> _external_ssabs_by_pack_hash;
 
     // Per-frame draw context: SoA pointers and frame-shared bindings fetched
     // once at the top of `drawAnimation`.

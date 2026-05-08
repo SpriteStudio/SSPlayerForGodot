@@ -7734,18 +7734,6 @@ struct AnimationData FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   const ::flatbuffers::String *name() const {
     return GetPointer<const ::flatbuffers::String *>(VT_NAME);
   }
-  bool KeyCompareLessThan(const AnimationData * const o) const {
-    return *name() < *o->name();
-  }
-  int KeyCompareWithValue(const char *_name) const {
-    return strcmp(name()->c_str(), _name);
-  }
-  template<typename StringType>
-  int KeyCompareWithValue(const StringType& _name) const {
-    if (name()->c_str() < _name) return -1;
-    if (_name < name()->c_str()) return 1;
-    return 0;
-  }
   uint32_t name_hash() const {
     return GetField<uint32_t>(VT_NAME_HASH, 0);
   }
@@ -8369,7 +8357,7 @@ inline ::flatbuffers::Offset<SsAnimeBinary> CreateSsAnimeBinaryDirect(
     const char *name = nullptr,
     uint32_t name_hash = 0,
     const std::vector<::flatbuffers::Offset<ss::format::PartData>> *parts = nullptr,
-    std::vector<::flatbuffers::Offset<ss::format::AnimationData>> *animations = nullptr,
+    const std::vector<::flatbuffers::Offset<ss::format::AnimationData>> *animations = nullptr,
     std::vector<::flatbuffers::Offset<ss::format::CellMap>> *cellmaps = nullptr,
     std::vector<::flatbuffers::Offset<ss::format::Effect>> *effects = nullptr,
     std::vector<::flatbuffers::Offset<ss::format::SoundList>> *sound_lists = nullptr,
@@ -8379,7 +8367,7 @@ inline ::flatbuffers::Offset<SsAnimeBinary> CreateSsAnimeBinaryDirect(
     std::vector<::flatbuffers::Offset<ss::format::EmbeddedAsset>> *embedded_assets = nullptr) {
   auto name__ = name ? _fbb.CreateString(name) : 0;
   auto parts__ = parts ? _fbb.CreateVector<::flatbuffers::Offset<ss::format::PartData>>(*parts) : 0;
-  auto animations__ = animations ? _fbb.CreateVectorOfSortedTables<ss::format::AnimationData>(animations) : 0;
+  auto animations__ = animations ? _fbb.CreateVector<::flatbuffers::Offset<ss::format::AnimationData>>(*animations) : 0;
   auto cellmaps__ = cellmaps ? _fbb.CreateVectorOfSortedTables<ss::format::CellMap>(cellmaps) : 0;
   auto effects__ = effects ? _fbb.CreateVectorOfSortedTables<ss::format::Effect>(effects) : 0;
   auto sound_lists__ = sound_lists ? _fbb.CreateVectorOfSortedTables<ss::format::SoundList>(sound_lists) : 0;
