@@ -26,7 +26,7 @@ SsInternalPlayer::SsInternalPlayer() {
 
 SsInternalPlayer::~SsInternalPlayer() {
     _clear_instance_players();
-    _clear_canvas_items();
+    _clear_batch_canvas_items();
 
     RenderingServer* rs = RenderingServer::get_singleton();
     if (_root_ci.is_valid()) {
@@ -59,13 +59,23 @@ void SsInternalPlayer::setEventSink(SsPlayerEventSink* p_sink) {
     _event_sink = p_sink;
 }
 
-void SsInternalPlayer::_clear_canvas_items() {
+void SsInternalPlayer::_clear_batch_canvas_items() {
     RenderingServer* rs = RenderingServer::get_singleton();
-    for (int i = 0; i < _canvas_items.size(); i++) {
-        rs->free_rid(_canvas_items[i]);
+    for (int i = 0; i < _batch_canvas_items.size(); i++) {
+        rs->free_rid(_batch_canvas_items[i]);
     }
-    _canvas_items.clear();
+    _batch_canvas_items.clear();
     _blend_materials.clear();
+}
+
+RID SsInternalPlayer::_ensure_batch_ci(int batch_idx) {
+    RenderingServer* rs = RenderingServer::get_singleton();
+    while (_batch_canvas_items.size() <= batch_idx) {
+        RID ci = rs->canvas_item_create();
+        rs->canvas_item_set_parent(ci, _root_ci);
+        _batch_canvas_items.push_back(ci);
+    }
+    return _batch_canvas_items[batch_idx];
 }
 
 void SsInternalPlayer::setSSABResource(const Ref<SSABResource>& ssabRes) {
@@ -383,83 +393,64 @@ void SsInternalPlayer::_drawAnimation(float frame_no) {
     ss_runtime_get_world_matrices(runtime_ctx, &f.world_matrices, &f.world_matrices_len);
     ss_runtime_get_local_uvs(runtime_ctx, &f.local_uvs, &f.local_uvs_len);
     ss_runtime_get_cell_meta(runtime_ctx, &f.cell_meta, &f.cell_meta_len);
-    ss_runtime_get_cell_texture_hashes(runtime_ctx, &f.cell_texture_hashes, &f.cell_texture_hashes_len);
     ss_runtime_get_local_vertices(runtime_ctx, &f.local_vertices, &f.local_vertices_len);
     ss_runtime_get_shape_vertices(runtime_ctx, &f.shape_vertices, &f.shape_vertices_len);
     ss_runtime_get_shape_vertex_box_coords(runtime_ctx, &f.shape_box_coords, &f.shape_box_coords_len);
     ss_runtime_get_shape_vertex_counts(runtime_ctx, &f.shape_vertex_counts, &f.shape_vertex_counts_len);
 
-    const int32_t* z_order = nullptr;
-    uintptr_t z_order_len = 0;
-    ss_runtime_get_z_order(runtime_ctx, &z_order, &z_order_len);
-
     auto parts = f.frameData->parts();
-    if (!parts) return;
+    auto draw_order = f.frameData->draw_order();
+    auto draw_batches = f.frameData->draw_batches();
+    if (!parts || !draw_order || !draw_batches) return;
 
-    for (RID ci : _canvas_items) {
+    // PartState lookup by part_idx (parts iter order is not guaranteed to be
+    // part_index order). Built once per frame.
+    Vector<const ss::runtime::PartState*> parts_by_idx;
+    {
+        const int total = f.binary->parts() ? (int)f.binary->parts()->size() : 0;
+        parts_by_idx.resize(total);
+        for (int i = 0; i < total; i++) parts_by_idx.set(i, nullptr);
+        for (uint32_t i = 0; i < parts->size(); i++) {
+            auto p = parts->Get(i);
+            int idx = p->part_index();
+            if (idx >= 0 && idx < total) parts_by_idx.set(idx, p);
+        }
+    }
+
+    const uint16_t* draw_order_data = draw_order->data();
+    const uint32_t batch_count = draw_batches->size();
+
+    // Hide / clear unused entries in the pool (peak-retain policy).
+    for (int i = (int)batch_count; i < _batch_canvas_items.size(); i++) {
+        f.rs->canvas_item_clear(_batch_canvas_items[i]);
+        f.rs->canvas_item_set_visible(_batch_canvas_items[i], false);
+    }
+
+    for (uint32_t bi = 0; bi < batch_count; bi++) {
+        const auto* batch = draw_batches->Get(bi);
+        RID ci = _ensure_batch_ci((int)bi);
         f.rs->canvas_item_clear(ci);
-    }
+        f.rs->canvas_item_set_visible(ci, true);
+        f.rs->canvas_item_set_z_index(ci, (int)bi);
 
-    for (uint32_t i = 0; i < parts->size(); i++) {
-        auto part = parts->Get(i);
-        int p_idx = part->part_index();
-        if (p_idx < 0 || p_idx >= (int)_canvas_items.size()) continue;
-
-        RID ci = _canvas_items[p_idx];
-        if (z_order && (uintptr_t)p_idx < z_order_len) {
-            f.rs->canvas_item_set_z_index(ci, z_order[p_idx]);
+        const auto kind = batch->kind();
+        if (kind == ss::runtime::DrawBatchKind_Normal) {
+            _emit_normal_batch(f, ci, batch, draw_order_data, parts_by_idx);
+        } else if (kind == ss::runtime::DrawBatchKind_Shape) {
+            int p_idx = (int)draw_order_data[batch->start_rank()];
+            const auto* part = (p_idx >= 0 && p_idx < parts_by_idx.size()) ? parts_by_idx[p_idx] : nullptr;
+            if (part) _emit_shape_singleton(f, ci, p_idx, part);
+        } else if (kind == ss::runtime::DrawBatchKind_Instance) {
+            int p_idx = (int)draw_order_data[batch->start_rank()];
+            const auto* part = (p_idx >= 0 && p_idx < parts_by_idx.size()) ? parts_by_idx[p_idx] : nullptr;
+            if (!part) continue;
+            const float* drawing_m = (f.world_matrices && (uintptr_t)p_idx * 16 < f.world_matrices_len)
+                ? f.world_matrices + (p_idx * 16) : nullptr;
+            if (!drawing_m) continue;
+            auto partBinary = f.binary->parts()->Get(p_idx);
+            _draw_part_instance(f, ci, p_idx, part, partBinary, drawing_m);
         }
-
-        if (part->hide()) continue;
-
-        const float* drawing_m = nullptr;
-        if (f.world_matrices && ((uintptr_t)p_idx * 16 < f.world_matrices_len)) {
-            drawing_m = f.world_matrices + (p_idx * 16);
-        } else {
-            continue;
-        }
-
-        auto partBinary = f.binary->parts()->Get(p_idx);
-        _draw_part(f, ci, p_idx, part, partBinary, drawing_m);
-    }
-}
-
-void SsInternalPlayer::_draw_part(const DrawFrame& f, RID ci, int p_idx, const ss::runtime::PartState* part, const ss::format::PartData* partBinary, const float* draw_m) {
-    switch (partBinary->part_type_type()) {
-        case ss::format::PartType_PartTypeNormal:
-            _draw_part_normal(f, ci, p_idx, part, partBinary, draw_m);
-            return;
-
-        case ss::format::PartType_PartTypeNull:
-        case ss::format::PartType_PartTypeArmature:
-        case ss::format::PartType_PartTypeJoint:
-        case ss::format::PartType_PartTypeMovenode:
-        case ss::format::PartType_PartTypeConstraint:
-        case ss::format::PartType_PartTypeBonepoint:
-        case ss::format::PartType_PartTypeTransformConstraint:
-        case ss::format::PartType_PartTypeCamera:
-        case ss::format::PartType_PartTypeAudio:
-            return;
-
-        case ss::format::PartType_PartTypeShape:
-            _draw_part_shape(f, ci, p_idx, part, partBinary, draw_m);
-            return;
-
-        case ss::format::PartType_PartTypeText:
-        case ss::format::PartType_PartTypeNines:
-        case ss::format::PartType_PartTypeMesh:
-        case ss::format::PartType_PartTypeMask:
-            return;
-
-        case ss::format::PartType_PartTypeInstance:
-            _draw_part_instance(f, ci, p_idx, part, partBinary, draw_m);
-            return;
-
-        case ss::format::PartType_PartTypeEffect:
-            return;
-
-        default:
-            return;
+        // DrawBatchKind_Effect / Mesh / Text / Nines / Mask: not yet implemented.
     }
 }
 
@@ -600,13 +591,9 @@ void SsInternalPlayer::_setup_instance_players() {
         // Keep the child hidden by default; _draw_part_instance toggles it
         // visible only when an EventInstance / InitialEvent triggers it.
         child->setRootVisible(false);
-        // Parent the child's root canvas item under this player's per-part
-        // canvas for the Instance slot. This is what replaces the previous
-        // add_child / set_transform plumbing — RenderingServer composes the
-        // transform hierarchically through the canvas item tree.
-        if (i < (int)_canvas_items.size()) {
-            child->setParentCanvasItem(_canvas_items[i]);
-        }
+        // Parenting under the slot's batch canvas_item is performed each
+        // frame in _draw_part_instance — batch CIs are recyclable so a
+        // setup-time parenting wouldn't survive batch-list shifts.
         _instance_players.set(i, child);
     }
 }
@@ -615,6 +602,12 @@ void SsInternalPlayer::_draw_part_instance(const DrawFrame& f, RID ci, int p_idx
     if (p_idx < 0 || p_idx >= _instance_players.size()) return;
     SsInternalPlayer* child = _instance_players[p_idx];
     if (!child) return;
+
+    // Re-parent the child's root canvas_item under this Instance batch's CI
+    // every frame: the batch CI pool may shuffle as draw_batches changes
+    // ordering, so the slot CI for a given Instance part is not guaranteed
+    // to be the same RID across frames.
+    child->setParentCanvasItem(ci);
 
     if (!_currentAnimationData) {
         child->setRootVisible(false);
@@ -705,9 +698,11 @@ void SsInternalPlayer::_draw_part_instance(const DrawFrame& f, RID ci, int p_idx
     child->setFrameRelative(diff);
 }
 
-void SsInternalPlayer::_draw_part_normal(const DrawFrame& f, RID ci, int p_idx, const ss::runtime::PartState* part, const ss::format::PartData* partBinary, const float* draw_m) {
-    RenderingServer* rs = f.rs;
-
+bool SsInternalPlayer::_build_normal_advanced(const DrawFrame& f, int p_idx,
+                                              const ss::runtime::PartState* part,
+                                              const float* draw_m,
+                                              const Vector2& tex_size,
+                                              NormalAdvancedBuffers& out) {
     const float* part_cell_meta = nullptr;
     if (f.cell_meta && (uintptr_t)p_idx * 6 + 6 <= f.cell_meta_len) {
         part_cell_meta = f.cell_meta + (p_idx * 6);
@@ -720,107 +715,42 @@ void SsInternalPlayer::_draw_part_normal(const DrawFrame& f, RID ci, int p_idx, 
     if (f.local_vertices && (uintptr_t)p_idx * 10 + 10 <= f.local_vertices_len) {
         part_verts = f.local_vertices + (p_idx * 10);
     }
+    if (!part_cell_meta || !part_uvs || !part_verts) return false;
 
-    if (!part_cell_meta || !part_verts) return;
-    if (!f.cell_texture_hashes || (uintptr_t)p_idx >= f.cell_texture_hashes_len) return;
-    const uint32_t texHash = f.cell_texture_hashes[p_idx];
-    if (texHash == 0) return;
-    if (!_textures.has(texHash)) return;
-    Ref<Texture2D> tex = _textures[texHash];
+    const uint64_t flags = part->update_flag();
+    const bool needs_center = (flags & (ss::runtime::UpdateAttributeFlags_AttributeVertex | ss::runtime::UpdateAttributeFlags_AttributePartColor)) != 0;
+    out.vert_count = needs_center ? MAX_VERTICES_COUNT : CORNERS_COUNT;
 
-    _apply_blend_material(rs, ci, partBinary->blend_type());
+    out.verts.resize(out.vert_count);
+    out.uvs.resize(out.vert_count);
+    out.colors.resize(out.vert_count);
 
-    uint64_t flags = part->update_flag();
-    Rect2 src_rect(part_cell_meta[4], part_cell_meta[5], part_cell_meta[2], part_cell_meta[3]);
+    const float out_x[MAX_VERTICES_COUNT] = { part_verts[0], part_verts[2], part_verts[4], part_verts[6], part_verts[8] };
+    const float out_y[MAX_VERTICES_COUNT] = { part_verts[1], part_verts[3], part_verts[5], part_verts[7], part_verts[9] };
+    const float out_u[MAX_VERTICES_COUNT] = { part_uvs[0], part_uvs[2], part_uvs[4], part_uvs[6], part_uvs[8] };
+    const float out_v[MAX_VERTICES_COUNT] = { part_uvs[1], part_uvs[3], part_uvs[5], part_uvs[7], part_uvs[9] };
 
-    bool use_advanced = (flags & (ss::runtime::UpdateAttributeFlags_AttributeVertex | ss::runtime::UpdateAttributeFlags_AttributePartColor |
-                                  ss::runtime::UpdateAttributeFlags_AttributeUvtX | ss::runtime::UpdateAttributeFlags_AttributeUvtY |
-                                  ss::runtime::UpdateAttributeFlags_AttributeUvrZ | ss::runtime::UpdateAttributeFlags_AttributeUvsX |
-                                  ss::runtime::UpdateAttributeFlags_AttributeUvsY |
-                                  ss::runtime::UpdateAttributeFlags_AttributeFlipH | ss::runtime::UpdateAttributeFlags_AttributeFlipV |
-                                  ss::runtime::UpdateAttributeFlags_AttributeImgFlipH | ss::runtime::UpdateAttributeFlags_AttributeImgFlipV |
-                                  ss::runtime::UpdateAttributeFlags_AttributeSizeX | ss::runtime::UpdateAttributeFlags_AttributeSizeY |
-                                  ss::runtime::UpdateAttributeFlags_AttributePivotX | ss::runtime::UpdateAttributeFlags_AttributePivotY));
-
-    if (!use_advanced) {
-        Transform2D t = matrix_to_transform2d(draw_m);
-        rs->canvas_item_set_transform(ci, t);
-
-        Vector2 draw_pos(part_verts[0], part_verts[1]);
-        rs->canvas_item_add_texture_rect_region(ci, Rect2(draw_pos, src_rect.size), tex->get_rid(), src_rect, Color(1, 1, 1, part->alpha()));
-    } else {
-        rs->canvas_item_set_transform(ci, Transform2D());
-
-        const bool needs_center = (flags & (ss::runtime::UpdateAttributeFlags_AttributeVertex | ss::runtime::UpdateAttributeFlags_AttributePartColor)) != 0;
-        const int vert_count = needs_center ? MAX_VERTICES_COUNT : CORNERS_COUNT;
-
-        #ifdef SPRITESTUDIO_GODOT_EXTENSION
-        static const PackedInt32Array INDICES_FAN_5 = []() {
-            PackedInt32Array a; a.resize(INDICES_COUNT_PENTAGON);
-            const int idxs[INDICES_COUNT_PENTAGON] = { 0,1,4, 1,3,4, 3,2,4, 2,0,4 };
-            for (int k = 0; k < INDICES_COUNT_PENTAGON; k++) a.set(k, idxs[k]);
-            return a;
-        }();
-
-        static const PackedInt32Array INDICES_QUAD_4 = []() {
-            PackedInt32Array a; a.resize(INDICES_COUNT_QUAD);
-            const int idxs[INDICES_COUNT_QUAD] = { 0,1,2, 1,3,2 };
-            for (int k = 0; k < INDICES_COUNT_QUAD; k++) a.set(k, idxs[k]);
-            return a;
-        }();
-        PackedVector2Array p_verts; p_verts.resize(vert_count);
-        PackedVector2Array p_uvs; p_uvs.resize(vert_count);
-        PackedColorArray p_colors; p_colors.resize(vert_count);
-        #else
-        static const Vector<int> INDICES_FAN_5 = []() {
-            Vector<int> a; a.resize(INDICES_COUNT_PENTAGON);
-            const int idxs[INDICES_COUNT_PENTAGON] = { 0,1,4, 1,3,4, 3,2,4, 2,0,4 };
-            for (int k = 0; k < INDICES_COUNT_PENTAGON; k++) a.set(k, idxs[k]);
-            return a;
-        }();
-        static const Vector<int> INDICES_QUAD_4 = []() {
-            Vector<int> a; a.resize(INDICES_COUNT_QUAD);
-            const int idxs[INDICES_COUNT_QUAD] = { 0,1,2, 1,3,2 };
-            for (int k = 0; k < INDICES_COUNT_QUAD; k++) a.set(k, idxs[k]);
-            return a;
-        }();
-        Vector<Vector2> p_verts; p_verts.resize(vert_count);
-        Vector<Vector2> p_uvs; p_uvs.resize(vert_count);
-        Vector<Color> p_colors; p_colors.resize(vert_count);
-        #endif
-
-        const float out_x[MAX_VERTICES_COUNT] = { part_verts[0], part_verts[2], part_verts[4], part_verts[6], part_verts[8] };
-        const float out_y[MAX_VERTICES_COUNT] = { part_verts[1], part_verts[3], part_verts[5], part_verts[7], part_verts[9] };
-
-        if (!part_uvs) return;
-        const float out_u[MAX_VERTICES_COUNT] = { part_uvs[0], part_uvs[2], part_uvs[4], part_uvs[6], part_uvs[8] };
-        const float out_v[MAX_VERTICES_COUNT] = { part_uvs[1], part_uvs[3], part_uvs[5], part_uvs[7], part_uvs[9] };
-
-        Vector2 tex_size = tex->get_size();
-        Color corner_colors[CORNERS_COUNT] = { Color(1, 1, 1, part->alpha()), Color(1, 1, 1, part->alpha()), Color(1, 1, 1, part->alpha()), Color(1, 1, 1, part->alpha()) };
-        const auto partColorIndex = part->part_color();
-        if ((flags & ss::runtime::UpdateAttributeFlags_AttributePartColor) && partColorIndex >= 0) {
-            auto pc = f.frameData->parts_color()->Get(partColorIndex);
-            auto to_color = [](const ss::runtime::SsAttributePartColorKeyValueColor& c) { return Color(c.rgba().r()/255.0f, c.rgba().g()/255.0f, c.rgba().b()/255.0f, c.rgba().a()/255.0f); };
-            corner_colors[0] = to_color(pc->lt()); corner_colors[1] = to_color(pc->rt()); corner_colors[2] = to_color(pc->lb()); corner_colors[3] = to_color(pc->rb());
-        }
-
-        Transform2D draw_transform = matrix_to_transform2d(draw_m);
-
-        for (int j = 0; j < CORNERS_COUNT; j++) {
-            p_verts.set(j, draw_transform.xform(Vector2(out_x[j], out_y[j])));
-            p_uvs.set(j, Vector2(out_u[j] / tex_size.x, out_v[j] / tex_size.y));
-            p_colors.set(j, corner_colors[j]);
-        }
-
-        if (needs_center) {
-            p_verts.set(CORNERS_COUNT, draw_transform.xform(Vector2(out_x[CORNERS_COUNT], out_y[CORNERS_COUNT])));
-            p_uvs.set(CORNERS_COUNT, Vector2(out_u[CORNERS_COUNT] / tex_size.x, out_v[CORNERS_COUNT] / tex_size.y));
-            p_colors.set(CORNERS_COUNT, (corner_colors[0] + corner_colors[1] + corner_colors[2] + corner_colors[3]) * 0.25f);
-        }
-
-        rs->canvas_item_add_triangle_array(ci, needs_center ? INDICES_FAN_5 : INDICES_QUAD_4, p_verts, p_colors, p_uvs, {}, {}, tex->get_rid());
+    Color corner_colors[CORNERS_COUNT] = { Color(1, 1, 1, part->alpha()), Color(1, 1, 1, part->alpha()), Color(1, 1, 1, part->alpha()), Color(1, 1, 1, part->alpha()) };
+    const auto partColorIndex = part->part_color();
+    if ((flags & ss::runtime::UpdateAttributeFlags_AttributePartColor) && partColorIndex >= 0) {
+        auto pc = f.frameData->parts_color()->Get(partColorIndex);
+        auto to_color = [](const ss::runtime::SsAttributePartColorKeyValueColor& c) { return Color(c.rgba().r()/255.0f, c.rgba().g()/255.0f, c.rgba().b()/255.0f, c.rgba().a()/255.0f); };
+        corner_colors[0] = to_color(pc->lt()); corner_colors[1] = to_color(pc->rt()); corner_colors[2] = to_color(pc->lb()); corner_colors[3] = to_color(pc->rb());
     }
+
+    Transform2D draw_transform = matrix_to_transform2d(draw_m);
+
+    for (int j = 0; j < CORNERS_COUNT; j++) {
+        out.verts.set(j, draw_transform.xform(Vector2(out_x[j], out_y[j])));
+        out.uvs.set(j, Vector2(out_u[j] / tex_size.x, out_v[j] / tex_size.y));
+        out.colors.set(j, corner_colors[j]);
+    }
+    if (needs_center) {
+        out.verts.set(CORNERS_COUNT, draw_transform.xform(Vector2(out_x[CORNERS_COUNT], out_y[CORNERS_COUNT])));
+        out.uvs.set(CORNERS_COUNT, Vector2(out_u[CORNERS_COUNT] / tex_size.x, out_v[CORNERS_COUNT] / tex_size.y));
+        out.colors.set(CORNERS_COUNT, (corner_colors[0] + corner_colors[1] + corner_colors[2] + corner_colors[3]) * 0.25f);
+    }
+    return true;
 }
 
 void SsInternalPlayer::_apply_blend_material(RenderingServer* rs, RID ci, ss::format::BlendType ss_blend) {
@@ -841,6 +771,18 @@ void SsInternalPlayer::_apply_blend_material(RenderingServer* rs, RID ci, ss::fo
 void SsInternalPlayer::_draw_part_shape(const DrawFrame& f, RID ci, int p_idx, const ss::runtime::PartState* part, const ss::format::PartData* partBinary, const float* draw_m) {
     RenderingServer* rs = f.rs;
 
+    ShapeGeometryBuffers bufs;
+    if (!_build_shape_geometry(f, p_idx, part, draw_m, bufs)) return;
+
+    _apply_blend_material(rs, ci, partBinary->blend_type());
+    rs->canvas_item_set_transform(ci, Transform2D());
+    rs->canvas_item_add_triangle_array(ci, bufs.indices, bufs.verts, bufs.colors);
+}
+
+bool SsInternalPlayer::_build_shape_geometry(const DrawFrame& f, int p_idx,
+                                             const ss::runtime::PartState* part,
+                                             const float* draw_m,
+                                             ShapeGeometryBuffers& out) {
     const float* part_shape_verts = nullptr;
     const float* part_shape_box_coords = nullptr;
     int32_t part_shape_count = 0;
@@ -853,9 +795,9 @@ void SsInternalPlayer::_draw_part_shape(const DrawFrame& f, RID ci, int p_idx, c
     if (f.shape_vertex_counts && (uintptr_t)p_idx < f.shape_vertex_counts_len) {
         part_shape_count = f.shape_vertex_counts[p_idx];
     }
-    if (!part_shape_verts || !part_shape_box_coords || part_shape_count < 3) return;
+    if (!part_shape_verts || !part_shape_box_coords || part_shape_count < 3) return false;
 
-    _apply_blend_material(rs, ci, partBinary->blend_type());
+    out.vert_count = part_shape_count;
 
     const uint64_t flags = part->update_flag();
     Color corner_colors[CORNERS_COUNT] = { Color(1, 1, 1, part->alpha()), Color(1, 1, 1, part->alpha()), Color(1, 1, 1, part->alpha()), Color(1, 1, 1, part->alpha()) };
@@ -867,17 +809,9 @@ void SsInternalPlayer::_draw_part_shape(const DrawFrame& f, RID ci, int p_idx, c
     }
 
     Transform2D draw_transform = matrix_to_transform2d(draw_m);
-    rs->canvas_item_set_transform(ci, Transform2D());
 
-    #ifdef SPRITESTUDIO_GODOT_EXTENSION
-    PackedVector2Array p_verts; p_verts.resize(part_shape_count);
-    PackedColorArray  p_colors; p_colors.resize(part_shape_count);
-    PackedInt32Array  p_indices;
-    #else
-    Vector<Vector2> p_verts; p_verts.resize(part_shape_count);
-    Vector<Color>   p_colors; p_colors.resize(part_shape_count);
-    Vector<int>     p_indices;
-    #endif
+    out.verts.resize(part_shape_count);
+    out.colors.resize(part_shape_count);
 
     for (int i = 0; i < part_shape_count; i++) {
         const float vx = part_shape_verts[i * 2 + 0];
@@ -888,25 +822,121 @@ void SsInternalPlayer::_draw_part_shape(const DrawFrame& f, RID ci, int p_idx, c
         const float wRT =          fx * (1.0f - fy);
         const float wLB = (1.0f - fx) *          fy;
         const float wRB =          fx *          fy;
-        p_colors.set(i, corner_colors[0] * wLT + corner_colors[1] * wRT + corner_colors[2] * wLB + corner_colors[3] * wRB);
-        p_verts.set(i, draw_transform.xform(Vector2(vx, vy)));
+        out.colors.set(i, corner_colors[0] * wLT + corner_colors[1] * wRT + corner_colors[2] * wLB + corner_colors[3] * wRB);
+        out.verts.set(i, draw_transform.xform(Vector2(vx, vy)));
     }
 
     if (part_shape_count == 4) {
         const int idx[6] = { 0,1,2, 1,3,2 };
-        p_indices.resize(6);
-        for (int i = 0; i < 6; i++) p_indices.set(i, idx[i]);
+        out.indices.resize(6);
+        for (int i = 0; i < 6; i++) out.indices.set(i, idx[i]);
     } else {
         const int tri_count = part_shape_count - 2;
-        p_indices.resize(tri_count * 3);
+        out.indices.resize(tri_count * 3);
         for (int i = 0; i < tri_count; i++) {
-            p_indices.set(i*3 + 0, 0);
-            p_indices.set(i*3 + 1, i + 1);
-            p_indices.set(i*3 + 2, i + 2);
+            out.indices.set(i*3 + 0, 0);
+            out.indices.set(i*3 + 1, i + 1);
+            out.indices.set(i*3 + 2, i + 2);
         }
     }
+    return true;
+}
 
-    rs->canvas_item_add_triangle_array(ci, p_indices, p_verts, p_colors);
+void SsInternalPlayer::_emit_normal_batch(const DrawFrame& f, RID ci,
+                                          const ss::runtime::DrawBatch* batch,
+                                          const uint16_t* draw_order_data,
+                                          const Vector<const ss::runtime::PartState*>& parts_by_idx) {
+    if (!batch || !draw_order_data) return;
+    const uint16_t count = batch->count();
+    if (count == 0) return;
+
+    RenderingServer* rs = f.rs;
+
+    // The whole Normal batch shares `texture_hash` (batch invariant). Resolve
+    // once here; the per-part build helper takes `tex_size` for UV
+    // normalisation, no per-part texture lookup is performed.
+    Ref<Texture2D> tex;
+    if (_textures.has(batch->texture_hash())) {
+        tex = _textures[batch->texture_hash()];
+    }
+    if (tex.is_null()) return;
+    const Vector2 tex_size = tex->get_size();
+
+    #ifdef SPRITESTUDIO_GODOT_EXTENSION
+    PackedVector2Array verts; verts.resize((int)batch->vertex_count());
+    PackedVector2Array uvs;   uvs.resize((int)batch->vertex_count());
+    PackedColorArray   colors; colors.resize((int)batch->vertex_count());
+    PackedInt32Array   indices; indices.resize((int)batch->index_count());
+    #else
+    Vector<Vector2> verts; verts.resize((int)batch->vertex_count());
+    Vector<Vector2> uvs;   uvs.resize((int)batch->vertex_count());
+    Vector<Color>   colors; colors.resize((int)batch->vertex_count());
+    Vector<int>     indices; indices.resize((int)batch->index_count());
+    #endif
+
+    int vbase = 0;
+    int ibase = 0;
+    bool any_emitted = false;
+
+    for (uint16_t k = 0; k < count; k++) {
+        int p_idx = (int)draw_order_data[batch->start_rank() + k];
+        if (p_idx < 0 || p_idx >= parts_by_idx.size()) continue;
+        const auto* part = parts_by_idx[p_idx];
+        if (!part) continue;
+
+        const float* drawing_m = nullptr;
+        if (f.world_matrices && (uintptr_t)p_idx * 16 < f.world_matrices_len) {
+            drawing_m = f.world_matrices + (p_idx * 16);
+        }
+        if (!drawing_m) continue;
+
+        NormalAdvancedBuffers bufs;
+        if (!_build_normal_advanced(f, p_idx, part, drawing_m, tex_size, bufs)) continue;
+
+        // Append per-part verts/uvs/colors.
+        for (int j = 0; j < bufs.vert_count && vbase + j < verts.size(); j++) {
+            verts.set(vbase + j, bufs.verts[j]);
+            uvs.set(vbase + j, bufs.uvs[j]);
+            colors.set(vbase + j, bufs.colors[j]);
+        }
+        // Append per-part indices with vertex base offset.
+        if (bufs.vert_count == MAX_VERTICES_COUNT) {
+            const int p[INDICES_COUNT_PENTAGON] = { 0,1,4, 1,3,4, 3,2,4, 2,0,4 };
+            for (int j = 0; j < INDICES_COUNT_PENTAGON && ibase + j < indices.size(); j++) {
+                indices.set(ibase + j, vbase + p[j]);
+            }
+            ibase += INDICES_COUNT_PENTAGON;
+        } else {
+            const int q[INDICES_COUNT_QUAD] = { 0,1,2, 1,3,2 };
+            for (int j = 0; j < INDICES_COUNT_QUAD && ibase + j < indices.size(); j++) {
+                indices.set(ibase + j, vbase + q[j]);
+            }
+            ibase += INDICES_COUNT_QUAD;
+        }
+        vbase += bufs.vert_count;
+        any_emitted = true;
+    }
+
+    if (!any_emitted) return;
+
+    // batch->blend_type() is the runtime BlendType; converted to ssab BlendType
+    // by raw u8 value (the two enums are layout-equivalent, see chapter 9 §7).
+    const auto ssab_blend = (ss::format::BlendType)batch->blend_type();
+    _apply_blend_material(rs, ci, ssab_blend);
+    rs->canvas_item_set_transform(ci, Transform2D());
+    rs->canvas_item_add_triangle_array(ci, indices, verts, colors, uvs, {}, {}, tex->get_rid());
+}
+
+void SsInternalPlayer::_emit_shape_singleton(const DrawFrame& f, RID ci, int p_idx,
+                                             const ss::runtime::PartState* part) {
+    if (!part) return;
+    const float* drawing_m = nullptr;
+    if (f.world_matrices && (uintptr_t)p_idx * 16 < f.world_matrices_len) {
+        drawing_m = f.world_matrices + (p_idx * 16);
+    }
+    if (!drawing_m) return;
+    auto partBinary = f.binary->parts()->Get(p_idx);
+    _draw_part_shape(f, ci, p_idx, part, partBinary, drawing_m);
 }
 
 void SsInternalPlayer::_fetchAnimation() {
@@ -919,16 +949,17 @@ void SsInternalPlayer::_fetchAnimation() {
         }
         _currentAnimationData = nullptr;
         // Free instance children before their parent canvas items — each
-        // child's _root_ci is parented to one of `_canvas_items[i]`, so
-        // freeing those first would leave the children with a dangling
-        // parent RID until their own dtor runs.
+        // child's _root_ci is parented to a batch CI from
+        // `_batch_canvas_items` per-frame, so freeing those first would
+        // leave the children with a dangling parent RID until their own
+        // dtor runs.
         _clear_instance_players();
-        _clear_canvas_items();
+        _clear_batch_canvas_items();
         return;
     }
 
     _clear_instance_players();
-    _clear_canvas_items();
+    _clear_batch_canvas_items();
 
     if (runtime_res != nullptr) {
         ss_resource_destroy(runtime_res);
@@ -947,17 +978,8 @@ void SsInternalPlayer::_fetchAnimation() {
         return;
     }
 
-    auto binary = _ssabRes->get_ss_anime_binary();
-    if (binary->parts() != nullptr) {
-        RenderingServer* rs = RenderingServer::get_singleton();
-        for (int i = 0; i < binary->parts()->size(); i++) {
-            RID ci = rs->canvas_item_create();
-            // Each per-part canvas item lives under _root_ci so transform /
-            // visibility on the player as a whole composes through one node.
-            rs->canvas_item_set_parent(ci, _root_ci);
-            _canvas_items.push_back(ci);
-        }
-    }
+    // Per-batch canvas_item pool grows on demand inside _drawAnimation via
+    // _ensure_batch_ci(). No per-part CIs are pre-allocated here.
 
     auto c = _strAnimationSelected.utf8();
     auto animation = _ssabRes->find_animation(_strAnimationSelected);

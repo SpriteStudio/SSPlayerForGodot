@@ -30,6 +30,7 @@ namespace ss {
 namespace runtime {
 struct FrameData;
 struct PartState;
+struct DrawBatch;
 }
 namespace format {
 struct PartData;
@@ -160,7 +161,10 @@ private:
     Ref<SSABResource> _ssabRes;
     HashMap<uint32_t, Ref<Texture2D>> _textures;
     HashMap<int, Ref<CanvasItemMaterial>> _blend_materials;
-    Vector<RID> _canvas_items;
+    // Per-batch canvas_item pool. Index == draw_batches[i] order. Recyclable
+    // across frames; pool grows monotonically to peak batch count, unused
+    // entries are hidden rather than freed.
+    Vector<RID> _batch_canvas_items;
     String _strAnimationSelected;
     const ss::format::AnimationData* _currentAnimationData = nullptr;
     void* runtime_ctx = nullptr;
@@ -194,21 +198,80 @@ private:
         const float* world_matrices;         uintptr_t world_matrices_len;
         const float* local_uvs;              uintptr_t local_uvs_len;
         const float* cell_meta;              uintptr_t cell_meta_len;
-        const uint32_t* cell_texture_hashes; uintptr_t cell_texture_hashes_len;
         const float* local_vertices;         uintptr_t local_vertices_len;
         const float* shape_vertices;         uintptr_t shape_vertices_len;
         const float* shape_box_coords;       uintptr_t shape_box_coords_len;
         const int32_t* shape_vertex_counts;  uintptr_t shape_vertex_counts_len;
     };
 
+    // Per-part geometry buffers in world space, ready to be consumed by either
+    // a single-part `canvas_item_add_triangle_array` call (current per-part
+    // path) or concatenated across multiple parts in a future per-batch path.
+    // The build helpers below produce these without touching any RID, so they
+    // are reusable from both paths.
+    struct NormalAdvancedBuffers {
+        int vert_count;          // 4 (quad) or 5 (pentagon fan w/ center)
+        // Texture is resolved by the caller (from `DrawBatch.texture_hash` for
+        // batched draws); not stored here.
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+        PackedVector2Array verts;
+        PackedVector2Array uvs;
+        PackedColorArray colors;
+#else
+        Vector<Vector2> verts;
+        Vector<Vector2> uvs;
+        Vector<Color> colors;
+#endif
+    };
+
+    struct ShapeGeometryBuffers {
+        int vert_count;          // 3..12, derived from runtime shape_vertex_counts
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+        PackedVector2Array verts;
+        PackedColorArray colors;
+        PackedInt32Array indices;
+#else
+        Vector<Vector2> verts;
+        Vector<Color> colors;
+        Vector<int> indices;
+#endif
+    };
+
     void _reconfigure();
     void _loadTextures(const Ref<SSABResource>& res);
     void _fetchAnimation();
     void _drawAnimation(float frame_no);
-    void _draw_part(const DrawFrame& f, RID ci, int p_idx, const ss::runtime::PartState* part, const ss::format::PartData* partBinary, const float* draw_m);
-    void _draw_part_normal(const DrawFrame& f, RID ci, int p_idx, const ss::runtime::PartState* part, const ss::format::PartData* partBinary, const float* draw_m);
+    // Per-part-type emit. Normal is consumed by `_emit_normal_batch` directly
+    // through the geometry helper, so no `_draw_part_normal` exists.
     void _draw_part_shape(const DrawFrame& f, RID ci, int p_idx, const ss::runtime::PartState* part, const ss::format::PartData* partBinary, const float* draw_m);
     void _draw_part_instance(const DrawFrame& f, RID ci, int p_idx, const ss::runtime::PartState* part, const ss::format::PartData* partBinary, const float* draw_m);
+
+    // Geometry-build helpers — fill `out` with world-space verts/uvs/colors
+    // for a single part. Return false when the part should be skipped (no
+    // texture / no cell / out-of-range buffers / etc.). No RID side effects.
+    bool _build_normal_advanced(const DrawFrame& f, int p_idx,
+                                const ss::runtime::PartState* part,
+                                const float* draw_m,
+                                const Vector2& tex_size,
+                                NormalAdvancedBuffers& out);
+    bool _build_shape_geometry(const DrawFrame& f, int p_idx,
+                               const ss::runtime::PartState* part,
+                               const float* draw_m,
+                               ShapeGeometryBuffers& out);
+
+    // Per-batch emit helpers. `ci` is the batch's canvas_item from
+    // `_batch_canvas_items`; caller has already cleared it and set z_index.
+    // For Normal batches multiple parts' geometry is concatenated into a
+    // single canvas_item_add_triangle_array call.
+    void _emit_normal_batch(const DrawFrame& f, RID ci,
+                            const ss::runtime::DrawBatch* batch,
+                            const uint16_t* draw_order_data,
+                            const Vector<const ss::runtime::PartState*>& parts_by_idx);
+    void _emit_shape_singleton(const DrawFrame& f, RID ci, int p_idx,
+                               const ss::runtime::PartState* part);
+
+    // Pool helpers
+    RID _ensure_batch_ci(int batch_idx);
 
     void _setup_instance_players();
     void _clear_instance_players();
@@ -216,5 +279,5 @@ private:
     String _resolve_animation_by_hash(uint32_t name_hash, Ref<SSABResource>& out_source) const;
     void _apply_blend_material(RenderingServer* rs, RID ci, ss::format::BlendType blend_type);
 
-    void _clear_canvas_items();
+    void _clear_batch_canvas_items();
 };
