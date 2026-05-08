@@ -231,20 +231,20 @@ inline const char *EnumNameUpdateAttributeFlags(UpdateAttributeFlags e) {
 
 FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(4) PartAttributeCell FLATBUFFERS_FINAL_CLASS {
  private:
-  int32_t map_id_;
+  uint32_t cellmap_name_hash_;
   uint32_t name_hash_;
 
  public:
   PartAttributeCell()
-      : map_id_(0),
+      : cellmap_name_hash_(0),
         name_hash_(0) {
   }
-  PartAttributeCell(int32_t _map_id, uint32_t _name_hash)
-      : map_id_(::flatbuffers::EndianScalar(_map_id)),
+  PartAttributeCell(uint32_t _cellmap_name_hash, uint32_t _name_hash)
+      : cellmap_name_hash_(::flatbuffers::EndianScalar(_cellmap_name_hash)),
         name_hash_(::flatbuffers::EndianScalar(_name_hash)) {
   }
-  int32_t map_id() const {
-    return ::flatbuffers::EndianScalar(map_id_);
+  uint32_t cellmap_name_hash() const {
+    return ::flatbuffers::EndianScalar(cellmap_name_hash_);
   }
   uint32_t name_hash() const {
     return ::flatbuffers::EndianScalar(name_hash_);
@@ -435,9 +435,9 @@ FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(4) PartAttributeShader FLATBUFFERS_FINAL_CLA
   float param5_;
   float param6_;
   float param7_;
-  int32_t map0_id_;
+  uint32_t map0_cellmap_name_hash_;
   uint32_t map0_name_hash_;
-  int32_t map1_id_;
+  uint32_t map1_cellmap_name_hash_;
   uint32_t map1_name_hash_;
 
  public:
@@ -451,12 +451,12 @@ FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(4) PartAttributeShader FLATBUFFERS_FINAL_CLA
         param5_(0),
         param6_(0),
         param7_(0),
-        map0_id_(0),
+        map0_cellmap_name_hash_(0),
         map0_name_hash_(0),
-        map1_id_(0),
+        map1_cellmap_name_hash_(0),
         map1_name_hash_(0) {
   }
-  PartAttributeShader(uint32_t _id_hash, float _param0, float _param1, float _param2, float _param3, float _param4, float _param5, float _param6, float _param7, int32_t _map0_id, uint32_t _map0_name_hash, int32_t _map1_id, uint32_t _map1_name_hash)
+  PartAttributeShader(uint32_t _id_hash, float _param0, float _param1, float _param2, float _param3, float _param4, float _param5, float _param6, float _param7, uint32_t _map0_cellmap_name_hash, uint32_t _map0_name_hash, uint32_t _map1_cellmap_name_hash, uint32_t _map1_name_hash)
       : id_hash_(::flatbuffers::EndianScalar(_id_hash)),
         param0_(::flatbuffers::EndianScalar(_param0)),
         param1_(::flatbuffers::EndianScalar(_param1)),
@@ -466,9 +466,9 @@ FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(4) PartAttributeShader FLATBUFFERS_FINAL_CLA
         param5_(::flatbuffers::EndianScalar(_param5)),
         param6_(::flatbuffers::EndianScalar(_param6)),
         param7_(::flatbuffers::EndianScalar(_param7)),
-        map0_id_(::flatbuffers::EndianScalar(_map0_id)),
+        map0_cellmap_name_hash_(::flatbuffers::EndianScalar(_map0_cellmap_name_hash)),
         map0_name_hash_(::flatbuffers::EndianScalar(_map0_name_hash)),
-        map1_id_(::flatbuffers::EndianScalar(_map1_id)),
+        map1_cellmap_name_hash_(::flatbuffers::EndianScalar(_map1_cellmap_name_hash)),
         map1_name_hash_(::flatbuffers::EndianScalar(_map1_name_hash)) {
   }
   uint32_t id_hash() const {
@@ -498,14 +498,14 @@ FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(4) PartAttributeShader FLATBUFFERS_FINAL_CLA
   float param7() const {
     return ::flatbuffers::EndianScalar(param7_);
   }
-  int32_t map0_id() const {
-    return ::flatbuffers::EndianScalar(map0_id_);
+  uint32_t map0_cellmap_name_hash() const {
+    return ::flatbuffers::EndianScalar(map0_cellmap_name_hash_);
   }
   uint32_t map0_name_hash() const {
     return ::flatbuffers::EndianScalar(map0_name_hash_);
   }
-  int32_t map1_id() const {
-    return ::flatbuffers::EndianScalar(map1_id_);
+  uint32_t map1_cellmap_name_hash() const {
+    return ::flatbuffers::EndianScalar(map1_cellmap_name_hash_);
   }
   uint32_t map1_name_hash() const {
     return ::flatbuffers::EndianScalar(map1_name_hash_);
