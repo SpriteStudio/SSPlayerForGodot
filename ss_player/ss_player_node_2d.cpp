@@ -88,7 +88,6 @@ void SpriteStudioPlayer2D::setSpeed(float p_speed) { _internal->setSpeed(p_speed
 float SpriteStudioPlayer2D::getSpeed() const { return _internal->getSpeed(); }
 
 void SpriteStudioPlayer2D::setFrame(float p_frame) { _internal->setFrame(p_frame); }
-void SpriteStudioPlayer2D::setFrameRelative(float p_diff) { _internal->setFrameRelative(p_diff); }
 float SpriteStudioPlayer2D::getFrame() const { return _internal->getFrame(); }
 
 int SpriteStudioPlayer2D::getTotalFrames() const { return _internal->getTotalFrames(); }
@@ -129,7 +128,6 @@ void SpriteStudioPlayer2D::_bind_methods() {
     ClassDB::bind_method( D_METHOD( "set_speed", "speed" ), &SpriteStudioPlayer2D::setSpeed );
     ClassDB::bind_method( D_METHOD( "get_speed" ), &SpriteStudioPlayer2D::getSpeed );
     ClassDB::bind_method( D_METHOD( "set_frame", "frame" ), &SpriteStudioPlayer2D::setFrame );
-    ClassDB::bind_method( D_METHOD( "set_frame_relative", "diff" ), &SpriteStudioPlayer2D::setFrameRelative );
     ClassDB::bind_method( D_METHOD( "get_frame" ), &SpriteStudioPlayer2D::getFrame );
 
     ClassDB::bind_method( D_METHOD( "get_total_frames" ), &SpriteStudioPlayer2D::getTotalFrames );
