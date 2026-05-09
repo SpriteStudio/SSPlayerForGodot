@@ -564,52 +564,6 @@ void SsInternalPlayer::_setup_instance_children() {
     }
 }
 
-namespace {
-    struct InstancePlaybackConfig {
-        int start_frame;
-        int end_frame;
-        int loops;
-        bool pingpong;
-        bool reverse;
-        float speed;
-    };
-
-    // Convert an EventInstance attribute into resolved playback parameters
-    // for the child. `active_attr` may be null — in which case we return the
-    // SS6 default-constructed `SsInstanceAttr` semantics (sstypes.h:1294):
-    // loopNum=1, full "_start".."_end" range, speed=1, no pingpong/reverse.
-    // This makes a slot with no EventInstance play through once and clamp at
-    // its end_frame (animedecode.cpp:1670 clamp behaviour), rather than loop.
-    InstancePlaybackConfig resolve_instance_playback(
-        const ss::format::PartAttributeInstance* active_attr,
-        const ss::format::AnimationData* child_anim,
-        int child_total_frames)
-    {
-        const int default_end = child_total_frames > 0 ? child_total_frames - 1 : 0;
-        InstancePlaybackConfig cfg{ 0, default_end, 1, false, false, 1.0f };
-        if (!active_attr) return cfg;
-
-        // Labels are sorted by name_hash (ssab schema marks
-        // `Label.name_hash (key)`), so LookupByKey gives us O(log n).
-        auto resolve_label = [&](uint32_t label_hash, int fallback) -> int {
-            if (label_hash == 0) return fallback;
-            if (!child_anim || !child_anim->labels()) return fallback;
-            const auto* lab = child_anim->labels()->LookupByKey(label_hash);
-            return lab ? lab->time() : fallback;
-        };
-
-        cfg.start_frame = resolve_label(active_attr->start_label_hash(), 0) + active_attr->start_offset();
-        cfg.end_frame = resolve_label(active_attr->end_label_hash(), default_end) + active_attr->end_offset();
-        if (cfg.end_frame < cfg.start_frame) cfg.end_frame = cfg.start_frame;
-
-        cfg.loops = active_attr->loop_num();
-        cfg.pingpong = active_attr->pingpong();
-        cfg.reverse = active_attr->reverse();
-        cfg.speed = active_attr->speed();
-        return cfg;
-    }
-}
-
 void SsInternalPlayer::_update_instance_children(float parent_frame_no, float delta_seconds, bool parent_looped) {
     if (!_currentAnimationData) {
         // No animation selected on the parent: keep all children hidden.
@@ -621,116 +575,61 @@ void SsInternalPlayer::_update_instance_children(float parent_frame_no, float de
     }
 
     // Re-arm transition detection on parent loop. The same EventInstance
-    // attribute pointer (and frame_index) triggers again on the next
+    // identity (event_frame + is_synthetic) re-fires on the next
     // playthrough; without this reset the equality check inside
-    // `_drive_active_instance_slot` would treat the loop edge as a no-op
-    // and finite-loop independent children would stay frozen at their
+    // `_drive_instance_slot` would treat the loop edge as a no-op and
+    // finite-loop independent children would stay frozen at their
     // previous end_frame.
     if (parent_looped) {
         for (uint32_t i = 0; i < _instance_children.size(); i++) {
-            _instance_children[i].last_active_attr = nullptr;
-            _instance_children[i].last_active_event_frame = -1;
-            _instance_children[i].default_applied = false;
+            _instance_children[i].last_event_frame = -1;
+            _instance_children[i].last_is_synthetic = false;
         }
     }
-
-    const int parent_frame_int = (int)parent_frame_no;
-    _build_active_instance_event_map(parent_frame_int);
 
     for (uint32_t p_idx = 0; p_idx < _instance_children.size(); p_idx++) {
         InstanceChildState& state = _instance_children[p_idx];
         SsInternalPlayer* child = state.player;
         if (!child) continue;
 
-        const ActiveInstanceEvent& active = _active_instance_events[p_idx];
-        if (!active.attr) {
-            _drive_default_instance_slot(state, child, parent_frame_no);
-        } else {
-            _drive_active_instance_slot(state, child, active.attr, active.event_frame,
-                                        parent_frame_no, delta_seconds);
-        }
+        const ss_event_instance_info info =
+            ss_runtime_get_active_event_instance(runtime_ctx, p_idx);
+        _drive_instance_slot(state, child, info, parent_frame_no, delta_seconds);
     }
 }
 
-void SsInternalPlayer::_build_active_instance_event_map(int parent_frame_int) {
-    const uint32_t slot_count = _instance_children.size();
-    _active_instance_events.resize(slot_count);
-    for (uint32_t i = 0; i < slot_count; i++) {
-        _active_instance_events[i] = ActiveInstanceEvent{};
-    }
-    if (!_currentAnimationData) return;
-    auto events = _currentAnimationData->events();
-    if (!events) return;
-
-    // Forward scan; events are sorted by frame_index, so we can stop once
-    // an event exceeds the parent's frame. Later events override earlier
-    // ones, leaving each slot pointing at its most-recent EventInstance.
-    for (uint32_t i = 0; i < events->size(); i++) {
-        auto epf = events->Get(i);
-        if (!epf) continue;
-        const int frame_index = epf->frame_index();
-        if (frame_index > parent_frame_int) break;
-        if (!epf->instances()) continue;
-        for (uint32_t j = 0; j < epf->instances()->size(); j++) {
-            auto ev = epf->instances()->Get(j);
-            if (!ev) continue;
-            const uint32_t p_idx = ev->part_index();
-            if (p_idx >= slot_count) continue;
-            _active_instance_events[p_idx].attr = ev->value();
-            _active_instance_events[p_idx].event_frame = frame_index;
-        }
-    }
-}
-
-void SsInternalPlayer::_drive_default_instance_slot(InstanceChildState& state,
-                                                    SsInternalPlayer* child,
-                                                    float parent_frame_no) {
-    // SS6 implicit default (sstypes.h:1294 SsInstanceAttr): synced from
-    // parent's frame 0, loops=1, full range, speed=1. Always visible.
-    // Apply config once per "default era"; `parent_looped` resets the flag
-    // so an already-finished default child plays again on the next cycle.
-    if (!state.default_applied) {
-        const int default_end = child->getTotalFrames() > 0 ? child->getTotalFrames() - 1 : 0;
-        child->setAnimationSection(0, default_end);
-        child->setLoop(1);
-        child->setPlaybackDirection(0, 0);
-        child->play();
-        state.default_applied = true;
-        state.last_active_attr = nullptr;
-        state.last_active_event_frame = 0;
-    }
-    child->setRootVisible(true);
-
-    // Synced step with implicit event_frame=0 and speed=1.
-    ss_runtime_set_frame_relative(child->runtime_ctx, parent_frame_no);
-    const float child_frame_no = ss_runtime_get_frame_no(child->runtime_ctx);
-    _redraw_child_if_frame_changed(child, child_frame_no);
-}
-
-void SsInternalPlayer::_drive_active_instance_slot(InstanceChildState& state,
-                                                   SsInternalPlayer* child,
-                                                   const ss::format::PartAttributeInstance* active_attr,
-                                                   int active_event_frame,
-                                                   float parent_frame_no,
-                                                   float delta_seconds) {
-    // The SS6 default no longer applies once an EventInstance is active.
-    state.default_applied = false;
-
-    // Transition edge: a new EventInstance just took over this slot, or
-    // the parent looped (state was reset by the caller).
+void SsInternalPlayer::_drive_instance_slot(InstanceChildState& state,
+                                            SsInternalPlayer* child,
+                                            const ss_event_instance_info& info,
+                                            float parent_frame_no,
+                                            float delta_seconds) {
+    // Transition edge: a different EventInstance (or synthetic-default
+    // toggle) is now active. `last_event_frame == -1` covers fresh state
+    // and post-`parent_looped` re-arm.
     const bool transitioned =
-        (active_attr != state.last_active_attr) ||
-        (active_event_frame != state.last_active_event_frame);
+        state.last_event_frame == -1 ||
+        state.last_event_frame != info.event_frame ||
+        state.last_is_synthetic != info.is_synthetic_default;
 
     if (transitioned) {
-        const InstancePlaybackConfig cfg = resolve_instance_playback(
-            active_attr, child->getCurrentAnimationData(), child->getTotalFrames());
-        child->setAnimationSection(cfg.start_frame, cfg.end_frame);
-        child->setLoop(cfg.loops);
-        child->setPlaybackDirection(cfg.reverse ? 1 : 0, cfg.pingpong ? 1 : 0);
+        // Resolve labels against the *child's* runtime context — the labels
+        // table belongs to the child's currently bound animation, not the
+        // parent's. This keeps dynamic ssab swap of the child correct.
+        const int default_end = child->getTotalFrames() > 0 ? child->getTotalFrames() - 1 : 0;
+        const int start_label_time = ss_runtime_resolve_label_time(
+            child->runtime_ctx, info.start_label_hash, 0);
+        const int end_label_time = ss_runtime_resolve_label_time(
+            child->runtime_ctx, info.end_label_hash, default_end);
+        int start_frame = start_label_time + info.start_offset;
+        int end_frame = end_label_time + info.end_offset;
+        if (end_frame < start_frame) end_frame = start_frame;
+
+        child->setAnimationSection(start_frame, end_frame);
+        child->setLoop(info.loop_num);
+        child->setPlaybackDirection(info.reverse ? 1 : 0, info.pingpong ? 1 : 0);
         child->play();
-        state.last_active_attr = active_attr;
-        state.last_active_event_frame = active_event_frame;
+        state.last_event_frame = info.event_frame;
+        state.last_is_synthetic = info.is_synthetic_default;
     }
 
     child->setRootVisible(true);
@@ -744,15 +643,15 @@ void SsInternalPlayer::_drive_active_instance_slot(InstanceChildState& state,
     // would push it past start by one delta and visibly skip the first
     // frame of the child's animation.
     float child_frame_no;
-    if (active_attr->independent()) {
+    if (info.independent) {
         if (delta_seconds > 0.0f && !transitioned) {
-            const float d_ms = delta_seconds * 1000.0f * active_attr->speed();
+            const float d_ms = delta_seconds * 1000.0f * info.speed;
             child_frame_no = ss_runtime_update(child->runtime_ctx, d_ms);
         } else {
             child_frame_no = ss_runtime_get_frame_no(child->runtime_ctx);
         }
     } else {
-        const float diff = (parent_frame_no - (float)active_event_frame) * active_attr->speed();
+        const float diff = (parent_frame_no - (float)info.event_frame) * info.speed;
         ss_runtime_set_frame_relative(child->runtime_ctx, diff);
         child_frame_no = ss_runtime_get_frame_no(child->runtime_ctx);
     }
