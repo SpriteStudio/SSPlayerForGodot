@@ -65,11 +65,13 @@ private:
   Vector<void *> _import_contexts;
   Vector<String> _import_dst_dirs;
   Vector<String> _import_src_files;
+  Vector<String> _import_generated_files;
   SSProgressDialog *_import_dialog = nullptr;
   String _session_title;
   Vector<bool> _import_finished_contexts;
   int _import_prev_num = 0;
   bool _is_importing = false;
+  bool _needs_full_scan = false;
 
   void *_process_file(const String &source_sspj_path, const String &dst_dir_path);
   void _enqueue_one(const String &p_sspj_path, const String &p_dst_dir);

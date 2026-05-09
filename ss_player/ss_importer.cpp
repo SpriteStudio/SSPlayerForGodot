@@ -123,17 +123,25 @@ void SSImporter::_finalize_import() {
     _import_src_files.clear();
 
 #if defined(SPRITESTUDIO_GODOT_EXTENSION) || (VERSION_MAJOR >= 4 && VERSION_MINOR >= 6)
-    for (int i = 0; i < _import_dst_dirs.size(); i++) {
-        EditorInterface::get_singleton()->get_resource_filesystem()->update_file(_import_dst_dirs[i]);
-    }
-    EditorInterface::get_singleton()->get_resource_filesystem()->scan();
+    auto *efs = EditorInterface::get_singleton()->get_resource_filesystem();
 #else
-    for (int i = 0; i < _import_dst_dirs.size(); i++) {
-        EditorInterface::get_singleton()->get_resource_file_system()->update_file(_import_dst_dirs[i]);
-    }
-    EditorInterface::get_singleton()->get_resource_file_system()->scan();
+    auto *efs = EditorInterface::get_singleton()->get_resource_file_system();
 #endif
+    for (int i = 0; i < _import_generated_files.size(); i++) {
+        efs->update_file(_import_generated_files[i]);
+    }
+    if (_needs_full_scan) {
+        efs->scan();
+    } else {
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+        efs->scan_sources();
+#else
+        efs->scan_changes();
+#endif
+    }
     _import_dst_dirs.clear();
+    _import_generated_files.clear();
+    _needs_full_scan = false;
     _import_dialog = nullptr;
     _is_importing = false;
     set_process(false);
@@ -168,6 +176,7 @@ void SSImporter::_record_ssabs_in_dir(Dictionary &p_map, const String &p_dst_dir
                 p_map.erase(output_path);
                 p_map[output_path] = p_sspj_path;
                 _refresh_cached_output(output_path);
+                _import_generated_files.push_back(output_path);
             }
         }
         fname = da->get_next();
@@ -232,6 +241,12 @@ String SSImporter::lookup_output_dir_for_sspj(const String &p_sspj_path) const {
 }
 
 void SSImporter::_enqueue_one(const String &p_sspj_path, const String &p_dst_dir) {
+    {
+        Ref<DirAccess> da = DirAccess::open("res://");
+        if (da.is_valid() && !da->dir_exists(p_dst_dir)) {
+            _needs_full_scan = true;
+        }
+    }
     String global_dst_dir = ProjectSettings::get_singleton()->globalize_path(p_dst_dir);
     String global_src_file_path = ProjectSettings::get_singleton()->globalize_path(p_sspj_path);
     void *ctx = _process_file(global_src_file_path, global_dst_dir);
