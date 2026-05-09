@@ -53,7 +53,7 @@ public:
     virtual void onAnimationStarted(const String& anim_name) {}
     virtual void onAnimationFinished(const String& anim_name) {}
     virtual void onAnimationLooped(const String& anim_name) {}
-    virtual void onUserData(int flag, int int_value, const Rect2& rect_value, const Vector2& point_value, const String& string_value) {}
+    virtual void onUserData(const Dictionary& payload) {}
     virtual void onSignal(const String& command, const Dictionary& value) {}
 };
 
