@@ -71,6 +71,7 @@ private:
   Vector<bool> _import_finished_contexts;
   int _import_prev_num = 0;
   bool _is_importing = false;
+  bool _needs_full_scan = false;
 
   void *_process_file(const String &source_sspj_path, const String &dst_dir_path);
   void _enqueue_one(const String &p_sspj_path, const String &p_dst_dir);

@@ -130,13 +130,18 @@ void SSImporter::_finalize_import() {
     for (int i = 0; i < _import_generated_files.size(); i++) {
         efs->update_file(_import_generated_files[i]);
     }
+    if (_needs_full_scan) {
+        efs->scan();
+    } else {
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
-    efs->scan_sources();
+        efs->scan_sources();
 #else
-    efs->scan_changes();
+        efs->scan_changes();
 #endif
+    }
     _import_dst_dirs.clear();
     _import_generated_files.clear();
+    _needs_full_scan = false;
     _import_dialog = nullptr;
     _is_importing = false;
     set_process(false);
@@ -236,6 +241,12 @@ String SSImporter::lookup_output_dir_for_sspj(const String &p_sspj_path) const {
 }
 
 void SSImporter::_enqueue_one(const String &p_sspj_path, const String &p_dst_dir) {
+    {
+        Ref<DirAccess> da = DirAccess::open("res://");
+        if (da.is_valid() && !da->dir_exists(p_dst_dir)) {
+            _needs_full_scan = true;
+        }
+    }
     String global_dst_dir = ProjectSettings::get_singleton()->globalize_path(p_dst_dir);
     String global_src_file_path = ProjectSettings::get_singleton()->globalize_path(p_sspj_path);
     void *ctx = _process_file(global_src_file_path, global_dst_dir);

@@ -114,5 +114,6 @@ private:
 #endif
   void _load_settings();
   void _save_settings();
+  void _ensure_output_dir_exists();
 };
 #endif // #ifdef TOOLS_ENABLED

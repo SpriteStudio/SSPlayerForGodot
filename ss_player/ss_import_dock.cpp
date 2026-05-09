@@ -5,6 +5,7 @@
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
 #include <godot_cpp/classes/dir_access.hpp>
 #include <godot_cpp/classes/display_server.hpp>
+#include <godot_cpp/classes/editor_file_system.hpp>
 #include <godot_cpp/classes/editor_interface.hpp>
 #include <godot_cpp/classes/editor_settings.hpp>
 #include <godot_cpp/classes/input_event_mouse_button.hpp>
@@ -19,6 +20,13 @@ using namespace godot;
 #include "editor/editor_interface.h"
 #include "editor/settings/editor_settings.h"
 #include "scene/main/window.h"
+#if VERSION_MAJOR >= 4
+    #if VERSION_MINOR >= 5
+    #include "editor/file_system/editor_file_system.h"
+    #else
+    #include "editor/editor_file_system.h"
+    #endif
+#endif
 #endif
 
 #include "ss_clickable_label.h"
@@ -303,6 +311,7 @@ void SSImportControl::_perform_default_drop_logic(const Vector<String> &p_files)
 
 void SSImportControl::_on_line_edit_submitted(const String &p_path) {
     _save_settings();
+    _ensure_output_dir_exists();
 }
 
 void SSImportControl::_on_browse_button_pressed() {
@@ -322,11 +331,13 @@ void SSImportControl::_on_browse_button_pressed() {
 void SSImportControl::_on_reset_button_pressed() {
     path_line_edit->set_text(DEFAULT_PATH);
     _save_settings();
+    _ensure_output_dir_exists();
 }
 
 void SSImportControl::_on_dir_selected(const String &p_path) {
     path_line_edit->set_text(p_path);
     _save_settings();
+    _ensure_output_dir_exists();
 }
 
 void SSImportControl::_on_recent_file_pressed(const String &p_path) {
@@ -521,6 +532,7 @@ void SSImportControl::_load_settings() {
 
     path_line_edit->set_text(path);
 
+    _ensure_output_dir_exists();
     _update_recent_files_ui();
 }
 
@@ -528,6 +540,29 @@ void SSImportControl::_save_settings() {
     ProjectSettings *ps = ProjectSettings::get_singleton();
     ps->set_setting(SETTING_KEY, path_line_edit->get_text());
     ps->save();
+}
+
+void SSImportControl::_ensure_output_dir_exists() {
+    if (!path_line_edit) return;
+    String path = path_line_edit->get_text();
+    if (path.is_empty()) return;
+
+    Ref<DirAccess> da = DirAccess::open("res://");
+    if (da.is_null()) return;
+    if (da->dir_exists(path)) return;
+    da->make_dir_recursive(path);
+
+#if defined(SPRITESTUDIO_GODOT_EXTENSION) || (VERSION_MAJOR >= 4 && VERSION_MINOR >= 6)
+    auto *efs = EditorInterface::get_singleton()->get_resource_filesystem();
+#else
+    auto *efs = EditorInterface::get_singleton()->get_resource_file_system();
+#endif
+    if (!efs) return;
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+    efs->scan_sources();
+#else
+    efs->scan_changes();
+#endif
 }
 
 #endif // #ifdef TOOLS_ENABLED
