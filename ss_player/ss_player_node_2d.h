@@ -37,7 +37,6 @@ public:
     void setSpeed( float p_speed );
     float getSpeed() const;
     void setFrame( float p_frame );
-    void setFrameRelative( float p_diff );
     float getFrame() const;
 
     int getTotalFrames() const;

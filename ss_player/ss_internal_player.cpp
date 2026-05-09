@@ -25,7 +25,7 @@ SsInternalPlayer::SsInternalPlayer() {
 }
 
 SsInternalPlayer::~SsInternalPlayer() {
-    _clear_instance_players();
+    _clear_instance_children();
     _clear_batch_canvas_items();
 
     RenderingServer* rs = RenderingServer::get_singleton();
@@ -95,12 +95,12 @@ void SsInternalPlayer::setSSABResource(const Ref<SSABResource>& ssabRes) {
         }
     }
 
-    // Resolve external instance dependencies before _setup_instance_players
+    // Resolve external instance dependencies before _setup_instance_children
     // (called from _fetchAnimation below) needs to find ref animations that
-    // live in sibling .ssab files.
-    if (!_instance_child_mode) {
-        _load_external_ssabs();
-    }
+    // live in sibling .ssab files. Done unconditionally so a nested instance
+    // child whose own SSAB references its own siblings can resolve them
+    // (Godot's ResourceLoader CACHE_MODE_REUSE keeps duplicate loads cheap).
+    _load_external_ssabs();
 
     _fetchAnimation();
 }
@@ -163,20 +163,7 @@ float SsInternalPlayer::getSpeed() const {
 void SsInternalPlayer::setFrame(float p_frame) {
     if (runtime_ctx) {
         ss_runtime_set_frame_no(runtime_ctx, p_frame);
-        float frame_no = ss_runtime_get_frame_no(runtime_ctx);
-        float draw_frame = _sub_frame_enabled ? frame_no : floorf(frame_no);
-        previous_frame_no = draw_frame;
-        _drawAnimation(draw_frame);
-    }
-}
-
-void SsInternalPlayer::setFrameRelative(float p_diff) {
-    if (runtime_ctx) {
-        ss_runtime_set_frame_relative(runtime_ctx, p_diff);
-        float frame_no = ss_runtime_get_frame_no(runtime_ctx);
-        float draw_frame = _sub_frame_enabled ? frame_no : floorf(frame_no);
-        previous_frame_no = draw_frame;
-        _drawAnimation(draw_frame);
+        _seek_and_redraw(ss_runtime_get_frame_no(runtime_ctx), 0.0f, false);
     }
 }
 
@@ -239,10 +226,7 @@ bool SsInternalPlayer::isSkipFrames() const {
 void SsInternalPlayer::setSubFrameEnabled(bool p_enabled) {
     _sub_frame_enabled = p_enabled;
     if (runtime_ctx) {
-        float frame_no = ss_runtime_get_frame_no(runtime_ctx);
-        float draw_frame = _sub_frame_enabled ? frame_no : floorf(frame_no);
-        previous_frame_no = draw_frame;
-        _drawAnimation(draw_frame);
+        _seek_and_redraw(ss_runtime_get_frame_no(runtime_ctx), 0.0f, false);
     }
 }
 
@@ -250,8 +234,8 @@ bool SsInternalPlayer::isSubFrameEnabled() const {
     return _sub_frame_enabled;
 }
 
-void SsInternalPlayer::setInstanceChildMode(bool p_enabled) {
-    _instance_child_mode = p_enabled;
+void SsInternalPlayer::setParentDriven(bool p_enabled) {
+    _parent_driven = p_enabled;
 }
 
 void SsInternalPlayer::setRootTransform(const Transform2D& p_xf) {
@@ -312,15 +296,17 @@ namespace {
 }
 
 void SsInternalPlayer::update(float delta_seconds) {
-    // Instance-child players are advanced by the parent via setFrameRelative;
-    // they must not run their own controller tick.
-    if (_instance_child_mode) return;
+    // Parent-driven players are stepped by the parent's
+    // `_update_instance_children`; they must not run their own controller
+    // tick (would race the parent's deterministic seek).
+    if (_parent_driven) return;
     if (!ss_runtime_is_playing(runtime_ctx)) return;
 
     auto d = delta_seconds * 1000.0f;
     float frame_no = ss_runtime_update(runtime_ctx, d);
 
-    if (ss_runtime_is_looped(runtime_ctx)) {
+    const bool was_looped = ss_runtime_is_looped(runtime_ctx);
+    if (was_looped) {
         if (_event_sink) _event_sink->onAnimationLooped(_strAnimationSelected);
     }
     if (ss_runtime_is_end_frame_reached(runtime_ctx)) {
@@ -375,8 +361,7 @@ void SsInternalPlayer::update(float delta_seconds) {
         }
     }
 
-    previous_frame_no = draw_frame;
-    _drawAnimation(draw_frame);
+    _seek_and_redraw(frame_no, delta_seconds, was_looped);
 }
 
 void SsInternalPlayer::_drawAnimation(float frame_no) {
@@ -444,8 +429,7 @@ void SsInternalPlayer::_drawAnimation(float frame_no) {
             const float* drawing_m = (f.world_matrices && (uintptr_t)p_idx * 16 < f.world_matrices_len)
                 ? f.world_matrices + (p_idx * 16) : nullptr;
             if (!drawing_m) continue;
-            auto partBinary = f.binary->parts()->Get(p_idx);
-            _draw_part_instance(f, ci, p_idx, part, partBinary, drawing_m);
+            _emit_instance_slot(f, ci, p_idx, drawing_m);
         }
         // DrawBatchKind_Effect / Mesh / Text / Nines / Mask: not yet implemented.
     }
@@ -542,26 +526,26 @@ void SsInternalPlayer::_load_external_ssabs() {
     }
 }
 
-void SsInternalPlayer::_clear_instance_players() {
-    for (int i = 0; i < _instance_players.size(); i++) {
-        SsInternalPlayer* child = _instance_players[i];
+void SsInternalPlayer::_clear_instance_children() {
+    for (uint32_t i = 0; i < _instance_children.size(); i++) {
+        SsInternalPlayer* child = _instance_children[i].player;
         if (child) {
             memdelete(child);
         }
     }
-    _instance_players.clear();
+    _instance_children.clear();
 }
 
-void SsInternalPlayer::_setup_instance_players() {
-    _clear_instance_players();
+void SsInternalPlayer::_setup_instance_children() {
+    _clear_instance_children();
     if (_ssabRes.is_null()) return;
     auto binary = _ssabRes->get_ss_anime_binary();
     if (!binary || !binary->parts()) return;
 
     auto parts = binary->parts();
-    _instance_players.resize(parts->size());
-    for (int i = 0; i < (int)parts->size(); i++) {
-        _instance_players.set(i, nullptr);
+    _instance_children.resize(parts->size());
+    for (uint32_t i = 0; i < parts->size(); i++) {
+        _instance_children[i] = InstanceChildState{};
     }
     for (int i = 0; i < (int)parts->size(); i++) {
         auto p = parts->Get(i);
@@ -579,80 +563,51 @@ void SsInternalPlayer::_setup_instance_players() {
         }
 
         SsInternalPlayer* child = memnew(SsInternalPlayer);
-        child->setInstanceChildMode(true);
+        child->setParentDriven(true);
         // Hand the child the SSAB that actually contains the referenced
         // animation — may be `_ssabRes` itself or an external sibling.
         child->setSSABResource(source);
         child->setAnimation(anim_name);
         child->stop();
-        // Keep the child hidden by default; _draw_part_instance toggles it
-        // visible only when an EventInstance / InitialEvent triggers it.
+        // Keep the child hidden by default; _update_instance_children flips
+        // it visible only once an EventInstance becomes active for the slot.
         child->setRootVisible(false);
         // Parenting under the slot's batch canvas_item is performed each
-        // frame in _draw_part_instance — batch CIs are recyclable so a
+        // frame in _emit_instance_slot — batch CIs are recyclable so a
         // setup-time parenting wouldn't survive batch-list shifts.
-        _instance_players.set(i, child);
+        InstanceChildState st;
+        st.player = child;
+        _instance_children[i] = st;
     }
 }
 
-void SsInternalPlayer::_draw_part_instance(const DrawFrame& f, RID ci, int p_idx, const ss::runtime::PartState* part, const ss::format::PartData* partBinary, const float* draw_m) {
-    if (p_idx < 0 || p_idx >= _instance_players.size()) return;
-    SsInternalPlayer* child = _instance_players[p_idx];
-    if (!child) return;
+namespace {
+    struct InstancePlaybackConfig {
+        int start_frame;
+        int end_frame;
+        int loops;
+        bool pingpong;
+        bool reverse;
+        float speed;
+    };
 
-    // Re-parent the child's root canvas_item under this Instance batch's CI
-    // every frame: the batch CI pool may shuffle as draw_batches changes
-    // ordering, so the slot CI for a given Instance part is not guaranteed
-    // to be the same RID across frames.
-    child->setParentCanvasItem(ci);
+    // Convert an EventInstance attribute into resolved playback parameters
+    // for the child. `active_attr` may be null — in which case we return the
+    // SS6 default-constructed `SsInstanceAttr` semantics (sstypes.h:1294):
+    // loopNum=1, full "_start".."_end" range, speed=1, no pingpong/reverse.
+    // This makes a slot with no EventInstance play through once and clamp at
+    // its end_frame (animedecode.cpp:1670 clamp behaviour), rather than loop.
+    InstancePlaybackConfig resolve_instance_playback(
+        const ss::format::PartAttributeInstance* active_attr,
+        const ss::format::AnimationData* child_anim,
+        int child_total_frames)
+    {
+        const int default_end = child_total_frames > 0 ? child_total_frames - 1 : 0;
+        InstancePlaybackConfig cfg{ 0, default_end, 1, false, false, 1.0f };
+        if (!active_attr) return cfg;
 
-    if (!_currentAnimationData) {
-        child->setRootVisible(false);
-        return;
-    }
-    int parent_frame_int = (int)f.frame_no;
-
-    const ss::format::PartAttributeInstance* active_attr = nullptr;
-    int active_event_frame = 0;
-    if (auto events = _currentAnimationData->events()) {
-        for (int i = (int)events->size() - 1; i >= 0; i--) {
-            auto epf = events->Get(i);
-            if (!epf) continue;
-            int frame_index = epf->frame_index();
-            if (frame_index > parent_frame_int) continue;
-            if (!epf->instances()) continue;
-            for (uint32_t j = 0; j < epf->instances()->size(); j++) {
-                auto ev = epf->instances()->Get(j);
-                if (!ev || ev->part_index() != (uint16_t)p_idx) continue;
-                active_attr = ev->value();
-                active_event_frame = frame_index;
-                break;
-            }
-            if (active_attr) break;
-        }
-    }
-    // Default playback config used when no EventInstance has fired yet for this
-    // slot. Matches the default-constructed `SsInstanceAttr` in SS6
-    // (sstypes.h:1294): loopNum=1, infinity=false, full "_start".."_end"
-    // range, speed=1, curKeyframe=0. This makes the instance play through
-    // once and clamp at end_frame (animedecode.cpp:1670 clamps `reftime` to
-    // `inst_scale - 1` once `nowloop >= loopNum`), rather than looping.
-    int child_total = child->getTotalFrames();
-    int default_end = child_total > 0 ? child_total - 1 : 0;
-
-    int start_frame = 0;
-    int end_frame = default_end;
-    int loops = 1;
-    bool pingpong = false;
-    bool reverse = false;
-    float speed = 1.0f;
-
-    if (active_attr) {
-        // The child has already resolved its selected animation in
-        // _fetchAnimation(); reuse that pointer instead of scanning the child's
-        // animations array by name. Labels are sorted by name_hash (ssab schema
-        // marks `Label.name_hash (key)`), so LookupByKey gives us O(log n).
-        const ss::format::AnimationData* child_anim = child->getCurrentAnimationData();
+        // Labels are sorted by name_hash (ssab schema marks
+        // `Label.name_hash (key)`), so LookupByKey gives us O(log n).
         auto resolve_label = [&](uint32_t label_hash, int fallback) -> int {
             if (label_hash == 0) return fallback;
             if (!child_anim || !child_anim->labels()) return fallback;
@@ -660,25 +615,192 @@ void SsInternalPlayer::_draw_part_instance(const DrawFrame& f, RID ci, int p_idx
             return lab ? lab->time() : fallback;
         };
 
-        start_frame = resolve_label(active_attr->start_label_hash(), 0) + active_attr->start_offset();
-        end_frame = resolve_label(active_attr->end_label_hash(), default_end) + active_attr->end_offset();
-        if (end_frame < start_frame) end_frame = start_frame;
+        cfg.start_frame = resolve_label(active_attr->start_label_hash(), 0) + active_attr->start_offset();
+        cfg.end_frame = resolve_label(active_attr->end_label_hash(), default_end) + active_attr->end_offset();
+        if (cfg.end_frame < cfg.start_frame) cfg.end_frame = cfg.start_frame;
 
-        loops = active_attr->loop_num();
-        pingpong = active_attr->pingpong();
-        reverse = active_attr->reverse();
-        speed = active_attr->speed();
+        cfg.loops = active_attr->loop_num();
+        cfg.pingpong = active_attr->pingpong();
+        cfg.reverse = active_attr->reverse();
+        cfg.speed = active_attr->speed();
+        return cfg;
+    }
+}
+
+void SsInternalPlayer::_update_instance_children(float parent_frame_no, float delta_seconds, bool parent_looped) {
+    if (!_currentAnimationData) {
+        // No animation selected on the parent: keep all children hidden.
+        for (uint32_t i = 0; i < _instance_children.size(); i++) {
+            SsInternalPlayer* child = _instance_children[i].player;
+            if (child) child->setRootVisible(false);
+        }
+        return;
     }
 
-    child->setAnimationSection(start_frame, end_frame);
-    child->setLoop(loops);
-    child->setPlaybackDirection(reverse ? 1 : 0, pingpong ? 1 : 0);
+    // Re-arm transition detection on parent loop. The same EventInstance
+    // attribute pointer (and frame_index) triggers again on the next
+    // playthrough; without this reset the equality check inside
+    // `_drive_active_instance_slot` would treat the loop edge as a no-op
+    // and finite-loop independent children would stay frozen at their
+    // previous end_frame.
+    if (parent_looped) {
+        for (uint32_t i = 0; i < _instance_children.size(); i++) {
+            _instance_children[i].last_active_attr = nullptr;
+            _instance_children[i].last_active_event_frame = -1;
+            _instance_children[i].default_applied = false;
+        }
+    }
 
-    float diff = (f.frame_no - (float)active_event_frame) * speed;
-    Transform2D xf = matrix_to_transform2d(draw_m);
-    child->setRootTransform(xf);
+    const int parent_frame_int = (int)parent_frame_no;
+    _build_active_instance_event_map(parent_frame_int);
+
+    for (uint32_t p_idx = 0; p_idx < _instance_children.size(); p_idx++) {
+        InstanceChildState& state = _instance_children[p_idx];
+        SsInternalPlayer* child = state.player;
+        if (!child) continue;
+
+        const ActiveInstanceEvent& active = _active_instance_events[p_idx];
+        if (!active.attr) {
+            _drive_default_instance_slot(state, child, parent_frame_no);
+        } else {
+            _drive_active_instance_slot(state, child, active.attr, active.event_frame,
+                                        parent_frame_no, delta_seconds);
+        }
+    }
+}
+
+void SsInternalPlayer::_build_active_instance_event_map(int parent_frame_int) {
+    const uint32_t slot_count = _instance_children.size();
+    _active_instance_events.resize(slot_count);
+    for (uint32_t i = 0; i < slot_count; i++) {
+        _active_instance_events[i] = ActiveInstanceEvent{};
+    }
+    if (!_currentAnimationData) return;
+    auto events = _currentAnimationData->events();
+    if (!events) return;
+
+    // Forward scan; events are sorted by frame_index, so we can stop once
+    // an event exceeds the parent's frame. Later events override earlier
+    // ones, leaving each slot pointing at its most-recent EventInstance.
+    for (uint32_t i = 0; i < events->size(); i++) {
+        auto epf = events->Get(i);
+        if (!epf) continue;
+        const int frame_index = epf->frame_index();
+        if (frame_index > parent_frame_int) break;
+        if (!epf->instances()) continue;
+        for (uint32_t j = 0; j < epf->instances()->size(); j++) {
+            auto ev = epf->instances()->Get(j);
+            if (!ev) continue;
+            const uint32_t p_idx = ev->part_index();
+            if (p_idx >= slot_count) continue;
+            _active_instance_events[p_idx].attr = ev->value();
+            _active_instance_events[p_idx].event_frame = frame_index;
+        }
+    }
+}
+
+void SsInternalPlayer::_drive_default_instance_slot(InstanceChildState& state,
+                                                    SsInternalPlayer* child,
+                                                    float parent_frame_no) {
+    // SS6 implicit default (sstypes.h:1294 SsInstanceAttr): synced from
+    // parent's frame 0, loops=1, full range, speed=1. Always visible.
+    // Apply config once per "default era"; `parent_looped` resets the flag
+    // so an already-finished default child plays again on the next cycle.
+    if (!state.default_applied) {
+        const int default_end = child->getTotalFrames() > 0 ? child->getTotalFrames() - 1 : 0;
+        child->setAnimationSection(0, default_end);
+        child->setLoop(1);
+        child->setPlaybackDirection(0, 0);
+        child->play();
+        state.default_applied = true;
+        state.last_active_attr = nullptr;
+        state.last_active_event_frame = 0;
+    }
     child->setRootVisible(true);
-    child->setFrameRelative(diff);
+
+    // Synced step with implicit event_frame=0 and speed=1.
+    ss_runtime_set_frame_relative(child->runtime_ctx, parent_frame_no);
+    const float child_frame_no = ss_runtime_get_frame_no(child->runtime_ctx);
+    _redraw_child_if_frame_changed(child, child_frame_no);
+}
+
+void SsInternalPlayer::_drive_active_instance_slot(InstanceChildState& state,
+                                                   SsInternalPlayer* child,
+                                                   const ss::format::PartAttributeInstance* active_attr,
+                                                   int active_event_frame,
+                                                   float parent_frame_no,
+                                                   float delta_seconds) {
+    // The SS6 default no longer applies once an EventInstance is active.
+    state.default_applied = false;
+
+    // Transition edge: a new EventInstance just took over this slot, or
+    // the parent looped (state was reset by the caller).
+    const bool transitioned =
+        (active_attr != state.last_active_attr) ||
+        (active_event_frame != state.last_active_event_frame);
+
+    if (transitioned) {
+        const InstancePlaybackConfig cfg = resolve_instance_playback(
+            active_attr, child->getCurrentAnimationData(), child->getTotalFrames());
+        child->setAnimationSection(cfg.start_frame, cfg.end_frame);
+        child->setLoop(cfg.loops);
+        child->setPlaybackDirection(cfg.reverse ? 1 : 0, cfg.pingpong ? 1 : 0);
+        child->play();
+        state.last_active_attr = active_attr;
+        state.last_active_event_frame = active_event_frame;
+    }
+
+    child->setRootVisible(true);
+
+    // Branch on `independent`. Synced children are seeked deterministically
+    // from the parent's frame each tick — same `parent_frame_no` always
+    // yields the same `child_frame`. Independent children own their own
+    // controller time: forward `delta_seconds` to `ss_runtime_update` on
+    // tick callers, except on the transition tick itself where `play()` has
+    // already snapped the child to `start_frame` — stepping on the same tick
+    // would push it past start by one delta and visibly skip the first
+    // frame of the child's animation.
+    float child_frame_no;
+    if (active_attr->independent()) {
+        if (delta_seconds > 0.0f && !transitioned) {
+            const float d_ms = delta_seconds * 1000.0f * active_attr->speed();
+            child_frame_no = ss_runtime_update(child->runtime_ctx, d_ms);
+        } else {
+            child_frame_no = ss_runtime_get_frame_no(child->runtime_ctx);
+        }
+    } else {
+        const float diff = (parent_frame_no - (float)active_event_frame) * active_attr->speed();
+        ss_runtime_set_frame_relative(child->runtime_ctx, diff);
+        child_frame_no = ss_runtime_get_frame_no(child->runtime_ctx);
+    }
+
+    _redraw_child_if_frame_changed(child, child_frame_no);
+}
+
+void SsInternalPlayer::_redraw_child_if_frame_changed(SsInternalPlayer* child, float frame_no) {
+    const float draw_frame = child->_sub_frame_enabled ? frame_no : floorf(frame_no);
+    if (child->previous_frame_no == draw_frame) return;
+    child->previous_frame_no = draw_frame;
+    child->_drawAnimation(draw_frame);
+}
+
+void SsInternalPlayer::_seek_and_redraw(float frame_no, float delta_seconds, bool parent_looped) {
+    const float draw_frame = _sub_frame_enabled ? frame_no : floorf(frame_no);
+    previous_frame_no = draw_frame;
+    _update_instance_children(draw_frame, delta_seconds, parent_looped);
+    _drawAnimation(draw_frame);
+}
+
+void SsInternalPlayer::_emit_instance_slot(const DrawFrame& /*f*/, RID ci, int p_idx, const float* slot_matrix) {
+    if (p_idx < 0 || (uint32_t)p_idx >= _instance_children.size()) return;
+    SsInternalPlayer* child = _instance_children[p_idx].player;
+    if (!child) return;
+
+    // Re-parent every frame: the batch CI pool can shuffle as draw_batches
+    // ordering changes, so the slot CI for a given Instance part is not
+    // guaranteed to be the same RID across frames.
+    child->setParentCanvasItem(ci);
+    child->setRootTransform(matrix_to_transform2d(slot_matrix));
 }
 
 int SsInternalPlayer::_build_normal(const DrawFrame& f, int p_idx,
@@ -923,12 +1045,12 @@ void SsInternalPlayer::_fetchAnimation() {
         // `_batch_canvas_items` per-frame, so freeing those first would
         // leave the children with a dangling parent RID until their own
         // dtor runs.
-        _clear_instance_players();
+        _clear_instance_children();
         _clear_batch_canvas_items();
         return;
     }
 
-    _clear_instance_players();
+    _clear_instance_children();
     _clear_batch_canvas_items();
 
     if (runtime_res != nullptr) {
@@ -964,15 +1086,12 @@ void SsInternalPlayer::_fetchAnimation() {
         return;
     }
 
-    // Skip when this player is itself an instance child to cap recursion at
-    // depth 1 — nested Instance parts are not yet supported and would
-    // self-reference / cycle through the same SSABResource.
-    if (!_instance_child_mode) {
-        _setup_instance_players();
-    }
+    // Recursive setup — instance children also populate their own
+    // `_instance_children`, so any depth of nested Instance parts is
+    // supported. Cross-SSAB cycles (A → B → A authoring mistakes) are not
+    // detected; they recurse until stack overflow on load. Trust the
+    // converter / authoring tool to keep references acyclic.
+    _setup_instance_children();
 
-    float frame_no = ss_runtime_get_frame_no(runtime_ctx);
-    float draw_frame = _sub_frame_enabled ? frame_no : floorf(frame_no);
-    previous_frame_no = draw_frame;
-    _drawAnimation(draw_frame);
+    _seek_and_redraw(ss_runtime_get_frame_no(runtime_ctx), 0.0f, false);
 }
