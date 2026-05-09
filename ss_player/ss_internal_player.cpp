@@ -750,16 +750,16 @@ void SsInternalPlayer::_emit_effect_slot(const DrawFrame& f, RID ci, int p_idx, 
     int event_frame = 0;
     int start_time = 0;
     float speed = 1.0f;
-    bool has_attr = false;
-    bool is_synthetic = false;
+    bool independent = false;
+    bool is_synthetic = true;
 
     if (_currentAnimationData) {
-        const int parent_frame_int = (int)f.frame_no;
+        bool found_explicit = false;
         if (auto events = _currentAnimationData->events()) {
             for (int ei = (int)events->size() - 1; ei >= 0; ei--) {
                 auto epf = events->Get(ei);
                 if (!epf) continue;
-                if ((int)epf->frame_index() > parent_frame_int) continue;
+                if ((float)epf->frame_index() > f.frame_no) continue;
                 if (!epf->effects()) continue;
                 auto found = epf->effects()->LookupByKey((uint16_t)p_idx);
                 if (found && found->value()) {
@@ -767,12 +767,14 @@ void SsInternalPlayer::_emit_effect_slot(const DrawFrame& f, RID ci, int p_idx, 
                     start_time = found->value()->start_time();
                     speed = found->value()->speed();
                     if (speed == 0.0f) speed = 1.0f;
-                    has_attr = true;
+                    independent = found->value()->independent();
+                    is_synthetic = false;
+                    found_explicit = true;
                     break;
                 }
             }
         }
-        if (!has_attr) {
+        if (!found_explicit) {
             if (auto inits = _currentAnimationData->initial_events()) {
                 if ((uint32_t)p_idx < inits->size()) {
                     auto entry = inits->Get(p_idx);
@@ -780,8 +782,8 @@ void SsInternalPlayer::_emit_effect_slot(const DrawFrame& f, RID ci, int p_idx, 
                         start_time = entry->effect()->start_time();
                         speed = entry->effect()->speed();
                         if (speed == 0.0f) speed = 1.0f;
+                        independent = entry->effect()->independent();
                         event_frame = 0;
-                        has_attr = true;
                         is_synthetic = true;
                     }
                 }
@@ -789,23 +791,39 @@ void SsInternalPlayer::_emit_effect_slot(const DrawFrame& f, RID ci, int p_idx, 
         }
     }
 
-    if (!has_attr) {
-        f.rs->canvas_item_set_visible(ci, false);
-        return;
-    }
+    const bool transitioned =
+        slot.last_event_frame != event_frame ||
+        slot.last_is_synthetic != is_synthetic ||
+        slot.last_independent != independent;
 
-    if (slot.last_event_frame != event_frame || slot.last_is_synthetic != is_synthetic) {
+    if (transitioned) {
         ss_effect_reset(slot.effect_ctx);
+        ss_effect_set_loop(slot.effect_ctx, independent);
         slot.last_event_frame = event_frame;
         slot.last_is_synthetic = is_synthetic;
+        slot.last_independent = independent;
+        slot.accumulated_time = (float)start_time;
+        slot.last_parent_frame = f.frame_no;
     }
 
-    const float elapsed = (float)((int)f.frame_no - event_frame);
-    if (elapsed < 0.0f) {
-        f.rs->canvas_item_set_visible(ci, false);
-        return;
+    float relative_frame;
+    if (independent) {
+        const float delta = f.frame_no - slot.last_parent_frame;
+        if (delta > 0.0f) {
+            slot.accumulated_time += delta * speed;
+        }
+        relative_frame = slot.accumulated_time;
+    } else {
+        const float elapsed = f.frame_no - (float)event_frame;
+        if (elapsed < 0.0f) {
+            slot.last_parent_frame = f.frame_no;
+            f.rs->canvas_item_set_visible(ci, false);
+            return;
+        }
+        relative_frame = elapsed * speed + (float)start_time;
     }
-    const float relative_frame = elapsed * speed + (float)start_time;
+    slot.last_parent_frame = f.frame_no;
+
     if (relative_frame < 0.0f) {
         f.rs->canvas_item_set_visible(ci, false);
         return;

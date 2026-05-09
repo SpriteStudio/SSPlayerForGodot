@@ -211,6 +211,9 @@ private:
         void* effect_ctx = nullptr;
         int last_event_frame = -1;
         bool last_is_synthetic = false;
+        bool last_independent = false;
+        float accumulated_time = 0.0f;
+        float last_parent_frame = -1.0f;
         Vector<RID> emitter_cis;
     };
     LocalVector<EffectSlotState> _effect_slots;
