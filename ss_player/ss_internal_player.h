@@ -204,6 +204,7 @@ private:
         // to -1 on `parent_looped` so the same event re-fires on next loop.
         int last_event_frame = -1;
         bool last_is_synthetic = false;
+        bool last_independent = false;
     };
     LocalVector<InstanceChildState> _instance_children;
 
@@ -258,6 +259,7 @@ private:
     // Per-part-type emit. Normal is consumed by `_emit_normal_batch` directly
     // through the geometry helper, so no `_draw_part_normal` exists.
     void _draw_part_shape(const DrawFrame& f, RID ci, int p_idx, const ss::runtime::PartState* part, const ss::format::PartData* partBinary, const float* draw_m);
+    bool _needs_continuous_update() const;
     // Instance slot emit: re-parent the child's _root_ci under this slot's
     // batch CI and apply the slot's world matrix as the child's root
     // transform. The child's own draw + simulation already happened earlier

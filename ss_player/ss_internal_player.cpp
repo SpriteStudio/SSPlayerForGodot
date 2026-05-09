@@ -297,6 +297,16 @@ namespace {
     }
 }
 
+bool SsInternalPlayer::_needs_continuous_update() const {
+    for (const auto& slot : _effect_slots) {
+        if (slot.last_independent) return true;
+    }
+    for (const auto& st : _instance_children) {
+        if (st.player && st.last_independent) return true;
+    }
+    return false;
+}
+
 void SsInternalPlayer::update(float delta_seconds) {
     // Parent-driven players are stepped by the parent's
     // `_update_instance_children`; they must not run their own controller
@@ -316,7 +326,7 @@ void SsInternalPlayer::update(float delta_seconds) {
     }
 
     float draw_frame = _sub_frame_enabled ? frame_no : floorf(frame_no);
-    if (previous_frame_no == draw_frame && _effect_slots.is_empty()) return;
+    if (previous_frame_no == draw_frame && !_needs_continuous_update()) return;
 
     if (_currentAnimationData && _currentAnimationData->events() != nullptr) {
         int event_count = ss_runtime_get_passed_event_count(runtime_ctx);
@@ -723,12 +733,13 @@ void SsInternalPlayer::_drive_instance_slot(InstanceChildState& state,
         }
     }
 
+    state.last_independent = info.independent;
     _redraw_child_if_frame_changed(child, child_frame_no, delta_seconds, child_looped);
 }
 
 void SsInternalPlayer::_redraw_child_if_frame_changed(SsInternalPlayer* child, float frame_no, float delta_seconds, bool parent_looped) {
     const float draw_frame = child->_sub_frame_enabled ? frame_no : floorf(frame_no);
-    if (child->previous_frame_no == draw_frame && child->_effect_slots.is_empty()) return;
+    if (child->previous_frame_no == draw_frame && !child->_needs_continuous_update()) return;
     child->previous_frame_no = draw_frame;
     child->_drawAnimation(draw_frame, delta_seconds, parent_looped);
 }
