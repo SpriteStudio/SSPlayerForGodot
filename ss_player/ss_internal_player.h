@@ -207,6 +207,14 @@ private:
     };
     LocalVector<InstanceChildState> _instance_children;
 
+    struct EffectSlotState {
+        void* effect_ctx = nullptr;
+        int last_event_frame = -1;
+        bool last_is_synthetic = false;
+        Vector<RID> emitter_cis;
+    };
+    LocalVector<EffectSlotState> _effect_slots;
+
     // External SSAB resources auto-loaded from the parent's directory based
     // on `external_instances`. Cleared and rebuilt on every setSSABResource.
     Vector<Ref<SSABResource>> _external_ssabs;
@@ -251,6 +259,7 @@ private:
     // in `_update_instance_children` (sim phase), so this is positioning
     // only — no event scanning, no playback config, no frame stepping.
     void _emit_instance_slot(const DrawFrame& f, RID ci, int p_idx, const float* slot_matrix);
+    void _emit_effect_slot(const DrawFrame& f, RID ci, int p_idx, const float* slot_matrix);
 
     int _build_normal(const DrawFrame& f, int p_idx,
                       const ss::runtime::PartState* part,
@@ -280,6 +289,8 @@ private:
 
     void _setup_instance_children();
     void _clear_instance_children();
+    void _setup_effect_slots();
+    void _clear_effect_slots();
     // Per-tick instance child driver. Runs in the sim phase (called from
     // `update`), before `_drawAnimation`. Per slot, queries
     // `ss_runtime_get_active_event_instance` (returns SS6 default semantics
