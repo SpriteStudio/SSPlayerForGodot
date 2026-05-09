@@ -839,7 +839,7 @@ FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(4) DrawBatch FLATBUFFERS_FINAL_CLASS {
   uint8_t blend_type_;
   uint8_t kind_;
   uint8_t flags_;
-  uint8_t _reserved_;
+  int8_t padding0__;
 
  public:
   DrawBatch()
@@ -851,9 +851,10 @@ FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(4) DrawBatch FLATBUFFERS_FINAL_CLASS {
         blend_type_(0),
         kind_(0),
         flags_(0),
-        _reserved_(0) {
+        padding0__(0) {
+    (void)padding0__;
   }
-  DrawBatch(uint16_t _start_rank, uint16_t _count, uint32_t _texture_hash, uint16_t _vertex_count, uint16_t _index_count, ss::runtime::BlendType _blend_type, ss::runtime::DrawBatchKind _kind, uint8_t _flags, uint8_t __reserved)
+  DrawBatch(uint16_t _start_rank, uint16_t _count, uint32_t _texture_hash, uint16_t _vertex_count, uint16_t _index_count, ss::runtime::BlendType _blend_type, ss::runtime::DrawBatchKind _kind, uint8_t _flags)
       : start_rank_(::flatbuffers::EndianScalar(_start_rank)),
         count_(::flatbuffers::EndianScalar(_count)),
         texture_hash_(::flatbuffers::EndianScalar(_texture_hash)),
@@ -862,7 +863,8 @@ FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(4) DrawBatch FLATBUFFERS_FINAL_CLASS {
         blend_type_(::flatbuffers::EndianScalar(static_cast<uint8_t>(_blend_type))),
         kind_(::flatbuffers::EndianScalar(static_cast<uint8_t>(_kind))),
         flags_(::flatbuffers::EndianScalar(_flags)),
-        _reserved_(::flatbuffers::EndianScalar(__reserved)) {
+        padding0__(0) {
+    (void)padding0__;
   }
   uint16_t start_rank() const {
     return ::flatbuffers::EndianScalar(start_rank_);
@@ -887,9 +889,6 @@ FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(4) DrawBatch FLATBUFFERS_FINAL_CLASS {
   }
   uint8_t flags() const {
     return ::flatbuffers::EndianScalar(flags_);
-  }
-  uint8_t _reserved() const {
-    return ::flatbuffers::EndianScalar(_reserved_);
   }
 };
 FLATBUFFERS_STRUCT_END(DrawBatch, 16);

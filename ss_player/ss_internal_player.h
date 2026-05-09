@@ -204,8 +204,20 @@ private:
         // to -1 on `parent_looped` so the same event re-fires on next loop.
         int last_event_frame = -1;
         bool last_is_synthetic = false;
+        bool last_independent = false;
     };
     LocalVector<InstanceChildState> _instance_children;
+
+    struct EffectSlotState {
+        void* effect_ctx = nullptr;
+        int last_event_frame = -1;
+        bool last_is_synthetic = false;
+        bool last_independent = false;
+        float accumulated_time = 0.0f;
+        float last_parent_frame = -1.0f;
+        Vector<RID> emitter_cis;
+    };
+    LocalVector<EffectSlotState> _effect_slots;
 
     // External SSAB resources auto-loaded from the parent's directory based
     // on `external_instances`. Cleared and rebuilt on every setSSABResource.
@@ -221,6 +233,8 @@ private:
         const ss::runtime::FrameData* frameData;
         const ss::format::SsAnimeBinary* binary;
         float frame_no;
+        float delta_seconds = 0.0f;
+        bool parent_looped = false;
 
         const float* world_matrices;         uintptr_t world_matrices_len;
         const float* local_uvs;              uintptr_t local_uvs_len;
@@ -241,16 +255,18 @@ private:
     void _reconfigure();
     void _loadTextures(const Ref<SSABResource>& res);
     void _fetchAnimation();
-    void _drawAnimation(float frame_no);
+    void _drawAnimation(float frame_no, float delta_seconds = 0.0f, bool parent_looped = false);
     // Per-part-type emit. Normal is consumed by `_emit_normal_batch` directly
     // through the geometry helper, so no `_draw_part_normal` exists.
     void _draw_part_shape(const DrawFrame& f, RID ci, int p_idx, const ss::runtime::PartState* part, const ss::format::PartData* partBinary, const float* draw_m);
+    bool _needs_continuous_update() const;
     // Instance slot emit: re-parent the child's _root_ci under this slot's
     // batch CI and apply the slot's world matrix as the child's root
     // transform. The child's own draw + simulation already happened earlier
     // in `_update_instance_children` (sim phase), so this is positioning
     // only — no event scanning, no playback config, no frame stepping.
     void _emit_instance_slot(const DrawFrame& f, RID ci, int p_idx, const float* slot_matrix);
+    void _emit_effect_slot(const DrawFrame& f, RID ci, int p_idx, const float* slot_matrix);
 
     int _build_normal(const DrawFrame& f, int p_idx,
                       const ss::runtime::PartState* part,
@@ -280,6 +296,8 @@ private:
 
     void _setup_instance_children();
     void _clear_instance_children();
+    void _setup_effect_slots();
+    void _clear_effect_slots();
     // Per-tick instance child driver. Runs in the sim phase (called from
     // `update`), before `_drawAnimation`. Per slot, queries
     // `ss_runtime_get_active_event_instance` (returns SS6 default semantics
@@ -315,7 +333,7 @@ private:
 
     // Common: clamp `frame_no` to integer (unless sub-frame mode), redraw
     // only if changed since the last frame.
-    static void _redraw_child_if_frame_changed(SsInternalPlayer* child, float frame_no);
+    static void _redraw_child_if_frame_changed(SsInternalPlayer* child, float frame_no, float delta_seconds, bool parent_looped);
 
     // Apply the current `frame_no` to this player's draw state in one shot:
     // resolve `draw_frame` per `_sub_frame_enabled`, store it as

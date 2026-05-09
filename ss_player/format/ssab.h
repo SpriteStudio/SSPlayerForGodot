@@ -4160,23 +4160,15 @@ inline ::flatbuffers::Offset<PartAttributeInstance> CreatePartAttributeInstance(
 struct PartAttributeEffect FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   typedef PartAttributeEffectBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
-    VT_CUR_KEYFRAME = 4,
-    VT_START_TIME = 6,
-    VT_SPEED = 8,
-    VT_LOOPFLAG = 10,
-    VT_INDEPENDENT = 12
+    VT_START_TIME = 4,
+    VT_SPEED = 6,
+    VT_INDEPENDENT = 8
   };
-  int32_t cur_keyframe() const {
-    return GetField<int32_t>(VT_CUR_KEYFRAME, 0);
-  }
   int32_t start_time() const {
     return GetField<int32_t>(VT_START_TIME, 0);
   }
   float speed() const {
     return GetField<float>(VT_SPEED, 0.0f);
-  }
-  int32_t loopflag() const {
-    return GetField<int32_t>(VT_LOOPFLAG, 0);
   }
   bool independent() const {
     return GetField<uint8_t>(VT_INDEPENDENT, 0) != 0;
@@ -4184,10 +4176,8 @@ struct PartAttributeEffect FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Tabl
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<int32_t>(verifier, VT_CUR_KEYFRAME, 4) &&
            VerifyField<int32_t>(verifier, VT_START_TIME, 4) &&
            VerifyField<float>(verifier, VT_SPEED, 4) &&
-           VerifyField<int32_t>(verifier, VT_LOOPFLAG, 4) &&
            VerifyField<uint8_t>(verifier, VT_INDEPENDENT, 1) &&
            verifier.EndTable();
   }
@@ -4197,17 +4187,11 @@ struct PartAttributeEffectBuilder {
   typedef PartAttributeEffect Table;
   ::flatbuffers::FlatBufferBuilder &fbb_;
   ::flatbuffers::uoffset_t start_;
-  void add_cur_keyframe(int32_t cur_keyframe) {
-    fbb_.AddElement<int32_t>(PartAttributeEffect::VT_CUR_KEYFRAME, cur_keyframe, 0);
-  }
   void add_start_time(int32_t start_time) {
     fbb_.AddElement<int32_t>(PartAttributeEffect::VT_START_TIME, start_time, 0);
   }
   void add_speed(float speed) {
     fbb_.AddElement<float>(PartAttributeEffect::VT_SPEED, speed, 0.0f);
-  }
-  void add_loopflag(int32_t loopflag) {
-    fbb_.AddElement<int32_t>(PartAttributeEffect::VT_LOOPFLAG, loopflag, 0);
   }
   void add_independent(bool independent) {
     fbb_.AddElement<uint8_t>(PartAttributeEffect::VT_INDEPENDENT, static_cast<uint8_t>(independent), 0);
@@ -4225,16 +4209,12 @@ struct PartAttributeEffectBuilder {
 
 inline ::flatbuffers::Offset<PartAttributeEffect> CreatePartAttributeEffect(
     ::flatbuffers::FlatBufferBuilder &_fbb,
-    int32_t cur_keyframe = 0,
     int32_t start_time = 0,
     float speed = 0.0f,
-    int32_t loopflag = 0,
     bool independent = false) {
   PartAttributeEffectBuilder builder_(_fbb);
-  builder_.add_loopflag(loopflag);
   builder_.add_speed(speed);
   builder_.add_start_time(start_time);
-  builder_.add_cur_keyframe(cur_keyframe);
   builder_.add_independent(independent);
   return builder_.Finish();
 }

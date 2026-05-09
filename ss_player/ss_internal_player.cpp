@@ -1,5 +1,6 @@
 #include "ss_internal_player.h"
 #include "format/ssab.h"
+#include "format/effect_state.h"
 #include "ssruntime.h"
 #include "format/framedata.h"
 
@@ -26,6 +27,7 @@ SsInternalPlayer::SsInternalPlayer() {
 
 SsInternalPlayer::~SsInternalPlayer() {
     _clear_instance_children();
+    _clear_effect_slots();
     _clear_batch_canvas_items();
 
     RenderingServer* rs = RenderingServer::get_singleton();
@@ -295,6 +297,16 @@ namespace {
     }
 }
 
+bool SsInternalPlayer::_needs_continuous_update() const {
+    for (const auto& slot : _effect_slots) {
+        if (slot.last_independent) return true;
+    }
+    for (const auto& st : _instance_children) {
+        if (st.player && st.last_independent) return true;
+    }
+    return false;
+}
+
 void SsInternalPlayer::update(float delta_seconds) {
     // Parent-driven players are stepped by the parent's
     // `_update_instance_children`; they must not run their own controller
@@ -314,7 +326,7 @@ void SsInternalPlayer::update(float delta_seconds) {
     }
 
     float draw_frame = _sub_frame_enabled ? frame_no : floorf(frame_no);
-    if (previous_frame_no == draw_frame) return;
+    if (previous_frame_no == draw_frame && !_needs_continuous_update()) return;
 
     if (_currentAnimationData && _currentAnimationData->events() != nullptr) {
         int event_count = ss_runtime_get_passed_event_count(runtime_ctx);
@@ -347,7 +359,7 @@ void SsInternalPlayer::update(float delta_seconds) {
     _seek_and_redraw(frame_no, delta_seconds, was_looped);
 }
 
-void SsInternalPlayer::_drawAnimation(float frame_no) {
+void SsInternalPlayer::_drawAnimation(float frame_no, float delta_seconds, bool parent_looped) {
     unsigned char* data = nullptr;
     uintptr_t len = 0;
     ss_runtime_get_frame_data(runtime_ctx, frame_no, &data, &len);
@@ -358,6 +370,8 @@ void SsInternalPlayer::_drawAnimation(float frame_no) {
     f.frameData = ss::runtime::GetFrameData(data);
     f.binary = _ssabRes->get_ss_anime_binary();
     f.frame_no = frame_no;
+    f.delta_seconds = delta_seconds;
+    f.parent_looped = parent_looped;
     ss_runtime_get_world_matrices(runtime_ctx, &f.world_matrices, &f.world_matrices_len);
     ss_runtime_get_local_uvs(runtime_ctx, &f.local_uvs, &f.local_uvs_len);
     ss_runtime_get_cell_meta(runtime_ctx, &f.cell_meta, &f.cell_meta_len);
@@ -413,8 +427,16 @@ void SsInternalPlayer::_drawAnimation(float frame_no) {
                 ? f.world_matrices + (p_idx * 16) : nullptr;
             if (!drawing_m) continue;
             _emit_instance_slot(f, ci, p_idx, drawing_m);
+        } else if (kind == ss::runtime::DrawBatchKind_Effect) {
+            int p_idx = (int)draw_order_data[batch->start_rank()];
+            const auto* part = (p_idx >= 0 && p_idx < (int)_parts_by_idx.size()) ? _parts_by_idx[p_idx] : nullptr;
+            if (!part) continue;
+            const float* drawing_m = (f.world_matrices && (uintptr_t)p_idx * 16 < f.world_matrices_len)
+                ? f.world_matrices + (p_idx * 16) : nullptr;
+            if (!drawing_m) continue;
+            _emit_effect_slot(f, ci, p_idx, drawing_m);
         }
-        // DrawBatchKind_Effect / Mesh / Text / Nines / Mask: not yet implemented.
+        // DrawBatchKind_Mesh / Text / Nines / Mask: not yet implemented.
     }
 }
 
@@ -564,6 +586,50 @@ void SsInternalPlayer::_setup_instance_children() {
     }
 }
 
+void SsInternalPlayer::_clear_effect_slots() {
+    RenderingServer* rs = RenderingServer::get_singleton();
+    for (uint32_t i = 0; i < _effect_slots.size(); i++) {
+        EffectSlotState& slot = _effect_slots[i];
+        if (slot.effect_ctx) {
+            ss_effect_destroy(slot.effect_ctx);
+            slot.effect_ctx = nullptr;
+        }
+        for (int e = 0; e < slot.emitter_cis.size(); e++) {
+            rs->free_rid(slot.emitter_cis[e]);
+        }
+        slot.emitter_cis.clear();
+    }
+    _effect_slots.clear();
+}
+
+void SsInternalPlayer::_setup_effect_slots() {
+    _clear_effect_slots();
+    if (_ssabRes.is_null() || runtime_res == nullptr) return;
+    auto binary = _ssabRes->get_ss_anime_binary();
+    if (!binary || !binary->parts()) return;
+
+    auto parts = binary->parts();
+    _effect_slots.resize(parts->size());
+    for (uint32_t i = 0; i < parts->size(); i++) {
+        _effect_slots[i] = EffectSlotState{};
+    }
+    for (int i = 0; i < (int)parts->size(); i++) {
+        auto p = parts->Get(i);
+        if (!p) continue;
+        if (p->part_type_type() != ss::format::PartType_PartTypeEffect) continue;
+        auto pt = p->part_type_as_PartTypeEffect();
+        if (!pt) continue;
+
+        const uint32_t seed = (uint32_t)i ^ pt->ref_effect_name_hash();
+        void* ctx = ss_effect_create(runtime_res, pt->ref_effect_name_hash(), seed);
+        if (!ctx) {
+            ERR_PRINT(vformat("[SS] effect part %d: ref_effect_name_hash=0x%x not found in current SSAB", i, pt->ref_effect_name_hash()));
+            continue;
+        }
+        _effect_slots[i].effect_ctx = ctx;
+    }
+}
+
 void SsInternalPlayer::_update_instance_children(float parent_frame_no, float delta_seconds, bool parent_looped) {
     if (!_currentAnimationData) {
         // No animation selected on the parent: keep all children hidden.
@@ -584,6 +650,10 @@ void SsInternalPlayer::_update_instance_children(float parent_frame_no, float de
         for (uint32_t i = 0; i < _instance_children.size(); i++) {
             _instance_children[i].last_event_frame = -1;
             _instance_children[i].last_is_synthetic = false;
+        }
+        for (uint32_t i = 0; i < _effect_slots.size(); i++) {
+            _effect_slots[i].last_event_frame = -1;
+            _effect_slots[i].last_is_synthetic = false;
         }
     }
 
@@ -656,21 +726,29 @@ void SsInternalPlayer::_drive_instance_slot(InstanceChildState& state,
         child_frame_no = ss_runtime_get_frame_no(child->runtime_ctx);
     }
 
-    _redraw_child_if_frame_changed(child, child_frame_no);
+    bool child_looped = false;
+    if (info.independent) {
+        if (delta_seconds > 0.0f && child_frame_no < child->previous_frame_no && !transitioned) {
+             child_looped = true;
+        }
+    }
+
+    state.last_independent = info.independent;
+    _redraw_child_if_frame_changed(child, child_frame_no, delta_seconds, child_looped);
 }
 
-void SsInternalPlayer::_redraw_child_if_frame_changed(SsInternalPlayer* child, float frame_no) {
+void SsInternalPlayer::_redraw_child_if_frame_changed(SsInternalPlayer* child, float frame_no, float delta_seconds, bool parent_looped) {
     const float draw_frame = child->_sub_frame_enabled ? frame_no : floorf(frame_no);
-    if (child->previous_frame_no == draw_frame) return;
+    if (child->previous_frame_no == draw_frame && !child->_needs_continuous_update()) return;
     child->previous_frame_no = draw_frame;
-    child->_drawAnimation(draw_frame);
+    child->_drawAnimation(draw_frame, delta_seconds, parent_looped);
 }
 
 void SsInternalPlayer::_seek_and_redraw(float frame_no, float delta_seconds, bool parent_looped) {
     const float draw_frame = _sub_frame_enabled ? frame_no : floorf(frame_no);
     previous_frame_no = draw_frame;
     _update_instance_children(draw_frame, delta_seconds, parent_looped);
-    _drawAnimation(draw_frame);
+    _drawAnimation(draw_frame, delta_seconds, parent_looped);
 }
 
 void SsInternalPlayer::_emit_instance_slot(const DrawFrame& /*f*/, RID ci, int p_idx, const float* slot_matrix) {
@@ -683,6 +761,252 @@ void SsInternalPlayer::_emit_instance_slot(const DrawFrame& /*f*/, RID ci, int p
     // guaranteed to be the same RID across frames.
     child->setParentCanvasItem(ci);
     child->setRootTransform(matrix_to_transform2d(slot_matrix));
+}
+
+void SsInternalPlayer::_emit_effect_slot(const DrawFrame& f, RID ci, int p_idx, const float* slot_matrix) {
+    if (p_idx < 0 || (uint32_t)p_idx >= _effect_slots.size()) return;
+    EffectSlotState& slot = _effect_slots[p_idx];
+    if (!slot.effect_ctx) {
+        f.rs->canvas_item_set_visible(ci, false);
+        return;
+    }
+
+    int event_frame = 0;
+    int start_time = 0;
+    float speed = 1.0f;
+    bool independent = false;
+    bool is_synthetic = true;
+
+    if (_currentAnimationData) {
+        bool found_explicit = false;
+        if (auto events = _currentAnimationData->events()) {
+            for (int ei = (int)events->size() - 1; ei >= 0; ei--) {
+                auto epf = events->Get(ei);
+                if (!epf) continue;
+                if ((float)epf->frame_index() > f.frame_no) continue;
+                if (!epf->effects()) continue;
+                auto found = epf->effects()->LookupByKey((uint16_t)p_idx);
+                if (found && found->value()) {
+                    event_frame = epf->frame_index();
+                    start_time = found->value()->start_time();
+                    speed = found->value()->speed();
+                    if (speed == 0.0f) speed = 1.0f;
+                    independent = found->value()->independent();
+                    is_synthetic = false;
+                    found_explicit = true;
+                    break;
+                }
+            }
+        }
+        if (!found_explicit) {
+            if (auto inits = _currentAnimationData->initial_events()) {
+                if ((uint32_t)p_idx < inits->size()) {
+                    auto entry = inits->Get(p_idx);
+                    if (entry && entry->effect()) {
+                        start_time = entry->effect()->start_time();
+                        speed = entry->effect()->speed();
+                        if (speed == 0.0f) speed = 1.0f;
+                        independent = entry->effect()->independent();
+                        event_frame = 0;
+                        is_synthetic = true;
+                    }
+                }
+            }
+        }
+    }
+
+    const bool transitioned =
+        slot.last_event_frame != event_frame ||
+        slot.last_is_synthetic != is_synthetic ||
+        slot.last_independent != independent;
+
+    if (transitioned) {
+        ss_effect_reset(slot.effect_ctx);
+        ss_effect_set_loop(slot.effect_ctx, independent);
+        slot.last_event_frame = event_frame;
+        slot.last_is_synthetic = is_synthetic;
+        slot.last_independent = independent;
+        slot.accumulated_time = (float)start_time;
+        slot.last_parent_frame = f.frame_no;
+    }
+
+    float relative_frame;
+    if (independent) {
+        if (!transitioned && f.delta_seconds > 0.0f) {
+            const float fps = _currentAnimationData->fps() > 0 ? (float)_currentAnimationData->fps() : 60.0f;
+            const float delta_frames = f.delta_seconds * fps;
+            slot.accumulated_time += delta_frames * speed;
+        }
+        relative_frame = slot.accumulated_time;
+    } else {
+        const float elapsed = f.frame_no - (float)event_frame;
+        if (elapsed < 0.0f) {
+            slot.last_parent_frame = f.frame_no;
+            f.rs->canvas_item_set_visible(ci, false);
+            return;
+        }
+        relative_frame = elapsed * speed + (float)start_time;
+    }
+    slot.last_parent_frame = f.frame_no;
+
+    if (relative_frame < 0.0f) {
+        f.rs->canvas_item_set_visible(ci, false);
+        return;
+    }
+
+    f.rs->canvas_item_set_visible(ci, true);
+
+    ss_effect_update(slot.effect_ctx, relative_frame);
+    unsigned char* state_buf = nullptr;
+    uintptr_t state_len = 0;
+    ss_effect_get_state(slot.effect_ctx, &state_buf, &state_len);
+    if (!state_buf || state_len == 0) {
+        f.rs->canvas_item_clear(ci);
+        return;
+    }
+    auto effect_state = ss::runtime::GetEffectState(state_buf);
+    if (!effect_state || !effect_state->emitters()) {
+        f.rs->canvas_item_clear(ci);
+        return;
+    }
+
+    f.rs->canvas_item_set_transform(ci, matrix_to_transform2d(slot_matrix));
+
+    const uint32_t emitter_count = effect_state->emitters()->size();
+    while ((uint32_t)slot.emitter_cis.size() < emitter_count) {
+        RID e_ci = f.rs->canvas_item_create();
+        f.rs->canvas_item_set_parent(e_ci, ci);
+        slot.emitter_cis.push_back(e_ci);
+    }
+    for (int e = (int)emitter_count; e < slot.emitter_cis.size(); e++) {
+        f.rs->canvas_item_clear(slot.emitter_cis[e]);
+        f.rs->canvas_item_set_visible(slot.emitter_cis[e], false);
+    }
+
+    constexpr float kDegToRad = 0.017453292519943295f;
+
+    for (uint32_t e_idx = 0; e_idx < emitter_count; e_idx++) {
+        auto emitter = effect_state->emitters()->Get(e_idx);
+        RID e_ci = slot.emitter_cis[e_idx];
+        f.rs->canvas_item_clear(e_ci);
+
+        if (!emitter || !emitter->particles() || emitter->particles()->size() == 0) {
+            f.rs->canvas_item_set_visible(e_ci, false);
+            continue;
+        }
+
+        const uint32_t cellmap_hash = emitter->cell_map_name_hash();
+        const uint32_t cell_hash = emitter->cell_name_hash();
+        if (cellmap_hash == 0) {
+            f.rs->canvas_item_set_visible(e_ci, false);
+            continue;
+        }
+
+        const ss::format::CellMap* cellmap = f.binary->cellmaps()
+            ? f.binary->cellmaps()->LookupByKey(cellmap_hash)
+            : nullptr;
+        if (!cellmap || !cellmap->cells()) {
+            f.rs->canvas_item_set_visible(e_ci, false);
+            continue;
+        }
+        const ss::format::Cell* cell = cellmap->cells()->LookupByKey(cell_hash);
+        if (!cell) {
+            f.rs->canvas_item_set_visible(e_ci, false);
+            continue;
+        }
+        if (!_textures.has(cellmap_hash)) {
+            f.rs->canvas_item_set_visible(e_ci, false);
+            continue;
+        }
+        Ref<Texture2D> tex = _textures[cellmap_hash];
+        if (tex.is_null()) {
+            f.rs->canvas_item_set_visible(e_ci, false);
+            continue;
+        }
+
+        f.rs->canvas_item_set_visible(e_ci, true);
+
+        ss::format::BlendType blend = ss::format::BlendType_Mix;
+        switch (emitter->blend_type()) {
+            case 0: blend = ss::format::BlendType_Mix; break;
+            case 1: blend = ss::format::BlendType_Add; break;
+            default: blend = ss::format::BlendType_Mix; break;
+        }
+        _apply_blend_material(f.rs, e_ci, blend);
+
+        auto rect = cell->rectangle();
+        const float src_x = rect ? rect->x1() : 0.0f;
+        const float src_y = rect ? rect->y1() : 0.0f;
+        const float sw = rect ? rect->x2() : 0.0f;
+        const float sh = rect ? rect->y2() : 0.0f;
+
+        auto pivot = cell->pivot();
+        const float pivot_x = pivot ? pivot->v1() : 0.0f;
+        const float pivot_y = pivot ? -pivot->v2() : 0.0f;
+        const float quad_origin_x = -sw * 0.5f + pivot_x * sw;
+        const float quad_origin_y = -sh * 0.5f + pivot_y * sh;
+
+        const Vector2 tex_size = tex->get_size();
+
+        const int particle_count = (int)emitter->particles()->size();
+        SsVec2Array p_verts;   p_verts.resize(particle_count * 4);
+        SsVec2Array p_uvs;     p_uvs.resize(particle_count * 4);
+        SsColorArray p_colors; p_colors.resize(particle_count * 4);
+        SsIntArray p_indices;  p_indices.resize(particle_count * 6);
+
+        const float u0 = src_x / tex_size.x;
+        const float v0 = src_y / tex_size.y;
+        const float u1 = (src_x + sw) / tex_size.x;
+        const float v1 = (src_y + sh) / tex_size.y;
+
+        for (int i = 0; i < particle_count; i++) {
+            auto particle = emitter->particles()->Get(i);
+            if (!particle) continue;
+
+            const float angle = -(particle->rotation() * kDegToRad + particle->direction());
+            const float c = cosf(angle);
+            const float s = sinf(angle);
+            const float sx = particle->scale_x();
+            const float sy = particle->scale_y();
+            const float px = particle->x();
+            const float py = -particle->y();
+
+            const float lx[4] = { quad_origin_x,        quad_origin_x + sw, quad_origin_x,        quad_origin_x + sw };
+            const float ly[4] = { quad_origin_y,        quad_origin_y,      quad_origin_y + sh,   quad_origin_y + sh };
+
+            for (int v = 0; v < 4; v++) {
+                const float xx = lx[v] * sx;
+                const float yy = ly[v] * sy;
+                const float wx = c * xx - s * yy + px;
+                const float wy = s * xx + c * yy + py;
+                p_verts.set(i * 4 + v, Vector2(wx, wy));
+            }
+
+            p_uvs.set(i * 4 + 0, Vector2(u0, v0));
+            p_uvs.set(i * 4 + 1, Vector2(u1, v0));
+            p_uvs.set(i * 4 + 2, Vector2(u0, v1));
+            p_uvs.set(i * 4 + 3, Vector2(u1, v1));
+
+            const Color col(
+                particle->r() / 255.0f,
+                particle->g() / 255.0f,
+                particle->b() / 255.0f,
+                particle->a() / 255.0f);
+            p_colors.set(i * 4 + 0, col);
+            p_colors.set(i * 4 + 1, col);
+            p_colors.set(i * 4 + 2, col);
+            p_colors.set(i * 4 + 3, col);
+
+            p_indices.set(i * 6 + 0, i * 4 + 0);
+            p_indices.set(i * 6 + 1, i * 4 + 1);
+            p_indices.set(i * 6 + 2, i * 4 + 2);
+            p_indices.set(i * 6 + 3, i * 4 + 2);
+            p_indices.set(i * 6 + 4, i * 4 + 1);
+            p_indices.set(i * 6 + 5, i * 4 + 3);
+        }
+
+        f.rs->canvas_item_add_triangle_array(e_ci, p_indices, p_verts, p_colors, p_uvs, {}, {}, tex->get_rid());
+    }
 }
 
 int SsInternalPlayer::_build_normal(const DrawFrame& f, int p_idx,
@@ -928,11 +1252,13 @@ void SsInternalPlayer::_fetchAnimation() {
         // leave the children with a dangling parent RID until their own
         // dtor runs.
         _clear_instance_children();
+        _clear_effect_slots();
         _clear_batch_canvas_items();
         return;
     }
 
     _clear_instance_children();
+    _clear_effect_slots();
     _clear_batch_canvas_items();
 
     if (runtime_res != nullptr) {
@@ -974,6 +1300,7 @@ void SsInternalPlayer::_fetchAnimation() {
     // detected; they recurse until stack overflow on load. Trust the
     // converter / authoring tool to keep references acyclic.
     _setup_instance_children();
+    _setup_effect_slots();
 
     _seek_and_redraw(ss_runtime_get_frame_no(runtime_ctx), 0.0f, false);
 }
