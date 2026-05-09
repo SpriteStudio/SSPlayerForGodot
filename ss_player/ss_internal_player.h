@@ -345,6 +345,15 @@ private:
     // Common: clamp `frame_no` to integer (unless sub-frame mode), redraw
     // only if changed since the last frame.
     static void _redraw_child_if_frame_changed(SsInternalPlayer* child, float frame_no);
+
+    // Apply the current `frame_no` to this player's draw state in one shot:
+    // resolve `draw_frame` per `_sub_frame_enabled`, store it as
+    // `previous_frame_no`, drive Instance children for that frame, and
+    // redraw. Used by `setFrame`, `setSubFrameEnabled`, `_fetchAnimation`
+    // (delta=0, parent_looped=false — non-tick callers don't step
+    // independent children) and the per-tick `update` path.
+    void _seek_and_redraw(float frame_no, float delta_seconds, bool parent_looped);
+
     void _load_external_ssabs();
     String _resolve_animation_by_hash(uint32_t name_hash, Ref<SSABResource>& out_source) const;
     void _apply_blend_material(RenderingServer* rs, RID ci, ss::format::BlendType blend_type);

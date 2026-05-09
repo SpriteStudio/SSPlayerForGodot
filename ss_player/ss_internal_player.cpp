@@ -163,11 +163,7 @@ float SsInternalPlayer::getSpeed() const {
 void SsInternalPlayer::setFrame(float p_frame) {
     if (runtime_ctx) {
         ss_runtime_set_frame_no(runtime_ctx, p_frame);
-        float frame_no = ss_runtime_get_frame_no(runtime_ctx);
-        float draw_frame = _sub_frame_enabled ? frame_no : floorf(frame_no);
-        previous_frame_no = draw_frame;
-        _update_instance_children(draw_frame, 0.0f, false);
-        _drawAnimation(draw_frame);
+        _seek_and_redraw(ss_runtime_get_frame_no(runtime_ctx), 0.0f, false);
     }
 }
 
@@ -230,11 +226,7 @@ bool SsInternalPlayer::isSkipFrames() const {
 void SsInternalPlayer::setSubFrameEnabled(bool p_enabled) {
     _sub_frame_enabled = p_enabled;
     if (runtime_ctx) {
-        float frame_no = ss_runtime_get_frame_no(runtime_ctx);
-        float draw_frame = _sub_frame_enabled ? frame_no : floorf(frame_no);
-        previous_frame_no = draw_frame;
-        _update_instance_children(draw_frame, 0.0f, false);
-        _drawAnimation(draw_frame);
+        _seek_and_redraw(ss_runtime_get_frame_no(runtime_ctx), 0.0f, false);
     }
 }
 
@@ -369,9 +361,7 @@ void SsInternalPlayer::update(float delta_seconds) {
         }
     }
 
-    previous_frame_no = draw_frame;
-    _update_instance_children(draw_frame, delta_seconds, was_looped);
-    _drawAnimation(draw_frame);
+    _seek_and_redraw(frame_no, delta_seconds, was_looped);
 }
 
 void SsInternalPlayer::_drawAnimation(float frame_no) {
@@ -794,6 +784,13 @@ void SsInternalPlayer::_redraw_child_if_frame_changed(SsInternalPlayer* child, f
     child->_drawAnimation(draw_frame);
 }
 
+void SsInternalPlayer::_seek_and_redraw(float frame_no, float delta_seconds, bool parent_looped) {
+    const float draw_frame = _sub_frame_enabled ? frame_no : floorf(frame_no);
+    previous_frame_no = draw_frame;
+    _update_instance_children(draw_frame, delta_seconds, parent_looped);
+    _drawAnimation(draw_frame);
+}
+
 void SsInternalPlayer::_emit_instance_slot(const DrawFrame& /*f*/, RID ci, int p_idx, const float* slot_matrix) {
     if (p_idx < 0 || (uint32_t)p_idx >= _instance_children.size()) return;
     SsInternalPlayer* child = _instance_children[p_idx].player;
@@ -1096,9 +1093,5 @@ void SsInternalPlayer::_fetchAnimation() {
     // converter / authoring tool to keep references acyclic.
     _setup_instance_children();
 
-    float frame_no = ss_runtime_get_frame_no(runtime_ctx);
-    float draw_frame = _sub_frame_enabled ? frame_no : floorf(frame_no);
-    previous_frame_no = draw_frame;
-    _update_instance_children(draw_frame, 0.0f, false);
-    _drawAnimation(draw_frame);
+    _seek_and_redraw(ss_runtime_get_frame_no(runtime_ctx), 0.0f, false);
 }
