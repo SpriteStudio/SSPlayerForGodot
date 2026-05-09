@@ -134,14 +134,14 @@ public:
     bool isSubFrameEnabled() const;
 
     // Marks this player as parent-driven — its own per-tick `update` is a
-    // no-op (the parent's `_advance_instance_children` seeks the child's
-    // frame deterministically each tick). Also disables recursive instance
-    // setup so a misauthored cycle in the SSAB doesn't self-reference.
-    // Defaults to false.
-    void setInstanceChildMode(bool p_enabled);
-    bool isInstanceChildMode() const { return _instance_child_mode; }
+    // no-op because the parent's `_update_instance_children` seeks the
+    // child's frame each tick (synced) or steps it via `ss_runtime_update`
+    // (independent). Defaults to false; `_setup_instance_children` flips
+    // it to true on every Instance child it spawns.
+    void setParentDriven(bool p_enabled);
+    bool isParentDriven() const { return _parent_driven; }
 
-    // Per-tick advance (in seconds; the host typically passes
+    // Per-tick update (in seconds; the host typically passes
     // `process_delta_time`). No-op when paused or in instance-child mode.
     void update(float delta_seconds);
 
@@ -186,7 +186,7 @@ private:
     float previous_frame_no = -1.0f;
     float _speed_rate = 1.0f;
     bool _sub_frame_enabled = false;
-    bool _instance_child_mode = false;
+    bool _parent_driven = false;
 
     SsPlayerEventSink* _event_sink = nullptr;
 
@@ -209,6 +209,18 @@ private:
         bool default_applied = false;
     };
     LocalVector<InstanceChildState> _instance_children;
+
+    // Per-tick scratch: for each Instance slot, the active EventInstance at
+    // the parent's current frame. Built once at the top of
+    // `_update_instance_children` by a single forward scan over the events
+    // list (later events override earlier — matches "latest event ≤
+    // parent_frame" semantics). Reused across calls to avoid per-tick
+    // allocation; sized to `_instance_children.size()` on each rebuild.
+    struct ActiveInstanceEvent {
+        const ss::format::PartAttributeInstance* attr = nullptr;
+        int event_frame = 0;
+    };
+    LocalVector<ActiveInstanceEvent> _active_instance_events;
     // External SSAB resources auto-loaded from the parent's directory based
     // on `external_instances`. Cleared and rebuilt on every setSSABResource.
     Vector<Ref<SSABResource>> _external_ssabs;
@@ -250,8 +262,8 @@ private:
     // Instance slot emit: re-parent the child's _root_ci under this slot's
     // batch CI and apply the slot's world matrix as the child's root
     // transform. The child's own draw + simulation already happened earlier
-    // in `_advance_instance_children` (sim phase), so this is positioning
-    // only — no event scanning, no playback config, no frame advance.
+    // in `_update_instance_children` (sim phase), so this is positioning
+    // only — no event scanning, no playback config, no frame stepping.
     void _emit_instance_slot(const DrawFrame& f, RID ci, int p_idx, const float* slot_matrix);
 
     int _build_normal(const DrawFrame& f, int p_idx,
@@ -280,16 +292,14 @@ private:
     // Pool helpers
     RID _ensure_batch_ci(int batch_idx);
 
-    void _setup_instance_players();
-    void _clear_instance_players();
+    void _setup_instance_children();
+    void _clear_instance_children();
     // Per-tick instance child driver. Runs in the sim phase (called from
-    // `update`), before `_drawAnimation`. For each Instance part it scans the
-    // current animation's events for the most recent EventInstance whose
-    // frame_index <= parent_frame_no, detects transitions against the
-    // tracked `last_active_attr`, applies playback config + `play()` only on
-    // the transition edge, then advances the child to its target frame and
-    // triggers the child's own `_drawAnimation`. `_emit_instance_slot` later
-    // only positions the already-drawn child under the slot's batch CI.
+    // `update`), before `_drawAnimation`. The body delegates each slot to
+    // either `_drive_active_instance_slot` (an EventInstance is active) or
+    // `_drive_default_instance_slot` (SS6 implicit default playback for
+    // slots without explicit EventInstance). `_emit_instance_slot` later
+    // positions the already-drawn child under the slot's batch CI.
     //
     // `delta_seconds` is the wall-clock tick this update represents and is
     // forwarded to children whose EventInstance has `independent = true`
@@ -304,7 +314,37 @@ private:
     // pointer + same event_frame match a child's stored last_active state, so
     // without this flag the loop edge would be invisible and finite-loop
     // independent children would stay frozen at their previous end_frame.
-    void _advance_instance_children(float parent_frame_no, float delta_seconds, bool parent_looped);
+    void _update_instance_children(float parent_frame_no, float delta_seconds, bool parent_looped);
+
+    // Single forward pass over the current animation's events list,
+    // populating `_active_instance_events` with the most recent
+    // EventInstance attribute per Instance slot whose frame_index is <=
+    // `parent_frame_int`. Sized to `_instance_children.size()`; entries
+    // for slots without an event keep `attr == nullptr`. Events are
+    // assumed sorted by `frame_index` (current ssconverter output).
+    void _build_active_instance_event_map(int parent_frame_int);
+
+    // Slot driver: SS6 implicit default playback (synced from frame 0,
+    // loops=1, full range, speed=1) for slots without an active
+    // EventInstance. Applies config once per "default era" via
+    // `state.default_applied`.
+    void _drive_default_instance_slot(InstanceChildState& state,
+                                      SsInternalPlayer* child,
+                                      float parent_frame_no);
+
+    // Slot driver: active-EventInstance path. Detects the transition edge
+    // (new attr or new event_frame), applies playback config + `play()`
+    // only on transition, then steps the child synced or independent.
+    void _drive_active_instance_slot(InstanceChildState& state,
+                                     SsInternalPlayer* child,
+                                     const ss::format::PartAttributeInstance* active_attr,
+                                     int active_event_frame,
+                                     float parent_frame_no,
+                                     float delta_seconds);
+
+    // Common: clamp `frame_no` to integer (unless sub-frame mode), redraw
+    // only if changed since the last frame.
+    static void _redraw_child_if_frame_changed(SsInternalPlayer* child, float frame_no);
     void _load_external_ssabs();
     String _resolve_animation_by_hash(uint32_t name_hash, Ref<SSABResource>& out_source) const;
     void _apply_blend_material(RenderingServer* rs, RID ci, ss::format::BlendType blend_type);
