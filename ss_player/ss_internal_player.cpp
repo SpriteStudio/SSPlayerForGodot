@@ -328,30 +328,13 @@ void SsInternalPlayer::update(float delta_seconds) {
                     if (!user || !user->value()) continue;
                     auto val = user->value();
 
-                    int flag = 0;
-                    int int_val = 0;
-                    Rect2 rect_val;
-                    Vector2 point_val;
-                    String str_val;
+                    Dictionary payload;
+                    if (auto i = val->integer()) payload["integer"] = i->value();
+                    if (auto r = val->rect())    payload["rect"]    = Rect2(r->x1(), r->y1(), r->x2() - r->x1(), r->y2() - r->y1());
+                    if (auto p = val->point())   payload["point"]   = Vector2(p->v1(), p->v2());
+                    if (auto s = val->str())     payload["string"]  = String::utf8(s->c_str());
 
-                    if (val->integer()) {
-                        flag |= 1;
-                        int_val = val->integer()->value();
-                    }
-                    if (val->rect()) {
-                        flag |= 2;
-                        rect_val = Rect2(val->rect()->x1(), val->rect()->y1(), val->rect()->x2() - val->rect()->x1(), val->rect()->y2() - val->rect()->y1());
-                    }
-                    if (val->point()) {
-                        flag |= 4;
-                        point_val = Vector2(val->point()->v1(), val->point()->v2());
-                    }
-                    if (val->str()) {
-                        flag |= 8;
-                        str_val = String::utf8(val->str()->c_str());
-                    }
-
-                    if (_event_sink) _event_sink->onUserData(flag, int_val, rect_val, point_val, str_val);
+                    if (_event_sink) _event_sink->onUserData(payload);
                 }
             }
 

@@ -13,8 +13,8 @@ public:
     void onAnimationLooped(const String& anim_name) override {
         _owner->emit_signal("animation_looped", anim_name);
     }
-    void onUserData(int flag, int int_value, const Rect2& rect_value, const Vector2& point_value, const String& string_value) override {
-        _owner->emit_signal("user_data", flag, int_value, rect_value, point_value, string_value);
+    void onUserData(const Dictionary& payload) override {
+        _owner->emit_signal("user_data", payload);
     }
     void onSignal(const String& command, const Dictionary& value) override {
         _owner->emit_signal("signal", command, value);
@@ -155,11 +155,7 @@ void SpriteStudioPlayer2D::_bind_methods() {
     ADD_SIGNAL(
         MethodInfo(
             "user_data",
-            PropertyInfo(Variant::INT, "flag"),
-            PropertyInfo(Variant::INT, "int_value"),
-            PropertyInfo(Variant::RECT2, "rect_value"),
-            PropertyInfo(Variant::VECTOR2, "point_value"),
-            PropertyInfo(Variant::STRING, "string_value")
+            PropertyInfo(Variant::DICTIONARY, "payload")
         )
     );
     ADD_SIGNAL(
