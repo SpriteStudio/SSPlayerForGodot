@@ -776,7 +776,6 @@ void SsInternalPlayer::_emit_effect_slot(const DrawFrame& f, RID ci, int p_idx, 
     float speed = 1.0f;
     bool independent = false;
     bool is_synthetic = true;
-    bool has_attr = false;
 
     if (_currentAnimationData) {
         bool found_explicit = false;
@@ -795,7 +794,6 @@ void SsInternalPlayer::_emit_effect_slot(const DrawFrame& f, RID ci, int p_idx, 
                     independent = found->value()->independent();
                     is_synthetic = false;
                     found_explicit = true;
-                    has_attr = true;
                     break;
                 }
             }
@@ -811,17 +809,10 @@ void SsInternalPlayer::_emit_effect_slot(const DrawFrame& f, RID ci, int p_idx, 
                         independent = entry->effect()->independent();
                         event_frame = 0;
                         is_synthetic = true;
-                        has_attr = true;
                     }
                 }
             }
         }
-    }
-
-    if (!has_attr) {
-        slot.last_independent = false;
-        f.rs->canvas_item_set_visible(ci, false);
-        return;
     }
 
     const bool transitioned =
