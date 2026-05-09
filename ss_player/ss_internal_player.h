@@ -232,6 +232,8 @@ private:
         const ss::runtime::FrameData* frameData;
         const ss::format::SsAnimeBinary* binary;
         float frame_no;
+        float delta_seconds = 0.0f;
+        bool parent_looped = false;
 
         const float* world_matrices;         uintptr_t world_matrices_len;
         const float* local_uvs;              uintptr_t local_uvs_len;
@@ -252,7 +254,7 @@ private:
     void _reconfigure();
     void _loadTextures(const Ref<SSABResource>& res);
     void _fetchAnimation();
-    void _drawAnimation(float frame_no);
+    void _drawAnimation(float frame_no, float delta_seconds = 0.0f, bool parent_looped = false);
     // Per-part-type emit. Normal is consumed by `_emit_normal_batch` directly
     // through the geometry helper, so no `_draw_part_normal` exists.
     void _draw_part_shape(const DrawFrame& f, RID ci, int p_idx, const ss::runtime::PartState* part, const ss::format::PartData* partBinary, const float* draw_m);
@@ -329,7 +331,7 @@ private:
 
     // Common: clamp `frame_no` to integer (unless sub-frame mode), redraw
     // only if changed since the last frame.
-    static void _redraw_child_if_frame_changed(SsInternalPlayer* child, float frame_no);
+    static void _redraw_child_if_frame_changed(SsInternalPlayer* child, float frame_no, float delta_seconds, bool parent_looped);
 
     // Apply the current `frame_no` to this player's draw state in one shot:
     // resolve `draw_frame` per `_sub_frame_enabled`, store it as

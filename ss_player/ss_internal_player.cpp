@@ -316,7 +316,7 @@ void SsInternalPlayer::update(float delta_seconds) {
     }
 
     float draw_frame = _sub_frame_enabled ? frame_no : floorf(frame_no);
-    if (previous_frame_no == draw_frame) return;
+    if (previous_frame_no == draw_frame && _effect_slots.is_empty()) return;
 
     if (_currentAnimationData && _currentAnimationData->events() != nullptr) {
         int event_count = ss_runtime_get_passed_event_count(runtime_ctx);
@@ -349,7 +349,7 @@ void SsInternalPlayer::update(float delta_seconds) {
     _seek_and_redraw(frame_no, delta_seconds, was_looped);
 }
 
-void SsInternalPlayer::_drawAnimation(float frame_no) {
+void SsInternalPlayer::_drawAnimation(float frame_no, float delta_seconds, bool parent_looped) {
     unsigned char* data = nullptr;
     uintptr_t len = 0;
     ss_runtime_get_frame_data(runtime_ctx, frame_no, &data, &len);
@@ -360,6 +360,8 @@ void SsInternalPlayer::_drawAnimation(float frame_no) {
     f.frameData = ss::runtime::GetFrameData(data);
     f.binary = _ssabRes->get_ss_anime_binary();
     f.frame_no = frame_no;
+    f.delta_seconds = delta_seconds;
+    f.parent_looped = parent_looped;
     ss_runtime_get_world_matrices(runtime_ctx, &f.world_matrices, &f.world_matrices_len);
     ss_runtime_get_local_uvs(runtime_ctx, &f.local_uvs, &f.local_uvs_len);
     ss_runtime_get_cell_meta(runtime_ctx, &f.cell_meta, &f.cell_meta_len);
@@ -639,6 +641,10 @@ void SsInternalPlayer::_update_instance_children(float parent_frame_no, float de
             _instance_children[i].last_event_frame = -1;
             _instance_children[i].last_is_synthetic = false;
         }
+        for (uint32_t i = 0; i < _effect_slots.size(); i++) {
+            _effect_slots[i].last_event_frame = -1;
+            _effect_slots[i].last_is_synthetic = false;
+        }
     }
 
     for (uint32_t p_idx = 0; p_idx < _instance_children.size(); p_idx++) {
@@ -710,21 +716,28 @@ void SsInternalPlayer::_drive_instance_slot(InstanceChildState& state,
         child_frame_no = ss_runtime_get_frame_no(child->runtime_ctx);
     }
 
-    _redraw_child_if_frame_changed(child, child_frame_no);
+    bool child_looped = false;
+    if (info.independent) {
+        if (delta_seconds > 0.0f && child_frame_no < child->previous_frame_no && !transitioned) {
+             child_looped = true;
+        }
+    }
+
+    _redraw_child_if_frame_changed(child, child_frame_no, delta_seconds, child_looped);
 }
 
-void SsInternalPlayer::_redraw_child_if_frame_changed(SsInternalPlayer* child, float frame_no) {
+void SsInternalPlayer::_redraw_child_if_frame_changed(SsInternalPlayer* child, float frame_no, float delta_seconds, bool parent_looped) {
     const float draw_frame = child->_sub_frame_enabled ? frame_no : floorf(frame_no);
-    if (child->previous_frame_no == draw_frame) return;
+    if (child->previous_frame_no == draw_frame && child->_effect_slots.is_empty()) return;
     child->previous_frame_no = draw_frame;
-    child->_drawAnimation(draw_frame);
+    child->_drawAnimation(draw_frame, delta_seconds, parent_looped);
 }
 
 void SsInternalPlayer::_seek_and_redraw(float frame_no, float delta_seconds, bool parent_looped) {
     const float draw_frame = _sub_frame_enabled ? frame_no : floorf(frame_no);
     previous_frame_no = draw_frame;
     _update_instance_children(draw_frame, delta_seconds, parent_looped);
-    _drawAnimation(draw_frame);
+    _drawAnimation(draw_frame, delta_seconds, parent_looped);
 }
 
 void SsInternalPlayer::_emit_instance_slot(const DrawFrame& /*f*/, RID ci, int p_idx, const float* slot_matrix) {
@@ -808,9 +821,10 @@ void SsInternalPlayer::_emit_effect_slot(const DrawFrame& f, RID ci, int p_idx, 
 
     float relative_frame;
     if (independent) {
-        const float delta = f.frame_no - slot.last_parent_frame;
-        if (delta > 0.0f) {
-            slot.accumulated_time += delta * speed;
+        if (!transitioned && f.delta_seconds > 0.0f) {
+            const float fps = _currentAnimationData->fps() > 0 ? (float)_currentAnimationData->fps() : 60.0f;
+            const float delta_frames = f.delta_seconds * fps;
+            slot.accumulated_time += delta_frames * speed;
         }
         relative_frame = slot.accumulated_time;
     } else {
