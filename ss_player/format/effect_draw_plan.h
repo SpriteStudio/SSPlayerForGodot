@@ -96,16 +96,16 @@ struct EffectDrawPlan FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyOffset(verifier, VT_COMMANDS) &&
+           VerifyOffsetRequired(verifier, VT_COMMANDS) &&
            verifier.VerifyVector(commands()) &&
            VerifyField<uint8_t>(verifier, VT_VERT_STRIDE, 1) &&
-           VerifyOffset(verifier, VT_VERTS) &&
+           VerifyOffsetRequired(verifier, VT_VERTS) &&
            verifier.VerifyVector(verts()) &&
-           VerifyOffset(verifier, VT_UVS) &&
+           VerifyOffsetRequired(verifier, VT_UVS) &&
            verifier.VerifyVector(uvs()) &&
-           VerifyOffset(verifier, VT_COLORS) &&
+           VerifyOffsetRequired(verifier, VT_COLORS) &&
            verifier.VerifyVector(colors()) &&
-           VerifyOffset(verifier, VT_INDICES) &&
+           VerifyOffsetRequired(verifier, VT_INDICES) &&
            verifier.VerifyVector(indices()) &&
            verifier.EndTable();
   }
@@ -140,6 +140,11 @@ struct EffectDrawPlanBuilder {
   ::flatbuffers::Offset<EffectDrawPlan> Finish() {
     const auto end = fbb_.EndTable(start_);
     auto o = ::flatbuffers::Offset<EffectDrawPlan>(end);
+    fbb_.Required(o, EffectDrawPlan::VT_COMMANDS);
+    fbb_.Required(o, EffectDrawPlan::VT_VERTS);
+    fbb_.Required(o, EffectDrawPlan::VT_UVS);
+    fbb_.Required(o, EffectDrawPlan::VT_COLORS);
+    fbb_.Required(o, EffectDrawPlan::VT_INDICES);
     return o;
   }
 };

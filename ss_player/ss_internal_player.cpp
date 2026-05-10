@@ -737,7 +737,7 @@ void SsInternalPlayer::_emit_effect_slot(const DrawFrame& f, RID ci, int p_idx, 
     f.rs->canvas_item_set_visible(ci, true);
 
     const auto* plan = ss::runtime::GetEffectDrawPlan(step.draw_plan_buf);
-    if (!plan || !plan->commands()) {
+    if (!plan) {
         f.rs->canvas_item_clear(ci);
         return;
     }
@@ -761,10 +761,10 @@ void SsInternalPlayer::_emit_effect_slot(const DrawFrame& f, RID ci, int p_idx, 
     static_assert(sizeof(Vector2) == 2 * sizeof(float),
                   "EffectDrawPlan vert_stride=2 requires Godot built with real_t == float");
 
-    const float* V = plan->verts() ? plan->verts()->data() : nullptr;
-    const float* U = plan->uvs() ? plan->uvs()->data() : nullptr;
-    const float* C = plan->colors() ? plan->colors()->data() : nullptr;
-    const int32_t* I = plan->indices() ? plan->indices()->data() : nullptr;
+    const float* V = plan->verts()->data();
+    const float* U = plan->uvs()->data();
+    const float* C = plan->colors()->data();
+    const int32_t* I = plan->indices()->data();
 
     for (uint32_t e_idx = 0; e_idx < cmd_count; e_idx++) {
         const auto* cmd = plan->commands()->Get(e_idx);
@@ -798,10 +798,10 @@ void SsInternalPlayer::_emit_effect_slot(const DrawFrame& f, RID ci, int p_idx, 
         SsColorArray p_colors; p_colors.resize(qc * 4);
         SsIntArray p_indices;  p_indices.resize(qc * 6);
 
-        if (V) memcpy(p_verts.ptrw(),  V + off * 8,  qc * 8  * sizeof(float));
-        if (U) memcpy(p_uvs.ptrw(),    U + off * 8,  qc * 8  * sizeof(float));
-        if (C) memcpy(p_colors.ptrw(), C + off * 16, qc * 16 * sizeof(float));
-        if (I) memcpy(p_indices.ptrw(), I + off * 6, qc * 6  * sizeof(int32_t));
+        memcpy(p_verts.ptrw(),   V + off * 8,  qc * 8  * sizeof(float));
+        memcpy(p_uvs.ptrw(),     U + off * 8,  qc * 8  * sizeof(float));
+        memcpy(p_colors.ptrw(),  C + off * 16, qc * 16 * sizeof(float));
+        memcpy(p_indices.ptrw(), I + off * 6,  qc * 6  * sizeof(int32_t));
 
         f.rs->canvas_item_add_triangle_array(e_ci, p_indices, p_verts, p_colors, p_uvs, {}, {}, tex->get_rid());
     }
