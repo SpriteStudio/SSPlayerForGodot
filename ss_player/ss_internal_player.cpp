@@ -383,7 +383,6 @@ void SsInternalPlayer::_drawAnimation(float frame_no, float delta_seconds, bool 
     auto parts = f.frameData->parts();
     auto draw_order = f.frameData->draw_order();
     auto draw_batches = f.frameData->draw_batches();
-    if (!parts || !draw_order || !draw_batches) return;
 
     {
         const int total = f.binary->parts() ? (int)f.binary->parts()->size() : 0;
