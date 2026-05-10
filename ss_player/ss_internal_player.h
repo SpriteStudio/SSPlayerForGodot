@@ -200,11 +200,10 @@ private:
     // detect transitions and re-apply playback config only on the edge.
     struct InstanceChildState {
         SsInternalPlayer* player = nullptr;
-        // -1 = uninitialized; otherwise the last applied event_frame. Reset
-        // to -1 on `parent_looped` so the same event re-fires on next loop.
-        int last_event_frame = -1;
-        bool last_is_synthetic = false;
-        bool last_independent = false;
+        // Owns transition detection, child-ctx playback config, and frame
+        // stepping — all delegated to ssruntime InstanceSlot via
+        // `ss_instance_slot_step`.
+        void* instance_slot = nullptr;
     };
     LocalVector<InstanceChildState> _instance_children;
 
@@ -354,7 +353,8 @@ private:
                               SsInternalPlayer* child,
                               const ss_event_instance_info& info,
                               float parent_frame_no,
-                              float delta_seconds);
+                              float delta_seconds,
+                              bool parent_looped);
 
     // Common: clamp `frame_no` to integer (unless sub-frame mode), redraw
     // only if changed since the last frame.

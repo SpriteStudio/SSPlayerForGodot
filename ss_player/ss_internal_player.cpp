@@ -302,7 +302,7 @@ bool SsInternalPlayer::_needs_continuous_update() const {
         if (slot.effect_slot && ss_effect_slot_is_independent(slot.effect_slot)) return true;
     }
     for (const auto& st : _instance_children) {
-        if (st.player && st.last_independent) return true;
+        if (st.player && st.instance_slot && ss_instance_slot_is_independent(st.instance_slot)) return true;
     }
     return false;
 }
@@ -533,9 +533,14 @@ void SsInternalPlayer::_load_external_ssabs() {
 
 void SsInternalPlayer::_clear_instance_children() {
     for (uint32_t i = 0; i < _instance_children.size(); i++) {
-        SsInternalPlayer* child = _instance_children[i].player;
-        if (child) {
-            memdelete(child);
+        InstanceChildState& st = _instance_children[i];
+        if (st.player) {
+            memdelete(st.player);
+            st.player = nullptr;
+        }
+        if (st.instance_slot) {
+            ss_instance_slot_destroy(st.instance_slot);
+            st.instance_slot = nullptr;
         }
     }
     _instance_children.clear();
@@ -582,6 +587,7 @@ void SsInternalPlayer::_setup_instance_children() {
         // setup-time parenting wouldn't survive batch-list shifts.
         InstanceChildState st;
         st.player = child;
+        st.instance_slot = ss_instance_slot_create();
         _instance_children[i] = st;
     }
 }
@@ -697,31 +703,13 @@ void SsInternalPlayer::_update_instance_children(float parent_frame_no, float de
         return;
     }
 
-    // Re-arm transition detection on parent loop. The same EventInstance
-    // identity (event_frame + is_synthetic) re-fires on the next
-    // playthrough; without this reset the equality check inside
-    // `_drive_instance_slot` would treat the loop edge as a no-op and
-    // finite-loop independent children would stay frozen at their
-    // previous end_frame.
-    //
-    // Effect slots receive the same re-arm via the `parent_looped` flag
-    // passed into `ss_effect_slot_step` per frame, so no separate reset
-    // here for `_effect_slots`.
-    if (parent_looped) {
-        for (uint32_t i = 0; i < _instance_children.size(); i++) {
-            _instance_children[i].last_event_frame = -1;
-            _instance_children[i].last_is_synthetic = false;
-        }
-    }
-
     for (uint32_t p_idx = 0; p_idx < _instance_children.size(); p_idx++) {
         InstanceChildState& state = _instance_children[p_idx];
         SsInternalPlayer* child = state.player;
-        if (!child) continue;
+        if (!child || !state.instance_slot) continue;
 
-        const ss_event_instance_info info =
-            ss_runtime_get_active_event_instance(runtime_ctx, p_idx);
-        _drive_instance_slot(state, child, info, parent_frame_no, delta_seconds);
+        const ss_event_instance_info info = ss_runtime_get_active_event_instance(runtime_ctx, p_idx);
+        _drive_instance_slot(state, child, info, parent_frame_no, delta_seconds, parent_looped);
     }
 }
 
@@ -729,69 +717,30 @@ void SsInternalPlayer::_drive_instance_slot(InstanceChildState& state,
                                             SsInternalPlayer* child,
                                             const ss_event_instance_info& info,
                                             float parent_frame_no,
-                                            float delta_seconds) {
-    // Transition edge: a different EventInstance (or synthetic-default
-    // toggle) is now active. `last_event_frame == -1` covers fresh state
-    // and post-`parent_looped` re-arm.
-    const bool transitioned =
-        state.last_event_frame == -1 ||
-        state.last_event_frame != info.event_frame ||
-        state.last_is_synthetic != info.is_synthetic_default;
+                                            float delta_seconds,
+                                            bool parent_looped) {
+    // All per-slot lifecycle (transition detection, label resolution, child
+    // playback config, frame stepping, child-loop detection) runs inside
+    // ss_instance_slot_step against the *child* runtime context. The host
+    // is left with the side effects ssruntime cannot perform: firing the
+    // child Player's event sink on transition (via play()), and the redraw.
+    const ss_instance_step_result r = ss_instance_slot_step(
+        state.instance_slot, info, child->runtime_ctx,
+        child->previous_frame_no, parent_frame_no, delta_seconds, parent_looped);
 
-    if (transitioned) {
-        // Resolve labels against the *child's* runtime context — the labels
-        // table belongs to the child's currently bound animation, not the
-        // parent's. This keeps dynamic ssab swap of the child correct.
-        const int default_end = child->getTotalFrames() > 0 ? child->getTotalFrames() - 1 : 0;
-        const int start_label_time = ss_runtime_resolve_label_time(
-            child->runtime_ctx, info.start_label_hash, 0);
-        const int end_label_time = ss_runtime_resolve_label_time(
-            child->runtime_ctx, info.end_label_hash, default_end);
-        int start_frame = start_label_time + info.start_offset;
-        int end_frame = end_label_time + info.end_offset;
-        if (end_frame < start_frame) end_frame = start_frame;
-
-        child->setAnimationSection(start_frame, end_frame);
-        child->setLoop(info.loop_num);
-        child->setPlaybackDirection(info.reverse ? 1 : 0, info.pingpong ? 1 : 0);
+    if (r.transitioned) {
+        // Controller is already configured + playing inside step(); play()
+        // here is for its host-side side effect (onAnimationStarted callback).
         child->play();
-        state.last_event_frame = info.event_frame;
-        state.last_is_synthetic = info.is_synthetic_default;
     }
 
+    if (!r.visible) {
+        child->setRootVisible(false);
+        return;
+    }
     child->setRootVisible(true);
 
-    // Branch on `independent`. Synced children are seeked deterministically
-    // from the parent's frame each tick — same `parent_frame_no` always
-    // yields the same `child_frame`. Independent children own their own
-    // controller time: forward `delta_seconds` to `ss_runtime_update` on
-    // tick callers, except on the transition tick itself where `play()` has
-    // already snapped the child to `start_frame` — stepping on the same tick
-    // would push it past start by one delta and visibly skip the first
-    // frame of the child's animation.
-    float child_frame_no;
-    if (info.independent) {
-        if (delta_seconds > 0.0f && !transitioned) {
-            const float d_ms = delta_seconds * 1000.0f * info.speed;
-            child_frame_no = ss_runtime_update(child->runtime_ctx, d_ms);
-        } else {
-            child_frame_no = ss_runtime_get_frame_no(child->runtime_ctx);
-        }
-    } else {
-        const float diff = (parent_frame_no - (float)info.event_frame) * info.speed;
-        ss_runtime_set_frame_relative(child->runtime_ctx, diff);
-        child_frame_no = ss_runtime_get_frame_no(child->runtime_ctx);
-    }
-
-    bool child_looped = false;
-    if (info.independent) {
-        if (delta_seconds > 0.0f && child_frame_no < child->previous_frame_no && !transitioned) {
-             child_looped = true;
-        }
-    }
-
-    state.last_independent = info.independent;
-    _redraw_child_if_frame_changed(child, child_frame_no, delta_seconds, child_looped);
+    _redraw_child_if_frame_changed(child, r.child_frame_no, delta_seconds, r.child_looped);
 }
 
 void SsInternalPlayer::_redraw_child_if_frame_changed(SsInternalPlayer* child, float frame_no, float delta_seconds, bool parent_looped) {
