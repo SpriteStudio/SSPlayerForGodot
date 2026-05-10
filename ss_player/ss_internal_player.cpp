@@ -598,8 +598,65 @@ void SsInternalPlayer::_clear_effect_slots() {
             rs->free_rid(slot.emitter_cis[e]);
         }
         slot.emitter_cis.clear();
+        slot.emitter_cache.clear();
     }
     _effect_slots.clear();
+}
+
+int SsInternalPlayer::_ensure_emitter_cache(EffectSlotState& slot, const DrawFrame& f,
+                                            uint32_t cellmap_hash, uint32_t cell_hash, int blend_in) {
+    for (int i = 0; i < slot.emitter_cache.size(); i++) {
+        const EmitterResourceCache& c = slot.emitter_cache[i];
+        if (c.cellmap_hash == cellmap_hash && c.cell_hash == cell_hash && c.blend_type_in == blend_in) {
+            return i;
+        }
+    }
+
+    EmitterResourceCache c;
+    c.cellmap_hash = cellmap_hash;
+    c.cell_hash = cell_hash;
+    c.blend_type_in = blend_in;
+
+    do {
+        if (cellmap_hash == 0) break;
+        const ss::format::CellMap* cellmap = f.binary->cellmaps()
+            ? f.binary->cellmaps()->LookupByKey(cellmap_hash) : nullptr;
+        if (!cellmap || !cellmap->cells()) break;
+        c.cell = cellmap->cells()->LookupByKey(cell_hash);
+        if (!c.cell) break;
+        if (!_textures.has(cellmap_hash)) break;
+        c.tex = _textures[cellmap_hash];
+        if (c.tex.is_null()) break;
+
+        switch (blend_in) {
+            case 1:  c.blend = ss::format::BlendType_Add; break;
+            default: c.blend = ss::format::BlendType_Mix; break;
+        }
+
+        auto rect = c.cell->rectangle();
+        c.src_x = rect ? rect->x1() : 0.0f;
+        c.src_y = rect ? rect->y1() : 0.0f;
+        c.sw    = rect ? rect->x2() : 0.0f;
+        c.sh    = rect ? rect->y2() : 0.0f;
+
+        auto pivot = c.cell->pivot();
+        const float pivot_x = pivot ? pivot->v1() : 0.0f;
+        const float pivot_y = pivot ? -pivot->v2() : 0.0f;
+        c.quad_origin_x = -c.sw * 0.5f + pivot_x * c.sw;
+        c.quad_origin_y = -c.sh * 0.5f + pivot_y * c.sh;
+
+        c.tex_size = c.tex->get_size();
+        c.u0 = c.src_x / c.tex_size.x;
+        c.v0 = c.src_y / c.tex_size.y;
+        c.u1 = (c.src_x + c.sw) / c.tex_size.x;
+        c.v1 = (c.src_y + c.sh) / c.tex_size.y;
+
+        c.resolved_ok = true;
+    } while (false);
+
+    int idx = slot.emitter_cache.size();
+    slot.emitter_cache.push_back(c);
+    return idx;
 }
 
 void SsInternalPlayer::_setup_effect_slots() {
@@ -771,49 +828,15 @@ void SsInternalPlayer::_emit_effect_slot(const DrawFrame& f, RID ci, int p_idx, 
         return;
     }
 
-    int event_frame = 0;
-    int start_time = 0;
-    float speed = 1.0f;
-    bool independent = false;
-    bool is_synthetic = true;
-
-    if (_currentAnimationData) {
-        bool found_explicit = false;
-        if (auto events = _currentAnimationData->events()) {
-            for (int ei = (int)events->size() - 1; ei >= 0; ei--) {
-                auto epf = events->Get(ei);
-                if (!epf) continue;
-                if ((float)epf->frame_index() > f.frame_no) continue;
-                if (!epf->effects()) continue;
-                auto found = epf->effects()->LookupByKey((uint16_t)p_idx);
-                if (found && found->value()) {
-                    event_frame = epf->frame_index();
-                    start_time = found->value()->start_time();
-                    speed = found->value()->speed();
-                    if (speed == 0.0f) speed = 1.0f;
-                    independent = found->value()->independent();
-                    is_synthetic = false;
-                    found_explicit = true;
-                    break;
-                }
-            }
-        }
-        if (!found_explicit) {
-            if (auto inits = _currentAnimationData->initial_events()) {
-                if ((uint32_t)p_idx < inits->size()) {
-                    auto entry = inits->Get(p_idx);
-                    if (entry && entry->effect()) {
-                        start_time = entry->effect()->start_time();
-                        speed = entry->effect()->speed();
-                        if (speed == 0.0f) speed = 1.0f;
-                        independent = entry->effect()->independent();
-                        event_frame = 0;
-                        is_synthetic = true;
-                    }
-                }
-            }
-        }
-    }
+    // Active EventEffect resolution lives in ssruntime — single forward-scan
+    // with InitialEvents.effect fallback baked in. Mirrors the Instance side
+    // (`ss_runtime_get_active_event_instance`).
+    const ss_effect_event_info ev = ss_runtime_get_active_effect_event(runtime_ctx, (uint32_t)p_idx);
+    const int event_frame = ev.event_frame;
+    const int start_time = ev.start_time;
+    const float speed = ev.speed;
+    const bool independent = ev.independent;
+    const bool is_synthetic = ev.is_synthetic_default;
 
     const bool transitioned =
         slot.last_event_frame != event_frame ||
@@ -883,7 +906,10 @@ void SsInternalPlayer::_emit_effect_slot(const DrawFrame& f, RID ci, int p_idx, 
         f.rs->canvas_item_set_visible(slot.emitter_cis[e], false);
     }
 
-    constexpr float kDegToRad = 0.017453292519943295f;
+    // PackedVector2Array stores Vector2 = (real_t, real_t). The FFI writes flat
+    // float pairs, so cast the storage as float* — only valid when real_t == float.
+    static_assert(sizeof(Vector2) == 2 * sizeof(float),
+                  "ss_effect_emit_particle_quads requires Godot built with real_t == float");
 
     for (uint32_t e_idx = 0; e_idx < emitter_count; e_idx++) {
         auto emitter = effect_state->emitters()->Get(e_idx);
@@ -895,58 +921,18 @@ void SsInternalPlayer::_emit_effect_slot(const DrawFrame& f, RID ci, int p_idx, 
             continue;
         }
 
-        const uint32_t cellmap_hash = emitter->cell_map_name_hash();
-        const uint32_t cell_hash = emitter->cell_name_hash();
-        if (cellmap_hash == 0) {
-            f.rs->canvas_item_set_visible(e_ci, false);
-            continue;
-        }
-
-        const ss::format::CellMap* cellmap = f.binary->cellmaps()
-            ? f.binary->cellmaps()->LookupByKey(cellmap_hash)
-            : nullptr;
-        if (!cellmap || !cellmap->cells()) {
-            f.rs->canvas_item_set_visible(e_ci, false);
-            continue;
-        }
-        const ss::format::Cell* cell = cellmap->cells()->LookupByKey(cell_hash);
-        if (!cell) {
-            f.rs->canvas_item_set_visible(e_ci, false);
-            continue;
-        }
-        if (!_textures.has(cellmap_hash)) {
-            f.rs->canvas_item_set_visible(e_ci, false);
-            continue;
-        }
-        Ref<Texture2D> tex = _textures[cellmap_hash];
-        if (tex.is_null()) {
+        const int cache_idx = _ensure_emitter_cache(slot, f,
+            emitter->cell_map_name_hash(),
+            emitter->cell_name_hash(),
+            emitter->blend_type());
+        const EmitterResourceCache& cache = slot.emitter_cache[cache_idx];
+        if (!cache.resolved_ok) {
             f.rs->canvas_item_set_visible(e_ci, false);
             continue;
         }
 
         f.rs->canvas_item_set_visible(e_ci, true);
-
-        ss::format::BlendType blend = ss::format::BlendType_Mix;
-        switch (emitter->blend_type()) {
-            case 0: blend = ss::format::BlendType_Mix; break;
-            case 1: blend = ss::format::BlendType_Add; break;
-            default: blend = ss::format::BlendType_Mix; break;
-        }
-        _apply_blend_material(f.rs, e_ci, blend);
-
-        auto rect = cell->rectangle();
-        const float src_x = rect ? rect->x1() : 0.0f;
-        const float src_y = rect ? rect->y1() : 0.0f;
-        const float sw = rect ? rect->x2() : 0.0f;
-        const float sh = rect ? rect->y2() : 0.0f;
-
-        auto pivot = cell->pivot();
-        const float pivot_x = pivot ? pivot->v1() : 0.0f;
-        const float pivot_y = pivot ? -pivot->v2() : 0.0f;
-        const float quad_origin_x = -sw * 0.5f + pivot_x * sw;
-        const float quad_origin_y = -sh * 0.5f + pivot_y * sh;
-
-        const Vector2 tex_size = tex->get_size();
+        _apply_blend_material(f.rs, e_ci, cache.blend);
 
         const int particle_count = (int)emitter->particles()->size();
         SsVec2Array p_verts;   p_verts.resize(particle_count * 4);
@@ -954,58 +940,29 @@ void SsInternalPlayer::_emit_effect_slot(const DrawFrame& f, RID ci, int p_idx, 
         SsColorArray p_colors; p_colors.resize(particle_count * 4);
         SsIntArray p_indices;  p_indices.resize(particle_count * 6);
 
-        const float u0 = src_x / tex_size.x;
-        const float v0 = src_y / tex_size.y;
-        const float u1 = (src_x + sw) / tex_size.x;
-        const float v1 = (src_y + sh) / tex_size.y;
+        ss_effect_emit_particle_quads(
+            (const void*)emitter->particles()->Data(),
+            particle_count,
+            cache.quad_origin_x, cache.quad_origin_y,
+            cache.sw, cache.sh,
+            cache.u0, cache.v0, cache.u1, cache.v1,
+            true,                               // y_flip for Godot Y-down
+            (float*)p_verts.ptrw(),
+            (float*)p_uvs.ptrw(),
+            (float*)p_colors.ptrw());
 
+        // 6 indices per particle: pure index arithmetic, kept scalar in C++.
         for (int i = 0; i < particle_count; i++) {
-            auto particle = emitter->particles()->Get(i);
-            if (!particle) continue;
-
-            const float angle = -(particle->rotation() * kDegToRad + particle->direction());
-            const float c = cosf(angle);
-            const float s = sinf(angle);
-            const float sx = particle->scale_x();
-            const float sy = particle->scale_y();
-            const float px = particle->x();
-            const float py = -particle->y();
-
-            const float lx[4] = { quad_origin_x,        quad_origin_x + sw, quad_origin_x,        quad_origin_x + sw };
-            const float ly[4] = { quad_origin_y,        quad_origin_y,      quad_origin_y + sh,   quad_origin_y + sh };
-
-            for (int v = 0; v < 4; v++) {
-                const float xx = lx[v] * sx;
-                const float yy = ly[v] * sy;
-                const float wx = c * xx - s * yy + px;
-                const float wy = s * xx + c * yy + py;
-                p_verts.set(i * 4 + v, Vector2(wx, wy));
-            }
-
-            p_uvs.set(i * 4 + 0, Vector2(u0, v0));
-            p_uvs.set(i * 4 + 1, Vector2(u1, v0));
-            p_uvs.set(i * 4 + 2, Vector2(u0, v1));
-            p_uvs.set(i * 4 + 3, Vector2(u1, v1));
-
-            const Color col(
-                particle->r() / 255.0f,
-                particle->g() / 255.0f,
-                particle->b() / 255.0f,
-                particle->a() / 255.0f);
-            p_colors.set(i * 4 + 0, col);
-            p_colors.set(i * 4 + 1, col);
-            p_colors.set(i * 4 + 2, col);
-            p_colors.set(i * 4 + 3, col);
-
-            p_indices.set(i * 6 + 0, i * 4 + 0);
-            p_indices.set(i * 6 + 1, i * 4 + 1);
-            p_indices.set(i * 6 + 2, i * 4 + 2);
-            p_indices.set(i * 6 + 3, i * 4 + 2);
-            p_indices.set(i * 6 + 4, i * 4 + 1);
-            p_indices.set(i * 6 + 5, i * 4 + 3);
+            const int v = i * 4;
+            p_indices.set(i * 6 + 0, v + 0);
+            p_indices.set(i * 6 + 1, v + 1);
+            p_indices.set(i * 6 + 2, v + 2);
+            p_indices.set(i * 6 + 3, v + 2);
+            p_indices.set(i * 6 + 4, v + 1);
+            p_indices.set(i * 6 + 5, v + 3);
         }
 
-        f.rs->canvas_item_add_triangle_array(e_ci, p_indices, p_verts, p_colors, p_uvs, {}, {}, tex->get_rid());
+        f.rs->canvas_item_add_triangle_array(e_ci, p_indices, p_verts, p_colors, p_uvs, {}, {}, cache.tex->get_rid());
     }
 }
 

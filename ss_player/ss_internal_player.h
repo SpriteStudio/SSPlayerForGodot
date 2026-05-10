@@ -208,6 +208,25 @@ private:
     };
     LocalVector<InstanceChildState> _instance_children;
 
+    // Resolved cellmap/cell/texture for a given (cellmap_hash, cell_hash, blend)
+    // triple. Built lazily on first encounter and reused across frames so the
+    // hot loop in `_emit_effect_slot` skips per-frame `LookupByKey` chains and
+    // texture map lookups. Effect emitters may shift index if a sibling emitter
+    // goes silent, so the cache is keyed by hash, not slot index.
+    struct EmitterResourceCache {
+        uint32_t cellmap_hash = 0;
+        uint32_t cell_hash = 0;
+        int blend_type_in = -1;                              // raw value from EmitterState
+        ss::format::BlendType blend = ss::format::BlendType_Mix;
+        const ss::format::Cell* cell = nullptr;
+        Ref<Texture2D> tex;
+        Vector2 tex_size;
+        float src_x = 0, src_y = 0, sw = 0, sh = 0;
+        float u0 = 0, v0 = 0, u1 = 0, v1 = 0;
+        float quad_origin_x = 0, quad_origin_y = 0;
+        bool resolved_ok = false;                            // false = hash didn't resolve; emitter is hidden
+    };
+
     struct EffectSlotState {
         void* effect_ctx = nullptr;
         int last_event_frame = -1;
@@ -216,6 +235,7 @@ private:
         float accumulated_time = 0.0f;
         float last_parent_frame = -1.0f;
         Vector<RID> emitter_cis;
+        Vector<EmitterResourceCache> emitter_cache;
     };
     LocalVector<EffectSlotState> _effect_slots;
 
@@ -298,6 +318,13 @@ private:
     void _clear_instance_children();
     void _setup_effect_slots();
     void _clear_effect_slots();
+    // Find or build a per-emitter resource cache entry. Effects re-emit with
+    // the same (cellmap_hash, cell_hash, blend) tuple every frame; resolving
+    // cellmap/cell/texture once and reusing it keeps `_emit_effect_slot` off
+    // the per-frame `LookupByKey` chain. Linear lookup — typical effects have
+    // 1-3 unique tuples, smaller than the cache-line cost of a hash map.
+    int _ensure_emitter_cache(EffectSlotState& slot, const DrawFrame& f,
+                              uint32_t cellmap_hash, uint32_t cell_hash, int blend_in);
     // Per-tick instance child driver. Runs in the sim phase (called from
     // `update`), before `_drawAnimation`. Per slot, queries
     // `ss_runtime_get_active_event_instance` (returns SS6 default semantics
