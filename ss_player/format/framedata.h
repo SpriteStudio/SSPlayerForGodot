@@ -1002,7 +1002,7 @@ struct FrameData FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyOffset(verifier, VT_PARTS) &&
+           VerifyOffsetRequired(verifier, VT_PARTS) &&
            verifier.VerifyVector(parts()) &&
            VerifyOffset(verifier, VT_CELLS) &&
            verifier.VerifyVector(cells()) &&
@@ -1015,11 +1015,11 @@ struct FrameData FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyOffset(verifier, VT_DEFORMS) &&
            verifier.VerifyVector(deforms()) &&
            verifier.VerifyVectorOfTables(deforms()) &&
-           VerifyOffset(verifier, VT_DRAW_ORDER) &&
+           VerifyOffsetRequired(verifier, VT_DRAW_ORDER) &&
            verifier.VerifyVector(draw_order()) &&
-           VerifyOffset(verifier, VT_DRAW_BATCHES) &&
+           VerifyOffsetRequired(verifier, VT_DRAW_BATCHES) &&
            verifier.VerifyVector(draw_batches()) &&
-           VerifyOffset(verifier, VT_MASK_INDICES) &&
+           VerifyOffsetRequired(verifier, VT_MASK_INDICES) &&
            verifier.VerifyVector(mask_indices()) &&
            verifier.EndTable();
   }
@@ -1063,6 +1063,10 @@ struct FrameDataBuilder {
   ::flatbuffers::Offset<FrameData> Finish() {
     const auto end = fbb_.EndTable(start_);
     auto o = ::flatbuffers::Offset<FrameData>(end);
+    fbb_.Required(o, FrameData::VT_PARTS);
+    fbb_.Required(o, FrameData::VT_DRAW_ORDER);
+    fbb_.Required(o, FrameData::VT_DRAW_BATCHES);
+    fbb_.Required(o, FrameData::VT_MASK_INDICES);
     return o;
   }
 };
