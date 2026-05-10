@@ -200,21 +200,21 @@ private:
     // detect transitions and re-apply playback config only on the edge.
     struct InstanceChildState {
         SsInternalPlayer* player = nullptr;
-        // -1 = uninitialized; otherwise the last applied event_frame. Reset
-        // to -1 on `parent_looped` so the same event re-fires on next loop.
-        int last_event_frame = -1;
-        bool last_is_synthetic = false;
-        bool last_independent = false;
+        // Owns transition detection, child-ctx playback config, and frame
+        // stepping — all delegated to ssruntime InstanceSlot via
+        // `ss_instance_slot_step`.
+        void* instance_slot = nullptr;
     };
     LocalVector<InstanceChildState> _instance_children;
 
     struct EffectSlotState {
-        void* effect_ctx = nullptr;
-        int last_event_frame = -1;
-        bool last_is_synthetic = false;
-        bool last_independent = false;
-        float accumulated_time = 0.0f;
-        float last_parent_frame = -1.0f;
+        // Owns the entire per-slot effect lifecycle: transition detection,
+        // accumulator, dead-effect skip, simulator update, emitter resource
+        // resolution (cellmap/cell/UV), particle quad emission, and the
+        // resulting EffectDrawPlan FlatBuffer. Godot side keeps only the
+        // canvas_item pool — texture lookup happens at draw time via
+        // `cellmap_hash` returned per draw command.
+        void* effect_slot = nullptr;
         Vector<RID> emitter_cis;
     };
     LocalVector<EffectSlotState> _effect_slots;
@@ -329,7 +329,8 @@ private:
                               SsInternalPlayer* child,
                               const ss_event_instance_info& info,
                               float parent_frame_no,
-                              float delta_seconds);
+                              float delta_seconds,
+                              bool parent_looped);
 
     // Common: clamp `frame_no` to integer (unless sub-frame mode), redraw
     // only if changed since the last frame.
