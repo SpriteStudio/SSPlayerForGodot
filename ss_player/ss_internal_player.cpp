@@ -299,7 +299,7 @@ namespace {
 
 bool SsInternalPlayer::_needs_continuous_update() const {
     for (const auto& slot : _effect_slots) {
-        if (slot.last_independent) return true;
+        if (slot.effect_slot && ss_effect_slot_is_independent(slot.effect_slot)) return true;
     }
     for (const auto& st : _instance_children) {
         if (st.player && st.last_independent) return true;
@@ -590,9 +590,9 @@ void SsInternalPlayer::_clear_effect_slots() {
     RenderingServer* rs = RenderingServer::get_singleton();
     for (uint32_t i = 0; i < _effect_slots.size(); i++) {
         EffectSlotState& slot = _effect_slots[i];
-        if (slot.effect_ctx) {
-            ss_effect_destroy(slot.effect_ctx);
-            slot.effect_ctx = nullptr;
+        if (slot.effect_slot) {
+            ss_effect_slot_destroy(slot.effect_slot);
+            slot.effect_slot = nullptr;
         }
         for (int e = 0; e < slot.emitter_cis.size(); e++) {
             rs->free_rid(slot.emitter_cis[e]);
@@ -678,12 +678,12 @@ void SsInternalPlayer::_setup_effect_slots() {
         if (!pt) continue;
 
         const uint32_t seed = (uint32_t)i ^ pt->ref_effect_name_hash();
-        void* ctx = ss_effect_create(runtime_res, pt->ref_effect_name_hash(), seed);
-        if (!ctx) {
+        void* effect_slot = ss_effect_slot_create(runtime_res, pt->ref_effect_name_hash(), seed);
+        if (!effect_slot) {
             ERR_PRINT(vformat("[SS] effect part %d: ref_effect_name_hash=0x%x not found in current SSAB", i, pt->ref_effect_name_hash()));
             continue;
         }
-        _effect_slots[i].effect_ctx = ctx;
+        _effect_slots[i].effect_slot = effect_slot;
     }
 }
 
@@ -703,14 +703,14 @@ void SsInternalPlayer::_update_instance_children(float parent_frame_no, float de
     // `_drive_instance_slot` would treat the loop edge as a no-op and
     // finite-loop independent children would stay frozen at their
     // previous end_frame.
+    //
+    // Effect slots receive the same re-arm via the `parent_looped` flag
+    // passed into `ss_effect_slot_step` per frame, so no separate reset
+    // here for `_effect_slots`.
     if (parent_looped) {
         for (uint32_t i = 0; i < _instance_children.size(); i++) {
             _instance_children[i].last_event_frame = -1;
             _instance_children[i].last_is_synthetic = false;
-        }
-        for (uint32_t i = 0; i < _effect_slots.size(); i++) {
-            _effect_slots[i].last_event_frame = -1;
-            _effect_slots[i].last_is_synthetic = false;
         }
     }
 
@@ -823,71 +823,25 @@ void SsInternalPlayer::_emit_instance_slot(const DrawFrame& /*f*/, RID ci, int p
 void SsInternalPlayer::_emit_effect_slot(const DrawFrame& f, RID ci, int p_idx, const float* slot_matrix) {
     if (p_idx < 0 || (uint32_t)p_idx >= _effect_slots.size()) return;
     EffectSlotState& slot = _effect_slots[p_idx];
-    if (!slot.effect_ctx) {
+    if (!slot.effect_slot) {
         f.rs->canvas_item_set_visible(ci, false);
         return;
     }
 
-    // Active EventEffect resolution lives in ssruntime — single forward-scan
-    // with InitialEvents.effect fallback baked in. Mirrors the Instance side
-    // (`ss_runtime_get_active_event_instance`).
+    // All per-slot lifecycle (active-event resolution, transition edges,
+    // accumulator, dead-effect skip, simulator update, state serialization)
+    // lives behind ss_effect_slot_step. The caller hands in the resolved
+    // event + frame timing and gets back render-ready state buffer.
     const ss_effect_event_info ev = ss_runtime_get_active_effect_event(runtime_ctx, (uint32_t)p_idx);
-    const int event_frame = ev.event_frame;
-    const int start_time = ev.start_time;
-    const float speed = ev.speed;
-    const bool independent = ev.independent;
-    const bool is_synthetic = ev.is_synthetic_default;
-
-    const bool transitioned =
-        slot.last_event_frame != event_frame ||
-        slot.last_is_synthetic != is_synthetic ||
-        slot.last_independent != independent;
-
-    if (transitioned) {
-        ss_effect_reset(slot.effect_ctx);
-        ss_effect_set_loop(slot.effect_ctx, independent);
-        slot.last_event_frame = event_frame;
-        slot.last_is_synthetic = is_synthetic;
-        slot.last_independent = independent;
-        slot.accumulated_time = (float)start_time;
-        slot.last_parent_frame = f.frame_no;
-    }
-
-    float relative_frame;
-    if (independent) {
-        if (!transitioned && f.delta_seconds > 0.0f) {
-            const float fps = _currentAnimationData->fps() > 0 ? (float)_currentAnimationData->fps() : 60.0f;
-            const float delta_frames = f.delta_seconds * fps;
-            slot.accumulated_time += delta_frames * speed;
-        }
-        relative_frame = slot.accumulated_time;
-    } else {
-        const float elapsed = f.frame_no - (float)event_frame;
-        if (elapsed < 0.0f) {
-            slot.last_parent_frame = f.frame_no;
-            f.rs->canvas_item_set_visible(ci, false);
-            return;
-        }
-        relative_frame = elapsed * speed + (float)start_time;
-    }
-    slot.last_parent_frame = f.frame_no;
-
-    if (relative_frame < 0.0f) {
+    const float fps = _currentAnimationData->fps() > 0 ? (float)_currentAnimationData->fps() : 60.0f;
+    const ss_effect_step_result step = ss_effect_slot_step(slot.effect_slot, ev, f.frame_no, f.delta_seconds, fps, f.parent_looped);
+    if (!step.visible) {
         f.rs->canvas_item_set_visible(ci, false);
         return;
     }
-
     f.rs->canvas_item_set_visible(ci, true);
 
-    ss_effect_update(slot.effect_ctx, relative_frame);
-    unsigned char* state_buf = nullptr;
-    uintptr_t state_len = 0;
-    ss_effect_get_state(slot.effect_ctx, &state_buf, &state_len);
-    if (!state_buf || state_len == 0) {
-        f.rs->canvas_item_clear(ci);
-        return;
-    }
-    auto effect_state = ss::runtime::GetEffectState(state_buf);
+    auto effect_state = ss::runtime::GetEffectState(step.state_buf);
     if (!effect_state || !effect_state->emitters()) {
         f.rs->canvas_item_clear(ci);
         return;

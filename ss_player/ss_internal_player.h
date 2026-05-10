@@ -228,12 +228,10 @@ private:
     };
 
     struct EffectSlotState {
-        void* effect_ctx = nullptr;
-        int last_event_frame = -1;
-        bool last_is_synthetic = false;
-        bool last_independent = false;
-        float accumulated_time = 0.0f;
-        float last_parent_frame = -1.0f;
+        // Owns transition detection, accumulator, dead-effect skip, simulator
+        // update, and FlatBuffer state serialization — all delegated to the
+        // ssruntime EffectSlot via `ss_effect_slot_step`.
+        void* effect_slot = nullptr;
         Vector<RID> emitter_cis;
         Vector<EmitterResourceCache> emitter_cache;
     };
