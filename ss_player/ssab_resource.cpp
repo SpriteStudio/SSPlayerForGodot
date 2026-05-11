@@ -15,8 +15,8 @@ void SSABResource::_bind_methods() {
   ClassDB::bind_method(D_METHOD("is_valid"), &SSABResource::is_valid);
   ClassDB::bind_method(D_METHOD("get_animation_count"), &SSABResource::get_animation_count);
   ClassDB::bind_method(D_METHOD("get_animation_names"), &SSABResource::get_animation_names);
-}
-
+  ClassDB::bind_method(D_METHOD("get_cellmap_names"), &SSABResource::get_cellmap_names);
+  }
 bool SSABResource::is_valid() const {
   if (binary.size() == 0) {
     return false;
@@ -98,6 +98,50 @@ Vector<String> SSABResource::get_animation_names() {
       vec.push_back(String(name->c_str()));
     }
     return vec;
+}
+
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+PackedStringArray SSABResource::get_cellmap_names() {
+    PackedStringArray vec;
+#else
+Vector<String> SSABResource::get_cellmap_names() {
+    Vector<String> vec;
+#endif
+    auto a = get_ss_anime_binary();
+    if (a->cellmaps() != nullptr) {
+        for (int i = 0; i < a->cellmaps()->size(); i++) {
+            auto cellmap = a->cellmaps()->Get(i);
+            vec.push_back(String::utf8(cellmap->name()->c_str()));
+        }
+    }
+    if (a->external_textures() != nullptr) {
+        for (int i = 0; i < a->external_textures()->size(); i++) {
+            auto etexture = a->external_textures()->Get(i);
+            vec.push_back(String::utf8(etexture->name()->c_str()));
+        }
+    }
+    return vec;
+}
+
+uint32_t SSABResource::get_cellmap_hash(const String &cellmap_name) {
+    auto a = get_ss_anime_binary();
+    if (a->cellmaps() != nullptr) {
+        for (int i = 0; i < a->cellmaps()->size(); i++) {
+            auto cellmap = a->cellmaps()->Get(i);
+            if (cellmap_name == String::utf8(cellmap->name()->c_str())) {
+                return cellmap->name_hash();
+            }
+        }
+    }
+    if (a->external_textures() != nullptr) {
+        for (int i = 0; i < a->external_textures()->size(); i++) {
+            auto etexture = a->external_textures()->Get(i);
+            if (cellmap_name == String::utf8(etexture->name()->c_str())) {
+                return etexture->name_hash();
+            }
+        }
+    }
+    return 0;
 }
 
 const ss::format::SsAnimeBinary *SSABResource::get_ss_anime_binary() {
