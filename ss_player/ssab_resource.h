@@ -36,9 +36,13 @@ public:
   int get_animation_count();
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
   PackedStringArray get_animation_names();
+  PackedStringArray get_cellmap_names();
 #else
   Vector<String> get_animation_names();
+  Vector<String> get_cellmap_names();
 #endif
+
+  uint32_t get_cellmap_hash(const String &cellmap_name);
 
   const ss::format::SsAnimeBinary *get_ss_anime_binary();
   const uint8_t *get_data_ptr();

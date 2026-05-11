@@ -54,6 +54,7 @@ class SsPlayerEventSink {
 public:
     virtual ~SsPlayerEventSink() = default;
     virtual void onAnimationStarted(const String& anim_name) {}
+    virtual void onAnimationChanged(const String& anim_name) {}
     virtual void onAnimationFinished(const String& anim_name) {}
     virtual void onAnimationLooped(const String& anim_name) {}
     virtual void onUserData(const Dictionary& payload) {}
@@ -153,6 +154,9 @@ public:
     // parent SsInternalPlayer when this player is an Instance child.
     void setRootTransform(const Transform2D& p_xf);
     void setRootVisible(bool p_visible);
+
+    void setCellMapOverrideTexture(uint32_t cellmap_name_hash, const Ref<Texture2D>& texture);
+    Ref<Texture2D> getCellMapTexture(uint32_t cellmap_name_hash) const;
 
     // Re-apply current resource after the underlying binary changes on disk
     // (mirrors the previous Resource::changed signal handler).

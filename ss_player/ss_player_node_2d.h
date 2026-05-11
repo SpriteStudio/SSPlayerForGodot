@@ -41,6 +41,9 @@ public:
 
     int getTotalFrames() const;
 
+    int getStartFrame() const;
+    int getEndFrame() const;
+
     void setFrameRate( int p_fps );
     int getFrameRate() const;
 
@@ -61,11 +64,16 @@ public:
     void setSubFrameEnabled( bool p_enabled );
     bool isSubFrameEnabled() const;
 
+    void set_cellmap_texture(const String &cellmap_name, const Ref<Texture2D> &texture);
+    Ref<Texture2D> get_cellmap_texture(const String &cellmap_name) const;
+
 private:
     // Engine-agnostic playback / render core. The Node2D wrapper feeds it the
     // host canvas item and per-tick delta, and forwards its events back to
     // GDScript signals via _SignalSink.
     SsInternalPlayer* _internal = nullptr;
+
+    HashMap<String, Ref<Texture2D>> _cellmap_overrides;
 
     // Adapter that turns SsInternalPlayer event callbacks into Node-level
     // emit_signal calls. Lifetime tied to the Node; lives in the cpp file.

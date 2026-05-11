@@ -124,8 +124,14 @@ void SsInternalPlayer::onSSABReloaded() {
 }
 
 void SsInternalPlayer::setAnimation(const String& strName) {
+    if (_strAnimationSelected == strName) {
+        return;
+    }
     _strAnimationSelected = strName;
     _fetchAnimation();
+    if (_event_sink) {
+        _event_sink->onAnimationChanged(_strAnimationSelected);
+    }
 }
 
 bool SsInternalPlayer::isPlaying() const {
@@ -248,6 +254,56 @@ void SsInternalPlayer::setRootTransform(const Transform2D& p_xf) {
 void SsInternalPlayer::setRootVisible(bool p_visible) {
     RenderingServer* rs = RenderingServer::get_singleton();
     rs->canvas_item_set_visible(_root_ci, p_visible);
+}
+
+void SsInternalPlayer::setCellMapOverrideTexture(uint32_t cellmap_name_hash, const Ref<Texture2D>& texture) {
+    if (cellmap_name_hash == 0) return;
+    if (texture.is_valid()) {
+        _textures[cellmap_name_hash] = texture;
+    } else {
+        if (_ssabRes.is_valid()) {
+            auto a = _ssabRes->get_ss_anime_binary();
+            if (a->cellmaps() != nullptr) {
+                for (int i = 0; i < a->cellmaps()->size(); i++) {
+                    auto cellmap = a->cellmaps()->Get(i);
+                    if (cellmap->name_hash() == cellmap_name_hash) {
+                        String strImage = _ssabRes->get_parent_dir().path_join(String::utf8(cellmap->image_path()->c_str()));
+                        Ref<Texture2D> original_tex =
+                        #ifdef SPRITESTUDIO_GODOT_EXTENSION
+                        ResourceLoader::get_singleton()->load(strImage, "", ResourceLoader::CACHE_MODE_REUSE);
+                        #else
+                        ResourceLoader::load(strImage, "", ResourceFormatLoader::CACHE_MODE_REUSE, nullptr);
+                        #endif
+                        _textures[cellmap_name_hash] = original_tex;
+                        return;
+                    }
+                }
+            }
+            if (a->external_textures() != nullptr) {
+                for (int i = 0; i < a->external_textures()->size(); i++) {
+                    auto etexture = a->external_textures()->Get(i);
+                    if (etexture->name_hash() == cellmap_name_hash) {
+                        String strImage = _ssabRes->get_parent_dir().path_join(String::utf8(etexture->name()->c_str()));
+                        Ref<Texture2D> original_tex =
+                        #ifdef SPRITESTUDIO_GODOT_EXTENSION
+                        ResourceLoader::get_singleton()->load(strImage, "", ResourceLoader::CACHE_MODE_REUSE);
+                        #else
+                        ResourceLoader::load(strImage, "", ResourceFormatLoader::CACHE_MODE_REUSE, nullptr);
+                        #endif
+                        _textures[cellmap_name_hash] = original_tex;
+                        return;
+                    }
+                }
+            }
+        }
+    }
+}
+
+Ref<Texture2D> SsInternalPlayer::getCellMapTexture(uint32_t cellmap_name_hash) const {
+    if (_textures.has(cellmap_name_hash)) {
+        return _textures[cellmap_name_hash];
+    }
+    return Ref<Texture2D>();
 }
 
 void SsInternalPlayer::_loadTextures(const Ref<SSABResource>& ssabRes) {
