@@ -1,0 +1,10 @@
+[gd_scene format=3 uid="uid://cma2gh5n7asqh"]
+
+[ext_resource type="SSABResource" uid="uid://c7326lu3oipav" path="res://ssab_generated/ParticleEffect/e001.ssab" id="1_wtcfe"]
+
+[node name="Node2D" type="Node2D" unique_id=1490947827]
+
+[node name="SpriteStudioPlayer2D" type="SpriteStudioPlayer2D" parent="." unique_id=2102891123]
+ssab = ExtResource("1_wtcfe")
+animation = "emission"
+playing = true

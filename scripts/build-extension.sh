@@ -131,11 +131,20 @@ for arch in $ARCHES; do
     fi
 done
 
-# Copy .gdextension to example projects in the idiomatic addons structure
-for project in "feature_test_gdextension" "new_gdextension"; do
+# Copy .gdextension and binaries to example projects in the idiomatic addons structure
+MAIN_PROJECT="dev_gdextension"
+OTHER_PROJECTS=("overall_gdextension")
+
+# Ensure MAIN_PROJECT has the .gdextension
+/bin/cp misc/spritestudio.gdextension "./examples/${MAIN_PROJECT}/addons/spritestudio/"
+
+# Copy from MAIN_PROJECT to OTHER_PROJECTS
+for project in "${OTHER_PROJECTS[@]}"; do
     DEST_DIR="./examples/${project}/addons/spritestudio"
     /bin/mkdir -p "${DEST_DIR}"
     /bin/cp misc/spritestudio.gdextension "${DEST_DIR}/"
+    echo "Syncing binaries to ${project}..."
+    /bin/cp -R "./examples/${MAIN_PROJECT}/addons/spritestudio/bin" "${DEST_DIR}/"
 done
 
 popd > /dev/null # ${ROOTDIR}

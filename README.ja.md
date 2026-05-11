@@ -87,14 +87,15 @@ Godot エディタを再起動すると `SpriteStudioPlayer2D` ノードや SS I
 
 ## サンプル
 
-[examples フォルダ](./examples/) にサンプルプロジェクトがあります。
+[examples フォルダ](./examples/) に SDK のテストプロジェクトに基づいたサンプルプロジェクトがあります。
 
-> **Note:** 既存サンプルは v1.x 系の `.sspj` 直接読み込み前提で作成されています。本バージョンの `.ssab` / `.ssqb` ワークフローで動作させるには移行作業が必要です。マイグレーションドキュメント整備に合わせて随時更新予定です。
-
-- [feature_test](./examples/feature_test) — カスタムモジュール版の基本機能テスト
-- [feature_test_gdextension](./examples/feature_test_gdextension) — GDExtension 版の基本機能テスト
-- [mesh_bone](./examples/mesh_bone) — メッシュ・ボーン・エフェクトを利用したキャラクターアニメ
-- [particle_effect](./examples/particle_effect) — エフェクト機能のサンプル
+- [allAttributeV7](./examples/allAttributeV7) — 全属性の機能テスト
+- [allPartsV7](./examples/allPartsV7) — 全パーツ種の機能テスト
+- [overall](./examples/overall) — 総合的な機能テスト
+- [overall_gdextension](./examples/overall_gdextension) — GDExtension 版での総合テスト
+- [ParticleEffect](./examples/ParticleEffect) — エフェクト機能のテスト
+- [dev_module](./examples/dev_module) — モジュール版開発用プロジェクト
+- [dev_gdextension](./examples/dev_gdextension) — GDExtension 版開発用プロジェクト
 
 ## 自分でビルドする / 開発する
 

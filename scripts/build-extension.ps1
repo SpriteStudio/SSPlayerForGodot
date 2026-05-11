@@ -91,12 +91,20 @@ $BINDIR = "bin/$($opts.platform)"
 mkdir "$BINDIR" -Force
 Invoke-Expression "scons $scons_command_opts"
 
-# Copy .gdextension to example projects in the idiomatic addons structure
-$project_list = "feature_test_gdextension", "new_gdextension"
-foreach ($project in $project_list) {
+# Copy .gdextension and binaries to example projects in the idiomatic addons structure
+$MAIN_PROJECT = "dev_gdextension"
+$OTHER_PROJECTS = "overall_gdextension"
+
+# Ensure MAIN_PROJECT has the .gdextension
+Copy-Item "misc\spritestudio.gdextension" "examples\$MAIN_PROJECT\addons\spritestudio\spritestudio.gdextension" -Force
+
+# Copy from MAIN_PROJECT to OTHER_PROJECTS
+foreach ($project in $OTHER_PROJECTS) {
     $dest_dir = "examples\$project\addons\spritestudio"
     mkdir $dest_dir -Force | Out-Null
     Copy-Item "misc\spritestudio.gdextension" "$dest_dir\spritestudio.gdextension" -Force
+    Write-Host "Syncing binaries to $project..."
+    Copy-Item "examples\$MAIN_PROJECT\addons\spritestudio\bin" "$dest_dir\" -Recurse -Force
 }
 
 popd

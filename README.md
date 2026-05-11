@@ -87,14 +87,15 @@ For converting `.sspj` and playing it back via `SpriteStudioPlayer2D`, see [USAG
 
 ## Samples
 
-Sample projects are available under the [examples folder](./examples/).
+Sample projects based on SDK test projects are available under the [examples folder](./examples/).
 
-> **Note:** Existing samples were created for the v1.x `.sspj` direct-load workflow and need to be migrated to the current `.ssab` / `.ssqb` workflow before they will run on this branch. They will be updated alongside the migration guide.
-
-- [feature_test](./examples/feature_test) — Basic functional test (custom-module build)
-- [feature_test_gdextension](./examples/feature_test_gdextension) — Basic functional test (GDExtension build)
-- [mesh_bone](./examples/mesh_bone) — Character animation using mesh, bone, and effect features
-- [particle_effect](./examples/particle_effect) — Effect feature sample
+- [allAttributeV7](./examples/allAttributeV7) — Functional test for all attributes
+- [allPartsV7](./examples/allPartsV7) — Functional test for all part types
+- [overall](./examples/overall) — Comprehensive functional test
+- [overall_gdextension](./examples/overall_gdextension) — Comprehensive test for GDExtension
+- [ParticleEffect](./examples/ParticleEffect) — Test for effect features
+- [dev_module](./examples/dev_module) — Development project for Module version
+- [dev_gdextension](./examples/dev_gdextension) — Development project for GDExtension version
 
 ## Building / Developing
 

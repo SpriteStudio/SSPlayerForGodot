@@ -5,7 +5,7 @@ import subprocess
 
 # --- Configuration & Constants ---
 LIB_NAME = "SSGodot"
-DEFAULT_PROJECT_DIR = os.path.join("examples", "new_gdextension")
+DEFAULT_PROJECT_DIR = os.path.join("examples", "dev_gdextension")
 
 # --- Helper Functions ---
 def normalize_path(val, env):
