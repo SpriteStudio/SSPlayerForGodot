@@ -2,8 +2,9 @@
 
 # SpriteStudioPlayer for Godot
 
-本developブランチは現在開発中のバージョンです。
-本ブランチに関していかなる保証もサポートも提供しません。リクエストやバグ報告への返信もできません。
+本developブランチは現在開発中のバージョンです。  
+安定版は [mainブランチ](https://github.com/SpriteStudio/SSPlayerForGodot/tree/main) または、[Releases]([url](https://github.com/SpriteStudio/SSPlayerForGodot/releases))から取得してください。  
+本developブランチに関してはいかなる保証もサポートも提供しません。リクエストやバグ報告への返信もできません。  
 インターフェースは予告なく変更される可能性があります。v1.x からの移行手順は別途マイグレーションドキュメントを用意予定です。
 
 [OPTPiX SpriteStudio](https://www.webtech.co.jp/spritestudio/) で作成したアニメーションを [Godot Engine](https://godotengine.org/) 上で再生するためのプラグインです。
