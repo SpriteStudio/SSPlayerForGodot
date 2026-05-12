@@ -2,9 +2,10 @@
 
 # SpriteStudioPlayer for Godot
 
-This `develop` branch is a work-in-progress version.
-No warranty or support is provided for this branch, and we cannot respond to feature requests or bug reports.
-Interfaces may change without notice. A migration guide for v1.x users will be provided as a separate document.
+This `develop` branch is a work-in-progress version.  
+The stable version can be obtained from the [main branch](https://github.com/SpriteStudio/SSPlayerForGodot/tree/main) or from [Releases](https://github.com/SpriteStudio/SSPlayerForGodot/releases).  
+No warranty or support is provided for this branch, and we cannot respond to feature requests or bug reports.  
+Interfaces may change without notice. A migration guide for v1.x users will be provided as a separate document.  
 
 A plugin for playing back animations created with [OPTPiX SpriteStudio](https://www.webtech.co.jp/spritestudio/) inside [Godot Engine](https://godotengine.org/).
 Animation playback uses `libssruntime` provided by [SpriteStudio7-SDK](https://github.com/SpriteStudio/SpriteStudio7-SDK).
