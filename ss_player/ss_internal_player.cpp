@@ -848,10 +848,14 @@ void SsInternalPlayer::_emit_effect_slot(const DrawFrame& f, RID ci, int p_idx, 
 
         const uint32_t qc = cmd->quad_count();
         const uint32_t off = cmd->particle_offset();
-        SsVec2Array p_verts;   p_verts.resize(qc * 4);
-        SsVec2Array p_uvs;     p_uvs.resize(qc * 4);
-        SsColorArray p_colors; p_colors.resize(qc * 4);
-        SsIntArray p_indices;  p_indices.resize(qc * 6);
+        _effect_verts.resize(qc * 4);
+        _effect_uvs.resize(qc * 4);
+        _effect_colors.resize(qc * 4);
+        _effect_indices.resize(qc * 6);
+        SsVec2Array&  p_verts   = _effect_verts;
+        SsVec2Array&  p_uvs     = _effect_uvs;
+        SsColorArray& p_colors  = _effect_colors;
+        SsIntArray&   p_indices = _effect_indices;
 
         memcpy(p_verts.ptrw(),   V + off * 8,  qc * 8  * sizeof(float));
         memcpy(p_uvs.ptrw(),     U + off * 8,  qc * 8  * sizeof(float));
@@ -935,12 +939,11 @@ void SsInternalPlayer::_apply_blend_material(RenderingServer* rs, RID ci, ss::fo
 void SsInternalPlayer::_draw_part_shape(const DrawFrame& f, RID ci, int p_idx, const ss::runtime::PartState* part, const ss::format::PartData* partBinary, const float* draw_m) {
     RenderingServer* rs = f.rs;
 
-    ShapeGeometryBuffers bufs;
-    if (!_build_shape_geometry(f, p_idx, part, draw_m, bufs)) return;
+    if (!_build_shape_geometry(f, p_idx, part, draw_m, _shape_buf)) return;
 
     _apply_blend_material(rs, ci, partBinary->blend_type());
     rs->canvas_item_set_transform(ci, Transform2D());
-    rs->canvas_item_add_triangle_array(ci, bufs.indices, bufs.verts, bufs.colors);
+    rs->canvas_item_add_triangle_array(ci, _shape_buf.indices, _shape_buf.verts, _shape_buf.colors);
 }
 
 bool SsInternalPlayer::_build_shape_geometry(const DrawFrame& f, int p_idx,
@@ -1025,10 +1028,14 @@ void SsInternalPlayer::_emit_normal_batch(const DrawFrame& f, RID ci,
     if (tex.is_null()) return;
     const Vector2 tex_size = tex->get_size();
 
-    SsVec2Array  verts;   verts.resize((int)batch->vertex_count());
-    SsVec2Array  uvs;     uvs.resize((int)batch->vertex_count());
-    SsColorArray colors;  colors.resize((int)batch->vertex_count());
-    SsIntArray   indices; indices.resize((int)batch->index_count());
+    _normal_verts.resize((int)batch->vertex_count());
+    _normal_uvs.resize((int)batch->vertex_count());
+    _normal_colors.resize((int)batch->vertex_count());
+    _normal_indices.resize((int)batch->index_count());
+    SsVec2Array&  verts   = _normal_verts;
+    SsVec2Array&  uvs     = _normal_uvs;
+    SsColorArray& colors  = _normal_colors;
+    SsIntArray&   indices = _normal_indices;
 
     int vbase = 0;
     int ibase = 0;

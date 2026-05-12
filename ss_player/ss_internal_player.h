@@ -256,6 +256,16 @@ private:
         SsIntArray indices;
     };
 
+    SsVec2Array  _normal_verts;
+    SsVec2Array  _normal_uvs;
+    SsColorArray _normal_colors;
+    SsIntArray   _normal_indices;
+    SsVec2Array  _effect_verts;
+    SsVec2Array  _effect_uvs;
+    SsColorArray _effect_colors;
+    SsIntArray   _effect_indices;
+    ShapeGeometryBuffers _shape_buf;
+
     void _reconfigure();
     void _loadTextures(const Ref<SSABResource>& res);
     void _fetchAnimation();
