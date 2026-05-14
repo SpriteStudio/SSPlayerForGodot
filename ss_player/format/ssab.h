@@ -115,6 +115,15 @@ struct FontGlyphBitmapBuilder;
 struct FontBitmap;
 struct FontBitmapBuilder;
 
+struct PartMeshBindingInfluence;
+struct PartMeshBindingInfluenceBuilder;
+
+struct PartMeshBindingVertex;
+struct PartMeshBindingVertexBuilder;
+
+struct PartMeshBinding;
+struct PartMeshBindingBuilder;
+
 struct PartAttributeCell;
 struct PartAttributeCellBuilder;
 
@@ -3768,6 +3777,175 @@ inline ::flatbuffers::Offset<FontBitmap> CreateFontBitmapDirect(
       table_data__);
 }
 
+struct PartMeshBindingInfluence FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef PartMeshBindingInfluenceBuilder Builder;
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
+    VT_BONE = 4,
+    VT_WEIGHT = 6,
+    VT_COORDINATE = 8
+  };
+  uint16_t bone() const {
+    return GetField<uint16_t>(VT_BONE, 0);
+  }
+  float weight() const {
+    return GetField<float>(VT_WEIGHT, 0.0f);
+  }
+  const ss::format::Vec2 *coordinate() const {
+    return GetPointer<const ss::format::Vec2 *>(VT_COORDINATE);
+  }
+  template <bool B = false>
+  bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyField<uint16_t>(verifier, VT_BONE, 2) &&
+           VerifyField<float>(verifier, VT_WEIGHT, 4) &&
+           VerifyOffset(verifier, VT_COORDINATE) &&
+           verifier.VerifyTable(coordinate()) &&
+           verifier.EndTable();
+  }
+};
+
+struct PartMeshBindingInfluenceBuilder {
+  typedef PartMeshBindingInfluence Table;
+  ::flatbuffers::FlatBufferBuilder &fbb_;
+  ::flatbuffers::uoffset_t start_;
+  void add_bone(uint16_t bone) {
+    fbb_.AddElement<uint16_t>(PartMeshBindingInfluence::VT_BONE, bone, 0);
+  }
+  void add_weight(float weight) {
+    fbb_.AddElement<float>(PartMeshBindingInfluence::VT_WEIGHT, weight, 0.0f);
+  }
+  void add_coordinate(::flatbuffers::Offset<ss::format::Vec2> coordinate) {
+    fbb_.AddOffset(PartMeshBindingInfluence::VT_COORDINATE, coordinate);
+  }
+  explicit PartMeshBindingInfluenceBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  ::flatbuffers::Offset<PartMeshBindingInfluence> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = ::flatbuffers::Offset<PartMeshBindingInfluence>(end);
+    return o;
+  }
+};
+
+inline ::flatbuffers::Offset<PartMeshBindingInfluence> CreatePartMeshBindingInfluence(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    uint16_t bone = 0,
+    float weight = 0.0f,
+    ::flatbuffers::Offset<ss::format::Vec2> coordinate = 0) {
+  PartMeshBindingInfluenceBuilder builder_(_fbb);
+  builder_.add_coordinate(coordinate);
+  builder_.add_weight(weight);
+  builder_.add_bone(bone);
+  return builder_.Finish();
+}
+
+struct PartMeshBindingVertex FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef PartMeshBindingVertexBuilder Builder;
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
+    VT_INFLUENCE = 4
+  };
+  const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartMeshBindingInfluence>> *influence() const {
+    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartMeshBindingInfluence>> *>(VT_INFLUENCE);
+  }
+  template <bool B = false>
+  bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyOffset(verifier, VT_INFLUENCE) &&
+           verifier.VerifyVector(influence()) &&
+           verifier.VerifyVectorOfTables(influence()) &&
+           verifier.EndTable();
+  }
+};
+
+struct PartMeshBindingVertexBuilder {
+  typedef PartMeshBindingVertex Table;
+  ::flatbuffers::FlatBufferBuilder &fbb_;
+  ::flatbuffers::uoffset_t start_;
+  void add_influence(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartMeshBindingInfluence>>> influence) {
+    fbb_.AddOffset(PartMeshBindingVertex::VT_INFLUENCE, influence);
+  }
+  explicit PartMeshBindingVertexBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  ::flatbuffers::Offset<PartMeshBindingVertex> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = ::flatbuffers::Offset<PartMeshBindingVertex>(end);
+    return o;
+  }
+};
+
+inline ::flatbuffers::Offset<PartMeshBindingVertex> CreatePartMeshBindingVertex(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartMeshBindingInfluence>>> influence = 0) {
+  PartMeshBindingVertexBuilder builder_(_fbb);
+  builder_.add_influence(influence);
+  return builder_.Finish();
+}
+
+inline ::flatbuffers::Offset<PartMeshBindingVertex> CreatePartMeshBindingVertexDirect(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    const std::vector<::flatbuffers::Offset<ss::format::PartMeshBindingInfluence>> *influence = nullptr) {
+  auto influence__ = influence ? _fbb.CreateVector<::flatbuffers::Offset<ss::format::PartMeshBindingInfluence>>(*influence) : 0;
+  return ss::format::CreatePartMeshBindingVertex(
+      _fbb,
+      influence__);
+}
+
+struct PartMeshBinding FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef PartMeshBindingBuilder Builder;
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
+    VT_VERTEX = 4
+  };
+  const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartMeshBindingVertex>> *vertex() const {
+    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartMeshBindingVertex>> *>(VT_VERTEX);
+  }
+  template <bool B = false>
+  bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyOffset(verifier, VT_VERTEX) &&
+           verifier.VerifyVector(vertex()) &&
+           verifier.VerifyVectorOfTables(vertex()) &&
+           verifier.EndTable();
+  }
+};
+
+struct PartMeshBindingBuilder {
+  typedef PartMeshBinding Table;
+  ::flatbuffers::FlatBufferBuilder &fbb_;
+  ::flatbuffers::uoffset_t start_;
+  void add_vertex(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartMeshBindingVertex>>> vertex) {
+    fbb_.AddOffset(PartMeshBinding::VT_VERTEX, vertex);
+  }
+  explicit PartMeshBindingBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  ::flatbuffers::Offset<PartMeshBinding> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = ::flatbuffers::Offset<PartMeshBinding>(end);
+    return o;
+  }
+};
+
+inline ::flatbuffers::Offset<PartMeshBinding> CreatePartMeshBinding(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartMeshBindingVertex>>> vertex = 0) {
+  PartMeshBindingBuilder builder_(_fbb);
+  builder_.add_vertex(vertex);
+  return builder_.Finish();
+}
+
+inline ::flatbuffers::Offset<PartMeshBinding> CreatePartMeshBindingDirect(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    const std::vector<::flatbuffers::Offset<ss::format::PartMeshBindingVertex>> *vertex = nullptr) {
+  auto vertex__ = vertex ? _fbb.CreateVector<::flatbuffers::Offset<ss::format::PartMeshBindingVertex>>(*vertex) : 0;
+  return ss::format::CreatePartMeshBinding(
+      _fbb,
+      vertex__);
+}
+
 struct PartAttributeCell FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   typedef PartAttributeCellBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
@@ -5795,8 +5973,9 @@ struct PartData FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
     VT_BOUNDS_TYPE = 8,
     VT_BLEND_TYPE = 10,
     VT_MASK_INFLUENCE = 12,
-    VT_PART_TYPE_TYPE = 14,
-    VT_PART_TYPE = 16
+    VT_MESH_BINDING = 14,
+    VT_PART_TYPE_TYPE = 16,
+    VT_PART_TYPE = 18
   };
   const ::flatbuffers::String *name() const {
     return GetPointer<const ::flatbuffers::String *>(VT_NAME);
@@ -5812,6 +5991,9 @@ struct PartData FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   }
   bool mask_influence() const {
     return GetField<uint8_t>(VT_MASK_INFLUENCE, 0) != 0;
+  }
+  const ss::format::PartMeshBinding *mesh_binding() const {
+    return GetPointer<const ss::format::PartMeshBinding *>(VT_MESH_BINDING);
   }
   ss::format::PartType part_type_type() const {
     return static_cast<ss::format::PartType>(GetField<uint8_t>(VT_PART_TYPE_TYPE, 0));
@@ -5879,6 +6061,8 @@ struct PartData FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyField<uint8_t>(verifier, VT_BOUNDS_TYPE, 1) &&
            VerifyField<uint8_t>(verifier, VT_BLEND_TYPE, 1) &&
            VerifyField<uint8_t>(verifier, VT_MASK_INFLUENCE, 1) &&
+           VerifyOffset(verifier, VT_MESH_BINDING) &&
+           verifier.VerifyTable(mesh_binding()) &&
            VerifyField<uint8_t>(verifier, VT_PART_TYPE_TYPE, 1) &&
            VerifyOffset(verifier, VT_PART_TYPE) &&
            VerifyPartType(verifier, part_type(), part_type_type()) &&
@@ -5905,6 +6089,9 @@ struct PartDataBuilder {
   void add_mask_influence(bool mask_influence) {
     fbb_.AddElement<uint8_t>(PartData::VT_MASK_INFLUENCE, static_cast<uint8_t>(mask_influence), 0);
   }
+  void add_mesh_binding(::flatbuffers::Offset<ss::format::PartMeshBinding> mesh_binding) {
+    fbb_.AddOffset(PartData::VT_MESH_BINDING, mesh_binding);
+  }
   void add_part_type_type(ss::format::PartType part_type_type) {
     fbb_.AddElement<uint8_t>(PartData::VT_PART_TYPE_TYPE, static_cast<uint8_t>(part_type_type), 0);
   }
@@ -5929,10 +6116,12 @@ inline ::flatbuffers::Offset<PartData> CreatePartData(
     ss::format::BoundsType bounds_type = ss::format::BoundsType_None,
     ss::format::BlendType blend_type = ss::format::BlendType_Mix,
     bool mask_influence = false,
+    ::flatbuffers::Offset<ss::format::PartMeshBinding> mesh_binding = 0,
     ss::format::PartType part_type_type = ss::format::PartType_NONE,
     ::flatbuffers::Offset<void> part_type = 0) {
   PartDataBuilder builder_(_fbb);
   builder_.add_part_type(part_type);
+  builder_.add_mesh_binding(mesh_binding);
   builder_.add_name(name);
   builder_.add_parent_index(parent_index);
   builder_.add_part_type_type(part_type_type);
@@ -5949,6 +6138,7 @@ inline ::flatbuffers::Offset<PartData> CreatePartDataDirect(
     ss::format::BoundsType bounds_type = ss::format::BoundsType_None,
     ss::format::BlendType blend_type = ss::format::BlendType_Mix,
     bool mask_influence = false,
+    ::flatbuffers::Offset<ss::format::PartMeshBinding> mesh_binding = 0,
     ss::format::PartType part_type_type = ss::format::PartType_NONE,
     ::flatbuffers::Offset<void> part_type = 0) {
   auto name__ = name ? _fbb.CreateString(name) : 0;
@@ -5959,6 +6149,7 @@ inline ::flatbuffers::Offset<PartData> CreatePartDataDirect(
       bounds_type,
       blend_type,
       mask_influence,
+      mesh_binding,
       part_type_type,
       part_type);
 }

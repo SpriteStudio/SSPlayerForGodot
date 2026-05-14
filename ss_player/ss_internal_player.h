@@ -285,7 +285,7 @@ private:
     int _build_normal(const DrawFrame& f, int p_idx,
                       const ss::runtime::PartState* part,
                       const float* draw_m,
-                      const Vector2& tex_size,
+                      const Vector2& inv_tex_size,
                       SsVec2Array& verts,
                       SsVec2Array& uvs,
                       SsColorArray& colors,
