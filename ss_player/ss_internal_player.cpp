@@ -344,12 +344,15 @@ namespace {
     constexpr int INDICES_COUNT_PENTAGON = 12;
     constexpr int INDICES_COUNT_QUAD = 6;
 
-    Transform2D matrix_to_transform2d(const float* m) {
-        Transform2D t;
-        t.columns[0] = Vector2(m[0], m[1]);
-        t.columns[1] = Vector2(m[4], m[5]);
-        t.columns[2] = Vector2(m[12], m[13]);
-        return t;
+    inline Vector2 xform_raw(const float* m, float x, float y) {
+        return Vector2(
+            m[0] * x + m[4] * y + m[12],
+            m[1] * x + m[5] * y + m[13]
+        );
+    }
+
+    inline Transform2D matrix_to_transform2d(const float* m) {
+        return Transform2D(m[0], m[1], m[4], m[5], m[12], m[13]);
     }
 }
 
@@ -428,6 +431,8 @@ void SsInternalPlayer::_drawAnimation(float frame_no, float delta_seconds, bool 
     f.frame_no = frame_no;
     f.delta_seconds = delta_seconds;
     f.parent_looped = parent_looped;
+
+    // Fetch all SoA buffers from runtime in one block.
     ss_runtime_get_world_matrices(runtime_ctx, &f.world_matrices, &f.world_matrices_len);
     ss_runtime_get_local_uvs(runtime_ctx, &f.local_uvs, &f.local_uvs_len);
     ss_runtime_get_cell_meta(runtime_ctx, &f.cell_meta, &f.cell_meta_len);
@@ -442,8 +447,10 @@ void SsInternalPlayer::_drawAnimation(float frame_no, float delta_seconds, bool 
 
     {
         const int total = f.binary->parts() ? (int)f.binary->parts()->size() : 0;
-        _parts_by_idx.resize(total);
-        for (int i = 0; i < total; i++) _parts_by_idx[i] = nullptr;
+        if ((int)_parts_by_idx.size() != total) _parts_by_idx.resize(total);
+        if (total > 0) {
+            for (int i = 0; i < total; i++) _parts_by_idx[i] = nullptr;
+        }
         for (uint32_t i = 0; i < parts->size(); i++) {
             auto p = parts->Get(i);
             int idx = p->part_index();
@@ -869,7 +876,7 @@ void SsInternalPlayer::_emit_effect_slot(const DrawFrame& f, RID ci, int p_idx, 
 int SsInternalPlayer::_build_normal(const DrawFrame& f, int p_idx,
                                     const ss::runtime::PartState* part,
                                     const float* draw_m,
-                                    const Vector2& tex_size,
+                                    const Vector2& inv_tex_size,
                                     SsVec2Array& verts,
                                     SsVec2Array& uvs,
                                     SsColorArray& colors,
@@ -906,17 +913,19 @@ int SsInternalPlayer::_build_normal(const DrawFrame& f, int p_idx,
         corner_colors[0] = to_color(pc->lt()); corner_colors[1] = to_color(pc->rt()); corner_colors[2] = to_color(pc->lb()); corner_colors[3] = to_color(pc->rb());
     }
 
-    Transform2D draw_transform = matrix_to_transform2d(draw_m);
+    Vector2* v_ptr = verts.ptrw();
+    Vector2* u_ptr = uvs.ptrw();
+    Color* c_ptr = colors.ptrw();
 
     for (int j = 0; j < CORNERS_COUNT; j++) {
-        verts.set(vbase + j, draw_transform.xform(Vector2(out_x[j], out_y[j])));
-        uvs.set(vbase + j, Vector2(out_u[j] / tex_size.x, out_v[j] / tex_size.y));
-        colors.set(vbase + j, corner_colors[j]);
+        v_ptr[vbase + j] = xform_raw(draw_m, out_x[j], out_y[j]);
+        u_ptr[vbase + j] = Vector2(out_u[j] * inv_tex_size.x, out_v[j] * inv_tex_size.y);
+        c_ptr[vbase + j] = corner_colors[j];
     }
     if (needs_center) {
-        verts.set(vbase + CORNERS_COUNT, draw_transform.xform(Vector2(out_x[CORNERS_COUNT], out_y[CORNERS_COUNT])));
-        uvs.set(vbase + CORNERS_COUNT, Vector2(out_u[CORNERS_COUNT] / tex_size.x, out_v[CORNERS_COUNT] / tex_size.y));
-        colors.set(vbase + CORNERS_COUNT, (corner_colors[0] + corner_colors[1] + corner_colors[2] + corner_colors[3]) * 0.25f);
+        v_ptr[vbase + CORNERS_COUNT] = xform_raw(draw_m, out_x[CORNERS_COUNT], out_y[CORNERS_COUNT]);
+        u_ptr[vbase + CORNERS_COUNT] = Vector2(out_u[CORNERS_COUNT] * inv_tex_size.x, out_v[CORNERS_COUNT] * inv_tex_size.y);
+        c_ptr[vbase + CORNERS_COUNT] = (corner_colors[0] + corner_colors[1] + corner_colors[2] + corner_colors[3]) * 0.25f;
     }
     return vert_count;
 }
@@ -975,10 +984,10 @@ bool SsInternalPlayer::_build_shape_geometry(const DrawFrame& f, int p_idx,
         corner_colors[0] = to_color(pc->lt()); corner_colors[1] = to_color(pc->rt()); corner_colors[2] = to_color(pc->lb()); corner_colors[3] = to_color(pc->rb());
     }
 
-    Transform2D draw_transform = matrix_to_transform2d(draw_m);
-
     out.verts.resize(part_shape_count);
     out.colors.resize(part_shape_count);
+    Vector2* v_ptr = out.verts.ptrw();
+    Color* c_ptr = out.colors.ptrw();
 
     for (int i = 0; i < part_shape_count; i++) {
         const float vx = part_shape_verts[i * 2 + 0];
@@ -989,21 +998,23 @@ bool SsInternalPlayer::_build_shape_geometry(const DrawFrame& f, int p_idx,
         const float wRT =          fx * (1.0f - fy);
         const float wLB = (1.0f - fx) *          fy;
         const float wRB =          fx *          fy;
-        out.colors.set(i, corner_colors[0] * wLT + corner_colors[1] * wRT + corner_colors[2] * wLB + corner_colors[3] * wRB);
-        out.verts.set(i, draw_transform.xform(Vector2(vx, vy)));
+        c_ptr[i] = corner_colors[0] * wLT + corner_colors[1] * wRT + corner_colors[2] * wLB + corner_colors[3] * wRB;
+        v_ptr[i] = xform_raw(draw_m, vx, vy);
     }
 
     if (part_shape_count == 4) {
         const int idx[6] = { 0,1,2, 1,3,2 };
         out.indices.resize(6);
-        for (int i = 0; i < 6; i++) out.indices.set(i, idx[i]);
+        int32_t* i_ptr = (int32_t*)out.indices.ptrw();
+        for (int i = 0; i < 6; i++) i_ptr[i] = idx[i];
     } else {
         const int tri_count = part_shape_count - 2;
         out.indices.resize(tri_count * 3);
+        int32_t* i_ptr = (int32_t*)out.indices.ptrw();
         for (int i = 0; i < tri_count; i++) {
-            out.indices.set(i*3 + 0, 0);
-            out.indices.set(i*3 + 1, i + 1);
-            out.indices.set(i*3 + 2, i + 2);
+            i_ptr[i*3 + 0] = 0;
+            i_ptr[i*3 + 1] = i + 1;
+            i_ptr[i*3 + 2] = i + 2;
         }
     }
     return true;
@@ -1027,6 +1038,7 @@ void SsInternalPlayer::_emit_normal_batch(const DrawFrame& f, RID ci,
     }
     if (tex.is_null()) return;
     const Vector2 tex_size = tex->get_size();
+    const Vector2 inv_tex_size = Vector2(1.0f / tex_size.x, 1.0f / tex_size.y);
 
     _normal_verts.resize((int)batch->vertex_count());
     _normal_uvs.resize((int)batch->vertex_count());
@@ -1036,6 +1048,7 @@ void SsInternalPlayer::_emit_normal_batch(const DrawFrame& f, RID ci,
     SsVec2Array&  uvs     = _normal_uvs;
     SsColorArray& colors  = _normal_colors;
     SsIntArray&   indices = _normal_indices;
+    int32_t* indices_ptr = (int32_t*)indices.ptrw();
 
     int vbase = 0;
     int ibase = 0;
@@ -1053,7 +1066,7 @@ void SsInternalPlayer::_emit_normal_batch(const DrawFrame& f, RID ci,
         }
         if (!drawing_m) continue;
 
-        const int vert_count = _build_normal(f, p_idx, part, drawing_m, tex_size,
+        const int vert_count = _build_normal(f, p_idx, part, drawing_m, inv_tex_size,
                                              verts, uvs, colors, vbase);
         if (vert_count == 0) continue;
 
@@ -1061,13 +1074,13 @@ void SsInternalPlayer::_emit_normal_batch(const DrawFrame& f, RID ci,
         if (vert_count == MAX_VERTICES_COUNT) {
             const int p[INDICES_COUNT_PENTAGON] = { 0,1,4, 1,3,4, 3,2,4, 2,0,4 };
             for (int j = 0; j < INDICES_COUNT_PENTAGON && ibase + j < indices.size(); j++) {
-                indices.set(ibase + j, vbase + p[j]);
+                indices_ptr[ibase + j] = vbase + p[j];
             }
             ibase += INDICES_COUNT_PENTAGON;
         } else {
             const int q[INDICES_COUNT_QUAD] = { 0,1,2, 1,3,2 };
             for (int j = 0; j < INDICES_COUNT_QUAD && ibase + j < indices.size(); j++) {
-                indices.set(ibase + j, vbase + q[j]);
+                indices_ptr[ibase + j] = vbase + q[j];
             }
             ibase += INDICES_COUNT_QUAD;
         }
