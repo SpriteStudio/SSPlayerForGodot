@@ -39,6 +39,7 @@ void SSImportControl::_bind_methods() {
     ClassDB::bind_method(D_METHOD("_on_line_edit_submitted", "text"), &SSImportControl::_on_line_edit_submitted);
     ClassDB::bind_method(D_METHOD("_on_browse_button_pressed"), &SSImportControl::_on_browse_button_pressed);
     ClassDB::bind_method(D_METHOD("_on_reset_button_pressed"), &SSImportControl::_on_reset_button_pressed);
+    ClassDB::bind_method(D_METHOD("_on_open_dir_button_pressed"), &SSImportControl::_on_open_dir_button_pressed);
     ClassDB::bind_method(D_METHOD("_on_dir_selected"), &SSImportControl::_on_dir_selected);
     ClassDB::bind_method(D_METHOD("_on_recent_file_pressed", "path"), &SSImportControl::_on_recent_file_pressed);
     ClassDB::bind_method(D_METHOD("_on_recent_gui_input", "event", "path"), &SSImportControl::_on_recent_gui_input);
@@ -70,30 +71,40 @@ SSImportControl::SSImportControl() {
 
     // 2. Output Dir row
     {
-        HBoxContainer *hbox = memnew(HBoxContainer);
-        add_child(hbox);
+        VBoxContainer *output_vbox = memnew(VBoxContainer);
+        add_child(output_vbox);
+
+        HBoxContainer *header_hbox = memnew(HBoxContainer);
+        output_vbox->add_child(header_hbox);
 
         Label *label = memnew(Label);
         label->set_text(tr("Output:"));
-        hbox->add_child(label);
+        header_hbox->add_child(label);
+
+        Control *spacer = memnew(Control);
+        spacer->set_h_size_flags(SIZE_EXPAND_FILL);
+        header_hbox->add_child(spacer);
+
+        browse_button = memnew(Button);
+        browse_button->set_tooltip_text(tr("Choose output directory"));
+        browse_button->connect("pressed", Callable(this, "_on_browse_button_pressed"));
+        header_hbox->add_child(browse_button);
+
+        reset_button = memnew(Button);
+        reset_button->set_tooltip_text(tr("Reset to default directory"));
+        reset_button->connect("pressed", callable_mp(this, &SSImportControl::_on_reset_button_pressed));
+        header_hbox->add_child(reset_button);
+
+        open_dir_button = memnew(Button);
+        open_dir_button->set_tooltip_text(tr("Open in File Manager"));
+        open_dir_button->connect("pressed", Callable(this, "_on_open_dir_button_pressed"));
+        header_hbox->add_child(open_dir_button);
 
         path_line_edit = memnew(LineEdit);
         path_line_edit->set_h_size_flags(SIZE_EXPAND_FILL);
         path_line_edit->set_editable(true);
         path_line_edit->connect("text_submitted", Callable(this, "_on_line_edit_submitted"));
-        hbox->add_child(path_line_edit);
-
-        browse_button = memnew(Button);
-        browse_button->set_text("...");
-        browse_button->set_tooltip_text(tr("Choose output directory"));
-        browse_button->connect("pressed", Callable(this, "_on_browse_button_pressed"));
-        hbox->add_child(browse_button);
-
-        reset_button = memnew(Button);
-        reset_button->set_text(L"⟲");
-        reset_button->set_tooltip_text(tr("Reset to default directory"));
-        reset_button->connect("pressed", callable_mp(this, &SSImportControl::_on_reset_button_pressed));
-        hbox->add_child(reset_button);
+        output_vbox->add_child(path_line_edit);
     }
 
     file_dialog = memnew(EditorFileDialog);
@@ -170,6 +181,11 @@ SSImportControl::~SSImportControl() {
 
 void SSImportControl::_notification(int p_what) {
     switch (p_what) {
+        case NOTIFICATION_THEME_CHANGED: {
+            if (browse_button) browse_button->set_button_icon(get_theme_icon(SNAME("Load"), SNAME("EditorIcons")));
+            if (reset_button) reset_button->set_button_icon(get_theme_icon(SNAME("Reload"), SNAME("EditorIcons")));
+            if (open_dir_button) open_dir_button->set_button_icon(get_theme_icon(SNAME("Filesystem"), SNAME("EditorIcons")));
+        } break;
         case NOTIFICATION_ENTER_TREE: {
             start_intercepting();
         } break;
@@ -343,6 +359,19 @@ void SSImportControl::_on_reset_button_pressed() {
     path_line_edit->set_text(DEFAULT_PATH);
     _save_settings();
     _ensure_output_dir_exists();
+}
+
+void SSImportControl::_on_open_dir_button_pressed() {
+    String path = path_line_edit->get_text();
+    if (path.is_empty()) {
+        return;
+    }
+
+    String global_path = ProjectSettings::get_singleton()->globalize_path(path);
+    Error err = OS::get_singleton()->shell_open(global_path);
+    if (err != OK) {
+        print_line(vformat("SSImportControl: failed to open output directory %s. error=%d", global_path, (int)err));
+    }
 }
 
 void SSImportControl::_on_dir_selected(const String &p_path) {
