@@ -43,6 +43,7 @@ void SSImportControl::_bind_methods() {
     ClassDB::bind_method(D_METHOD("_on_recent_file_pressed", "path"), &SSImportControl::_on_recent_file_pressed);
     ClassDB::bind_method(D_METHOD("_on_recent_gui_input", "event", "path"), &SSImportControl::_on_recent_gui_input);
     ClassDB::bind_method(D_METHOD("_on_recent_menu_id_pressed", "id"), &SSImportControl::_on_recent_menu_id_pressed);
+    ClassDB::bind_method(D_METHOD("_on_clear_recent_pressed"), &SSImportControl::_on_clear_recent_pressed);
 }
 
 
@@ -131,9 +132,19 @@ SSImportControl::SSImportControl() {
 
     // 4. Recent SSPJs section
     {
+        HBoxContainer *recent_header = memnew(HBoxContainer);
+        add_child(recent_header);
+
         recent_label = memnew(Label);
         recent_label->set_text(tr("Recent SSPJs"));
-        add_child(recent_label);
+        recent_label->set_h_size_flags(Control::SIZE_EXPAND_FILL);
+        recent_header->add_child(recent_label);
+
+        clear_recent_button = memnew(Button);
+        clear_recent_button->set_text(tr("Clear"));
+        clear_recent_button->set_tooltip_text(tr("Clear recent SSPJ files"));
+        clear_recent_button->connect("pressed", Callable(this, "_on_clear_recent_pressed"));
+        recent_header->add_child(clear_recent_button);
 
         ScrollContainer *scroll = memnew(ScrollContainer);
         scroll->set_h_size_flags(SIZE_EXPAND_FILL);
@@ -446,6 +457,12 @@ void SSImportControl::_on_recent_menu_id_pressed(int p_id) {
             _remove_from_recent_files(path);
         } break;
     }
+}
+
+void SSImportControl::_on_clear_recent_pressed() {
+    Ref<EditorSettings> es = EditorInterface::get_singleton()->get_editor_settings();
+    es->set_project_metadata("spritestudio", "recent_files", PackedStringArray());
+    _update_recent_files_ui();
 }
 
 void SSImportControl::_remove_from_recent_files(const String &p_path) {
