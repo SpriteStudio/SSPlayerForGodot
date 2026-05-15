@@ -81,11 +81,13 @@ private:
   LineEdit *path_line_edit = nullptr;
   Button *browse_button = nullptr;
   Button *reset_button = nullptr;
+  Button *open_dir_button = nullptr;
   EditorFileDialog *file_dialog = nullptr;
 
   VBoxContainer *recent_vbox = nullptr;
   Label *recent_label = nullptr;
   Label *recent_empty_label = nullptr;
+  Button *clear_recent_button = nullptr;
 
   PopupMenu *recent_popup = nullptr;
   String pending_recent_path;
@@ -98,11 +100,13 @@ private:
   void _on_line_edit_submitted(const String &p_path);
   void _on_browse_button_pressed();
   void _on_reset_button_pressed();
+  void _on_open_dir_button_pressed();
   void _on_dir_selected(const String &p_path);
   void _on_recent_file_pressed(const String &p_path);
   void _on_recent_gui_input(const Ref<InputEvent> &p_event, const String &p_path);
   void _show_recent_context_menu(const String &p_path);
   void _on_recent_menu_id_pressed(int p_id);
+  void _on_clear_recent_pressed();
   void _remove_from_recent_files(const String &p_path);
   void _update_recent_files_ui();
   void _add_to_recent_files(const String &p_path);
