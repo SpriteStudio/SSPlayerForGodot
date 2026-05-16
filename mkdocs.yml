@@ -1,0 +1,49 @@
+site_name: SpriteStudioPlayer for Godot
+theme:
+  name: material
+  language: en
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: blue grey
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: blue grey
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - content.code.copy
+
+plugins:
+  - search
+  - i18n:
+      default_language: en
+      languages:
+        en: 
+          name: English
+          build_dir: en
+        ja: 
+          name: 日本語
+          build_dir: ja
+
+nav:
+  - Home: index.md
+  - Setup:
+      - Installation: setup/install.md
+      - Build Guide: setup/build.md
+  - Workflow:
+      - Import: workflow/import.md
+      - Basic Usage: workflow/usage.md
+      - Tips & Advanced: workflow/tips.md
+  - API Reference:
+      - SpriteStudioPlayer2D: api/player.md
+      - Resource Classes: api/resource.md

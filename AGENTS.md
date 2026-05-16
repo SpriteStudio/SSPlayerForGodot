@@ -21,7 +21,7 @@ A Godot Engine integration for SpriteStudio 7, providing a C++ `SsPlayerNode2D` 
 | `ss_player/runtime/` | Binary artifacts (`libssruntime`, `libssconverter`) and FFI headers. | — |
 | `ss_player/SpriteStudio7-SDK/` | Submodule for core Rust runtime/converter. | [SDK AGENTS](./ss_player/SpriteStudio7-SDK/AGENTS.md) |
 | `ss_player/format/` | FlatBuffers-generated headers for C++. | — |
-| `scripts/` | SCons build wrappers and release packaging. | [BUILD.md](./BUILD.md) |
+| `scripts/` | SCons build wrappers and release packaging. | [docs/en/setup/build.md](./docs/en/setup/build.md) |
 
 ## Hard constraints
 
