@@ -108,7 +108,11 @@ void SSImporter::_finalize_import() {
             _record_ssabs_in_dir(source_map, _import_dst_dirs[i], _import_src_files[i]);
             any_success = true;
         } else {
-            print_line(vformat("SSImporter: convert failed for %s (error %d)", _import_src_files[i], (int)result));
+            const char *err_msg = nullptr;
+            uintptr_t err_len = 0;
+            ss_converter_get_error((Context *)ctx, &err_msg, &err_len);
+            String err_str = err_msg ? String::utf8(err_msg) : String("Unknown error");
+            ERR_PRINT(vformat("SSImporter: convert failed for %s (error %d): %s", _import_src_files[i], (int)result, err_str));
         }
         ss_converter_destroy((Context *)ctx);
     }

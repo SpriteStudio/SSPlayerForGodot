@@ -7,13 +7,19 @@
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
   #include <godot_cpp/core/version.hpp>
+  #include <godot_cpp/variant/string_name.hpp>
+  #define SNAME(x) godot::StringName(x)
   #define EMPTY(x) ((x).is_empty())
   #define VARIANT_FLOAT Variant::FLOAT
   #define NOTIFY_PROPERTY_LIST_CHANGED() notify_property_list_changed()
 #else
   #include "core/version.h"
+  #include "core/string/string_name.h"
   #if VERSION_MAJOR>=4
     #define	GD_V4
+    #ifndef SNAME
+      #define SNAME(x) StringName(x)
+    #endif
     #define EMPTY(x) ((x).is_empty())
     #define VARIANT_FLOAT Variant::FLOAT
     #define NOTIFY_PROPERTY_LIST_CHANGED() notify_property_list_changed()
