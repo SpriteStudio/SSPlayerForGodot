@@ -12,8 +12,25 @@
 #include "servers/rendering/rendering_server.h"
 #endif
 
+namespace {
+// Bridges ssruntime's `ss_log!` output into the Godot console. Without this
+// the runtime's log callback stays null and FFI-side diagnostics are silent.
+void ss_runtime_log_bridge(int level, const char *message) {
+    (void)level;
+    if (!message) {
+        return;
+    }
+    WARN_PRINT(String("[ssruntime] ") + String(message));
+}
+} // namespace
 
 SsInternalPlayer::SsInternalPlayer() {
+    // Register once; the runtime stores the callback in a process-global slot.
+    static bool log_callback_registered = false;
+    if (!log_callback_registered) {
+        ss_runtime_set_log_callback(&ss_runtime_log_bridge);
+        log_callback_registered = true;
+    }
     runtime_ctx = ss_runtime_create();
     _reconfigure();
 
