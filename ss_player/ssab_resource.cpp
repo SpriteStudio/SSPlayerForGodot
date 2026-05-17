@@ -79,6 +79,9 @@ Error SSABResource::save_to_file(const String &path) {
 }
 
 int SSABResource::get_animation_count() {
+  if (!is_valid()) {
+    return 0;
+  }
   auto ss_anime_binary = this->get_ss_anime_binary();
   return ss_anime_binary->animations()->size();
 }
@@ -90,6 +93,9 @@ PackedStringArray SSABResource::get_animation_names() {
 Vector<String> SSABResource::get_animation_names() {
     Vector<String> vec;
 #endif
+    if (!is_valid()) {
+        return vec;
+    }
     auto ss_anime_binary = this->get_ss_anime_binary();
     auto num  = ss_anime_binary->animations()->size();
     for (int i=0; i < num; i++) {
@@ -107,6 +113,9 @@ PackedStringArray SSABResource::get_cellmap_names() {
 Vector<String> SSABResource::get_cellmap_names() {
     Vector<String> vec;
 #endif
+    if (!is_valid()) {
+        return vec;
+    }
     auto a = get_ss_anime_binary();
     if (a->cellmaps() != nullptr) {
         for (int i = 0; i < a->cellmaps()->size(); i++) {
@@ -124,6 +133,9 @@ Vector<String> SSABResource::get_cellmap_names() {
 }
 
 uint32_t SSABResource::get_cellmap_hash(const String &cellmap_name) {
+    if (!is_valid()) {
+        return 0;
+    }
     auto a = get_ss_anime_binary();
     if (a->cellmaps() != nullptr) {
         for (int i = 0; i < a->cellmaps()->size(); i++) {
@@ -145,6 +157,9 @@ uint32_t SSABResource::get_cellmap_hash(const String &cellmap_name) {
 }
 
 const ss::format::SsAnimeBinary *SSABResource::get_ss_anime_binary() {
+    if (binary.size() == 0) {
+        return nullptr;
+    }
     return ss::format::GetSsAnimeBinary(this->binary.ptr());
 }
 
@@ -157,6 +172,9 @@ int64_t SSABResource::get_data_size() {
 }
 
 ss::format::AnimationData *SSABResource::find_animation(const String &name) {
+    if (!is_valid()) {
+        return nullptr;
+    }
     auto ss_anime_binary = this->get_ss_anime_binary();
     auto num  = ss_anime_binary->animations()->size();
     for (int i=0; i < num; i++) {
@@ -200,7 +218,15 @@ Ref<Resource> SSABResourceFormatLoader::load(const String &path,
                                                        CacheMode cache_mode) {
 #endif
   Ref<SSABResource> ssab_file = memnew(SSABResource);
-  ssab_file->load_from_file(path);
+  Error err = ssab_file->load_from_file(path);
+  if (err != OK) {
+#ifndef SPRITESTUDIO_GODOT_EXTENSION
+    if (error)
+      *error = err;
+#endif
+    return Ref<Resource>();
+  }
+
 #ifndef SPRITESTUDIO_GODOT_EXTENSION
   if (error)
     *error = OK;
@@ -250,14 +276,14 @@ Error SSABResourceFormatSaver::save(const Ref<Resource> &resource, const String 
 PackedStringArray SSABResourceFormatSaver::_get_recognized_extensions(const Ref<Resource> &resource) {
   PackedStringArray extensions;
   if (Object::cast_to<SSABResource>(*resource)) {
-    extensions.push_back("bssab");
+    extensions.push_back("ssab");
   }
   return extensions;
 }
 #else
 void SSABResourceFormatSaver::get_recognized_extensions(const Ref<Resource> &resource, List<String> *p_extensions) const {
   if (Object::cast_to<SSABResource>(*resource)) {
-    p_extensions->push_back("bssab");
+    p_extensions->push_back("ssab");
   }
 }
 #endif
