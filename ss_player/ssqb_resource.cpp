@@ -49,6 +49,9 @@ Error SSQBResource::save_to_file(const String &path) {
 }
 
 const ss::format::SsSequenceBinary *SSQBResource::get_ss_sequence_binary() {
+  if (binary.size() == 0) {
+    return nullptr;
+  }
   return ss::format::GetSsSequenceBinary(this->binary.ptr());
 }
 
@@ -78,7 +81,15 @@ Ref<Resource> SSQBResourceFormatLoader::load(
     bool use_sub_threads, float *progress, CacheMode cache_mode) {
 #endif
   Ref<SSQBResource> ssqb_file = memnew(SSQBResource);
-  ssqb_file->load_from_file(path);
+  Error err = ssqb_file->load_from_file(path);
+  if (err != OK) {
+#ifndef SPRITESTUDIO_GODOT_EXTENSION
+    if (error)
+      *error = err;
+#endif
+    return Ref<Resource>();
+  }
+
 #ifndef SPRITESTUDIO_GODOT_EXTENSION
   if (error)
     *error = OK;
@@ -133,7 +144,7 @@ PackedStringArray SSQBResourceFormatSaver::_get_recognized_extensions(
     const Ref<Resource> &resource) {
   PackedStringArray extensions;
   if (Object::cast_to<SSQBResource>(*resource)) {
-    extensions.push_back("bssqb");
+    extensions.push_back("ssqb");
   }
   return extensions;
 }
@@ -141,7 +152,7 @@ PackedStringArray SSQBResourceFormatSaver::_get_recognized_extensions(
 void SSQBResourceFormatSaver::get_recognized_extensions(
     const Ref<Resource> &resource, List<String> *p_extensions) const {
   if (Object::cast_to<SSQBResource>(*resource)) {
-    p_extensions->push_back("bssqb");
+    p_extensions->push_back("ssqb");
   }
 }
 #endif
