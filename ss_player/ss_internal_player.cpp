@@ -12,8 +12,25 @@
 #include "servers/rendering/rendering_server.h"
 #endif
 
+namespace {
+// Bridges ssruntime's `ss_log!` output into the Godot console. Without this
+// the runtime's log callback stays null and FFI-side diagnostics are silent.
+void ss_runtime_log_bridge(int level, const char *message) {
+    (void)level;
+    if (!message) {
+        return;
+    }
+    WARN_PRINT(String("[ssruntime] ") + String(message));
+}
+} // namespace
 
 SsInternalPlayer::SsInternalPlayer() {
+    // Register once; the runtime stores the callback in a process-global slot.
+    static bool log_callback_registered = false;
+    if (!log_callback_registered) {
+        ss_runtime_set_log_callback(&ss_runtime_log_bridge);
+        log_callback_registered = true;
+    }
     runtime_ctx = ss_runtime_create();
     _reconfigure();
 
@@ -440,6 +457,12 @@ void SsInternalPlayer::_drawAnimation(float frame_no, float delta_seconds, bool 
     ss_runtime_get_shape_vertices(runtime_ctx, &f.shape_vertices, &f.shape_vertices_len);
     ss_runtime_get_shape_vertex_box_coords(runtime_ctx, &f.shape_box_coords, &f.shape_box_coords_len);
     ss_runtime_get_shape_vertex_counts(runtime_ctx, &f.shape_vertex_counts, &f.shape_vertex_counts_len);
+    ss_runtime_get_mesh_vertices_x(runtime_ctx, &f.mesh_vertices_x, &f.mesh_vertices_x_len);
+    ss_runtime_get_mesh_vertices_y(runtime_ctx, &f.mesh_vertices_y, &f.mesh_vertices_y_len);
+    ss_runtime_get_mesh_vertex_offsets(runtime_ctx, &f.mesh_vertex_offsets, &f.mesh_vertex_offsets_len);
+    ss_runtime_get_mesh_uvs(runtime_ctx, &f.mesh_uvs, &f.mesh_uvs_len);
+    ss_runtime_get_mesh_indices(runtime_ctx, &f.mesh_indices, &f.mesh_indices_len);
+    ss_runtime_get_mesh_index_offsets(runtime_ctx, &f.mesh_index_offsets, &f.mesh_index_offsets_len);
 
     auto parts = f.frameData->parts();
     auto draw_order = f.frameData->draw_order();
@@ -497,8 +520,12 @@ void SsInternalPlayer::_drawAnimation(float frame_no, float delta_seconds, bool 
                 ? f.world_matrices + (p_idx * 16) : nullptr;
             if (!drawing_m) continue;
             _emit_effect_slot(f, ci, p_idx, drawing_m);
+        } else if (kind == ss::runtime::DrawBatchKind_Mesh) {
+            int p_idx = (int)draw_order_data[batch->start_rank()];
+            const auto* part = (p_idx >= 0 && p_idx < (int)_parts_by_idx.size()) ? _parts_by_idx[p_idx] : nullptr;
+            if (part) _emit_mesh_singleton(f, ci, batch, p_idx, part);
         }
-        // DrawBatchKind_Mesh / Text / Nines / Mask: not yet implemented.
+        // DrawBatchKind_Text / Nines / Mask: not yet implemented.
     }
 }
 
@@ -1108,6 +1135,96 @@ void SsInternalPlayer::_emit_shape_singleton(const DrawFrame& f, RID ci, int p_i
     if (!drawing_m) return;
     auto partBinary = f.binary->parts()->Get(p_idx);
     _draw_part_shape(f, ci, p_idx, part, partBinary, drawing_m);
+}
+
+void SsInternalPlayer::_emit_mesh_singleton(const DrawFrame& f, RID ci,
+                                            const ss::runtime::DrawBatch* batch, int p_idx,
+                                            const ss::runtime::PartState* part) {
+    if (!part || !batch) return;
+
+    // The whole mesh shares one cellmap texture (batch invariant); resolve it
+    // via texture_hash, exactly like a Normal batch.
+    Ref<Texture2D> tex;
+    if (_textures.has(batch->texture_hash())) {
+        tex = _textures[batch->texture_hash()];
+    }
+    if (tex.is_null()) return;
+    const Vector2 tex_size = tex->get_size();
+    const Vector2 inv_tex_size = Vector2(1.0f / tex_size.x, 1.0f / tex_size.y);
+
+    if (!_build_mesh_geometry(f, p_idx, part, inv_tex_size, _mesh_buf)) return;
+
+    // batch->blend_type() is the runtime BlendType; converted to the ssab
+    // BlendType by raw u8 value (same convention as _emit_normal_batch).
+    const auto ssab_blend = (ss::format::BlendType)batch->blend_type();
+    _apply_blend_material(f.rs, ci, ssab_blend);
+    f.rs->canvas_item_set_transform(ci, Transform2D());
+    f.rs->canvas_item_add_triangle_array(ci, _mesh_buf.indices, _mesh_buf.verts,
+                                         _mesh_buf.colors, _mesh_buf.uvs, {}, {}, tex->get_rid());
+}
+
+bool SsInternalPlayer::_build_mesh_geometry(const DrawFrame& f, int p_idx,
+                                            const ss::runtime::PartState* part,
+                                            const Vector2& inv_tex_size,
+                                            MeshGeometryBuffers& out) {
+    // Per-part vertex range from the CSR offsets (shared by positions + UVs).
+    if (!f.mesh_vertex_offsets || (uintptr_t)(p_idx + 1) >= f.mesh_vertex_offsets_len) return false;
+    const uint32_t v0 = f.mesh_vertex_offsets[p_idx];
+    const uint32_t v1 = f.mesh_vertex_offsets[p_idx + 1];
+    if (v1 <= v0) return false;
+    const int vert_count = (int)(v1 - v0);
+
+    // Per-part triangle-index range.
+    if (!f.mesh_index_offsets || (uintptr_t)(p_idx + 1) >= f.mesh_index_offsets_len) return false;
+    const uint32_t i0 = f.mesh_index_offsets[p_idx];
+    const uint32_t i1 = f.mesh_index_offsets[p_idx + 1];
+    if (i1 <= i0 || (i1 - i0) % 3 != 0) return false;
+    const int index_count = (int)(i1 - i0);
+
+    // Bounds-check the source buffers before slicing.
+    if (!f.mesh_vertices_x || !f.mesh_vertices_y) return false;
+    if ((uintptr_t)v1 > f.mesh_vertices_x_len || (uintptr_t)v1 > f.mesh_vertices_y_len) return false;
+    if (!f.mesh_uvs || (uintptr_t)v1 * 2 > f.mesh_uvs_len) return false;
+    if (!f.mesh_indices || (uintptr_t)i1 > f.mesh_indices_len) return false;
+
+    out.vert_count = vert_count;
+    out.verts.resize(vert_count);
+    out.uvs.resize(vert_count);
+    out.colors.resize(vert_count);
+    out.indices.resize(index_count);
+
+    // Mesh part color is "Overall" only (a single flat color for the whole
+    // part — see SS6 DrawMesh); resolve once, apply to every vertex.
+    Color mesh_color(1, 1, 1, part->alpha());
+    const uint64_t flags = part->update_flag();
+    const auto partColorIndex = part->part_color();
+    if ((flags & ss::runtime::UpdateAttributeFlags_AttributePartColor) && partColorIndex >= 0) {
+        auto pc = f.frameData->parts_color()->Get(partColorIndex);
+        auto to_color = [](const ss::runtime::SsAttributePartColorKeyValueColor& c) { return Color(c.rgba().r()/255.0f, c.rgba().g()/255.0f, c.rgba().b()/255.0f, c.rgba().a()/255.0f); };
+        mesh_color = to_color(pc->lt());
+    }
+
+    const float* mx = f.mesh_vertices_x + v0;
+    const float* my = f.mesh_vertices_y + v0;
+    const float* uv = f.mesh_uvs + (uintptr_t)v0 * 2;
+    Vector2* v_ptr = out.verts.ptrw();
+    Vector2* u_ptr = out.uvs.ptrw();
+    Color* c_ptr = out.colors.ptrw();
+    for (int i = 0; i < vert_count; i++) {
+        // mesh_vertices are already world-space — no xform_raw needed.
+        v_ptr[i] = Vector2(mx[i], my[i]);
+        u_ptr[i] = Vector2(uv[i * 2] * inv_tex_size.x, uv[i * 2 + 1] * inv_tex_size.y);
+        c_ptr[i] = mesh_color;
+    }
+
+    // Triangle indices are part-local 0-based; this is a singleton batch, so
+    // no vertex-base rebasing is required.
+    int32_t* i_ptr = (int32_t*)out.indices.ptrw();
+    const int32_t* src = f.mesh_indices + i0;
+    for (int i = 0; i < index_count; i++) {
+        i_ptr[i] = src[i];
+    }
+    return true;
 }
 
 void SsInternalPlayer::_fetchAnimation() {

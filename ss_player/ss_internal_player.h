@@ -247,11 +247,29 @@ private:
         const float* shape_vertices;         uintptr_t shape_vertices_len;
         const float* shape_box_coords;       uintptr_t shape_box_coords_len;
         const int32_t* shape_vertex_counts;  uintptr_t shape_vertex_counts_len;
+
+        // Skinned mesh SoA buffers. Vertex positions are world-space (already
+        // skinned); UVs are texture-pixel space; indices are part-local. The
+        // CSR offset arrays (length num_parts + 1) slice the per-part ranges.
+        const float* mesh_vertices_x;        uintptr_t mesh_vertices_x_len;
+        const float* mesh_vertices_y;        uintptr_t mesh_vertices_y_len;
+        const uint32_t* mesh_vertex_offsets; uintptr_t mesh_vertex_offsets_len;
+        const float* mesh_uvs;               uintptr_t mesh_uvs_len;
+        const int32_t* mesh_indices;         uintptr_t mesh_indices_len;
+        const uint32_t* mesh_index_offsets;  uintptr_t mesh_index_offsets_len;
     };
 
     struct ShapeGeometryBuffers {
         int vert_count;          // 3..12, derived from runtime shape_vertex_counts
         SsVec2Array verts;
+        SsColorArray colors;
+        SsIntArray indices;
+    };
+
+    struct MeshGeometryBuffers {
+        int vert_count;          // mesh vertex count, derived from mesh_vertex_offsets
+        SsVec2Array verts;
+        SsVec2Array uvs;
         SsColorArray colors;
         SsIntArray indices;
     };
@@ -265,6 +283,7 @@ private:
     SsColorArray _effect_colors;
     SsIntArray   _effect_indices;
     ShapeGeometryBuffers _shape_buf;
+    MeshGeometryBuffers _mesh_buf;
 
     void _reconfigure();
     void _loadTextures(const Ref<SSABResource>& res);
@@ -294,6 +313,10 @@ private:
                                const ss::runtime::PartState* part,
                                const float* draw_m,
                                ShapeGeometryBuffers& out);
+    bool _build_mesh_geometry(const DrawFrame& f, int p_idx,
+                              const ss::runtime::PartState* part,
+                              const Vector2& inv_tex_size,
+                              MeshGeometryBuffers& out);
 
     // Per-batch emit helpers. `ci` is the batch's canvas_item from
     // `_batch_canvas_items`; caller has already cleared it and set z_index.
@@ -304,6 +327,12 @@ private:
                             const uint16_t* draw_order_data);
     void _emit_shape_singleton(const DrawFrame& f, RID ci, int p_idx,
                                const ss::runtime::PartState* part);
+    // Mesh singleton emit: skinned mesh parts are non-batchable, so each gets
+    // its own batch (like Shape). Vertices arrive world-space from the runtime,
+    // so no world-matrix multiply is applied here.
+    void _emit_mesh_singleton(const DrawFrame& f, RID ci,
+                              const ss::runtime::DrawBatch* batch, int p_idx,
+                              const ss::runtime::PartState* part);
 
     // Pool helpers
     RID _ensure_batch_ci(int batch_idx);
