@@ -226,9 +226,6 @@ struct PartAnimationDataDeformBuilder;
 struct PartAnimationData;
 struct PartAnimationDataBuilder;
 
-struct PartMeshData;
-struct PartMeshDataBuilder;
-
 struct AnimationData;
 struct AnimationDataBuilder;
 
@@ -7775,116 +7772,6 @@ inline ::flatbuffers::Offset<PartAnimationData> CreatePartAnimationDataDirect(
       texture_array__);
 }
 
-struct PartMeshData FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
-  typedef PartMeshDataBuilder Builder;
-  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
-    VT_PART_INDEX = 4,
-    VT_UV = 6,
-    VT_INDICES = 8,
-    VT_COUNT_COORDINATE_MESH = 10,
-    VT_INDEX_COORDINATE_DEFORM = 12
-  };
-  uint16_t part_index() const {
-    return GetField<uint16_t>(VT_PART_INDEX, 0);
-  }
-  bool KeyCompareLessThan(const PartMeshData * const o) const {
-    return part_index() < o->part_index();
-  }
-  int KeyCompareWithValue(uint16_t _part_index) const {
-    return static_cast<int>(part_index() > _part_index) - static_cast<int>(part_index() < _part_index);
-  }
-  const ::flatbuffers::Vector<float> *uv() const {
-    return GetPointer<const ::flatbuffers::Vector<float> *>(VT_UV);
-  }
-  const ::flatbuffers::Vector<int32_t> *indices() const {
-    return GetPointer<const ::flatbuffers::Vector<int32_t> *>(VT_INDICES);
-  }
-  int32_t count_coordinate_mesh() const {
-    return GetField<int32_t>(VT_COUNT_COORDINATE_MESH, 0);
-  }
-  const ::flatbuffers::Vector<int32_t> *index_coordinate_deform() const {
-    return GetPointer<const ::flatbuffers::Vector<int32_t> *>(VT_INDEX_COORDINATE_DEFORM);
-  }
-  template <bool B = false>
-  bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
-    return VerifyTableStart(verifier) &&
-           VerifyField<uint16_t>(verifier, VT_PART_INDEX, 2) &&
-           VerifyOffset(verifier, VT_UV) &&
-           verifier.VerifyVector(uv()) &&
-           VerifyOffset(verifier, VT_INDICES) &&
-           verifier.VerifyVector(indices()) &&
-           VerifyField<int32_t>(verifier, VT_COUNT_COORDINATE_MESH, 4) &&
-           VerifyOffset(verifier, VT_INDEX_COORDINATE_DEFORM) &&
-           verifier.VerifyVector(index_coordinate_deform()) &&
-           verifier.EndTable();
-  }
-};
-
-struct PartMeshDataBuilder {
-  typedef PartMeshData Table;
-  ::flatbuffers::FlatBufferBuilder &fbb_;
-  ::flatbuffers::uoffset_t start_;
-  void add_part_index(uint16_t part_index) {
-    fbb_.AddElement<uint16_t>(PartMeshData::VT_PART_INDEX, part_index, 0);
-  }
-  void add_uv(::flatbuffers::Offset<::flatbuffers::Vector<float>> uv) {
-    fbb_.AddOffset(PartMeshData::VT_UV, uv);
-  }
-  void add_indices(::flatbuffers::Offset<::flatbuffers::Vector<int32_t>> indices) {
-    fbb_.AddOffset(PartMeshData::VT_INDICES, indices);
-  }
-  void add_count_coordinate_mesh(int32_t count_coordinate_mesh) {
-    fbb_.AddElement<int32_t>(PartMeshData::VT_COUNT_COORDINATE_MESH, count_coordinate_mesh, 0);
-  }
-  void add_index_coordinate_deform(::flatbuffers::Offset<::flatbuffers::Vector<int32_t>> index_coordinate_deform) {
-    fbb_.AddOffset(PartMeshData::VT_INDEX_COORDINATE_DEFORM, index_coordinate_deform);
-  }
-  explicit PartMeshDataBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
-        : fbb_(_fbb) {
-    start_ = fbb_.StartTable();
-  }
-  ::flatbuffers::Offset<PartMeshData> Finish() {
-    const auto end = fbb_.EndTable(start_);
-    auto o = ::flatbuffers::Offset<PartMeshData>(end);
-    return o;
-  }
-};
-
-inline ::flatbuffers::Offset<PartMeshData> CreatePartMeshData(
-    ::flatbuffers::FlatBufferBuilder &_fbb,
-    uint16_t part_index = 0,
-    ::flatbuffers::Offset<::flatbuffers::Vector<float>> uv = 0,
-    ::flatbuffers::Offset<::flatbuffers::Vector<int32_t>> indices = 0,
-    int32_t count_coordinate_mesh = 0,
-    ::flatbuffers::Offset<::flatbuffers::Vector<int32_t>> index_coordinate_deform = 0) {
-  PartMeshDataBuilder builder_(_fbb);
-  builder_.add_index_coordinate_deform(index_coordinate_deform);
-  builder_.add_count_coordinate_mesh(count_coordinate_mesh);
-  builder_.add_indices(indices);
-  builder_.add_uv(uv);
-  builder_.add_part_index(part_index);
-  return builder_.Finish();
-}
-
-inline ::flatbuffers::Offset<PartMeshData> CreatePartMeshDataDirect(
-    ::flatbuffers::FlatBufferBuilder &_fbb,
-    uint16_t part_index = 0,
-    const std::vector<float> *uv = nullptr,
-    const std::vector<int32_t> *indices = nullptr,
-    int32_t count_coordinate_mesh = 0,
-    const std::vector<int32_t> *index_coordinate_deform = nullptr) {
-  auto uv__ = uv ? _fbb.CreateVector<float>(*uv) : 0;
-  auto indices__ = indices ? _fbb.CreateVector<int32_t>(*indices) : 0;
-  auto index_coordinate_deform__ = index_coordinate_deform ? _fbb.CreateVector<int32_t>(*index_coordinate_deform) : 0;
-  return ss::format::CreatePartMeshData(
-      _fbb,
-      part_index,
-      uv__,
-      indices__,
-      count_coordinate_mesh,
-      index_coordinate_deform__);
-}
-
 struct AnimationData FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   typedef AnimationDataBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
@@ -7892,15 +7779,14 @@ struct AnimationData FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
     VT_NAME_HASH = 6,
     VT_PARTS_INITIAL_ATTRIBUTES = 8,
     VT_PARTS_ANIMATION_DATA = 10,
-    VT_PARTS_MESH_DATA = 12,
-    VT_EVENTS = 14,
-    VT_INITIAL_EVENTS = 16,
-    VT_LABELS = 18,
-    VT_START_FRAME = 20,
-    VT_END_FRAME = 22,
-    VT_TOTAL_FRAME = 24,
-    VT_FPS = 26,
-    VT_CANVAS = 28
+    VT_EVENTS = 12,
+    VT_INITIAL_EVENTS = 14,
+    VT_LABELS = 16,
+    VT_START_FRAME = 18,
+    VT_END_FRAME = 20,
+    VT_TOTAL_FRAME = 22,
+    VT_FPS = 24,
+    VT_CANVAS = 26
   };
   const ::flatbuffers::String *name() const {
     return GetPointer<const ::flatbuffers::String *>(VT_NAME);
@@ -7913,9 +7799,6 @@ struct AnimationData FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   }
   const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationData>> *parts_animation_data() const {
     return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationData>> *>(VT_PARTS_ANIMATION_DATA);
-  }
-  const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartMeshData>> *parts_mesh_data() const {
-    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartMeshData>> *>(VT_PARTS_MESH_DATA);
   }
   const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::EventsPerFrame>> *events() const {
     return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::EventsPerFrame>> *>(VT_EVENTS);
@@ -7953,9 +7836,6 @@ struct AnimationData FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyOffset(verifier, VT_PARTS_ANIMATION_DATA) &&
            verifier.VerifyVector(parts_animation_data()) &&
            verifier.VerifyVectorOfTables(parts_animation_data()) &&
-           VerifyOffset(verifier, VT_PARTS_MESH_DATA) &&
-           verifier.VerifyVector(parts_mesh_data()) &&
-           verifier.VerifyVectorOfTables(parts_mesh_data()) &&
            VerifyOffset(verifier, VT_EVENTS) &&
            verifier.VerifyVector(events()) &&
            verifier.VerifyVectorOfTables(events()) &&
@@ -7990,9 +7870,6 @@ struct AnimationDataBuilder {
   }
   void add_parts_animation_data(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationData>>> parts_animation_data) {
     fbb_.AddOffset(AnimationData::VT_PARTS_ANIMATION_DATA, parts_animation_data);
-  }
-  void add_parts_mesh_data(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartMeshData>>> parts_mesh_data) {
-    fbb_.AddOffset(AnimationData::VT_PARTS_MESH_DATA, parts_mesh_data);
   }
   void add_events(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::EventsPerFrame>>> events) {
     fbb_.AddOffset(AnimationData::VT_EVENTS, events);
@@ -8036,7 +7913,6 @@ inline ::flatbuffers::Offset<AnimationData> CreateAnimationData(
     uint32_t name_hash = 0,
     ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::InitialPartAttributes>>> parts_initial_attributes = 0,
     ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationData>>> parts_animation_data = 0,
-    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartMeshData>>> parts_mesh_data = 0,
     ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::EventsPerFrame>>> events = 0,
     ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::InitialEvents>>> initial_events = 0,
     ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::Label>>> labels = 0,
@@ -8050,7 +7926,6 @@ inline ::flatbuffers::Offset<AnimationData> CreateAnimationData(
   builder_.add_labels(labels);
   builder_.add_initial_events(initial_events);
   builder_.add_events(events);
-  builder_.add_parts_mesh_data(parts_mesh_data);
   builder_.add_parts_animation_data(parts_animation_data);
   builder_.add_parts_initial_attributes(parts_initial_attributes);
   builder_.add_name_hash(name_hash);
@@ -8068,7 +7943,6 @@ inline ::flatbuffers::Offset<AnimationData> CreateAnimationDataDirect(
     uint32_t name_hash = 0,
     const std::vector<::flatbuffers::Offset<ss::format::InitialPartAttributes>> *parts_initial_attributes = nullptr,
     const std::vector<::flatbuffers::Offset<ss::format::PartAnimationData>> *parts_animation_data = nullptr,
-    std::vector<::flatbuffers::Offset<ss::format::PartMeshData>> *parts_mesh_data = nullptr,
     std::vector<::flatbuffers::Offset<ss::format::EventsPerFrame>> *events = nullptr,
     const std::vector<::flatbuffers::Offset<ss::format::InitialEvents>> *initial_events = nullptr,
     std::vector<::flatbuffers::Offset<ss::format::Label>> *labels = nullptr,
@@ -8080,7 +7954,6 @@ inline ::flatbuffers::Offset<AnimationData> CreateAnimationDataDirect(
   auto name__ = name ? _fbb.CreateString(name) : 0;
   auto parts_initial_attributes__ = parts_initial_attributes ? _fbb.CreateVector<::flatbuffers::Offset<ss::format::InitialPartAttributes>>(*parts_initial_attributes) : 0;
   auto parts_animation_data__ = parts_animation_data ? _fbb.CreateVector<::flatbuffers::Offset<ss::format::PartAnimationData>>(*parts_animation_data) : 0;
-  auto parts_mesh_data__ = parts_mesh_data ? _fbb.CreateVectorOfSortedTables<ss::format::PartMeshData>(parts_mesh_data) : 0;
   auto events__ = events ? _fbb.CreateVectorOfSortedTables<ss::format::EventsPerFrame>(events) : 0;
   auto initial_events__ = initial_events ? _fbb.CreateVector<::flatbuffers::Offset<ss::format::InitialEvents>>(*initial_events) : 0;
   auto labels__ = labels ? _fbb.CreateVectorOfSortedTables<ss::format::Label>(labels) : 0;
@@ -8090,7 +7963,6 @@ inline ::flatbuffers::Offset<AnimationData> CreateAnimationDataDirect(
       name_hash,
       parts_initial_attributes__,
       parts_animation_data__,
-      parts_mesh_data__,
       events__,
       initial_events__,
       labels__,
