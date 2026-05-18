@@ -493,17 +493,25 @@ void SsInternalPlayer::_drawAnimation(float frame_no, float delta_seconds, bool 
     for (uint32_t bi = 0; bi < batch_count; bi++) {
         const auto* batch = draw_batches->Get(bi);
         RID ci = _ensure_batch_ci((int)bi);
+
+        // Reset batch CI state before use. Pool reuse can leak properties
+        // from previous frames / different kinds (e.g. Effect transform).
         f.rs->canvas_item_clear(ci);
         f.rs->canvas_item_set_visible(ci, true);
-        f.rs->canvas_item_set_z_index(ci, (int)bi);
+        f.rs->canvas_item_set_transform(ci, Transform2D());
+        f.rs->canvas_item_set_material(ci, RID());
+
+        // We use explicit draw indices for internal Z sorting within the player.
+        // Using global z_index would cause character parts to interleave with
+        // other nodes in the scene. Tree order (child index) is not usable here
+        // because our CI pool is reused and ordering is fixed at allocation.
+        f.rs->canvas_item_set_draw_index(ci, (int)bi);
 
         const auto kind = batch->kind();
         if (kind == ss::runtime::DrawBatchKind_Normal) {
             _emit_normal_batch(f, ci, batch, draw_order_data);
         } else if (kind == ss::runtime::DrawBatchKind_Shape) {
-            int p_idx = (int)draw_order_data[batch->start_rank()];
-            const auto* part = (p_idx >= 0 && p_idx < (int)_parts_by_idx.size()) ? _parts_by_idx[p_idx] : nullptr;
-            if (part) _emit_shape_singleton(f, ci, p_idx, part);
+            _emit_shape_batch(f, ci, batch, draw_order_data);
         } else if (kind == ss::runtime::DrawBatchKind_Instance) {
             int p_idx = (int)draw_order_data[batch->start_rank()];
             const auto* part = (p_idx >= 0 && p_idx < (int)_parts_by_idx.size()) ? _parts_by_idx[p_idx] : nullptr;
@@ -521,9 +529,7 @@ void SsInternalPlayer::_drawAnimation(float frame_no, float delta_seconds, bool 
             if (!drawing_m) continue;
             _emit_effect_slot(f, ci, p_idx, drawing_m);
         } else if (kind == ss::runtime::DrawBatchKind_Mesh) {
-            int p_idx = (int)draw_order_data[batch->start_rank()];
-            const auto* part = (p_idx >= 0 && p_idx < (int)_parts_by_idx.size()) ? _parts_by_idx[p_idx] : nullptr;
-            if (part) _emit_mesh_singleton(f, ci, batch, p_idx, part);
+            _emit_mesh_batch(f, ci, batch, draw_order_data);
         }
         // DrawBatchKind_Text / Nines / Mask: not yet implemented.
     }
@@ -836,12 +842,16 @@ void SsInternalPlayer::_emit_effect_slot(const DrawFrame& f, RID ci, int p_idx, 
     const uint32_t cmd_count = plan->commands()->size();
     while ((uint32_t)slot.emitter_cis.size() < cmd_count) {
         RID e_ci = f.rs->canvas_item_create();
-        f.rs->canvas_item_set_parent(e_ci, ci);
         slot.emitter_cis.push_back(e_ci);
+    }
+    for (uint32_t e = 0; e < cmd_count; e++) {
+        f.rs->canvas_item_set_parent(slot.emitter_cis[e], ci);
+        f.rs->canvas_item_set_draw_index(slot.emitter_cis[e], (int)e);
     }
     for (int e = (int)cmd_count; e < slot.emitter_cis.size(); e++) {
         f.rs->canvas_item_clear(slot.emitter_cis[e]);
         f.rs->canvas_item_set_visible(slot.emitter_cis[e], false);
+        f.rs->canvas_item_set_parent(slot.emitter_cis[e], RID());
     }
 
     // PackedVector2Array stores Vector2 = (real_t, real_t). The plan emits
@@ -970,16 +980,6 @@ void SsInternalPlayer::_apply_blend_material(RenderingServer* rs, RID ci, ss::fo
         _blend_materials[(int)ss_blend] = mat;
     }
     rs->canvas_item_set_material(ci, _blend_materials[(int)ss_blend]->get_rid());
-}
-
-void SsInternalPlayer::_draw_part_shape(const DrawFrame& f, RID ci, int p_idx, const ss::runtime::PartState* part, const ss::format::PartData* partBinary, const float* draw_m) {
-    RenderingServer* rs = f.rs;
-
-    if (!_build_shape_geometry(f, p_idx, part, draw_m, _shape_buf)) return;
-
-    _apply_blend_material(rs, ci, partBinary->blend_type());
-    rs->canvas_item_set_transform(ci, Transform2D());
-    rs->canvas_item_add_triangle_array(ci, _shape_buf.indices, _shape_buf.verts, _shape_buf.colors);
 }
 
 bool SsInternalPlayer::_build_shape_geometry(const DrawFrame& f, int p_idx,
@@ -1125,22 +1125,39 @@ void SsInternalPlayer::_emit_normal_batch(const DrawFrame& f, RID ci,
     rs->canvas_item_add_triangle_array(ci, indices, verts, colors, uvs, {}, {}, tex->get_rid());
 }
 
-void SsInternalPlayer::_emit_shape_singleton(const DrawFrame& f, RID ci, int p_idx,
-                                             const ss::runtime::PartState* part) {
-    if (!part) return;
-    const float* drawing_m = nullptr;
-    if (f.world_matrices && (uintptr_t)p_idx * 16 < f.world_matrices_len) {
-        drawing_m = f.world_matrices + (p_idx * 16);
+void SsInternalPlayer::_emit_shape_batch(const DrawFrame& f, RID ci,
+                                          const ss::runtime::DrawBatch* batch,
+                                          const uint16_t* draw_order_data) {
+    if (!batch || !draw_order_data) return;
+    const uint16_t count = batch->count();
+    if (count == 0) return;
+
+    // batch->blend_type() is the runtime BlendType; converted to the ssab
+    // BlendType by raw u8 value (same convention as _emit_normal_batch).
+    const auto ssab_blend = (ss::format::BlendType)batch->blend_type();
+    _apply_blend_material(f.rs, ci, ssab_blend);
+
+    for (uint16_t k = 0; k < count; k++) {
+        int p_idx = (int)draw_order_data[batch->start_rank() + k];
+        if (p_idx < 0 || p_idx >= (int)_parts_by_idx.size()) continue;
+        const auto* part = _parts_by_idx[p_idx];
+        if (!part) continue;
+
+        const float* drawing_m = (f.world_matrices && (uintptr_t)p_idx * 16 < f.world_matrices_len)
+            ? f.world_matrices + (p_idx * 16) : nullptr;
+        if (!drawing_m) continue;
+
+        if (!_build_shape_geometry(f, p_idx, part, drawing_m, _shape_buf)) continue;
+        f.rs->canvas_item_add_triangle_array(ci, _shape_buf.indices, _shape_buf.verts, _shape_buf.colors);
     }
-    if (!drawing_m) return;
-    auto partBinary = f.binary->parts()->Get(p_idx);
-    _draw_part_shape(f, ci, p_idx, part, partBinary, drawing_m);
 }
 
-void SsInternalPlayer::_emit_mesh_singleton(const DrawFrame& f, RID ci,
-                                            const ss::runtime::DrawBatch* batch, int p_idx,
-                                            const ss::runtime::PartState* part) {
-    if (!part || !batch) return;
+void SsInternalPlayer::_emit_mesh_batch(const DrawFrame& f, RID ci,
+                                        const ss::runtime::DrawBatch* batch,
+                                        const uint16_t* draw_order_data) {
+    if (!batch || !draw_order_data) return;
+    const uint16_t count = batch->count();
+    if (count == 0) return;
 
     // The whole mesh shares one cellmap texture (batch invariant); resolve it
     // via texture_hash, exactly like a Normal batch.
@@ -1152,15 +1169,21 @@ void SsInternalPlayer::_emit_mesh_singleton(const DrawFrame& f, RID ci,
     const Vector2 tex_size = tex->get_size();
     const Vector2 inv_tex_size = Vector2(1.0f / tex_size.x, 1.0f / tex_size.y);
 
-    if (!_build_mesh_geometry(f, p_idx, part, inv_tex_size, _mesh_buf)) return;
-
     // batch->blend_type() is the runtime BlendType; converted to the ssab
     // BlendType by raw u8 value (same convention as _emit_normal_batch).
     const auto ssab_blend = (ss::format::BlendType)batch->blend_type();
     _apply_blend_material(f.rs, ci, ssab_blend);
-    f.rs->canvas_item_set_transform(ci, Transform2D());
-    f.rs->canvas_item_add_triangle_array(ci, _mesh_buf.indices, _mesh_buf.verts,
-                                         _mesh_buf.colors, _mesh_buf.uvs, {}, {}, tex->get_rid());
+
+    for (uint16_t k = 0; k < count; k++) {
+        int p_idx = (int)draw_order_data[batch->start_rank() + k];
+        if (p_idx < 0 || p_idx >= (int)_parts_by_idx.size()) continue;
+        const auto* part = _parts_by_idx[p_idx];
+        if (!part) continue;
+
+        if (!_build_mesh_geometry(f, p_idx, part, inv_tex_size, _mesh_buf)) continue;
+        f.rs->canvas_item_add_triangle_array(ci, _mesh_buf.indices, _mesh_buf.verts,
+                                             _mesh_buf.colors, _mesh_buf.uvs, {}, {}, tex->get_rid());
+    }
 }
 
 bool SsInternalPlayer::_build_mesh_geometry(const DrawFrame& f, int p_idx,

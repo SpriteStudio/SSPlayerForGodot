@@ -289,9 +289,6 @@ private:
     void _loadTextures(const Ref<SSABResource>& res);
     void _fetchAnimation();
     void _drawAnimation(float frame_no, float delta_seconds = 0.0f, bool parent_looped = false);
-    // Per-part-type emit. Normal is consumed by `_emit_normal_batch` directly
-    // through the geometry helper, so no `_draw_part_normal` exists.
-    void _draw_part_shape(const DrawFrame& f, RID ci, int p_idx, const ss::runtime::PartState* part, const ss::format::PartData* partBinary, const float* draw_m);
     bool _needs_continuous_update() const;
     // Instance slot emit: re-parent the child's _root_ci under this slot's
     // batch CI and apply the slot's world matrix as the child's root
@@ -325,14 +322,15 @@ private:
     void _emit_normal_batch(const DrawFrame& f, RID ci,
                             const ss::runtime::DrawBatch* batch,
                             const uint16_t* draw_order_data);
-    void _emit_shape_singleton(const DrawFrame& f, RID ci, int p_idx,
-                               const ss::runtime::PartState* part);
+    void _emit_shape_batch(const DrawFrame& f, RID ci,
+                           const ss::runtime::DrawBatch* batch,
+                           const uint16_t* draw_order_data);
     // Mesh singleton emit: skinned mesh parts are non-batchable, so each gets
     // its own batch (like Shape). Vertices arrive world-space from the runtime,
     // so no world-matrix multiply is applied here.
-    void _emit_mesh_singleton(const DrawFrame& f, RID ci,
-                              const ss::runtime::DrawBatch* batch, int p_idx,
-                              const ss::runtime::PartState* part);
+    void _emit_mesh_batch(const DrawFrame& f, RID ci,
+                          const ss::runtime::DrawBatch* batch,
+                          const uint16_t* draw_order_data);
 
     // Pool helpers
     RID _ensure_batch_ci(int batch_idx);
