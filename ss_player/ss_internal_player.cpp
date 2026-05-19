@@ -490,6 +490,20 @@ void SsInternalPlayer::_drawAnimation(float frame_no, float delta_seconds, bool 
         f.rs->canvas_item_set_visible(_batch_canvas_items[i], false);
     }
 
+    // Effect emitter canvas items are owned by EffectSlotState (persistent
+    // across frames) and hang off whatever batch CI they were last parented
+    // to. When an effect part stops producing an Effect batch (HIDE'd) or its
+    // slot reports not_visible, `_emit_effect_slot` is skipped or early-returns
+    // without touching `emitter_cis` — leaving stale particle geometry on a
+    // pool slot that gets recycled by another (visible) batch. Hide every
+    // emitter CI up-front; `_emit_effect_slot`'s visible branch re-shows only
+    // the ones it actually draws this frame.
+    for (const EffectSlotState& slot : _effect_slots) {
+        for (const RID& e_ci : slot.emitter_cis) {
+            f.rs->canvas_item_set_visible(e_ci, false);
+        }
+    }
+
     for (uint32_t bi = 0; bi < batch_count; bi++) {
         const auto* batch = draw_batches->Get(bi);
         RID ci = _ensure_batch_ci((int)bi);
