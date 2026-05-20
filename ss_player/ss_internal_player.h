@@ -1,13 +1,17 @@
 #pragma once
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
+#include <godot_cpp/classes/array_mesh.hpp>
 #include <godot_cpp/classes/canvas_item_material.hpp>
 #include <godot_cpp/classes/rendering_server.hpp>
+#include <godot_cpp/classes/shader.hpp>
+#include <godot_cpp/classes/shader_material.hpp>
 #include <godot_cpp/classes/texture2d.hpp>
 #include <godot_cpp/templates/hash_map.hpp>
 #include <godot_cpp/templates/local_vector.hpp>
 #include <godot_cpp/templates/vector.hpp>
 #include <godot_cpp/variant/dictionary.hpp>
+#include <godot_cpp/variant/packed_float32_array.hpp>
 #include <godot_cpp/variant/rect2.hpp>
 #include <godot_cpp/variant/rid.hpp>
 #include <godot_cpp/variant/string.hpp>
@@ -22,6 +26,9 @@ using namespace godot;
 #include "core/templates/vector.h"
 #include "core/variant/dictionary.h"
 #include "scene/resources/canvas_item_material.h"
+#include "scene/resources/mesh.h"
+#include "scene/resources/shader.h"
+#include "scene/resources/material.h"
 #include "scene/resources/texture.h"
 #include "servers/rendering/rendering_server.h"
 #endif
@@ -167,10 +174,12 @@ private:
     using SsVec2Array = PackedVector2Array;
     using SsColorArray = PackedColorArray;
     using SsIntArray = PackedInt32Array;
+    using SsFloatArray = PackedFloat32Array;
 #else
     using SsVec2Array = Vector<Vector2>;
     using SsColorArray = Vector<Color>;
     using SsIntArray = Vector<int>;
+    using SsFloatArray = Vector<float>;
 #endif
 
     // Root canvas item that all per-batch canvas items hang off. Created in
@@ -180,7 +189,23 @@ private:
 
     Ref<SSABResource> _ssabRes;
     HashMap<uint32_t, Ref<Texture2D>> _textures;
+    // Materials used by Shape and Effect batches; no PartColor mediation, the
+    // CanvasItem blend_mode does the work.
     HashMap<int, Ref<CanvasItemMaterial>> _blend_materials;
+    // Per-blend ShaderMaterial cache for Normal and Mesh batches. The shader
+    // applies the SS6 SDK PartColor compositing formula in fragment, plus
+    // output PMA when the per-vertex flag is set. One material per GPU blend
+    // mode (Mix/Add/Sub/Mul); the shader's render_mode differs per material.
+    HashMap<int, Ref<ShaderMaterial>> _partcolor_materials;
+    // Source Shader resources, one per render_mode (parallel to the
+    // _partcolor_materials map). Created lazily on first use.
+    HashMap<int, Ref<Shader>> _partcolor_shaders;
+    // ArrayMesh keep-alive list. canvas_item_add_mesh records the mesh RID
+    // into the canvas item's command stream; the resource has to stay alive
+    // until the next canvas_item_clear. Cleared at the top of _drawAnimation
+    // so each frame's meshes are released exactly when the new frame replaces
+    // their canvas item commands.
+    Vector<Ref<ArrayMesh>> _frame_meshes;
     // Per-batch canvas_item pool. Index == draw_batches[i] order. Recyclable
     // across frames; pool grows monotonically to peak batch count, unused
     // entries are hidden rather than freed.
@@ -259,24 +284,38 @@ private:
         const uint32_t* mesh_index_offsets;  uintptr_t mesh_index_offsets_len;
     };
 
+    // Shape batches share the shader pipeline with Normal/Mesh. Without a
+    // texture, the shader's default sampler returns white, so the SS6 PartColor
+    // compositing formula reduces to a meaningful tint over white. The CUSTOM0
+    // stream carries the same (rate, blend_idx, pma_flag, reserved) tuple; UVs
+    // are zero-filled because there's no texture to sample meaningfully.
     struct ShapeGeometryBuffers {
         int vert_count;          // 3..12, derived from runtime shape_vertex_counts
         SsVec2Array verts;
+        SsVec2Array uvs;
         SsColorArray colors;
+        SsFloatArray custom0;
         SsIntArray indices;
     };
 
+    // Mesh batches sample a cellmap texture and apply the PartColor formula,
+    // so they ride on the shader-based pipeline and carry CUSTOM0 per vertex.
     struct MeshGeometryBuffers {
         int vert_count;          // mesh vertex count, derived from mesh_vertex_offsets
         SsVec2Array verts;
         SsVec2Array uvs;
         SsColorArray colors;
+        // 4 floats per vertex: (rate, blend_idx, pma_flag, reserved). See the
+        // shader source comment for the role of each component.
+        SsFloatArray custom0;
         SsIntArray indices;
     };
 
     SsVec2Array  _normal_verts;
     SsVec2Array  _normal_uvs;
     SsColorArray _normal_colors;
+    // 4 floats per vertex, same layout as MeshGeometryBuffers::custom0.
+    SsFloatArray _normal_custom0;
     SsIntArray   _normal_indices;
     SsVec2Array  _effect_verts;
     SsVec2Array  _effect_uvs;
@@ -305,6 +344,7 @@ private:
                       SsVec2Array& verts,
                       SsVec2Array& uvs,
                       SsColorArray& colors,
+                      SsFloatArray& custom0,
                       int vbase);
     bool _build_shape_geometry(const DrawFrame& f, int p_idx,
                                const ss::runtime::PartState* part,
@@ -388,6 +428,19 @@ private:
     void _load_external_ssabs();
     String _resolve_animation_by_hash(uint32_t name_hash, Ref<SSABResource>& out_source) const;
     void _apply_blend_material(RenderingServer* rs, RID ci, ss::format::BlendType blend_type);
+    // ShaderMaterial variant for Normal and Mesh batches. PartColor is handled
+    // in the shader (per-vertex CUSTOM0 carries rate / blend_idx / pma flag).
+    void _apply_partcolor_material(RenderingServer* rs, RID ci, ss::format::BlendType blend_type);
+    Ref<Shader> _ensure_partcolor_shader(ss::format::BlendType blend_type);
+    // Build an ArrayMesh from the geometry arrays and attach it to `ci`. The
+    // mesh resource is appended to `_frame_meshes` to outlive the draw call.
+    void _emit_partcolor_mesh(RenderingServer* rs, RID ci,
+                              const SsIntArray& indices,
+                              const SsVec2Array& verts,
+                              const SsColorArray& colors,
+                              const SsVec2Array& uvs,
+                              const SsFloatArray& custom0,
+                              const RID& texture_rid);
 
     void _clear_batch_canvas_items();
 };
