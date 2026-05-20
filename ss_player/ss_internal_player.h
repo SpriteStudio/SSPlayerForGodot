@@ -284,14 +284,17 @@ private:
         const uint32_t* mesh_index_offsets;  uintptr_t mesh_index_offsets_len;
     };
 
-    // Shape batches don't have a texture; PartColor blend_type is irrelevant
-    // for them (the part-color RGB is the final pixel color directly), so no
-    // CUSTOM0 stream is carried — they keep the simple triangle_array path
-    // with CanvasItemMaterial.
+    // Shape batches share the shader pipeline with Normal/Mesh. Without a
+    // texture, the shader's default sampler returns white, so the SS6 PartColor
+    // compositing formula reduces to a meaningful tint over white. The CUSTOM0
+    // stream carries the same (rate, blend_idx, pma_flag, reserved) tuple; UVs
+    // are zero-filled because there's no texture to sample meaningfully.
     struct ShapeGeometryBuffers {
         int vert_count;          // 3..12, derived from runtime shape_vertex_counts
         SsVec2Array verts;
+        SsVec2Array uvs;
         SsColorArray colors;
+        SsFloatArray custom0;
         SsIntArray indices;
     };
 

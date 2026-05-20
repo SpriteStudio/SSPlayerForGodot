@@ -1166,18 +1166,55 @@ bool SsInternalPlayer::_build_shape_geometry(const DrawFrame& f, int p_idx,
     out.vert_count = part_shape_count;
 
     const uint64_t flags = part->update_flag();
-    Color corner_colors[CORNERS_COUNT] = { Color(1, 1, 1, part->alpha()), Color(1, 1, 1, part->alpha()), Color(1, 1, 1, part->alpha()), Color(1, 1, 1, part->alpha()) };
+    const float part_alpha = part->alpha();
+    // Default (no PartColor): white tint, part alpha only, rate=0 — the
+    // shader formula collapses to "pixel pass-through" which means white
+    // (the default sampler's value) for shapes. blend_idx is irrelevant in
+    // that case.
+    Color corner_colors[CORNERS_COUNT] = {
+        Color(1, 1, 1, part_alpha), Color(1, 1, 1, part_alpha),
+        Color(1, 1, 1, part_alpha), Color(1, 1, 1, part_alpha)
+    };
+    float corner_rates[CORNERS_COUNT] = { 0.0f, 0.0f, 0.0f, 0.0f };
+    int blend_idx = 0;
+
     const auto partColorIndex = part->part_color();
     if ((flags & ss::runtime::UpdateAttributeFlags_AttributePartColor) && partColorIndex >= 0) {
         auto pc = f.frameData->parts_color()->Get(partColorIndex);
-        auto to_color = [](const ss::runtime::SsAttributePartColorKeyValueColor& c) { return Color(c.rgba().r()/255.0f, c.rgba().g()/255.0f, c.rgba().b()/255.0f, c.rgba().a()/255.0f); };
-        corner_colors[0] = to_color(pc->lt()); corner_colors[1] = to_color(pc->rt()); corner_colors[2] = to_color(pc->lb()); corner_colors[3] = to_color(pc->rb());
+        // SDK-mediated semantic — see _build_normal for the field meanings.
+        // Shape paths additionally get the (blend_type == Mix → rgba.a = 255)
+        // override applied at convert time, so multiplying by part_alpha here
+        // gives `vertex.a = part_alpha` for Mix shapes and `vertex.a = dataA ×
+        // part_alpha` for non-Mix shapes — both matching the SS shape spec.
+        auto to_color = [part_alpha](const ss::runtime::SsAttributePartColorKeyValueColor& c) {
+            return Color(c.rgba().r()/255.0f, c.rgba().g()/255.0f, c.rgba().b()/255.0f,
+                         (c.rgba().a()/255.0f) * part_alpha);
+        };
+        corner_colors[0] = to_color(pc->lt());
+        corner_colors[1] = to_color(pc->rt());
+        corner_colors[2] = to_color(pc->lb());
+        corner_colors[3] = to_color(pc->rb());
+        // Shape parts intentionally skip the PartColor compositing formula —
+        // the spec says "per-vertex color = pc.rgba directly, no calculation".
+        // Force the shader's per-vertex inputs to Mix mode with rate=1.0 so
+        // ss_partcolor_blend(white, pc.rgb, varg) collapses to pc.rgb. The
+        // original pc->blend_type() is preserved in ssab for inspection; the
+        // GPU framebuffer blend comes from batch->blend_type() (= the part's
+        // alpha_blend_type, set by the artist).
+        for (int i = 0; i < CORNERS_COUNT; i++) corner_rates[i] = 1.0f;
+        blend_idx = 0;
     }
 
+    const float pma_flag = 0.0f;
+
     out.verts.resize(part_shape_count);
+    out.uvs.resize(part_shape_count);
     out.colors.resize(part_shape_count);
+    out.custom0.resize(part_shape_count * 4);
     Vector2* v_ptr = out.verts.ptrw();
-    Color* c_ptr = out.colors.ptrw();
+    Vector2* u_ptr = out.uvs.ptrw();
+    Color*   c_ptr = out.colors.ptrw();
+    float*   x_ptr = out.custom0.ptrw();
 
     for (int i = 0; i < part_shape_count; i++) {
         const float vx = part_shape_verts[i * 2 + 0];
@@ -1190,6 +1227,14 @@ bool SsInternalPlayer::_build_shape_geometry(const DrawFrame& f, int p_idx,
         const float wRB =          fx *          fy;
         c_ptr[i] = corner_colors[0] * wLT + corner_colors[1] * wRT + corner_colors[2] * wLB + corner_colors[3] * wRB;
         v_ptr[i] = xform_raw(draw_m, vx, vy);
+        // UV is unused — the shape has no bound texture; the canvas_item
+        // shader's default sampler returns white for any UV.
+        u_ptr[i] = Vector2(0.0f, 0.0f);
+        const float v_rate = corner_rates[0] * wLT + corner_rates[1] * wRT + corner_rates[2] * wLB + corner_rates[3] * wRB;
+        x_ptr[i*4 + 0] = v_rate;
+        x_ptr[i*4 + 1] = (float)blend_idx;
+        x_ptr[i*4 + 2] = pma_flag;
+        x_ptr[i*4 + 3] = 0.0f;
     }
 
     if (part_shape_count == 4) {
@@ -1298,9 +1343,11 @@ void SsInternalPlayer::_emit_shape_batch(const DrawFrame& f, RID ci,
     if (count == 0) return;
 
     // batch->blend_type() is the runtime BlendType; converted to the ssab
-    // BlendType by raw u8 value (same convention as _emit_normal_batch).
+    // BlendType by raw u8 value (same convention as _emit_normal_batch). The
+    // shape pipeline now shares the PartColor shader with Normal/Mesh, so
+    // the GPU framebuffer blend is selected via _apply_partcolor_material.
     const auto ssab_blend = (ss::format::BlendType)batch->blend_type();
-    _apply_blend_material(f.rs, ci, ssab_blend);
+    _apply_partcolor_material(f.rs, ci, ssab_blend);
 
     for (uint16_t k = 0; k < count; k++) {
         int p_idx = (int)draw_order_data[batch->start_rank() + k];
@@ -1313,7 +1360,12 @@ void SsInternalPlayer::_emit_shape_batch(const DrawFrame& f, RID ci,
         if (!drawing_m) continue;
 
         if (!_build_shape_geometry(f, p_idx, part, drawing_m, _shape_buf)) continue;
-        f.rs->canvas_item_add_triangle_array(ci, _shape_buf.indices, _shape_buf.verts, _shape_buf.colors);
+        // No texture bound; the canvas_item shader's TEXTURE sampler then
+        // returns white (Godot's default) for any UV. The PartColor formula
+        // therefore composites against an implicit white "shape pixel".
+        _emit_partcolor_mesh(f.rs, ci, _shape_buf.indices, _shape_buf.verts,
+                             _shape_buf.colors, _shape_buf.uvs, _shape_buf.custom0,
+                             RID());
     }
 }
 
