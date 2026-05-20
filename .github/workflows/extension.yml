@@ -175,19 +175,19 @@ jobs:
         run: |
           cd artifacts
 
-          mkdir -p bin
-          cp ../misc/ssplayer_godot_extension.gdextension bin/
+          mkdir -p addons/spritestudio/bin
+          cp ../misc/spritestudio.gdextension addons/spritestudio/
 
-          mv extension-${{ env.GODOT_VERSION_4 }}-android-${{ steps.commit.outputs.short }}/android bin/
-          mv extension-${{ env.GODOT_VERSION_4 }}-ios-${{ steps.commit.outputs.short }}/ios bin/
-          mv extension-${{ env.GODOT_VERSION_4 }}-macos-${{ steps.commit.outputs.short }}/macos bin/
-          mv extension-${{ env.GODOT_VERSION_4 }}-web-${{ steps.commit.outputs.short }}/web bin/
-          mv extension-${{ env.GODOT_VERSION_4 }}-windows-${{ steps.commit.outputs.short }}/windows bin/
-          mv extension-${{ env.GODOT_VERSION_4 }}-linux-${{ steps.commit.outputs.short }}/linux bin/
+          mv extension-${{ env.GODOT_VERSION_4 }}-android-${{ steps.commit.outputs.short }}/android addons/spritestudio/bin/
+          mv extension-${{ env.GODOT_VERSION_4 }}-ios-${{ steps.commit.outputs.short }}/ios addons/spritestudio/bin/
+          mv extension-${{ env.GODOT_VERSION_4 }}-macos-${{ steps.commit.outputs.short }}/macos addons/spritestudio/bin/
+          mv extension-${{ env.GODOT_VERSION_4 }}-web-${{ steps.commit.outputs.short }}/web addons/spritestudio/bin/
+          mv extension-${{ env.GODOT_VERSION_4 }}-windows-${{ steps.commit.outputs.short }}/windows addons/spritestudio/bin/
+          mv extension-${{ env.GODOT_VERSION_4 }}-linux-${{ steps.commit.outputs.short }}/linux addons/spritestudio/bin/
 
           rm -rf ../output
           mkdir -p ../output
-          mv bin ../output/
+          mv addons ../output/
 
       - name: Upload final release package
         uses: actions/upload-artifact@v4
