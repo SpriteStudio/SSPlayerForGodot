@@ -54,7 +54,10 @@ graph LR
 ## 対応バージョン
 
 - **Godot Engine**: [4.6 ブランチ](https://github.com/godotengine/godot/tree/4.6)
-- **godot-cpp**: [4.5 ブランチ](https://github.com/godotengine/godot-cpp/tree/4.5)
+- **godot-cpp**: [master ブランチ](https://github.com/godotengine/godot-cpp/tree/master)
+
+> [!NOTE]
+> GDExtension は Godot 4.6 以降から正式サポートされます。
 
 Windows / macOS でのビルドおよび実行を確認しています。
 

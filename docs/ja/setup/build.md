@@ -17,7 +17,7 @@ GDExtension またはカスタムモジュール組み込み Godot Engine を自
 git clone --recursive https://github.com/SpriteStudio/SSPlayerForGodot.git
 cd SSPlayerForGodot
 git clone https://github.com/godotengine/godot.git -b 4.6
-git clone https://github.com/godotengine/godot-cpp.git -b 4.5
+git clone https://github.com/godotengine/godot-cpp.git -b master
 ```
 
 `godot` ディレクトリはカスタムモジュール組み込み Godot Engine をビルドする場合に必要です。
@@ -59,7 +59,7 @@ Homebrew で配布されている `molten-vk` はホストアーキ向けのバ�
 
 ## 2-A. GDExtension のビルド
 
-`godot-cpp` を `4.5` ブランチで clone 済みであることが前提です。
+`godot-cpp` を `master` ブランチで clone 済みであることが前提です。
 
 **macOS / Linux**
 

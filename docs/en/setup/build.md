@@ -17,7 +17,7 @@ Clone this repository (with submodules) and clone Godot Engine / godot-cpp depen
 git clone --recursive https://github.com/SpriteStudio/SSPlayerForGodot.git
 cd SSPlayerForGodot
 git clone https://github.com/godotengine/godot.git -b 4.6
-git clone https://github.com/godotengine/godot-cpp.git -b 4.5
+git clone https://github.com/godotengine/godot-cpp.git -b master
 ```
 
 The `godot` directory is required when building a custom-module Godot Engine.
@@ -59,7 +59,7 @@ To build `libssruntime` from the SS7-SDK source yourself, see [For SS7-SDK Devel
 
 ## 2-A. Build the GDExtension
 
-Requires `godot-cpp` to be cloned at the `4.5` branch.
+Requires `godot-cpp` to be cloned at the `master` branch.
 
 **macOS / Linux**
 
