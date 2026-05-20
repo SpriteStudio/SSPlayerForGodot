@@ -22,6 +22,33 @@ void ss_runtime_log_bridge(int level, const char *message) {
     }
     WARN_PRINT(String("[ssruntime] ") + String(message));
 }
+
+// Shader source pieces. The vertex shader (default.vs) is meant to be reused
+// across most future fragment variants; per-variant differences are isolated
+// to the .fs file. The .vs and .fs files each hold a single C++ raw string
+// literal so they `#include` directly into a `const char*`.
+const char* SHADER_HEADER = "shader_type canvas_item;\n";
+
+const char* DEFAULT_VS =
+#include "shaders/default.vs"
+;
+
+const char* DEFAULT_FS =
+#include "shaders/default.fs"
+;
+
+// One render_mode line per GPU framebuffer blend variant. The four entries
+// correspond to SsBlendType::{Mix, Mul, Add, Sub} by enum value (0/1/2/3);
+// any other blend value falls back to Mix.
+const char* partcolor_render_mode_str(int blend_idx_for_render_mode) {
+    switch (blend_idx_for_render_mode) {
+        case 0: return "render_mode blend_mix;\n";  // Mix
+        case 1: return "render_mode blend_mul;\n";  // Mul
+        case 2: return "render_mode blend_add;\n";  // Add
+        case 3: return "render_mode blend_sub;\n";  // Sub
+        default: return "render_mode blend_mix;\n";
+    }
+}
 } // namespace
 
 SsInternalPlayer::SsInternalPlayer() {
@@ -440,6 +467,12 @@ void SsInternalPlayer::_drawAnimation(float frame_no, float delta_seconds, bool 
     uintptr_t len = 0;
     ss_runtime_get_frame_data(runtime_ctx, frame_no, &data, &len);
     if (!data) return;
+
+    // Release the previous frame's ArrayMesh references. The CanvasItem
+    // commands recorded last frame are about to be overwritten by
+    // canvas_item_clear in the per-batch loop below, so dropping these refs
+    // is safe (the renderer no longer needs the mesh data).
+    _frame_meshes.clear();
 
     DrawFrame f = {};
     f.rs = RenderingServer::get_singleton();
@@ -940,6 +973,7 @@ int SsInternalPlayer::_build_normal(const DrawFrame& f, int p_idx,
                                     SsVec2Array& verts,
                                     SsVec2Array& uvs,
                                     SsColorArray& colors,
+                                    SsFloatArray& custom0,
                                     int vbase)
 {
     const float* part_cell_meta = nullptr;
@@ -965,27 +999,70 @@ int SsInternalPlayer::_build_normal(const DrawFrame& f, int p_idx,
     const float out_u[MAX_VERTICES_COUNT] = { part_uvs[0], part_uvs[2], part_uvs[4], part_uvs[6], part_uvs[8] };
     const float out_v[MAX_VERTICES_COUNT] = { part_uvs[1], part_uvs[3], part_uvs[5], part_uvs[7], part_uvs[9] };
 
-    Color corner_colors[CORNERS_COUNT] = { Color(1, 1, 1, part->alpha()), Color(1, 1, 1, part->alpha()), Color(1, 1, 1, part->alpha()), Color(1, 1, 1, part->alpha()) };
+    // Default (no PartColor): white modulate, part alpha only, rate=0 makes
+    // the shader formula reduce to pixel pass-through regardless of blend_idx.
+    const float part_alpha = part->alpha();
+    Color corner_colors[CORNERS_COUNT] = {
+        Color(1, 1, 1, part_alpha), Color(1, 1, 1, part_alpha),
+        Color(1, 1, 1, part_alpha), Color(1, 1, 1, part_alpha)
+    };
+    float corner_rates[CORNERS_COUNT] = { 0.0f, 0.0f, 0.0f, 0.0f };
+    int blend_idx = 0;
+
     const auto partColorIndex = part->part_color();
     if ((flags & ss::runtime::UpdateAttributeFlags_AttributePartColor) && partColorIndex >= 0) {
         auto pc = f.frameData->parts_color()->Get(partColorIndex);
-        auto to_color = [](const ss::runtime::SsAttributePartColorKeyValueColor& c) { return Color(c.rgba().r()/255.0f, c.rgba().g()/255.0f, c.rgba().b()/255.0f, c.rgba().a()/255.0f); };
-        corner_colors[0] = to_color(pc->lt()); corner_colors[1] = to_color(pc->rt()); corner_colors[2] = to_color(pc->lb()); corner_colors[3] = to_color(pc->rb());
+        // SDK converter has applied SS6-style mediation; ssab fields now carry
+        // a consistent semantic regardless of the source (blend_type, target):
+        //   pc->lt/rt/lb/rb->rgba.a  = rateAlpha (final-alpha source, u8)
+        //   pc->lt/rt/lb/rb->rate    = colorA    (blend weight, float)
+        auto to_color = [part_alpha](const ss::runtime::SsAttributePartColorKeyValueColor& c) {
+            return Color(c.rgba().r()/255.0f, c.rgba().g()/255.0f, c.rgba().b()/255.0f,
+                         (c.rgba().a()/255.0f) * part_alpha);
+        };
+        corner_colors[0] = to_color(pc->lt());
+        corner_colors[1] = to_color(pc->rt());
+        corner_colors[2] = to_color(pc->lb());
+        corner_colors[3] = to_color(pc->rb());
+        corner_rates[0] = pc->lt().rate();
+        corner_rates[1] = pc->rt().rate();
+        corner_rates[2] = pc->lb().rate();
+        corner_rates[3] = pc->rb().rate();
+        // PartColor blend_type is 0..3 (Mix/Mul/Add/Sub). Higher SS7 values are
+        // GPU framebuffer blends, not PartColor formulas — clamp defensively.
+        blend_idx = (int)pc->blend_type();
+        if (blend_idx < 0 || blend_idx > 3) blend_idx = 0;
     }
+
+    // Output PMA flag — parked at 0 for now; wired so the shader path is
+    // ready when the host turns PMA on globally or per texture.
+    const float pma_flag = 0.0f;
 
     Vector2* v_ptr = verts.ptrw();
     Vector2* u_ptr = uvs.ptrw();
-    Color* c_ptr = colors.ptrw();
+    Color*   c_ptr = colors.ptrw();
+    float*   x_ptr = custom0.ptrw();
 
     for (int j = 0; j < CORNERS_COUNT; j++) {
         v_ptr[vbase + j] = xform_raw(draw_m, out_x[j], out_y[j]);
         u_ptr[vbase + j] = Vector2(out_u[j] * inv_tex_size.x, out_v[j] * inv_tex_size.y);
         c_ptr[vbase + j] = corner_colors[j];
+        const int c0 = (vbase + j) * 4;
+        x_ptr[c0 + 0] = corner_rates[j];
+        x_ptr[c0 + 1] = (float)blend_idx;
+        x_ptr[c0 + 2] = pma_flag;
+        x_ptr[c0 + 3] = 0.0f;
     }
     if (needs_center) {
         v_ptr[vbase + CORNERS_COUNT] = xform_raw(draw_m, out_x[CORNERS_COUNT], out_y[CORNERS_COUNT]);
         u_ptr[vbase + CORNERS_COUNT] = Vector2(out_u[CORNERS_COUNT] * inv_tex_size.x, out_v[CORNERS_COUNT] * inv_tex_size.y);
         c_ptr[vbase + CORNERS_COUNT] = (corner_colors[0] + corner_colors[1] + corner_colors[2] + corner_colors[3]) * 0.25f;
+        const float center_rate = (corner_rates[0] + corner_rates[1] + corner_rates[2] + corner_rates[3]) * 0.25f;
+        const int c0 = (vbase + CORNERS_COUNT) * 4;
+        x_ptr[c0 + 0] = center_rate;
+        x_ptr[c0 + 1] = (float)blend_idx;
+        x_ptr[c0 + 2] = pma_flag;
+        x_ptr[c0 + 3] = 0.0f;
     }
     return vert_count;
 }
@@ -1003,6 +1080,69 @@ void SsInternalPlayer::_apply_blend_material(RenderingServer* rs, RID ci, ss::fo
         _blend_materials[(int)ss_blend] = mat;
     }
     rs->canvas_item_set_material(ci, _blend_materials[(int)ss_blend]->get_rid());
+}
+
+Ref<Shader> SsInternalPlayer::_ensure_partcolor_shader(ss::format::BlendType blend_type) {
+    const int key = (int)blend_type;
+    if (_partcolor_shaders.has(key)) {
+        return _partcolor_shaders[key];
+    }
+    Ref<Shader> shader; shader.instantiate();
+    String src = String(SHADER_HEADER)
+               + String(partcolor_render_mode_str(key))
+               + String(DEFAULT_VS)
+               + String(DEFAULT_FS);
+    shader->set_code(src);
+    _partcolor_shaders[key] = shader;
+    return shader;
+}
+
+void SsInternalPlayer::_apply_partcolor_material(RenderingServer* rs, RID ci, ss::format::BlendType ss_blend) {
+    // Only Mix/Add/Sub/Mul are supported as GPU-side framebuffer blend modes
+    // here; any other batch blend_type falls back to Mix at the material level
+    // (the rest of the 12 SS7 blends are deferred — see ROADMAP). The
+    // per-vertex CUSTOM0 still drives PartColor compositing regardless.
+    ss::format::BlendType resolved = ss_blend;
+    switch (ss_blend) {
+        case ss::format::BlendType_Mix:
+        case ss::format::BlendType_Add:
+        case ss::format::BlendType_Sub:
+        case ss::format::BlendType_Mul:
+            break;
+        default:
+            resolved = ss::format::BlendType_Mix;
+            break;
+    }
+    const int key = (int)resolved;
+    if (!_partcolor_materials.has(key)) {
+        Ref<ShaderMaterial> mat; mat.instantiate();
+        mat->set_shader(_ensure_partcolor_shader(resolved));
+        _partcolor_materials[key] = mat;
+    }
+    rs->canvas_item_set_material(ci, _partcolor_materials[key]->get_rid());
+}
+
+void SsInternalPlayer::_emit_partcolor_mesh(RenderingServer* rs, RID ci,
+                                            const SsIntArray& indices,
+                                            const SsVec2Array& verts,
+                                            const SsColorArray& colors,
+                                            const SsVec2Array& uvs,
+                                            const SsFloatArray& custom0,
+                                            const RID& texture_rid) {
+    Ref<ArrayMesh> mesh; mesh.instantiate();
+    Array arrays;
+    arrays.resize(Mesh::ARRAY_MAX);
+    arrays[Mesh::ARRAY_VERTEX] = verts;
+    arrays[Mesh::ARRAY_TEX_UV] = uvs;
+    arrays[Mesh::ARRAY_COLOR]  = colors;
+    arrays[Mesh::ARRAY_CUSTOM0] = custom0;
+    arrays[Mesh::ARRAY_INDEX]  = indices;
+    // CUSTOM0 carries 4 floats per vertex (ARRAY_CUSTOM_RGBA_FLOAT). The 2D
+    // vertex flag is auto-detected from the PackedVector2Array contents.
+    const uint64_t flags = (uint64_t)Mesh::ARRAY_CUSTOM_RGBA_FLOAT << Mesh::ARRAY_FORMAT_CUSTOM0_SHIFT;
+    mesh->add_surface_from_arrays(Mesh::PRIMITIVE_TRIANGLES, arrays, Array(), Dictionary(), flags);
+    _frame_meshes.push_back(mesh);
+    rs->canvas_item_add_mesh(ci, mesh->get_rid(), Transform2D(), Color(1, 1, 1, 1), texture_rid);
 }
 
 bool SsInternalPlayer::_build_shape_geometry(const DrawFrame& f, int p_idx,
@@ -1093,10 +1233,12 @@ void SsInternalPlayer::_emit_normal_batch(const DrawFrame& f, RID ci,
     _normal_verts.resize((int)batch->vertex_count());
     _normal_uvs.resize((int)batch->vertex_count());
     _normal_colors.resize((int)batch->vertex_count());
+    _normal_custom0.resize((int)batch->vertex_count() * 4);
     _normal_indices.resize((int)batch->index_count());
     SsVec2Array&  verts   = _normal_verts;
     SsVec2Array&  uvs     = _normal_uvs;
     SsColorArray& colors  = _normal_colors;
+    SsFloatArray& custom0 = _normal_custom0;
     SsIntArray&   indices = _normal_indices;
     int32_t* indices_ptr = (int32_t*)indices.ptrw();
 
@@ -1117,7 +1259,7 @@ void SsInternalPlayer::_emit_normal_batch(const DrawFrame& f, RID ci,
         if (!drawing_m) continue;
 
         const int vert_count = _build_normal(f, p_idx, part, drawing_m, inv_tex_size,
-                                             verts, uvs, colors, vbase);
+                                             verts, uvs, colors, custom0, vbase);
         if (vert_count == 0) continue;
 
         // Append per-part indices with vertex base offset.
@@ -1143,9 +1285,9 @@ void SsInternalPlayer::_emit_normal_batch(const DrawFrame& f, RID ci,
     // batch->blend_type() is the runtime BlendType; converted to ssab BlendType
     // by raw u8 value (the two enums are layout-equivalent, see chapter 9 §7).
     const auto ssab_blend = (ss::format::BlendType)batch->blend_type();
-    _apply_blend_material(rs, ci, ssab_blend);
+    _apply_partcolor_material(rs, ci, ssab_blend);
     rs->canvas_item_set_transform(ci, Transform2D());
-    rs->canvas_item_add_triangle_array(ci, indices, verts, colors, uvs, {}, {}, tex->get_rid());
+    _emit_partcolor_mesh(rs, ci, indices, verts, colors, uvs, custom0, tex->get_rid());
 }
 
 void SsInternalPlayer::_emit_shape_batch(const DrawFrame& f, RID ci,
@@ -1195,7 +1337,7 @@ void SsInternalPlayer::_emit_mesh_batch(const DrawFrame& f, RID ci,
     // batch->blend_type() is the runtime BlendType; converted to the ssab
     // BlendType by raw u8 value (same convention as _emit_normal_batch).
     const auto ssab_blend = (ss::format::BlendType)batch->blend_type();
-    _apply_blend_material(f.rs, ci, ssab_blend);
+    _apply_partcolor_material(f.rs, ci, ssab_blend);
 
     for (uint16_t k = 0; k < count; k++) {
         int p_idx = (int)draw_order_data[batch->start_rank() + k];
@@ -1204,8 +1346,9 @@ void SsInternalPlayer::_emit_mesh_batch(const DrawFrame& f, RID ci,
         if (!part) continue;
 
         if (!_build_mesh_geometry(f, p_idx, part, inv_tex_size, _mesh_buf)) continue;
-        f.rs->canvas_item_add_triangle_array(ci, _mesh_buf.indices, _mesh_buf.verts,
-                                             _mesh_buf.colors, _mesh_buf.uvs, {}, {}, tex->get_rid());
+        _emit_partcolor_mesh(f.rs, ci, _mesh_buf.indices, _mesh_buf.verts,
+                             _mesh_buf.colors, _mesh_buf.uvs, _mesh_buf.custom0,
+                             tex->get_rid());
     }
 }
 
@@ -1237,30 +1380,49 @@ bool SsInternalPlayer::_build_mesh_geometry(const DrawFrame& f, int p_idx,
     out.verts.resize(vert_count);
     out.uvs.resize(vert_count);
     out.colors.resize(vert_count);
+    out.custom0.resize(vert_count * 4);
     out.indices.resize(index_count);
 
     // Mesh part color is "Overall" only (a single flat color for the whole
-    // part — see SS6 DrawMesh); resolve once, apply to every vertex.
-    Color mesh_color(1, 1, 1, part->alpha());
+    // part — see SS6 DrawMesh); resolve once, apply to every vertex. After
+    // SDK converter mediation: rgba.a = rateAlpha, rate = colorA, regardless
+    // of the source target.
+    const float part_alpha = part->alpha();
+    Color mesh_color(1, 1, 1, part_alpha);
+    float mesh_rate = 0.0f;
+    int blend_idx = 0;
     const uint64_t flags = part->update_flag();
     const auto partColorIndex = part->part_color();
     if ((flags & ss::runtime::UpdateAttributeFlags_AttributePartColor) && partColorIndex >= 0) {
         auto pc = f.frameData->parts_color()->Get(partColorIndex);
-        auto to_color = [](const ss::runtime::SsAttributePartColorKeyValueColor& c) { return Color(c.rgba().r()/255.0f, c.rgba().g()/255.0f, c.rgba().b()/255.0f, c.rgba().a()/255.0f); };
+        auto to_color = [part_alpha](const ss::runtime::SsAttributePartColorKeyValueColor& c) {
+            return Color(c.rgba().r()/255.0f, c.rgba().g()/255.0f, c.rgba().b()/255.0f,
+                         (c.rgba().a()/255.0f) * part_alpha);
+        };
         mesh_color = to_color(pc->lt());
+        mesh_rate = pc->lt().rate();
+        blend_idx = (int)pc->blend_type();
+        if (blend_idx < 0 || blend_idx > 3) blend_idx = 0;
     }
+
+    const float pma_flag = 0.0f;
 
     const float* mx = f.mesh_vertices_x + v0;
     const float* my = f.mesh_vertices_y + v0;
     const float* uv = f.mesh_uvs + (uintptr_t)v0 * 2;
     Vector2* v_ptr = out.verts.ptrw();
     Vector2* u_ptr = out.uvs.ptrw();
-    Color* c_ptr = out.colors.ptrw();
+    Color*   c_ptr = out.colors.ptrw();
+    float*   x_ptr = out.custom0.ptrw();
     for (int i = 0; i < vert_count; i++) {
         // mesh_vertices are already world-space — no xform_raw needed.
         v_ptr[i] = Vector2(mx[i], my[i]);
         u_ptr[i] = Vector2(uv[i * 2] * inv_tex_size.x, uv[i * 2 + 1] * inv_tex_size.y);
         c_ptr[i] = mesh_color;
+        x_ptr[i*4 + 0] = mesh_rate;
+        x_ptr[i*4 + 1] = (float)blend_idx;
+        x_ptr[i*4 + 2] = pma_flag;
+        x_ptr[i*4 + 3] = 0.0f;
     }
 
     // Triangle indices are part-local 0-based; this is a singleton batch, so
