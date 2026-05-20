@@ -19,10 +19,6 @@ else
 fi
 
 HOST_ARCH=$(uname -m)
-pushd $ROOTDIR/godot-cpp > /dev/null
-GODOT_BRANCH=$(git branch --show-current | sed -e "s/[\r\n]\+//g")
-GODOT_TAG=$(git describe --tags --abbrev=0 | sed -e "s/[\r\n]\+//g")
-popd > /dev/null
 
 # Godot scons default options
 declare -A scons_default_opts=(
@@ -82,13 +78,7 @@ done
 echo ""
 
 # get Godot Version
-if [[ -n $GODOT_BRANCH ]]; then
-    VERSION=${GODOT_BRANCH}
-elif [[ -n $GODOT_TAG ]]; then
-    VERSION=${GODOT_TAG}
-else
-    VERSION=${opts[version]}
-fi
+VERSION=${opts[version]}
 echo "Godot Version: ${VERSION}"
 
 # validate scons command options from macbuild.sh options
@@ -103,6 +93,12 @@ for key value in ${(kv)opts}; do
     fi
     scons_command_opts="$scons_command_opts $key=$value"
 done
+
+# Map version to api_version for SCons
+if [[ -n $VERSION ]]; then
+    scons_command_opts="$scons_command_opts api_version=$VERSION"
+fi
+
 scons_command_opts="$scons_command_opts -j $build_default_opts[cpus]"
 
 echo "scons command options: $scons_command_opts"

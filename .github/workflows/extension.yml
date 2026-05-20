@@ -5,7 +5,7 @@ on:
       godot_tag:
         required: true
         type: string
-        default: "4.4"
+        default: "master"
         description: "a branch or a tag of godot-cpp"
 
 env:

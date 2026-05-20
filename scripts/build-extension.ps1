@@ -10,19 +10,6 @@ if ($arch -match "AMD64") {
 }
 $cpus = (Get-Item Env:NUMBER_OF_PROCESSORS).Value
 
-pushd $rootDirectory/godot-cpp
-try {
-    $GODOT_BRANCH = (git branch --show-current).Trim()
-} catch {
-    $GODOT_BRANCH = ""
-}
-try {
-    $GODOT_TAG = (git describe --tags --abbrev=0).Trim()
-} catch {
-    $GODOT_TAG = ""
-}
-popd
-
 # Godot scons default options
 $scons_default_opts = @{
     arch = $HOST_ARCH
@@ -72,6 +59,7 @@ $opts
 echo ""
 
 # validate scons command options from winbuild options
+$scons_command_opts = ""
 foreach ($key in $opts.Keys) {
     if ($winbuild_default_opts.ContainsKey($key)) {
         # skip winbuild default options
@@ -79,8 +67,14 @@ foreach ($key in $opts.Keys) {
     }
     $scons_command_opts += " $key=$($opts[$key])"
 }
+
+# Map version to api_version for SCons
+if ($opts.version) {
+    $scons_command_opts += " api_version=$($opts.version)"
+}
+
 $j = $opts["cpus"]
-$scons_command_opts += "$scons_command_opts -j $j"
+$scons_command_opts += " -j $j"
 
 
 echo "scons command options: $scons_command_opts"
