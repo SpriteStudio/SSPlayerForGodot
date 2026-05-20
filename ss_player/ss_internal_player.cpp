@@ -509,11 +509,13 @@ void SsInternalPlayer::_drawAnimation(float frame_no, float delta_seconds, bool 
         RID ci = _ensure_batch_ci((int)bi);
 
         // Reset batch CI state before use. Pool reuse can leak properties
-        // from previous frames / different kinds (e.g. Effect transform).
+        // from previous frames / different kinds (e.g. Effect transform,
+        // Effect part-alpha modulate).
         f.rs->canvas_item_clear(ci);
         f.rs->canvas_item_set_visible(ci, true);
         f.rs->canvas_item_set_transform(ci, Transform2D());
         f.rs->canvas_item_set_material(ci, RID());
+        f.rs->canvas_item_set_modulate(ci, Color(1, 1, 1, 1));
 
         // We use explicit draw indices for internal Z sorting within the player.
         // Using global z_index would cause character parts to interleave with
@@ -852,6 +854,13 @@ void SsInternalPlayer::_emit_effect_slot(const DrawFrame& f, RID ci, int p_idx, 
     }
 
     f.rs->canvas_item_set_transform(ci, matrix_to_transform2d(slot_matrix));
+
+    // Cascade the Effect slot part's alpha attribute down to all child
+    // emitter CIs via modulate. The runtime / EffectDrawPlan only carries
+    // per-particle simulator colors, so without this the part's own alpha
+    // curve (e.g. a fade-out keyed on the Effect part itself) is ignored.
+    const float part_alpha = _parts_by_idx[p_idx] ? _parts_by_idx[p_idx]->alpha() : 1.0f;
+    f.rs->canvas_item_set_modulate(ci, Color(1, 1, 1, part_alpha));
 
     const uint32_t cmd_count = plan->commands()->size();
     while ((uint32_t)slot.emitter_cis.size() < cmd_count) {
