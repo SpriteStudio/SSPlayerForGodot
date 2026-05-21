@@ -23,11 +23,59 @@ void ss_runtime_log_bridge(int level, const char *message) {
     WARN_PRINT(String("[ssruntime] ") + String(message));
 }
 
-// Shader source pieces. The vertex shader (default.vs) is meant to be reused
-// across most future fragment variants; per-variant differences are isolated
-// to the .fs file. The .vs and .fs files each hold a single C++ raw string
-// literal so they `#include` directly into a `const char*`.
+// =========================================================================
+// Shader pipeline composition
+// =========================================================================
+//
+// The runtime shader for SpriteStudio canvas_item draws is composed at
+// material-creation time by concatenating GLSL text pieces. Each piece lives
+// in its own file under `shaders/` and is included here as a single C++ raw
+// string literal (`R"GLSL(...)GLSL"` — the only C++ artifact in those files).
+//
+//   shaders/ss_library_vs.glsl  — vs-stage SpriteStudio library: shared constants,
+//                                  varyings, and any helper functions used from vertex()
+//   shaders/ss_library_fs.glsl  — fs-stage SpriteStudio library functions
+//   shaders/default.vs          — default vertex stage (vertex() entry)
+//   shaders/default.fs          — default fragment stage (fragment() entry)
+//
+// Library files are stage-organized, not feature-organized. Functions inside
+// them follow the naming convention `ss_<CATEGORY>_<FEATURE>` (e.g.
+// `ss_partcolor_blend`, `ss_output_color`) so the category can be recovered
+// from the function name when a single file hosts many helpers.
+//
+// Concatenation order (top-down GLSL compilation):
+//   SHADER_HEADER → render_mode → LIBRARY_VS → LIBRARY_FS → DEFAULT_VS → DEFAULT_FS
+// Library functions come before entry points so vertex()/fragment() can call
+// them without forward declarations.
+//
+// `_PartColorCoef` table (ss_library_vs.glsl) mirrors the SS6 SDK reference
+// (Common/Drawer/ssplayer_render_gl.cpp:1203-1206):
+//   Mix (0): fSrc=1-r, fDst=+r, fDstSrc=0   -> lerp(pixel, color, r)
+//   Mul (1): fSrc=1-r, fDst=+r, fDstSrc=1   -> pixel * lerp(1, color, r)
+//   Add (2): fSrc=1,   fDst=+r, fDstSrc=0   -> pixel + color * r
+//   Sub (3): fSrc=1,   fDst=-r, fDstSrc=0   -> pixel - color * r
+//
+// `partcolor_color` is captured into a dedicated varying because Godot's
+// canvas_item fragment stage modulates the built-in COLOR with the sampled
+// texture before user fragment() runs; reading COLOR in fragment would lose
+// the original PartColor.rgb.
+//
+// `ss_partcolor_blend()` applies the SS6 SDK PartColor compositing formula
+// (Common/Drawer/GLSL/default.fs:27). `ss_input_texture()` and
+// `ss_output_color()` are I/O extension points: the former wraps the input
+// sampler call (so future variants can fold inverse-PMA or other input-side
+// conversions there), and the latter wraps the output stage (currently
+// optional premultiplied-alpha conversion; future linear/HDR conversions
+// will land here as well).
 const char* SHADER_HEADER = "shader_type canvas_item;\n";
+
+const char* LIBRARY_VS =
+#include "shaders/ss_library_vs.glsl"
+;
+
+const char* LIBRARY_FS =
+#include "shaders/ss_library_fs.glsl"
+;
 
 const char* DEFAULT_VS =
 #include "shaders/default.vs"
@@ -1090,6 +1138,8 @@ Ref<Shader> SsInternalPlayer::_ensure_partcolor_shader(ss::format::BlendType ble
     Ref<Shader> shader; shader.instantiate();
     String src = String(SHADER_HEADER)
                + String(partcolor_render_mode_str(key))
+               + String(LIBRARY_VS)
+               + String(LIBRARY_FS)
                + String(DEFAULT_VS)
                + String(DEFAULT_FS);
     shader->set_code(src);
