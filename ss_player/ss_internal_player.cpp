@@ -87,10 +87,17 @@ const char* DEFAULT_FS =
 
 // Stub fragment shader for per-part material dispatch verification. Inverts
 // the red channel of the sampled texture so the dispatch path is visually
-// distinguishable from Default. Remove this entry (and the file) once a real
-// custom shader variant lands.
+// distinguishable from Default. Kept around as a known-good per-part path
+// regression check while more SS6-ported variants land.
 const char* TESTSTUB_FS =
 #include "shaders/teststub.fs"
+;
+
+// SS6 SDK port: "ss-sepia". Sepia / grayscale tone with a single signed
+// strength parameter (ss_param0). See shaders/ss_sepia.fs for the
+// migration mapping from the SS6 reference.
+const char* SS_SEPIA_FS =
+#include "shaders/ss_sepia.fs"
 ;
 
 // One render_mode line per GPU framebuffer blend variant. The four entries
@@ -140,6 +147,7 @@ struct ShaderCatalogEntry {
 const ShaderCatalogEntry SHADER_CATALOG[] = {
     { fnv1a_hash("Default"),  "Default",  DEFAULT_FS,  false },
     { fnv1a_hash("TestStub"), "TestStub", TESTSTUB_FS, true  },
+    { fnv1a_hash("ss-sepia"), "ss-sepia", SS_SEPIA_FS, true  },
     // Add new shader variants below. Each new entry needs:
     //   1. A new `shaders/<name>.fs` with R"GLSL(...)GLSL"-wrapped pure GLSL
     //   2. A `const char* <NAME>_FS = #include "shaders/<name>.fs" ;` above
