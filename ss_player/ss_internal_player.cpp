@@ -100,6 +100,70 @@ const char* SS_SEPIA_FS =
 #include "shaders/ss_sepia.fs"
 ;
 
+// SS6 SDK port: "ss-outline". 4-neighbour alpha-edge outline with a
+// signed threshold parameter (ss_param0). Uses TEXTURE_PIXEL_SIZE in
+// place of SS6's args[A_U1]/args[A_V1].
+const char* SS_OUTLINE_FS =
+#include "shaders/ss_outline.fs"
+;
+
+// SS6 SDK port: "ss-bmask". Brightness-threshold mask discarding pixels
+// above/below `ss_param0`'s magnitude depending on its sign.
+const char* SS_BMASK_FS =
+#include "shaders/ss_bmask.fs"
+;
+
+// SS6 SDK port: "ss-hsb". Hue/Saturation/Brightness shift driven by
+// ss_param0..2. Defines ss_rgb_to_hsb / ss_hsb_to_rgb helpers inline.
+const char* SS_HSB_FS =
+#include "shaders/ss_hsb.fs"
+;
+
+// SS6 SDK port: "ss-step". Brightness-driven posterise. ss_param0 sets
+// the threshold (signed), ss_param1 the number of stages, ss_param2 the
+// mix between monochrome and texture-tinted output.
+const char* SS_STEP_FS =
+#include "shaders/ss_step.fs"
+;
+
+// SS6 SDK port: "ss-move". Directional smear/motion-blur driven by
+// ss_param0..2 (distance / direction / power). Iterates up to ~128
+// back-traced samples along sin/cos(direction).
+const char* SS_MOVE_FS =
+#include "shaders/ss_move.fs"
+;
+
+// SS6 SDK port: "ss-wave". Sine-warp horizontal displacement driven by
+// ss_param0..2 (width / height / phase).
+const char* SS_WAVE_FS =
+#include "shaders/ss_wave.fs"
+;
+
+// SS6 SDK port: "ss-noise". Per-texel pseudo-random noise overlay driven
+// by ss_param0..2 (power / color / phase).
+const char* SS_NOISE_FS =
+#include "shaders/ss_noise.fs"
+;
+
+// SS6 SDK port: "ss-blur". 9-tap box blur scaled by ss_param0 (focus
+// shift). Unique among the ss-* family in skipping the PartColor formula
+// — see ss_blur.fs for the rationale.
+const char* SS_BLUR_FS =
+#include "shaders/ss_blur.fs"
+;
+
+// SS6 SDK port: "ss-pix". UV-quantise pixelation; ss_param0 scales the
+// block size in source texels.
+const char* SS_PIX_FS =
+#include "shaders/ss_pix.fs"
+;
+
+// SS6 SDK port: "ss-scatter". Per-cell directional UV scatter driven by
+// ss_param0..2 (power / ratio / phase).
+const char* SS_SCATTER_FS =
+#include "shaders/ss_scatter.fs"
+;
+
 // One render_mode line per GPU framebuffer blend variant. The four entries
 // correspond to SsBlendType::{Mix, Mul, Add, Sub} by enum value (0/1/2/3);
 // any other blend value falls back to Mix.
@@ -147,7 +211,17 @@ struct ShaderCatalogEntry {
 const ShaderCatalogEntry SHADER_CATALOG[] = {
     { fnv1a_hash("Default"),  "Default",  DEFAULT_FS,  false },
     { fnv1a_hash("TestStub"), "TestStub", TESTSTUB_FS, true  },
-    { fnv1a_hash("ss-sepia"), "ss-sepia", SS_SEPIA_FS, true  },
+    { fnv1a_hash("ss-sepia"),   "ss-sepia",   SS_SEPIA_FS,   true  },
+    { fnv1a_hash("ss-outline"), "ss-outline", SS_OUTLINE_FS, true  },
+    { fnv1a_hash("ss-bmask"),   "ss-bmask",   SS_BMASK_FS,   true  },
+    { fnv1a_hash("ss-hsb"),     "ss-hsb",     SS_HSB_FS,     true  },
+    { fnv1a_hash("ss-step"),    "ss-step",    SS_STEP_FS,    true  },
+    { fnv1a_hash("ss-move"),    "ss-move",    SS_MOVE_FS,    true  },
+    { fnv1a_hash("ss-wave"),    "ss-wave",    SS_WAVE_FS,    true  },
+    { fnv1a_hash("ss-noise"),   "ss-noise",   SS_NOISE_FS,   true  },
+    { fnv1a_hash("ss-blur"),    "ss-blur",    SS_BLUR_FS,    true  },
+    { fnv1a_hash("ss-pix"),     "ss-pix",     SS_PIX_FS,     true  },
+    { fnv1a_hash("ss-scatter"), "ss-scatter", SS_SCATTER_FS, true  },
     // Add new shader variants below. Each new entry needs:
     //   1. A new `shaders/<name>.fs` with R"GLSL(...)GLSL"-wrapped pure GLSL
     //   2. A `const char* <NAME>_FS = #include "shaders/<name>.fs" ;` above
