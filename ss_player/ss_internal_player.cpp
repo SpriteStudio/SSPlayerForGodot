@@ -85,6 +85,14 @@ const char* DEFAULT_FS =
 #include "shaders/default.fs"
 ;
 
+// Stub fragment shader for per-part material dispatch verification. Inverts
+// the red channel of the sampled texture so the dispatch path is visually
+// distinguishable from Default. Remove this entry (and the file) once a real
+// custom shader variant lands.
+const char* TESTSTUB_FS =
+#include "shaders/teststub.fs"
+;
+
 // One render_mode line per GPU framebuffer blend variant. The four entries
 // correspond to SsBlendType::{Mix, Mul, Add, Sub} by enum value (0/1/2/3);
 // any other blend value falls back to Mix.
@@ -96,6 +104,66 @@ const char* partcolor_render_mode_str(int blend_idx_for_render_mode) {
         case 3: return "render_mode blend_sub;\n";  // Sub
         default: return "render_mode blend_mix;\n";
     }
+}
+
+// =========================================================================
+// Shader dispatch by SS Shader-attribute `id_hash`
+// =========================================================================
+//
+// Parts may carry an SS7 Shader attribute (sspj `id` / ssab `id_hash`) that
+// selects which fragment shader implementation to use. The mapping is a
+// static catalog: each entry pairs an FNV1a hash (computed at compile time
+// from the SS-side id string) with the fragment shader source string and a
+// flag indicating whether the variant needs a per-part ShaderMaterial.
+//
+// FNV1a mirrors `ssconverter/src/utils.rs::fnv1a_hash_str` exactly (seed
+// 0x811C9DC5, prime 0x01000193); the constexpr form lets the catalog's
+// id_hash field be evaluated at compile time so it matches the SDK output
+// without runtime cost.
+//
+// Parts without a Shader attribute are resolved as the "Default" id_hash so
+// dispatch is a single path. The "Default" variant has `is_per_part=false`
+// and keeps the existing PartColor batch behaviour (shared ShaderMaterial
+// per blend_type). Custom variants use `is_per_part=true` to opt into the
+// per-part material flow (params + maps as uniforms).
+constexpr uint32_t fnv1a_hash(const char* s, uint32_t hash = 2166136261u) {
+    return *s ? fnv1a_hash(s + 1, (hash ^ (uint32_t)(uint8_t)*s) * 16777619u) : hash;
+}
+
+struct ShaderCatalogEntry {
+    uint32_t id_hash;
+    const char* id_name;
+    const char* fs_source;
+    bool is_per_part;
+};
+
+const ShaderCatalogEntry SHADER_CATALOG[] = {
+    { fnv1a_hash("Default"),  "Default",  DEFAULT_FS,  false },
+    { fnv1a_hash("TestStub"), "TestStub", TESTSTUB_FS, true  },
+    // Add new shader variants below. Each new entry needs:
+    //   1. A new `shaders/<name>.fs` with R"GLSL(...)GLSL"-wrapped pure GLSL
+    //   2. A `const char* <NAME>_FS = #include "shaders/<name>.fs" ;` above
+    //   3. The entry here with the SS-side id string and is_per_part=true
+};
+
+// Resolved at compile time, used by call sites that have no SS Shader
+// attribute attached to the part (the dispatch is unified — they pass this
+// constant rather than branching to a non-dispatch path).
+constexpr uint32_t DEFAULT_SHADER_ID_HASH = fnv1a_hash("Default");
+
+const ShaderCatalogEntry* lookup_shader_variant(uint32_t id_hash) {
+    for (const auto& e : SHADER_CATALOG) {
+        if (e.id_hash == id_hash) return &e;
+    }
+    // Unknown id falls back to the first catalog entry (Default). A WARN
+    // here would help authors notice typo'd shader ids in ssab.
+    return &SHADER_CATALOG[0];
+}
+
+// Composite cache key for (shader_id_hash, blend_type). Packed into a u64 so
+// HashMap keys stay scalar — Godot's default Hash<uint64_t> just works.
+inline uint64_t make_partcolor_cache_key(uint32_t shader_id_hash, ss::format::BlendType blend_type) {
+    return ((uint64_t)shader_id_hash << 32) | (uint32_t)(int)blend_type;
 }
 } // namespace
 
@@ -121,6 +189,7 @@ SsInternalPlayer::~SsInternalPlayer() {
     _clear_instance_children();
     _clear_effect_slots();
     _clear_batch_canvas_items();
+    _free_per_part_canvas_items();
 
     RenderingServer* rs = RenderingServer::get_singleton();
     if (_root_ci.is_valid()) {
@@ -521,6 +590,11 @@ void SsInternalPlayer::_drawAnimation(float frame_no, float delta_seconds, bool 
     // canvas_item_clear in the per-batch loop below, so dropping these refs
     // is safe (the renderer no longer needs the mesh data).
     _frame_meshes.clear();
+    // Walk the per-part material / canvas_item pool cursors back to 0 so any
+    // per-part rendering during this frame re-uses entries from the front of
+    // each pool rather than growing them. No-op when no per-part variants
+    // are dispatched (pools stay empty).
+    _reset_per_part_pools();
 
     DrawFrame f = {};
     f.rs = RenderingServer::get_singleton();
@@ -1130,24 +1204,131 @@ void SsInternalPlayer::_apply_blend_material(RenderingServer* rs, RID ci, ss::fo
     rs->canvas_item_set_material(ci, _blend_materials[(int)ss_blend]->get_rid());
 }
 
-Ref<Shader> SsInternalPlayer::_ensure_partcolor_shader(ss::format::BlendType blend_type) {
-    const int key = (int)blend_type;
+Ref<Shader> SsInternalPlayer::_ensure_partcolor_shader(uint32_t shader_id_hash, ss::format::BlendType blend_type) {
+    const uint64_t key = make_partcolor_cache_key(shader_id_hash, blend_type);
     if (_partcolor_shaders.has(key)) {
         return _partcolor_shaders[key];
     }
+    const ShaderCatalogEntry* variant = lookup_shader_variant(shader_id_hash);
     Ref<Shader> shader; shader.instantiate();
     String src = String(SHADER_HEADER)
-               + String(partcolor_render_mode_str(key))
+               + String(partcolor_render_mode_str((int)blend_type))
                + String(LIBRARY_VS)
                + String(LIBRARY_FS)
                + String(DEFAULT_VS)
-               + String(DEFAULT_FS);
+               + String(variant->fs_source);
     shader->set_code(src);
     _partcolor_shaders[key] = shader;
     return shader;
 }
 
-void SsInternalPlayer::_apply_partcolor_material(RenderingServer* rs, RID ci, ss::format::BlendType ss_blend) {
+void SsInternalPlayer::_reset_per_part_pools() {
+    RenderingServer* rs = RenderingServer::get_singleton();
+    // Pool stays warm across frames; the in_use cursor walks back to 0 so
+    // previously-handed-out materials are re-issued from the front.
+    for (KeyValue<uint64_t, PerPartMaterialPool>& kv : _per_part_material_pools) {
+        kv.value.in_use = 0;
+    }
+    // Hide all canvas items by default; `_acquire_per_part_canvas_item` makes
+    // re-acquired entries visible. Unused entries this frame remain hidden.
+    for (int i = 0; i < _per_part_canvas_items.size(); i++) {
+        rs->canvas_item_clear(_per_part_canvas_items[i]);
+        rs->canvas_item_set_visible(_per_part_canvas_items[i], false);
+    }
+    _per_part_canvas_items_in_use = 0;
+}
+
+void SsInternalPlayer::_free_per_part_canvas_items() {
+    RenderingServer* rs = RenderingServer::get_singleton();
+    for (int i = 0; i < _per_part_canvas_items.size(); i++) {
+        rs->free_rid(_per_part_canvas_items[i]);
+    }
+    _per_part_canvas_items.clear();
+    _per_part_canvas_items_in_use = 0;
+}
+
+Ref<ShaderMaterial> SsInternalPlayer::_acquire_per_part_material(uint32_t shader_id_hash, ss::format::BlendType blend_type) {
+    const uint64_t key = make_partcolor_cache_key(shader_id_hash, blend_type);
+    PerPartMaterialPool& pool = _per_part_material_pools[key];
+    if (pool.in_use >= pool.materials.size()) {
+        Ref<ShaderMaterial> mat; mat.instantiate();
+        mat->set_shader(_ensure_partcolor_shader(shader_id_hash, blend_type));
+        pool.materials.push_back(mat);
+    }
+    return pool.materials[pool.in_use++];
+}
+
+RID SsInternalPlayer::_acquire_per_part_canvas_item() {
+    RenderingServer* rs = RenderingServer::get_singleton();
+    if (_per_part_canvas_items_in_use >= _per_part_canvas_items.size()) {
+        RID ci = rs->canvas_item_create();
+        rs->canvas_item_set_parent(ci, _root_ci);
+        _per_part_canvas_items.push_back(ci);
+    }
+    RID ci = _per_part_canvas_items[_per_part_canvas_items_in_use++];
+    rs->canvas_item_set_visible(ci, true);
+    return ci;
+}
+
+Ref<Texture2D> SsInternalPlayer::_resolve_map_texture(uint32_t cellmap_name_hash) {
+    if (cellmap_name_hash == 0) return Ref<Texture2D>();
+    if (!_textures.has(cellmap_name_hash)) return Ref<Texture2D>();
+    return _textures[cellmap_name_hash];
+}
+
+SsInternalPlayer::PartShaderInfo SsInternalPlayer::_resolve_part_shader_info(const DrawFrame& f, const ss::runtime::PartState* part) {
+    PartShaderInfo psi = {};
+    psi.id_hash = DEFAULT_SHADER_ID_HASH;
+    if (part) {
+        const uint64_t flags = part->update_flag();
+        const int16_t shader_idx = part->shader();
+        if ((flags & ss::runtime::UpdateAttributeFlags_AttributeShader) && shader_idx >= 0
+            && f.frameData->shaders() != nullptr
+            && shader_idx < (int16_t)f.frameData->shaders()->size()) {
+            auto sh = f.frameData->shaders()->Get(shader_idx);
+            psi.id_hash = sh->id_hash();
+            psi.params[0] = sh->param0();
+            psi.params[1] = sh->param1();
+            psi.params[2] = sh->param2();
+            psi.params[3] = sh->param3();
+            psi.params[4] = sh->param4();
+            psi.params[5] = sh->param5();
+            psi.params[6] = sh->param6();
+            psi.params[7] = sh->param7();
+            psi.map0 = _resolve_map_texture(sh->map0_cellmap_name_hash());
+            psi.map1 = _resolve_map_texture(sh->map1_cellmap_name_hash());
+        }
+    }
+    // Debug override: when set, force the dispatch through a specific catalog
+    // entry. Useful while verifying the per-part path before authoring .sspj
+    // content that actually exercises a custom shader id.
+    if (_test_shader_id_hash_override != 0) {
+        psi.id_hash = _test_shader_id_hash_override;
+    }
+    const ShaderCatalogEntry* variant = lookup_shader_variant(psi.id_hash);
+    psi.is_per_part = variant->is_per_part;
+    return psi;
+}
+
+void SsInternalPlayer::_apply_per_part_uniforms(Ref<ShaderMaterial> mat, const float params[8],
+                                                const Ref<Texture2D>& map0, const Ref<Texture2D>& map1) {
+    if (mat.is_null() || params == nullptr) return;
+    // Uniform names match the declarations expected in shaders/ss_library_fs.glsl
+    // (to be added when the first custom shader variant lands). Setting an
+    // unknown uniform is harmless in Godot — it just no-ops.
+    mat->set_shader_parameter("ss_param0", params[0]);
+    mat->set_shader_parameter("ss_param1", params[1]);
+    mat->set_shader_parameter("ss_param2", params[2]);
+    mat->set_shader_parameter("ss_param3", params[3]);
+    mat->set_shader_parameter("ss_param4", params[4]);
+    mat->set_shader_parameter("ss_param5", params[5]);
+    mat->set_shader_parameter("ss_param6", params[6]);
+    mat->set_shader_parameter("ss_param7", params[7]);
+    mat->set_shader_parameter("map0", map0);
+    mat->set_shader_parameter("map1", map1);
+}
+
+void SsInternalPlayer::_apply_partcolor_material(RenderingServer* rs, RID ci, uint32_t shader_id_hash, ss::format::BlendType ss_blend) {
     // Only Mix/Add/Sub/Mul are supported as GPU-side framebuffer blend modes
     // here; any other batch blend_type falls back to Mix at the material level
     // (the rest of the 12 SS7 blends are deferred — see ROADMAP). The
@@ -1163,10 +1344,10 @@ void SsInternalPlayer::_apply_partcolor_material(RenderingServer* rs, RID ci, ss
             resolved = ss::format::BlendType_Mix;
             break;
     }
-    const int key = (int)resolved;
+    const uint64_t key = make_partcolor_cache_key(shader_id_hash, resolved);
     if (!_partcolor_materials.has(key)) {
         Ref<ShaderMaterial> mat; mat.instantiate();
-        mat->set_shader(_ensure_partcolor_shader(resolved));
+        mat->set_shader(_ensure_partcolor_shader(shader_id_hash, resolved));
         _partcolor_materials[key] = mat;
     }
     rs->canvas_item_set_material(ci, _partcolor_materials[key]->get_rid());
@@ -1339,7 +1520,20 @@ void SsInternalPlayer::_emit_normal_batch(const DrawFrame& f, RID ci,
 
     int vbase = 0;
     int ibase = 0;
-    bool any_emitted = false;
+    bool any_default_emitted = false;
+
+    // batch->blend_type() is the runtime BlendType; converted to ssab BlendType
+    // by raw u8 value (the two enums are layout-equivalent, see chapter 9 §7).
+    const auto ssab_blend = (ss::format::BlendType)batch->blend_type();
+    const RID tex_rid = tex->get_rid();
+
+    // Pre-size the per-part scratch buffers to fit one Normal part at max
+    // (5 verts, 12 indices). Resized once here, reused across per-part emits.
+    _per_part_normal_verts.resize(MAX_VERTICES_COUNT);
+    _per_part_normal_uvs.resize(MAX_VERTICES_COUNT);
+    _per_part_normal_colors.resize(MAX_VERTICES_COUNT);
+    _per_part_normal_custom0.resize(MAX_VERTICES_COUNT * 4);
+    _per_part_normal_indices.resize(INDICES_COUNT_PENTAGON);
 
     for (uint16_t k = 0; k < count; k++) {
         int p_idx = (int)draw_order_data[batch->start_rank() + k];
@@ -1353,6 +1547,55 @@ void SsInternalPlayer::_emit_normal_batch(const DrawFrame& f, RID ci,
         }
         if (!drawing_m) continue;
 
+        PartShaderInfo psi = _resolve_part_shader_info(f, part);
+        if (psi.is_per_part) {
+            // Per-part path: build into the small scratch buffers (vbase=0),
+            // acquire dedicated canvas_item + ShaderMaterial, emit one mesh.
+            const int vc = _build_normal(f, p_idx, part, drawing_m, inv_tex_size,
+                                         _per_part_normal_verts, _per_part_normal_uvs,
+                                         _per_part_normal_colors, _per_part_normal_custom0, 0);
+            if (vc == 0) continue;
+            int32_t* iptr = (int32_t*)_per_part_normal_indices.ptrw();
+            int idx_count;
+            if (vc == MAX_VERTICES_COUNT) {
+                const int p[INDICES_COUNT_PENTAGON] = { 0,1,4, 1,3,4, 3,2,4, 2,0,4 };
+                for (int j = 0; j < INDICES_COUNT_PENTAGON; j++) iptr[j] = p[j];
+                idx_count = INDICES_COUNT_PENTAGON;
+            } else {
+                const int q[INDICES_COUNT_QUAD] = { 0,1,2, 1,3,2 };
+                for (int j = 0; j < INDICES_COUNT_QUAD; j++) iptr[j] = q[j];
+                idx_count = INDICES_COUNT_QUAD;
+            }
+            // Trim the index buffer for this emit; _emit_partcolor_mesh reads
+            // size() so a stale-tail Pentagon footprint would emit phantom
+            // triangles for a 4-vert Quad part.
+            _per_part_normal_indices.resize(idx_count);
+            _per_part_normal_verts.resize(vc);
+            _per_part_normal_uvs.resize(vc);
+            _per_part_normal_colors.resize(vc);
+            _per_part_normal_custom0.resize(vc * 4);
+
+            RID part_ci = _acquire_per_part_canvas_item();
+            Ref<ShaderMaterial> mat = _acquire_per_part_material(psi.id_hash, ssab_blend);
+            _apply_per_part_uniforms(mat, psi.params, psi.map0, psi.map1);
+            rs->canvas_item_set_material(part_ci, mat->get_rid());
+            rs->canvas_item_set_transform(part_ci, Transform2D());
+            _emit_partcolor_mesh(rs, part_ci,
+                                 _per_part_normal_indices, _per_part_normal_verts,
+                                 _per_part_normal_colors, _per_part_normal_uvs,
+                                 _per_part_normal_custom0, tex_rid);
+
+            // Restore per-part scratch buffers to max footprint for the next
+            // per-part emit in this batch.
+            _per_part_normal_verts.resize(MAX_VERTICES_COUNT);
+            _per_part_normal_uvs.resize(MAX_VERTICES_COUNT);
+            _per_part_normal_colors.resize(MAX_VERTICES_COUNT);
+            _per_part_normal_custom0.resize(MAX_VERTICES_COUNT * 4);
+            _per_part_normal_indices.resize(INDICES_COUNT_PENTAGON);
+            continue;
+        }
+
+        // Default / shared path: accumulate into the batch arrays.
         const int vert_count = _build_normal(f, p_idx, part, drawing_m, inv_tex_size,
                                              verts, uvs, colors, custom0, vbase);
         if (vert_count == 0) continue;
@@ -1372,17 +1615,28 @@ void SsInternalPlayer::_emit_normal_batch(const DrawFrame& f, RID ci,
             ibase += INDICES_COUNT_QUAD;
         }
         vbase += vert_count;
-        any_emitted = true;
+        any_default_emitted = true;
     }
 
-    if (!any_emitted) return;
+    if (!any_default_emitted) {
+        // Pure per-part batch (every part took the per-part route). The batch
+        // canvas_item has nothing to draw; clear any stale commands.
+        rs->canvas_item_clear(ci);
+        return;
+    }
 
-    // batch->blend_type() is the runtime BlendType; converted to ssab BlendType
-    // by raw u8 value (the two enums are layout-equivalent, see chapter 9 §7).
-    const auto ssab_blend = (ss::format::BlendType)batch->blend_type();
-    _apply_partcolor_material(rs, ci, ssab_blend);
+    // Shrink the accumulator to exactly what the Default-pass produced. The
+    // batch's vertex_count / index_count were sized for "all parts go through
+    // the shared mesh"; if some took the per-part path those slots are unused.
+    indices.resize(ibase);
+    verts.resize(vbase);
+    uvs.resize(vbase);
+    colors.resize(vbase);
+    custom0.resize(vbase * 4);
+
+    _apply_partcolor_material(rs, ci, DEFAULT_SHADER_ID_HASH, ssab_blend);
     rs->canvas_item_set_transform(ci, Transform2D());
-    _emit_partcolor_mesh(rs, ci, indices, verts, colors, uvs, custom0, tex->get_rid());
+    _emit_partcolor_mesh(rs, ci, indices, verts, colors, uvs, custom0, tex_rid);
 }
 
 void SsInternalPlayer::_emit_shape_batch(const DrawFrame& f, RID ci,
@@ -1397,7 +1651,7 @@ void SsInternalPlayer::_emit_shape_batch(const DrawFrame& f, RID ci,
     // shape pipeline now shares the PartColor shader with Normal/Mesh, so
     // the GPU framebuffer blend is selected via _apply_partcolor_material.
     const auto ssab_blend = (ss::format::BlendType)batch->blend_type();
-    _apply_partcolor_material(f.rs, ci, ssab_blend);
+    bool batch_material_applied = false;
 
     for (uint16_t k = 0; k < count; k++) {
         int p_idx = (int)draw_order_data[batch->start_rank() + k];
@@ -1413,9 +1667,30 @@ void SsInternalPlayer::_emit_shape_batch(const DrawFrame& f, RID ci,
         // No texture bound; the canvas_item shader's TEXTURE sampler then
         // returns white (Godot's default) for any UV. The PartColor formula
         // therefore composites against an implicit white "shape pixel".
-        _emit_partcolor_mesh(f.rs, ci, _shape_buf.indices, _shape_buf.verts,
-                             _shape_buf.colors, _shape_buf.uvs, _shape_buf.custom0,
-                             RID());
+
+        PartShaderInfo psi = _resolve_part_shader_info(f, part);
+        if (psi.is_per_part) {
+            RID part_ci = _acquire_per_part_canvas_item();
+            Ref<ShaderMaterial> mat = _acquire_per_part_material(psi.id_hash, ssab_blend);
+            _apply_per_part_uniforms(mat, psi.params, psi.map0, psi.map1);
+            f.rs->canvas_item_set_material(part_ci, mat->get_rid());
+            _emit_partcolor_mesh(f.rs, part_ci, _shape_buf.indices, _shape_buf.verts,
+                                 _shape_buf.colors, _shape_buf.uvs, _shape_buf.custom0,
+                                 RID());
+        } else {
+            if (!batch_material_applied) {
+                _apply_partcolor_material(f.rs, ci, DEFAULT_SHADER_ID_HASH, ssab_blend);
+                batch_material_applied = true;
+            }
+            _emit_partcolor_mesh(f.rs, ci, _shape_buf.indices, _shape_buf.verts,
+                                 _shape_buf.colors, _shape_buf.uvs, _shape_buf.custom0,
+                                 RID());
+        }
+    }
+    if (!batch_material_applied) {
+        // Every Shape part in this batch took the per-part route. Clear stale
+        // commands on the batch CI so the previous frame's draws don't linger.
+        f.rs->canvas_item_clear(ci);
     }
 }
 
@@ -1439,7 +1714,8 @@ void SsInternalPlayer::_emit_mesh_batch(const DrawFrame& f, RID ci,
     // batch->blend_type() is the runtime BlendType; converted to the ssab
     // BlendType by raw u8 value (same convention as _emit_normal_batch).
     const auto ssab_blend = (ss::format::BlendType)batch->blend_type();
-    _apply_partcolor_material(f.rs, ci, ssab_blend);
+    const RID tex_rid = tex->get_rid();
+    bool batch_material_applied = false;
 
     for (uint16_t k = 0; k < count; k++) {
         int p_idx = (int)draw_order_data[batch->start_rank() + k];
@@ -1448,9 +1724,28 @@ void SsInternalPlayer::_emit_mesh_batch(const DrawFrame& f, RID ci,
         if (!part) continue;
 
         if (!_build_mesh_geometry(f, p_idx, part, inv_tex_size, _mesh_buf)) continue;
-        _emit_partcolor_mesh(f.rs, ci, _mesh_buf.indices, _mesh_buf.verts,
-                             _mesh_buf.colors, _mesh_buf.uvs, _mesh_buf.custom0,
-                             tex->get_rid());
+
+        PartShaderInfo psi = _resolve_part_shader_info(f, part);
+        if (psi.is_per_part) {
+            RID part_ci = _acquire_per_part_canvas_item();
+            Ref<ShaderMaterial> mat = _acquire_per_part_material(psi.id_hash, ssab_blend);
+            _apply_per_part_uniforms(mat, psi.params, psi.map0, psi.map1);
+            f.rs->canvas_item_set_material(part_ci, mat->get_rid());
+            _emit_partcolor_mesh(f.rs, part_ci, _mesh_buf.indices, _mesh_buf.verts,
+                                 _mesh_buf.colors, _mesh_buf.uvs, _mesh_buf.custom0,
+                                 tex_rid);
+        } else {
+            if (!batch_material_applied) {
+                _apply_partcolor_material(f.rs, ci, DEFAULT_SHADER_ID_HASH, ssab_blend);
+                batch_material_applied = true;
+            }
+            _emit_partcolor_mesh(f.rs, ci, _mesh_buf.indices, _mesh_buf.verts,
+                                 _mesh_buf.colors, _mesh_buf.uvs, _mesh_buf.custom0,
+                                 tex_rid);
+        }
+    }
+    if (!batch_material_applied) {
+        f.rs->canvas_item_clear(ci);
     }
 }
 
@@ -1554,12 +1849,14 @@ void SsInternalPlayer::_fetchAnimation() {
         _clear_instance_children();
         _clear_effect_slots();
         _clear_batch_canvas_items();
+        _free_per_part_canvas_items();
         return;
     }
 
     _clear_instance_children();
     _clear_effect_slots();
     _clear_batch_canvas_items();
+    _free_per_part_canvas_items();
 
     if (runtime_res != nullptr) {
         ss_resource_destroy(runtime_res);
