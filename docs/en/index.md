@@ -70,6 +70,7 @@ Sample projects based on SDK test projects are available under the `examples/` f
 - `overall` — Comprehensive functional test
 - `overall_gdextension` — Comprehensive test for GDExtension
 - `ParticleEffect` — Test for effect features
+- `Ringo` — Test for Ringo
 - `dev_module` — Development project for Module version
 - `dev_gdextension` — Development project for GDExtension version
 

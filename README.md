@@ -24,13 +24,22 @@ Comprehensive documentation is available in the `docs/` folder:
 - [Tips & Advanced](./docs/en/workflow/tips.md)
 - [Build Guide](./docs/en/setup/build.md)
 
-## Quick Start
+## Quick Start with GDExtension
+
+We provide two Quick Starts: one for quickly checking the operation using a sample project, and another for setting up your own project.
+
+### 1. Check Operation with Sample
 
 1. **Get Godot Engine**: Download a 4.6-series editor from the [official site](https://godotengine.org/download/).
-2. **Download GDExtension**: Get the latest package from [Releases](https://github.com/SpriteStudio/SSPlayerForGodot/releases).
-3. **Install**: Copy the `addons` folder into your Godot project root.
-4. **Import**: Drag & drop your `.sspj` onto the Godot editor to convert it to `.ssab`.
-5. **Play**: Add a `SpriteStudioPlayer2D` node and assign the `.ssab` to its `SSAB Resource` property.
+2. **Download GDExtension**: Get the latest package from [Releases](https://github.com/SpriteStudio/SSPlayerForGodot/releases) and extract it.
+3. **Prepare Sample**: Copy the extracted `addons` folder into the `examples/Ringo` folder of this repository.
+4. **Check**: Open the `examples/Ringo` project in Godot Engine and open `Ringo.tscn` to immediately see the animation working.
+
+### 2. Introduce to Your Project
+
+1. **Install**: Copy the `addons` folder into your Godot project root.
+2. **Import**: Drag & drop your `.sspj` onto the Godot editor to convert it to `.ssab`.
+3. **Play**: Add a `SpriteStudioPlayer2D` node and assign the `.ssab` to its `SSAB Resource` property.
 
 For more details, see the [Installation Guide](./docs/en/setup/install.md).
 
@@ -71,6 +80,7 @@ Sample projects based on SDK test projects are available under the [examples fol
 - [overall](./examples/overall) — Comprehensive functional test
 - [overall_gdextension](./examples/overall_gdextension) — Comprehensive test for GDExtension
 - [ParticleEffect](./examples/ParticleEffect) — Test for effect features
+- [Ringo](./examples/Ringo) — Test for Ringo
 - [dev_module](./examples/dev_module) — Development project for Module version
 - [dev_gdextension](./examples/dev_gdextension) — Development project for GDExtension version
 

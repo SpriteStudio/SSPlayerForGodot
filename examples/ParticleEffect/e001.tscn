@@ -1,0 +1,12 @@
+[gd_scene format=3 uid="uid://cty11r2qfs3we"]
+
+[ext_resource type="SSABResource" uid="uid://beiskrpt3ch7x" path="res://ssab_generated/ParticleEffect/e001.ssab" id="1_pv581"]
+
+[node name="Node2D" type="Node2D" unique_id=1524313247]
+
+[node name="SpriteStudioPlayer2D" type="SpriteStudioPlayer2D" parent="." unique_id=498659720]
+ssab = ExtResource("1_pv581")
+sub_frame_enabled = true
+animation = "emission"
+playing = true
+cellmaps/ss_effect = null

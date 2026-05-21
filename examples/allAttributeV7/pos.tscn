@@ -1,0 +1,13 @@
+[gd_scene format=3 uid="uid://c748bqgena0o4"]
+
+[ext_resource type="SSABResource" uid="uid://4uwyipw716hx" path="res://ssab_generated/allAttributeV7/pos.ssab" id="1_esjsw"]
+
+[node name="Node2D" type="Node2D" unique_id=679560324]
+
+[node name="SpriteStudioPlayer2D" type="SpriteStudioPlayer2D" parent="." unique_id=1728073464]
+ssab = ExtResource("1_esjsw")
+sub_frame_enabled = true
+animation = "anime_1"
+playing = true
+cellmaps/color_bar = null
+cellmaps/9slice_64tile.png = null
