@@ -164,6 +164,19 @@ const char* SS_SCATTER_FS =
 #include "shaders/ss_scatter.fs"
 ;
 
+// SS6 SDK port: "ss-circle". Cell rect → polar unwrap. Needs `ss_cell_rect`
+// to know the source rectangle; degenerates to a discard for parts that
+// don't bind one (e.g. Shape).
+const char* SS_CIRCLE_FS =
+#include "shaders/ss_circle.fs"
+;
+
+// SS6 SDK port: "ss-spot". Radial spotlight gradient centred at the cell
+// rect's centre. Also needs `ss_cell_rect`.
+const char* SS_SPOT_FS =
+#include "shaders/ss_spot.fs"
+;
+
 // One render_mode line per GPU framebuffer blend variant. The four entries
 // correspond to SsBlendType::{Mix, Mul, Add, Sub} by enum value (0/1/2/3);
 // any other blend value falls back to Mix.
@@ -222,6 +235,8 @@ const ShaderCatalogEntry SHADER_CATALOG[] = {
     { fnv1a_hash("ss-blur"),    "ss-blur",    SS_BLUR_FS,    true  },
     { fnv1a_hash("ss-pix"),     "ss-pix",     SS_PIX_FS,     true  },
     { fnv1a_hash("ss-scatter"), "ss-scatter", SS_SCATTER_FS, true  },
+    { fnv1a_hash("ss-circle"),  "ss-circle",  SS_CIRCLE_FS,  true  },
+    { fnv1a_hash("ss-spot"),    "ss-spot",    SS_SPOT_FS,    true  },
     // Add new shader variants below. Each new entry needs:
     //   1. A new `shaders/<name>.fs` with R"GLSL(...)GLSL"-wrapped pure GLSL
     //   2. A `const char* <NAME>_FS = #include "shaders/<name>.fs" ;` above
@@ -1358,6 +1373,25 @@ Ref<Texture2D> SsInternalPlayer::_resolve_map_texture(uint32_t cellmap_name_hash
     return _textures[cellmap_name_hash];
 }
 
+Vector4 SsInternalPlayer::_resolve_cell_rect_uv(const DrawFrame& f, int p_idx, const Vector2& inv_tex_size) {
+    if (!f.cell_meta || (uintptr_t)p_idx * 6 + 6 > f.cell_meta_len) {
+        return Vector4(0, 0, 0, 0);
+    }
+    const float* m = f.cell_meta + (p_idx * 6);
+    // cell_meta layout: [pivot_x, pivot_y, size_w, size_h, rect_left, rect_top].
+    // See ssruntime/src/core/framedata.rs::evaluate_layer (cell_meta_per_part write).
+    const float size_w    = m[2];
+    const float size_h    = m[3];
+    const float rect_left = m[4];
+    const float rect_top  = m[5];
+    return Vector4(
+        rect_left * inv_tex_size.x,
+        rect_top  * inv_tex_size.y,
+        (rect_left + size_w) * inv_tex_size.x,
+        (rect_top  + size_h) * inv_tex_size.y
+    );
+}
+
 SsInternalPlayer::PartShaderInfo SsInternalPlayer::_resolve_part_shader_info(const DrawFrame& f, const ss::runtime::PartState* part) {
     PartShaderInfo psi = {};
     psi.id_hash = DEFAULT_SHADER_ID_HASH;
@@ -1393,11 +1427,11 @@ SsInternalPlayer::PartShaderInfo SsInternalPlayer::_resolve_part_shader_info(con
 }
 
 void SsInternalPlayer::_apply_per_part_uniforms(Ref<ShaderMaterial> mat, const float params[8],
-                                                const Ref<Texture2D>& map0, const Ref<Texture2D>& map1) {
+                                                const Ref<Texture2D>& map0, const Ref<Texture2D>& map1,
+                                                const Vector4& cell_rect) {
     if (mat.is_null() || params == nullptr) return;
-    // Uniform names match the declarations expected in shaders/ss_library_fs.glsl
-    // (to be added when the first custom shader variant lands). Setting an
-    // unknown uniform is harmless in Godot — it just no-ops.
+    // Uniform names match the declarations in shaders/ss_library_fs.glsl.
+    // Setting an unknown uniform is harmless in Godot — it just no-ops.
     mat->set_shader_parameter("ss_param0", params[0]);
     mat->set_shader_parameter("ss_param1", params[1]);
     mat->set_shader_parameter("ss_param2", params[2]);
@@ -1408,6 +1442,7 @@ void SsInternalPlayer::_apply_per_part_uniforms(Ref<ShaderMaterial> mat, const f
     mat->set_shader_parameter("ss_param7", params[7]);
     mat->set_shader_parameter("map0", map0);
     mat->set_shader_parameter("map1", map1);
+    mat->set_shader_parameter("ss_cell_rect", cell_rect);
 }
 
 void SsInternalPlayer::_apply_partcolor_material(RenderingServer* rs, RID ci, uint32_t shader_id_hash, ss::format::BlendType ss_blend) {
@@ -1659,7 +1694,8 @@ void SsInternalPlayer::_emit_normal_batch(const DrawFrame& f, RID ci,
 
             RID part_ci = _acquire_per_part_canvas_item();
             Ref<ShaderMaterial> mat = _acquire_per_part_material(psi.id_hash, ssab_blend);
-            _apply_per_part_uniforms(mat, psi.params, psi.map0, psi.map1);
+            const Vector4 cell_rect = _resolve_cell_rect_uv(f, p_idx, inv_tex_size);
+            _apply_per_part_uniforms(mat, psi.params, psi.map0, psi.map1, cell_rect);
             rs->canvas_item_set_material(part_ci, mat->get_rid());
             rs->canvas_item_set_transform(part_ci, Transform2D());
             _emit_partcolor_mesh(rs, part_ci,
@@ -1754,7 +1790,10 @@ void SsInternalPlayer::_emit_shape_batch(const DrawFrame& f, RID ci,
         if (psi.is_per_part) {
             RID part_ci = _acquire_per_part_canvas_item();
             Ref<ShaderMaterial> mat = _acquire_per_part_material(psi.id_hash, ssab_blend);
-            _apply_per_part_uniforms(mat, psi.params, psi.map0, psi.map1);
+            // Shape parts have no bound cellmap texture; pass a zero
+            // cell_rect (degenerates ss-circle / ss-spot to discard, which
+            // is the safest fallback when the variant is misapplied to a Shape).
+            _apply_per_part_uniforms(mat, psi.params, psi.map0, psi.map1, Vector4(0, 0, 0, 0));
             f.rs->canvas_item_set_material(part_ci, mat->get_rid());
             _emit_partcolor_mesh(f.rs, part_ci, _shape_buf.indices, _shape_buf.verts,
                                  _shape_buf.colors, _shape_buf.uvs, _shape_buf.custom0,
@@ -1811,7 +1850,8 @@ void SsInternalPlayer::_emit_mesh_batch(const DrawFrame& f, RID ci,
         if (psi.is_per_part) {
             RID part_ci = _acquire_per_part_canvas_item();
             Ref<ShaderMaterial> mat = _acquire_per_part_material(psi.id_hash, ssab_blend);
-            _apply_per_part_uniforms(mat, psi.params, psi.map0, psi.map1);
+            const Vector4 cell_rect = _resolve_cell_rect_uv(f, p_idx, inv_tex_size);
+            _apply_per_part_uniforms(mat, psi.params, psi.map0, psi.map1, cell_rect);
             f.rs->canvas_item_set_material(part_ci, mat->get_rid());
             _emit_partcolor_mesh(f.rs, part_ci, _mesh_buf.indices, _mesh_buf.verts,
                                  _mesh_buf.colors, _mesh_buf.uvs, _mesh_buf.custom0,

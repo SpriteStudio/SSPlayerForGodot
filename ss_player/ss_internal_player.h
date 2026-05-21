@@ -490,11 +490,14 @@ private:
     void _free_per_part_canvas_items();
     Ref<ShaderMaterial> _acquire_per_part_material(uint32_t shader_id_hash, ss::format::BlendType blend_type);
     RID _acquire_per_part_canvas_item();
-    // Set the SS Shader-attribute uniforms (param0..7, map0/map1) on a
-    // per-part material. `params` must point to 8 floats. Texture refs may be
-    // null when the variant does not bind that map.
+    // Set the SS Shader-attribute uniforms (param0..7, map0/map1, cell rect)
+    // on a per-part material. `params` must point to 8 floats. Texture refs
+    // may be null when the variant does not bind that map. `cell_rect` is
+    // (left_u, top_v, right_u, bottom_v) in UV space — used by ss-circle /
+    // ss-spot; other variants leave it unused.
     void _apply_per_part_uniforms(Ref<ShaderMaterial> mat, const float params[8],
-                                  const Ref<Texture2D>& map0, const Ref<Texture2D>& map1);
+                                  const Ref<Texture2D>& map0, const Ref<Texture2D>& map1,
+                                  const Vector4& cell_rect);
     // Resolve the SS Shader-attribute map reference to a Godot Texture2D.
     // `cellmap_name_hash` is fnv1a of the cellmap name without .ssce — the
     // same hash that keys `_textures` (which is populated by `_loadTextures`
@@ -510,6 +513,13 @@ private:
     // `_test_shader_id_hash_override` field, when non-zero, replaces the
     // resolved id_hash for debug routing.
     PartShaderInfo _resolve_part_shader_info(const DrawFrame& f, const ss::runtime::PartState* part);
+    // Compute the part's cell-rectangle UV bounds for the ss_cell_rect
+    // uniform. Returns (left_u, top_v, right_u, bottom_v). Inputs come from
+    // `f.cell_meta` (rect_left/top + size_w/h in pixel space) divided by the
+    // bound texture's pixel dimensions (`inv_tex_size = 1 / tex_size`).
+    // Returns zero when cell_meta is unavailable; ss-circle / ss-spot then
+    // degenerate to "nothing inside the rect" which is the safest fallback.
+    Vector4 _resolve_cell_rect_uv(const DrawFrame& f, int p_idx, const Vector2& inv_tex_size);
     // Build an ArrayMesh from the geometry arrays and attach it to `ci`. The
     // mesh resource is appended to `_frame_meshes` to outlive the draw call.
     void _emit_partcolor_mesh(RenderingServer* rs, RID ci,

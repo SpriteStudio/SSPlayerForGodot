@@ -2,6 +2,13 @@ R"GLSL(
 uniform sampler2D map0;
 uniform sampler2D map1;
 
+// Cell rectangle in UV space: (left_u, top_v, right_u, bottom_v).
+// Populated per-part on the per-part material path (Default and other
+// shareable variants leave it at zero — they don't reference it).
+// `ss-circle` / `ss-spot` use this to clip-sample inside the part's
+// cell bounds; the cell center is `(ss_cell_rect.xy + ss_cell_rect.zw) * 0.5`.
+uniform vec4 ss_cell_rect;
+
 uniform float ss_param0;
 uniform float ss_param1;
 uniform float ss_param2;
