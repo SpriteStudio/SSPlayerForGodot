@@ -821,11 +821,10 @@ void SsInternalPlayer::_drive_instance_slot(InstanceChildState& state,
         child->play();
     }
 
+    child->setRootVisible(false);
     if (!r.visible) {
-        child->setRootVisible(false);
         return;
     }
-    child->setRootVisible(true);
 
     _redraw_child_if_frame_changed(child, r.child_frame_no, delta_seconds, r.child_looped);
 }
@@ -854,6 +853,7 @@ void SsInternalPlayer::_emit_instance_slot(const DrawFrame& /*f*/, RID ci, int p
     // guaranteed to be the same RID across frames.
     child->setParentCanvasItem(ci);
     child->setRootTransform(matrix_to_transform2d(slot_matrix));
+    child->setRootVisible(true);
 }
 
 void SsInternalPlayer::_emit_effect_slot(const DrawFrame& f, RID ci, int p_idx, const float* slot_matrix) {
