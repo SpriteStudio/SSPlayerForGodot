@@ -18,7 +18,7 @@ cd "${EXAMPLES_DIR}"
 
 # List of tests to update SSABs
 # Note: overall is also converted into overall_gdextension
-TESTS=("allAttributeV7" "allPartsV7" "overall" "ParticleEffect")
+TESTS=("allAttributeV7" "allPartsV7" "overall" "ParticleEffect" "Ringo")
 
 for TEST in "${TESTS[@]}"; do
     SSPJ_PATH="${SDK_TESTS_DIR}/${TEST}/${TEST}.sspj"

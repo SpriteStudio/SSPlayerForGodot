@@ -70,6 +70,7 @@ Windows / macOS でのビルドおよび実行を確認しています。
 - `overall` — 総合的な機能テスト
 - `overall_gdextension` — GDExtension 版での総合テスト
 - `ParticleEffect` — エフェクト機能のテスト
+- `Ringo` — Ringoのテスト
 - `dev_module` — モジュール版開発用プロジェクト
 - `dev_gdextension` — GDExtension 版開発用プロジェクト
 

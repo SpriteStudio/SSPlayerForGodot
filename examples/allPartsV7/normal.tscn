@@ -1,0 +1,11 @@
+[gd_scene format=3 uid="uid://v3a0qyadyq4k"]
+
+[ext_resource type="SSABResource" uid="uid://cinyfsll2wpf2" path="res://ssab_generated/allPartsV7/normal.ssab" id="1_auxjy"]
+
+[node name="Node2D" type="Node2D" unique_id=2030235226]
+
+[node name="SpriteStudioPlayer2D" type="SpriteStudioPlayer2D" parent="." unique_id=2121339597]
+ssab = ExtResource("1_auxjy")
+animation = "anime_1"
+playing = true
+cellmaps/color_bar = null

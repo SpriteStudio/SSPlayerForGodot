@@ -87,7 +87,7 @@ Invoke-Expression "scons $scons_command_opts"
 
 # Copy .gdextension and binaries to example projects in the idiomatic addons structure
 $MAIN_PROJECT = "dev_gdextension"
-$OTHER_PROJECTS = "overall_gdextension"
+$OTHER_PROJECTS = @("overall_gdextension", "Ringo")
 
 # Ensure MAIN_PROJECT has the .gdextension
 Copy-Item "misc\spritestudio.gdextension" "examples\$MAIN_PROJECT\addons\spritestudio\spritestudio.gdextension" -Force

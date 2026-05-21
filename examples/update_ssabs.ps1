@@ -12,7 +12,7 @@ $CONVERTER = Join-Path $SDK_DIR "target/debug/ssconverter-cli.exe"
 Pop-Location
 
 # List of tests to update SSABs
-$TESTS = @("allAttributeV7", "allPartsV7", "overall", "ParticleEffect")
+$TESTS = @("allAttributeV7", "allPartsV7", "overall", "ParticleEffect", "Ringo")
 
 foreach ($TEST in $TESTS) {
     $SSPJ_PATH = Join-Path $SDK_TESTS_DIR "$TEST/$TEST.sspj"

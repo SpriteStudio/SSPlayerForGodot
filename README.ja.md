@@ -24,13 +24,22 @@
 - [応用的な使い方・Tips](./docs/ja/workflow/tips.md)
 - [ビルドガイド](./docs/ja/setup/build.md)
 
-## クイックスタート
+## GDExtension を用いたクイックスタート
+
+初めての方向けに、サンプルプロジェクトを使用した動作確認と、ご自身のプロジェクトへ導入する手順の2つを用意しています。
+
+### 1. サンプルで動作確認する
 
 1. **Godot Engine の準備**: [公式サイト](https://godotengine.org/download/) から 4.6 系のエディタをダウンロードします。
-2. **GDExtension の取得**: [Releases](https://github.com/SpriteStudio/SSPlayerForGodot/releases) から最新パッケージをダウンロードします。
-3. **配置**: `addons` フォルダを Godot プロジェクトのルートにコピーします。
-4. **インポート**: `.sspj` を Godot エディタにドラッグ＆ドロップして `.ssab` へ変換します。
-5. **再生**: `SpriteStudioPlayer2D` ノードを追加し、`SSAB Resource` プロパティに生成された `.ssab` を指定します。
+2. **GDExtension の取得**: [Releases](https://github.com/SpriteStudio/SSPlayerForGodot/releases) から最新パッケージをダウンロードし、展開します。
+3. **サンプルの準備**: 取得した `addons` フォルダを、本リポジトリの `examples/Ringo` フォルダ内にコピーします。
+4. **確認**: Godot Engine で `examples/Ringo` プロジェクトを開き、`Ringo.tscn` を開くことですぐにアニメーションの動作を確認できます。
+
+### 2. 自身のプロジェクトへ導入する
+
+1. **配置**: 取得した `addons` フォルダを、ご自身の Godot プロジェクトのルートにコピーします。
+2. **インポート**: `.sspj` を Godot エディタにドラッグ＆ドロップして `.ssab` へ変換します。
+3. **再生**: `SpriteStudioPlayer2D` ノードを追加し、`SSAB Resource` プロパティに生成された `.ssab` を指定します。
 
 詳細は [インストールガイド](./docs/ja/setup/install.md) を参照してください。
 
@@ -71,6 +80,7 @@ graph LR
 - [overall](./examples/overall) — 総合的な機能テスト
 - [overall_gdextension](./examples/overall_gdextension) — GDExtension 版での総合テスト
 - [ParticleEffect](./examples/ParticleEffect) — エフェクト機能のテスト
+- [Ringo](./examples/Ringo) — Ringoのテスト
 - [dev_module](./examples/dev_module) — モジュール版開発用プロジェクト
 - [dev_gdextension](./examples/dev_gdextension) — GDExtension 版開発用プロジェクト
 
