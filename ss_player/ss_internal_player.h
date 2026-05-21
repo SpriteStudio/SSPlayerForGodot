@@ -192,14 +192,64 @@ private:
     // Materials used by Shape and Effect batches; no PartColor mediation, the
     // CanvasItem blend_mode does the work.
     HashMap<int, Ref<CanvasItemMaterial>> _blend_materials;
-    // Per-blend ShaderMaterial cache for Normal and Mesh batches. The shader
-    // applies the SS6 SDK PartColor compositing formula in fragment, plus
-    // output PMA when the per-vertex flag is set. One material per GPU blend
-    // mode (Mix/Add/Sub/Mul); the shader's render_mode differs per material.
-    HashMap<int, Ref<ShaderMaterial>> _partcolor_materials;
-    // Source Shader resources, one per render_mode (parallel to the
-    // _partcolor_materials map). Created lazily on first use.
-    HashMap<int, Ref<Shader>> _partcolor_shaders;
+    // Shared ShaderMaterial cache for shader variants whose catalog entry has
+    // `is_per_part=false` (Default and any future shareable variants). Key is
+    // a composite of (shader_id_hash << 32 | blend_type) so the same material
+    // is reused across parts with matching shader+blend. Per-part variants
+    // are not cached here — they come from a per-shader_id pool (TBD).
+    HashMap<uint64_t, Ref<ShaderMaterial>> _partcolor_materials;
+    // Source Shader resources keyed by the same (shader_id_hash, blend_type)
+    // composite. Shaders themselves are always shareable (the per-part
+    // distinction lives on the material, not the underlying shader code).
+    HashMap<uint64_t, Ref<Shader>> _partcolor_shaders;
+    // Test-only override: when non-zero, parts that would normally dispatch
+    // through the Default catalog entry pass this id_hash instead. Used to
+    // exercise the dispatch path before the FFI exposes real SS Shader
+    // attribute data. Remove once the FFI wiring lands (task: dispatch FFI).
+    uint32_t _test_shader_id_hash_override = 0;
+
+    // Per-part ShaderMaterial pool for variants whose catalog entry has
+    // `is_per_part=true`. Godot binds material state per-material (not
+    // per-draw), so parts whose uniform values differ each need their own
+    // ShaderMaterial instance. Each pool entry is keyed by (shader_id_hash,
+    // blend_type) so materials pre-bound to the right Shader RID can be
+    // reused. Within a pool the `in_use` count walks forward each frame
+    // (acquire → set uniforms → bind) and is reset to 0 by
+    // `_reset_per_part_pools()` at the next frame's start.
+    struct PerPartMaterialPool {
+        Vector<Ref<ShaderMaterial>> materials;
+        int in_use = 0;
+    };
+    HashMap<uint64_t, PerPartMaterialPool> _per_part_material_pools;
+
+    // Per-part canvas_item pool. Parts that use a per-part material need
+    // their own canvas_item too (the material's uniform state otherwise leaks
+    // across draws in the same frame). RIDs survive across frames; at frame
+    // start every entry is cleared+hidden by `_reset_per_part_pools()`, then
+    // `_acquire_per_part_canvas_item()` re-shows entries as they are
+    // re-acquired. RIDs are freed in the destructor.
+    Vector<RID> _per_part_canvas_items;
+    int _per_part_canvas_items_in_use = 0;
+    // Single-part scratch buffers used by the per-part Normal emit path.
+    // Pre-sized to the per-part maximum (5 verts, 12 indices). Reused across
+    // per-part emits in a frame so we don't reallocate per part.
+    SsVec2Array  _per_part_normal_verts;
+    SsVec2Array  _per_part_normal_uvs;
+    SsColorArray _per_part_normal_colors;
+    SsFloatArray _per_part_normal_custom0;
+    SsIntArray   _per_part_normal_indices;
+
+    // Resolved SS Shader-attribute data for one part. Populated each emit by
+    // `_resolve_part_shader_info()`. `is_per_part` mirrors the catalog flag
+    // so callers can branch between the shared-material batch path and the
+    // per-part-material path without duplicating the lookup.
+    struct PartShaderInfo {
+        uint32_t id_hash;
+        bool is_per_part;
+        float params[8];
+        Ref<Texture2D> map0;
+        Ref<Texture2D> map1;
+    };
     // ArrayMesh keep-alive list. canvas_item_add_mesh records the mesh RID
     // into the canvas item's command stream; the resource has to stay alive
     // until the next canvas_item_clear. Cleared at the top of _drawAnimation
@@ -430,8 +480,46 @@ private:
     void _apply_blend_material(RenderingServer* rs, RID ci, ss::format::BlendType blend_type);
     // ShaderMaterial variant for Normal and Mesh batches. PartColor is handled
     // in the shader (per-vertex CUSTOM0 carries rate / blend_idx / pma flag).
-    void _apply_partcolor_material(RenderingServer* rs, RID ci, ss::format::BlendType blend_type);
-    Ref<Shader> _ensure_partcolor_shader(ss::format::BlendType blend_type);
+    // `shader_id_hash` selects the fragment shader variant from SHADER_CATALOG
+    // (see ss_internal_player.cpp); parts without an SS Shader attribute pass
+    // the Default id_hash so all callers share one dispatch path.
+    void _apply_partcolor_material(RenderingServer* rs, RID ci, uint32_t shader_id_hash, ss::format::BlendType blend_type);
+    Ref<Shader> _ensure_partcolor_shader(uint32_t shader_id_hash, ss::format::BlendType blend_type);
+    // Per-part material pool helpers. See member-doc above for the lifecycle.
+    void _reset_per_part_pools();
+    void _free_per_part_canvas_items();
+    Ref<ShaderMaterial> _acquire_per_part_material(uint32_t shader_id_hash, ss::format::BlendType blend_type);
+    RID _acquire_per_part_canvas_item();
+    // Set the SS Shader-attribute uniforms (param0..7, map0/map1, cell rect)
+    // on a per-part material. `params` must point to 8 floats. Texture refs
+    // may be null when the variant does not bind that map. `cell_rect` is
+    // (left_u, top_v, right_u, bottom_v) in UV space — used by ss-circle /
+    // ss-spot; other variants leave it unused.
+    void _apply_per_part_uniforms(Ref<ShaderMaterial> mat, const float params[8],
+                                  const Ref<Texture2D>& map0, const Ref<Texture2D>& map1,
+                                  const Vector4& cell_rect);
+    // Resolve the SS Shader-attribute map reference to a Godot Texture2D.
+    // `cellmap_name_hash` is fnv1a of the cellmap name without .ssce — the
+    // same hash that keys `_textures` (which is populated by `_loadTextures`
+    // from cellmap entries). Returns a null Ref when the hash is 0 (no map
+    // bound) or the cellmap is not loaded. `cell_name_hash` is currently
+    // unused — the per-cell pixel rect inside the cellmap atlas is left to
+    // the shader / future task. See ss_library_fs.glsl uniforms.
+    Ref<Texture2D> _resolve_map_texture(uint32_t cellmap_name_hash);
+    // Read the part's SS Shader attribute (if any) out of the current
+    // frame's PartAttributeShader vector and pair it with the catalog entry.
+    // When no attribute is present, `id_hash` defaults to "Default" and
+    // `is_per_part` resolves to false (the shared batch path). The
+    // `_test_shader_id_hash_override` field, when non-zero, replaces the
+    // resolved id_hash for debug routing.
+    PartShaderInfo _resolve_part_shader_info(const DrawFrame& f, const ss::runtime::PartState* part);
+    // Compute the part's cell-rectangle UV bounds for the ss_cell_rect
+    // uniform. Returns (left_u, top_v, right_u, bottom_v). Inputs come from
+    // `f.cell_meta` (rect_left/top + size_w/h in pixel space) divided by the
+    // bound texture's pixel dimensions (`inv_tex_size = 1 / tex_size`).
+    // Returns zero when cell_meta is unavailable; ss-circle / ss-spot then
+    // degenerate to "nothing inside the rect" which is the safest fallback.
+    Vector4 _resolve_cell_rect_uv(const DrawFrame& f, int p_idx, const Vector2& inv_tex_size);
     // Build an ArrayMesh from the geometry arrays and attach it to `ci`. The
     // mesh resource is appended to `_frame_meshes` to outlive the draw call.
     void _emit_partcolor_mesh(RenderingServer* rs, RID ci,
