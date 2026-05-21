@@ -101,7 +101,7 @@ Vector<String> SSABResource::get_animation_names() {
     for (int i=0; i < num; i++) {
       auto animation = ss_anime_binary->animations()->Get(i);
       auto name = animation->name();
-      vec.push_back(String(name->c_str()));
+      vec.push_back(String::utf8(name->c_str()));
     }
     return vec;
 }
@@ -180,7 +180,7 @@ ss::format::AnimationData *SSABResource::find_animation(const String &name) {
     for (int i=0; i < num; i++) {
         auto animation = ss_anime_binary->animations()->Get(i);
         auto anim_name = animation->name();
-        if (name == String(anim_name->c_str())) {
+        if (name == String::utf8(anim_name->c_str())) {
             return (ss::format::AnimationData *)animation;
         }
     }

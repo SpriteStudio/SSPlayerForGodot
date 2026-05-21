@@ -20,7 +20,7 @@ void ss_runtime_log_bridge(int level, const char *message) {
     if (!message) {
         return;
     }
-    WARN_PRINT(String("[ssruntime] ") + String(message));
+    WARN_PRINT(String("[ssruntime] ") + String::utf8(message));
 }
 
 // Shader source pieces. The vertex shader (default.vs) is meant to be reused
