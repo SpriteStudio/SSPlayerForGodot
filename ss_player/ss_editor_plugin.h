@@ -10,6 +10,7 @@ using namespace godot;
 #include "editor/editor_node.h"
 #endif
 
+#include "ss_canvas_drop_overlay.h"
 #include "ss_filesystem_menu.h"
 #include "ss_import_dock.h"
 #include "ss_importer.h"
@@ -22,6 +23,10 @@ class SSEditorPlugin : public EditorPlugin {
     SSImporter *importer = nullptr;
     Ref<SSFileSystemContextMenu> filesystem_menu;
     Ref<SSResourceInspectorPlugin> inspector_plugin;
+    SSCanvasDropOverlay *canvas_drop_overlay = nullptr;
+
+    void _install_canvas_drop_overlay();
+    void _remove_canvas_drop_overlay();
 
 protected:
     static void _bind_methods() {}
