@@ -230,6 +230,12 @@ private:
     // re-acquired. RIDs are freed in the destructor.
     Vector<RID> _per_part_canvas_items;
     int _per_part_canvas_items_in_use = 0;
+    // Monotonic canvas-item draw-order counter, reset each frame and bumped for
+    // every batch CI and per-part CI as they are emitted (in rank order). Keeps
+    // per-part (masked) items correctly ordered against batch items and each
+    // other — without it the per-part pool's allocation order leaks into the
+    // overdraw and a writer's own colour can land on top of its masked targets.
+    int _draw_seq = 0;
     // Single-part scratch buffers used by the per-part Normal emit path.
     // Pre-sized to the per-part maximum (5 verts, 12 indices). Reused across
     // per-part emits in a frame so we don't reallocate per part.

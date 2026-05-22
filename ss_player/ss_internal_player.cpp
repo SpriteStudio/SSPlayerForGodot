@@ -1105,6 +1105,9 @@ void SsInternalPlayer::_drawAnimation(float frame_no, float delta_seconds, bool 
         }
     }
 
+    // Per-frame draw-order counter: batch CIs and per-part CIs draw in the
+    // order they are emitted (rank order), not in CI-pool allocation order.
+    _draw_seq = 0;
     for (uint32_t bi = 0; bi < batch_count; bi++) {
         const auto* batch = draw_batches->Get(bi);
         RID ci = _ensure_batch_ci((int)bi);
@@ -1122,7 +1125,7 @@ void SsInternalPlayer::_drawAnimation(float frame_no, float delta_seconds, bool 
         // Using global z_index would cause character parts to interleave with
         // other nodes in the scene. Tree order (child index) is not usable here
         // because our CI pool is reused and ordering is fixed at allocation.
-        f.rs->canvas_item_set_draw_index(ci, (int)bi);
+        f.rs->canvas_item_set_draw_index(ci, _draw_seq++);
 
         const auto kind = batch->kind();
         // Pure masks feed only the coverage bitmap and must not draw their own
@@ -1720,6 +1723,7 @@ RID SsInternalPlayer::_acquire_per_part_canvas_item() {
     }
     RID ci = _per_part_canvas_items[_per_part_canvas_items_in_use++];
     rs->canvas_item_set_visible(ci, true);
+    rs->canvas_item_set_draw_index(ci, _draw_seq++);
     return ci;
 }
 
@@ -2025,8 +2029,19 @@ void SsInternalPlayer::_emit_normal_batch(const DrawFrame& f, RID ci,
         // CBP masking: parts inside an active writer's scope must run the mask
         // test, which needs per-part uniforms (rank / polarity) — so force the
         // per-part path for them even when their shader is otherwise batchable.
+        // visible_inside_mask parts draw ONLY inside a mask, so they must run the
+        // test even when out of scope (no writer covers them -> they discard);
+        // otherwise the scope optimisation would draw them in full.
         const uint16_t rank = (uint16_t)(batch->start_rank() + k);
-        const bool masked = masking_active && _part_in_mask_scope(rank);
+        bool vis_inside = false;
+        if (masking_active) {
+            auto pm = f.binary ? f.binary->parts() : nullptr;
+            if (pm && p_idx >= 0 && p_idx < (int)pm->size()) {
+                const auto* pdv = pm->Get(p_idx);
+                if (pdv) vis_inside = pdv->visible_inside_mask();
+            }
+        }
+        const bool masked = masking_active && (_part_in_mask_scope(rank) || vis_inside);
 
         PartShaderInfo psi = _resolve_part_shader_info(f, part);
         if (psi.is_per_part || masked) {
@@ -2061,12 +2076,6 @@ void SsInternalPlayer::_emit_normal_batch(const DrawFrame& f, RID ci,
             const Vector4 cell_rect = _resolve_cell_rect_uv(f, p_idx, inv_tex_size);
             _apply_per_part_uniforms(mat, psi.params, psi.map0, psi.map1, cell_rect);
             if (masked) {
-                bool vis_inside = false;
-                auto pm = f.binary ? f.binary->parts() : nullptr;
-                if (pm && p_idx >= 0 && p_idx < (int)pm->size()) {
-                    const auto* pd = pm->Get(p_idx);
-                    if (pd) vis_inside = pd->visible_inside_mask();
-                }
                 _apply_mask_uniforms(mat, rank, vis_inside);
             } else {
                 // Reuse of a pooled material — make sure masking is off.
@@ -2224,9 +2233,18 @@ void SsInternalPlayer::_emit_mesh_batch(const DrawFrame& f, RID ci,
         if (!_build_mesh_geometry(f, p_idx, part, inv_tex_size, _mesh_buf)) continue;
 
         // CBP masking: a masked target must run the mask test, which needs
-        // per-part uniforms — force the per-part path for it.
+        // per-part uniforms — force the per-part path for it. visible_inside_mask
+        // parts draw only inside a mask, so they run the test even out of scope.
         const uint16_t rank = (uint16_t)(batch->start_rank() + k);
-        const bool masked = masking_active && _part_in_mask_scope(rank);
+        bool vis_inside = false;
+        if (masking_active) {
+            auto pm = f.binary ? f.binary->parts() : nullptr;
+            if (pm && p_idx >= 0 && p_idx < (int)pm->size()) {
+                const auto* pdv = pm->Get(p_idx);
+                if (pdv) vis_inside = pdv->visible_inside_mask();
+            }
+        }
+        const bool masked = masking_active && (_part_in_mask_scope(rank) || vis_inside);
 
         PartShaderInfo psi = _resolve_part_shader_info(f, part);
         if (psi.is_per_part || masked) {
@@ -2235,12 +2253,6 @@ void SsInternalPlayer::_emit_mesh_batch(const DrawFrame& f, RID ci,
             const Vector4 cell_rect = _resolve_cell_rect_uv(f, p_idx, inv_tex_size);
             _apply_per_part_uniforms(mat, psi.params, psi.map0, psi.map1, cell_rect);
             if (masked) {
-                bool vis_inside = false;
-                auto pm = f.binary ? f.binary->parts() : nullptr;
-                if (pm && p_idx >= 0 && p_idx < (int)pm->size()) {
-                    const auto* pd = pm->Get(p_idx);
-                    if (pd) vis_inside = pd->visible_inside_mask();
-                }
                 _apply_mask_uniforms(mat, rank, vis_inside);
             } else {
                 mat->set_shader_parameter("ss_mask_enabled", false);

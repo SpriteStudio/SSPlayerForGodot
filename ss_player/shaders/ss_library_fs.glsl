@@ -24,7 +24,9 @@ uniform float ss_param7;
 // (ss_mask_enabled == false) so non-masked draws are untouched. `ss_mask_uv`
 // is the fragment's coverage UV, written in the vertex stage from the
 // player-local position via `ss_mask_uv_xform`.
-uniform sampler2D ss_mask_coverage;
+// MUST be nearest: the coverage packs writer bits into the RGBA8 channels, so
+// any linear blending across texels corrupts the per-bit decode (edge halos).
+uniform sampler2D ss_mask_coverage : filter_nearest;
 uniform bool ss_mask_enabled;
 uniform vec4 ss_mask_uv_xform;        // (scale.x, scale.y, offset.x, offset.y)
 uniform int ss_mask_count;            // active writer count (0..32)
