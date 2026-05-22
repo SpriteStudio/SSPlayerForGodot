@@ -32,6 +32,8 @@ SpriteStudioPlayer2D::SpriteStudioPlayer2D() {
     _internal = memnew(SsInternalPlayer);
     _sink = memnew(_SignalSink(this));
     _internal->setEventSink(_sink);
+    _internal->setSkipFrames(true);
+    _internal->setSubFrameEnabled(false);
 }
 
 SpriteStudioPlayer2D::~SpriteStudioPlayer2D() {
@@ -145,11 +147,11 @@ void SpriteStudioPlayer2D::setPlaybackDirection(int p_direction, int p_style) { 
 int SpriteStudioPlayer2D::getPlaybackDirection() const { return _internal->getPlaybackDirection(); }
 int SpriteStudioPlayer2D::getPlaybackStyle() const { return _internal->getPlaybackStyle(); }
 
-void SpriteStudioPlayer2D::setLoop(int p_count) { _internal->setLoop(p_count); }
-int SpriteStudioPlayer2D::getLoop() const { return _internal->getLoop(); }
+void SpriteStudioPlayer2D::setLoopCount(int p_count) { _internal->setLoop(p_count); }
+int SpriteStudioPlayer2D::getLoopCount() const { return _internal->getLoop(); }
 
-void SpriteStudioPlayer2D::setSkipFrames(bool p_skip) { _internal->setSkipFrames(p_skip); }
-bool SpriteStudioPlayer2D::isSkipFrames() const { return _internal->isSkipFrames(); }
+void SpriteStudioPlayer2D::setFrameSkipEnabled(bool p_skip) { _internal->setSkipFrames(p_skip); }
+bool SpriteStudioPlayer2D::isFrameSkipEnabled() const { return _internal->isSkipFrames(); }
 
 void SpriteStudioPlayer2D::setSubFrameEnabled(bool p_enabled) { _internal->setSubFrameEnabled(p_enabled); }
 bool SpriteStudioPlayer2D::isSubFrameEnabled() const { return _internal->isSubFrameEnabled(); }
@@ -187,11 +189,11 @@ void SpriteStudioPlayer2D::_bind_methods() {
     ClassDB::bind_method( D_METHOD( "get_playback_direction" ), &SpriteStudioPlayer2D::getPlaybackDirection );
     ClassDB::bind_method( D_METHOD( "get_playback_style" ), &SpriteStudioPlayer2D::getPlaybackStyle );
 
-    ClassDB::bind_method( D_METHOD( "set_loop", "count" ), &SpriteStudioPlayer2D::setLoop );
-    ClassDB::bind_method( D_METHOD( "get_loop" ), &SpriteStudioPlayer2D::getLoop );
+    ClassDB::bind_method( D_METHOD( "set_loop_count", "count" ), &SpriteStudioPlayer2D::setLoopCount );
+    ClassDB::bind_method( D_METHOD( "get_loop_count" ), &SpriteStudioPlayer2D::getLoopCount );
 
-    ClassDB::bind_method( D_METHOD( "set_skip_frames", "skip" ), &SpriteStudioPlayer2D::setSkipFrames );
-    ClassDB::bind_method( D_METHOD( "is_skip_frames" ), &SpriteStudioPlayer2D::isSkipFrames );
+    ClassDB::bind_method( D_METHOD( "set_frame_skip_enabled", "enabled" ), &SpriteStudioPlayer2D::setFrameSkipEnabled );
+    ClassDB::bind_method( D_METHOD( "is_frame_skip_enabled" ), &SpriteStudioPlayer2D::isFrameSkipEnabled );
 
     ClassDB::bind_method( D_METHOD( "set_sub_frame_enabled", "enabled" ), &SpriteStudioPlayer2D::setSubFrameEnabled );
     ClassDB::bind_method( D_METHOD( "is_sub_frame_enabled" ), &SpriteStudioPlayer2D::isSubFrameEnabled );
@@ -228,13 +230,6 @@ void SpriteStudioPlayer2D::_bind_methods() {
         "set_ssab_resource",
         "get_ssab_resource"
     );
-
-    ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "speed"), "set_speed", "get_speed");
-    ADD_PROPERTY(PropertyInfo(Variant::INT, "loop"), "set_loop", "get_loop");
-    ADD_PROPERTY(PropertyInfo(Variant::BOOL, "skip_frames"), "set_skip_frames", "is_skip_frames");
-    ADD_PROPERTY(PropertyInfo(Variant::BOOL, "sub_frame_enabled"), "set_sub_frame_enabled", "is_sub_frame_enabled");
-
-    ADD_GROUP("Animation Settings", "");
 }
 
 bool SpriteStudioPlayer2D::_set(const StringName& p_name, const Variant& p_property) {
@@ -245,14 +240,14 @@ bool SpriteStudioPlayer2D::_set(const StringName& p_name, const Variant& p_prope
     } else if (name == "frame") {
         setFrame(p_property);
         return true;
-    } else if (name == "loop") {
-        setLoop(p_property);
+    } else if (name == "loop_count") {
+        setLoopCount(p_property);
         return true;
     } else if (name == "speed") {
         setSpeed(p_property);
         return true;
-    } else if (name == "skip_frames") {
-        setSkipFrames(p_property);
+    } else if (name == "frame_skip_enabled") {
+        setFrameSkipEnabled(p_property);
         return true;
     } else if (name == "sub_frame_enabled") {
         setSubFrameEnabled(p_property);
@@ -263,6 +258,21 @@ bool SpriteStudioPlayer2D::_set(const StringName& p_name, const Variant& p_prope
         } else {
             stop();
         }
+        return true;
+    } else if (name == "playback_direction") {
+        setPlaybackDirection((int)p_property, getPlaybackStyle());
+        return true;
+    } else if (name == "playback_style") {
+        setPlaybackDirection(getPlaybackDirection(), (int)p_property);
+        return true;
+    } else if (name == "frame_rate") {
+        setFrameRate(p_property);
+        return true;
+    } else if (name == "animation_section_start") {
+        setAnimationSection((int)p_property, getAnimationSectionEnd());
+        return true;
+    } else if (name == "animation_section_end") {
+        setAnimationSection(getAnimationSectionStart(), (int)p_property);
         return true;
     }
 
@@ -283,20 +293,35 @@ bool SpriteStudioPlayer2D::_get(const StringName& p_name, Variant& r_property) c
     } else if (name == "frame") {
         r_property = getFrame();
         return true;
-    } else if (name == "loop") {
-        r_property = getLoop();
+    } else if (name == "loop_count") {
+        r_property = getLoopCount();
         return true;
     } else if (name == "speed") {
         r_property = getSpeed();
         return true;
-    } else if (name == "skip_frames") {
-        r_property = isSkipFrames();
+    } else if (name == "frame_skip_enabled") {
+        r_property = isFrameSkipEnabled();
         return true;
     } else if (name == "sub_frame_enabled") {
         r_property = isSubFrameEnabled();
         return true;
     } else if (name == "playing") {
         r_property = isPlaying();
+        return true;
+    } else if (name == "playback_direction") {
+        r_property = getPlaybackDirection();
+        return true;
+    } else if (name == "playback_style") {
+        r_property = getPlaybackStyle();
+        return true;
+    } else if (name == "frame_rate") {
+        r_property = getFrameRate();
+        return true;
+    } else if (name == "animation_section_start") {
+        r_property = getAnimationSectionStart();
+        return true;
+    } else if (name == "animation_section_end") {
+        r_property = getAnimationSectionEnd();
         return true;
     }
 
@@ -310,50 +335,49 @@ bool SpriteStudioPlayer2D::_get(const StringName& p_name, Variant& r_property) c
 }
 
 void SpriteStudioPlayer2D::_get_property_list(List<PropertyInfo>* p_list) const {
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
-    PackedStringArray vecAnimeName;
-#else
-    Vector<String> vecAnimeName;
-#endif
-
-    vecAnimeName.insert(0, "-- Empty --");
-
     Ref<SSABResource> res = _internal->getSSABResource();
-    if (!res.is_null()) {
-        vecAnimeName = res->get_animation_names();
+    bool has_res = !res.is_null();
+
+    if (has_res) {
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+        PackedStringArray anim_names = res->get_animation_names();
+#else
+        Vector<String> anim_names = res->get_animation_names();
+#endif
+        p_list->push_back(PropertyInfo(Variant::STRING, "animation", PROPERTY_HINT_ENUM, String(",").join(anim_names)));
+        p_list->push_back(PropertyInfo(Variant::BOOL, "playing"));
+
+        int total = getTotalFrames();
+        int max_frame = total > 0 ? total - 1 : 0;
+        p_list->push_back(PropertyInfo(Variant::FLOAT, "frame", PROPERTY_HINT_RANGE, "0," + String::num(max_frame) + ",0.01", PROPERTY_USAGE_EDITOR));
     }
 
-    PropertyInfo animasPropertyInfo;
-    animasPropertyInfo.name = "animation";
-    animasPropertyInfo.type = Variant::STRING;
-    animasPropertyInfo.usage = PROPERTY_USAGE_EDITOR | PROPERTY_USAGE_STORAGE;
-    animasPropertyInfo.hint_string = String(",").join(vecAnimeName);
-    animasPropertyInfo.hint = PROPERTY_HINT_ENUM;
-    p_list->push_back(animasPropertyInfo);
+    p_list->push_back(PropertyInfo(Variant::FLOAT, "speed", PROPERTY_HINT_RANGE, "0,4,0.01,or_greater"));
+    p_list->push_back(PropertyInfo(Variant::INT, "loop_count", PROPERTY_HINT_RANGE, "-1,9999,1,or_greater"));
 
-    animasPropertyInfo.name = "playing";
-    animasPropertyInfo.type = Variant::BOOL;
-    animasPropertyInfo.usage = PROPERTY_USAGE_EDITOR | PROPERTY_USAGE_STORAGE;
-    animasPropertyInfo.hint = PROPERTY_HINT_NONE;
-    p_list->push_back(animasPropertyInfo);
+    if (has_res) {
+        int total = getTotalFrames();
+        int max_frame = total > 0 ? total - 1 : 0;
+        String section_range = "0," + String::num(max_frame) + ",1";
+        p_list->push_back(PropertyInfo(Variant::NIL, "Section", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_GROUP));
+        p_list->push_back(PropertyInfo(Variant::INT, "animation_section_start", PROPERTY_HINT_RANGE, section_range));
+        p_list->push_back(PropertyInfo(Variant::INT, "animation_section_end", PROPERTY_HINT_RANGE, section_range));
+    }
 
-    animasPropertyInfo.name = "frame";
-    animasPropertyInfo.type = Variant::FLOAT;
-    animasPropertyInfo.usage = PROPERTY_USAGE_EDITOR;
-    animasPropertyInfo.hint = PROPERTY_HINT_RANGE;
-    animasPropertyInfo.hint_string = "0," + String::num(getTotalFrames() - 1) + ",0.01";
-    p_list->push_back(animasPropertyInfo);
+    p_list->push_back(PropertyInfo(Variant::NIL, "Advanced", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_GROUP));
+    p_list->push_back(PropertyInfo(Variant::BOOL, "frame_skip_enabled"));
+    p_list->push_back(PropertyInfo(Variant::BOOL, "sub_frame_enabled"));
 
-    if (!res.is_null()) {
+    if (has_res) {
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
-        PackedStringArray cellmapNames = res->get_cellmap_names();
+        PackedStringArray cellmap_names = res->get_cellmap_names();
 #else
-        Vector<String> cellmapNames = res->get_cellmap_names();
+        Vector<String> cellmap_names = res->get_cellmap_names();
 #endif
-        if (cellmapNames.size() > 0) {
+        if (cellmap_names.size() > 0) {
             p_list->push_back(PropertyInfo(Variant::NIL, "CellMap Overrides", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_GROUP));
-            for (int i = 0; i < cellmapNames.size(); i++) {
-                p_list->push_back(PropertyInfo(Variant::OBJECT, "cellmaps/" + cellmapNames[i], PROPERTY_HINT_RESOURCE_TYPE, "Texture2D", PROPERTY_USAGE_EDITOR | PROPERTY_USAGE_STORAGE));
+            for (int i = 0; i < cellmap_names.size(); i++) {
+                p_list->push_back(PropertyInfo(Variant::OBJECT, "cellmaps/" + cellmap_names[i], PROPERTY_HINT_RESOURCE_TYPE, "Texture2D"));
             }
         }
     }

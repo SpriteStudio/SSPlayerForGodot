@@ -6,7 +6,7 @@ extends SpriteStudioPlayer2D
 func _ready():
 	# Optionally set the speed and loop count
 	self.set_speed(1.0)
-	self.set_loop(0) # 0 = infinite loop
+	self.set_loop_count(-1) # -1 = infinite loop
 	
 	# Start playing from the beginning
 	self.play()

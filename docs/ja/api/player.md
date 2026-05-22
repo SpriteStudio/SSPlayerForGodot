@@ -15,7 +15,7 @@ func _ready() -> void:
     ssnode.set_animation("anime_1")
 
     # 再生
-    ssnode.set_loop(0)        # 0 で無限ループ
+    ssnode.set_loop_count(-1)  # -1 で無限ループ
     ssnode.set_speed(1.0)
     ssnode.play()
 ```
@@ -35,9 +35,9 @@ func _ready() -> void:
 * `set_playback_direction(direction: int, style: int)`:
   * `direction`: `0` = 順再生 (Forward)、`1` = 逆再生 (Backward)。
   * `style`: `0` = 通常/片道 (Normal)、`1` = 往復再生 (PingPong)。
-* `set_loop(count: int)` / `get_loop() -> int`: `0` で無限ループになります。
-* `set_skip_frames(enabled: bool)` / `is_skip_frames() -> bool`
-* `set_sub_frame_enabled(enabled: bool)` / `is_sub_frame_enabled() -> bool`
+* `set_loop_count(count: int)` / `get_loop_count() -> int`: `-1` で無限ループ、`0` で1回だけ再生、`n` で `n` 回繰り返し。
+* `set_frame_skip_enabled(enabled: bool)` / `is_frame_skip_enabled() -> bool` (デフォルト: `true`)
+* `set_sub_frame_enabled(enabled: bool)` / `is_sub_frame_enabled() -> bool` (デフォルト: `false`)
 * `set_cellmap_texture(cellmap_name: String, texture: Texture2D)` / `get_cellmap_texture(cellmap_name: String) -> Texture2D`
 
 ## シグナル
