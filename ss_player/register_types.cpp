@@ -10,6 +10,7 @@ using namespace godot;
 #endif
 
 #ifdef TOOLS_ENABLED
+#include "ss_canvas_drop_overlay.h"
 #include "ss_clickable_label.h"
 #include "ss_filesystem_menu.h"
 #include "ss_progress_dialog.h"
@@ -134,6 +135,7 @@ void initialize_ss_player_module(ModuleInitializationLevel level) {
     GDREGISTER_CLASS(SSResourceInspectorPlugin);
     GDREGISTER_CLASS(SSClickableLabel);
     GDREGISTER_CLASS(SSProgressDialog);
+    GDREGISTER_CLASS(SSCanvasDropOverlay);
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
     GDREGISTER_CLASS(SSEditorPlugin);

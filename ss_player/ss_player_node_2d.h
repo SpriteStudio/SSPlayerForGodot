@@ -13,7 +13,6 @@ using namespace godot;
 class SpriteStudioPlayer2D : public Node2D {
     GDCLASS( SpriteStudioPlayer2D, Node2D );
 
-protected:
     SpriteStudioPlayer2D();
     ~SpriteStudioPlayer2D();
     static void _bind_methods();
