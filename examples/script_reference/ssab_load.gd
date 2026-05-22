@@ -33,7 +33,7 @@ func load_and_play_current():
 		# Play the first animation
 		var target_anim = anim_names[0]
 		self.set_animation(target_anim)
-		self.set_loop(1) # Play once to trigger the finish signal
+		self.set_loop_count(1) # Play once to trigger the finish signal
 		self.play()
 		print("Playing: " + target_anim)
 

@@ -15,7 +15,7 @@ func _ready() -> void:
     ssnode.set_animation("anime_1")
 
     # Play
-    ssnode.set_loop(0)        # 0 = infinite loop
+    ssnode.set_loop_count(-1)  # -1 = infinite loop
     ssnode.set_speed(1.0)
     ssnode.play()
 ```
@@ -35,9 +35,9 @@ func _ready() -> void:
 * `set_playback_direction(direction: int, style: int)`: 
   * `direction`: `0` = Forward, `1` = Backward.
   * `style`: `0` = Normal (One-way), `1` = PingPong (Round-trip).
-* `set_loop(count: int)` / `get_loop() -> int`: `0` means infinite loop.
-* `set_skip_frames(enabled: bool)` / `is_skip_frames() -> bool`
-* `set_sub_frame_enabled(enabled: bool)` / `is_sub_frame_enabled() -> bool`
+* `set_loop_count(count: int)` / `get_loop_count() -> int`: `-1` means infinite loop. `0` plays once with no repeat. `n` repeats `n` times.
+* `set_frame_skip_enabled(enabled: bool)` / `is_frame_skip_enabled() -> bool` (default: `true`)
+* `set_sub_frame_enabled(enabled: bool)` / `is_sub_frame_enabled() -> bool` (default: `false`)
 * `set_cellmap_texture(cellmap_name: String, texture: Texture2D)` / `get_cellmap_texture(cellmap_name: String) -> Texture2D`
 
 ## Signals

@@ -54,11 +54,11 @@ public:
     int getPlaybackDirection() const;
     int getPlaybackStyle() const;
 
-    void setLoop( int p_count );
-    int getLoop() const;
+    void setLoopCount( int p_count );
+    int getLoopCount() const;
 
-    void setSkipFrames( bool p_skip );
-    bool isSkipFrames() const;
+    void setFrameSkipEnabled( bool p_skip );
+    bool isFrameSkipEnabled() const;
 
     void setSubFrameEnabled( bool p_enabled );
     bool isSubFrameEnabled() const;

@@ -17,7 +17,7 @@ func _ready():
 		print("to_texture: " + to_texture.resource_path)
 	
 	ss_player.set_frame(0)
-	ss_player.set_loop(0) # 0 = infinite loop
+	ss_player.set_loop_count(-1) # -1 = infinite loop
 	ss_player.play()
 
 func _process(delta):
