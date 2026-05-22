@@ -374,6 +374,81 @@ private:
     ShapeGeometryBuffers _shape_buf;
     MeshGeometryBuffers _mesh_buf;
 
+    // ---- CBP masking (clever bit packing) ----------------------------------
+    // One entry per part that writes the mask this frame. Rebuilt by
+    // `_build_mask_writers` each frame from draw_order + static PartData.
+    // `bit` is the writer's slot in the coverage bitmap (0..MAX_MASK_WRITERS-1).
+    // `op_invert` comes from PartData.mask_influence (false=increment / true=
+    // invert). `is_clipping` selects the scope direction: a pure Mask part
+    // (PartTypeMask) masks parts drawn BEFORE it (draw_rank < its slot); a
+    // clipping writer (write_mask, and shape/text/nines *_mask) masks parts
+    // drawn AFTER it (draw_rank > its slot), to frame end.
+    struct MaskWriter {
+        int part_index = -1;
+        uint16_t draw_rank = 0;   // slot = position in draw_order
+        uint8_t bit = 0;          // coverage-bitmap bit index
+        bool op_invert = false;   // mask_influence: false=increment, true=invert
+        bool is_clipping = false; // false=Mask part (before), true=clipping (after)
+    };
+    // Coverage bitmap packs writer bits into RGB only (the alpha channel is the
+    // premultiplied-blend coverage accumulator), so cap at 24 writers / frame.
+    static constexpr int MAX_MASK_WRITERS = 24;
+    Vector<MaskWriter> _mask_writers;
+    // Populate `_mask_writers` from this frame's draw_order + static PartData.
+    // Returns true if at least one writer is present (i.e., masking is active
+    // this frame). Only the top-root player owns the mask state.
+    bool _build_mask_writers(const DrawFrame& f);
+
+    // ---- CBP coverage bitmap (offscreen RGBA8 = 32 mask bits) --------------
+    // A private RenderingServer viewport + canvas owned by this player. The
+    // mask writers' geometry is rendered here (additive bit OR, cutout) by
+    // `_render_mask_coverage`; maskable shaders sample the result (P3). Created
+    // lazily by `_ensure_mask_targets` the first time masking runs; freed in
+    // the dtor / `_free_mask_targets`. The viewport renders with UPDATE_ALWAYS
+    // (one-frame latency, sidesteps inter-viewport ordering for a first cut).
+    RID _mask_viewport;
+    RID _mask_canvas;
+    Vector<RID> _mask_canvas_items;            // pooled, one per rendered writer
+    int _mask_canvas_items_in_use = 0;
+    Ref<Shader> _mask_write_shader;            // loaded from SS_MASK_WRITE
+    Vector<Ref<ShaderMaterial>> _mask_write_materials; // pooled, parallel
+    int _mask_write_materials_in_use = 0;
+    // Maps this player's local space (the space batch geometry lives in, world
+    // matrices already applied) -> coverage UV [0,1]. Set per frame by the
+    // coverage pass and read by maskable shaders. Identity until masking runs.
+    Transform2D _mask_local_to_uv;
+    bool _mask_coverage_valid = false;         // true if this frame drew coverage
+    // Longest coverage-bitmap dimension in pixels; the other side scales with
+    // the writer bounding box aspect ratio.
+    static constexpr int MASK_COVERAGE_MAX_DIM = 1024;
+
+    void _ensure_mask_targets();
+    void _free_mask_targets();
+    RID _acquire_mask_canvas_item();
+    Ref<ShaderMaterial> _acquire_mask_write_material();
+    // Render `_mask_writers` into the coverage bitmap. Assumes the list is
+    // populated and non-empty. Computes the writer bounding box, sizes the
+    // viewport, and sets `_mask_local_to_uv` / `_mask_coverage_valid`.
+    void _render_mask_coverage(const DrawFrame& f);
+
+    // Frame mask state derived by _render_mask_coverage and consumed when
+    // emitting maskable parts (P3). `_mask_uv_xform` maps player-local ->
+    // coverage UV as (scale.x, scale.y, offset.x, offset.y). `_mask_meta_array`
+    // is one Vec4 per writer: (draw_rank, bit, op_invert, is_clipping). The two
+    // slot bounds bracket which ranks can be affected (Mask: rank < max mask
+    // slot; clipping: rank > min clip slot) so out-of-scope parts skip the test.
+    Vector4 _mask_uv_xform;
+    float _mask_max_mask_slot = -1.0f;
+    float _mask_min_clip_slot = -1.0f;
+    Array _mask_meta_array;
+    RID _mask_coverage_tex;
+    bool _part_in_mask_scope(uint16_t rank) const;
+    // True if the part is a "pure" mask (PartTypeMask or a shape/text/nines
+    // *_mask): it feeds the coverage bitmap but must not draw its own colour.
+    // write_mask (clipping) writers are NOT pure — they draw AND mask.
+    bool _is_pure_mask_part(int p_idx) const;
+    void _apply_mask_uniforms(Ref<ShaderMaterial> mat, uint16_t rank, bool visible_inside);
+
     void _reconfigure();
     void _loadTextures(const Ref<SSABResource>& res);
     void _fetchAnimation();

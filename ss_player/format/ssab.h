@@ -5972,7 +5972,10 @@ struct PartData FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
     VT_MASK_INFLUENCE = 12,
     VT_MESH_BINDING = 14,
     VT_PART_TYPE_TYPE = 16,
-    VT_PART_TYPE = 18
+    VT_PART_TYPE = 18,
+    VT_MASK_WRITE = 20,
+    VT_VISIBLE_INSIDE_MASK = 22,
+    VT_OUTPUT_INFLUENCE = 24
   };
   const ::flatbuffers::String *name() const {
     return GetPointer<const ::flatbuffers::String *>(VT_NAME);
@@ -6049,6 +6052,15 @@ struct PartData FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   const ss::format::NoneValueEntry *part_type_as_PartTypeAudio() const {
     return part_type_type() == ss::format::PartType_PartTypeAudio ? static_cast<const ss::format::NoneValueEntry *>(part_type()) : nullptr;
   }
+  bool mask_write() const {
+    return GetField<uint8_t>(VT_MASK_WRITE, 0) != 0;
+  }
+  bool visible_inside_mask() const {
+    return GetField<uint8_t>(VT_VISIBLE_INSIDE_MASK, 0) != 0;
+  }
+  bool output_influence() const {
+    return GetField<uint8_t>(VT_OUTPUT_INFLUENCE, 1) != 0;
+  }
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
@@ -6063,6 +6075,9 @@ struct PartData FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyField<uint8_t>(verifier, VT_PART_TYPE_TYPE, 1) &&
            VerifyOffset(verifier, VT_PART_TYPE) &&
            VerifyPartType(verifier, part_type(), part_type_type()) &&
+           VerifyField<uint8_t>(verifier, VT_MASK_WRITE, 1) &&
+           VerifyField<uint8_t>(verifier, VT_VISIBLE_INSIDE_MASK, 1) &&
+           VerifyField<uint8_t>(verifier, VT_OUTPUT_INFLUENCE, 1) &&
            verifier.EndTable();
   }
 };
@@ -6095,6 +6110,15 @@ struct PartDataBuilder {
   void add_part_type(::flatbuffers::Offset<void> part_type) {
     fbb_.AddOffset(PartData::VT_PART_TYPE, part_type);
   }
+  void add_mask_write(bool mask_write) {
+    fbb_.AddElement<uint8_t>(PartData::VT_MASK_WRITE, static_cast<uint8_t>(mask_write), 0);
+  }
+  void add_visible_inside_mask(bool visible_inside_mask) {
+    fbb_.AddElement<uint8_t>(PartData::VT_VISIBLE_INSIDE_MASK, static_cast<uint8_t>(visible_inside_mask), 0);
+  }
+  void add_output_influence(bool output_influence) {
+    fbb_.AddElement<uint8_t>(PartData::VT_OUTPUT_INFLUENCE, static_cast<uint8_t>(output_influence), 1);
+  }
   explicit PartDataBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
@@ -6115,12 +6139,18 @@ inline ::flatbuffers::Offset<PartData> CreatePartData(
     bool mask_influence = false,
     ::flatbuffers::Offset<ss::format::PartMeshBinding> mesh_binding = 0,
     ss::format::PartType part_type_type = ss::format::PartType_NONE,
-    ::flatbuffers::Offset<void> part_type = 0) {
+    ::flatbuffers::Offset<void> part_type = 0,
+    bool mask_write = false,
+    bool visible_inside_mask = false,
+    bool output_influence = true) {
   PartDataBuilder builder_(_fbb);
   builder_.add_part_type(part_type);
   builder_.add_mesh_binding(mesh_binding);
   builder_.add_name(name);
   builder_.add_parent_index(parent_index);
+  builder_.add_output_influence(output_influence);
+  builder_.add_visible_inside_mask(visible_inside_mask);
+  builder_.add_mask_write(mask_write);
   builder_.add_part_type_type(part_type_type);
   builder_.add_mask_influence(mask_influence);
   builder_.add_blend_type(blend_type);
@@ -6137,7 +6167,10 @@ inline ::flatbuffers::Offset<PartData> CreatePartDataDirect(
     bool mask_influence = false,
     ::flatbuffers::Offset<ss::format::PartMeshBinding> mesh_binding = 0,
     ss::format::PartType part_type_type = ss::format::PartType_NONE,
-    ::flatbuffers::Offset<void> part_type = 0) {
+    ::flatbuffers::Offset<void> part_type = 0,
+    bool mask_write = false,
+    bool visible_inside_mask = false,
+    bool output_influence = true) {
   auto name__ = name ? _fbb.CreateString(name) : 0;
   return ss::format::CreatePartData(
       _fbb,
@@ -6148,7 +6181,10 @@ inline ::flatbuffers::Offset<PartData> CreatePartDataDirect(
       mask_influence,
       mesh_binding,
       part_type_type,
-      part_type);
+      part_type,
+      mask_write,
+      visible_inside_mask,
+      output_influence);
 }
 
 struct Label FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {

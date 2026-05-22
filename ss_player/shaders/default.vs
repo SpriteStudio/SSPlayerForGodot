@@ -10,5 +10,7 @@ void vertex() {
         CUSTOM0.z
     );
     partcolor_color = COLOR;
+    // CBP masking: coverage UV from the player-local vertex position.
+    ss_mask_uv = VERTEX * ss_mask_uv_xform.xy + ss_mask_uv_xform.zw;
 }
 )GLSL"
