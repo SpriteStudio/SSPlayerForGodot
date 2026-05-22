@@ -702,24 +702,24 @@ bool SsInternalPlayer::_build_mask_writers(const DrawFrame& f) {
 
         const auto pt = pd->part_type_type();
         const bool is_mask_part = (pt == ss::format::PartType_PartTypeMask);
-        // A writer contributes to the mask: a pure Mask part, a part flagged
-        // write_mask (SS7 clipping), or a shape/text/nines part with its own
-        // *_mask flag (older per-type mask). is_mask_contributor in ssruntime
-        // intentionally ignores write_mask, so the writer set is recomputed
-        // here from static PartData rather than read from FrameData.mask_indices.
-        bool writes = is_mask_part || pd->mask_write();
-        if (!writes && pt == ss::format::PartType_PartTypeShape) {
+        // A "pure" mask draws no colour and masks the parts drawn BEFORE it: a
+        // Mask part, or a shape/text/nines part flagged as a mask via its
+        // per-type *_mask flag. A write_mask (clipping) writer instead draws
+        // normally AND masks the parts drawn AFTER it.
+        bool pure_mask = is_mask_part;
+        if (!pure_mask && pt == ss::format::PartType_PartTypeShape) {
             const auto* s = pd->part_type_as_PartTypeShape();
-            writes = s && s->shape_mask();
+            pure_mask = s && s->shape_mask();
         }
-        if (!writes && pt == ss::format::PartType_PartTypeText) {
+        if (!pure_mask && pt == ss::format::PartType_PartTypeText) {
             const auto* t = pd->part_type_as_PartTypeText();
-            writes = t && t->text_mask();
+            pure_mask = t && t->text_mask();
         }
-        if (!writes && pt == ss::format::PartType_PartTypeNines) {
+        if (!pure_mask && pt == ss::format::PartType_PartTypeNines) {
             const auto* nn = pd->part_type_as_PartTypeNines();
-            writes = nn && nn->nines_mask();
+            pure_mask = nn && nn->nines_mask();
         }
+        const bool writes = pure_mask || pd->mask_write();
         if (!writes) continue;
 
         if ((int)_mask_writers.size() >= MAX_MASK_WRITERS) break; // bitmap holds 32
@@ -729,10 +729,10 @@ bool SsInternalPlayer::_build_mask_writers(const DrawFrame& f) {
         w.draw_rank = (uint16_t)rank;
         w.bit = (uint8_t)_mask_writers.size();
         w.op_invert = pd->mask_influence();
-        // Scope direction: only write_mask (clipping) writers mask the parts
-        // drawn AFTER them; pure masks (PartTypeMask and shape/text/nines
-        // *_mask) mask the parts drawn BEFORE them.
-        w.is_clipping = pd->mask_write();
+        // Scope: write_mask (clipping) writers mask the parts drawn AFTER them;
+        // pure masks (Mask / shape/text/nines mask) mask the parts BEFORE them
+        // and draw no colour, regardless of write_mask.
+        w.is_clipping = pd->mask_write() && !pure_mask;
         _mask_writers.push_back(w);
     }
     return !_mask_writers.is_empty();
@@ -804,12 +804,6 @@ void SsInternalPlayer::_render_mask_coverage(const DrawFrame& f) {
     if (_mask_writers.is_empty() || !f.frameData) return;
     _ensure_mask_targets();
     RenderingServer* rs = f.rs;
-
-    // TEMP DEBUG (revert): log the first couple of frames so we can see which
-    // writers produce real geometry vs degenerate (zero-size) quads.
-    static int _dbg_mask_frames = 0;
-    const bool dbg = _dbg_mask_frames < 2;
-    if (dbg) { _dbg_mask_frames++; print_line(vformat("[mask] ---- frame, writers=%d", _mask_writers.size())); }
 
     auto draw_batches = f.frameData->draw_batches();
     auto draw_order = f.frameData->draw_order();
@@ -922,12 +916,6 @@ void SsInternalPlayer::_render_mask_coverage(const DrawFrame& f) {
                 }
             }
 
-            if (dbg) {
-                print_line(vformat("[mask] w part=%d bit=%d clip=%d kind=%d nv=%d v0=(%.1f,%.1f) vlast=(%.1f,%.1f) tex=%d",
-                                   p_idx, (int)w->bit, (int)w->is_clipping, (int)kind, nv,
-                                   vp[0].x, vp[0].y, vp[nv - 1].x, vp[nv - 1].y, (int)tex_rid.is_valid()));
-            }
-
             // Encode this writer's bit into R/G/B (24 writers; alpha reserved
             // as the premultiplied-blend coverage accumulator).
             const int chan = w->bit / 8;
@@ -980,8 +968,6 @@ void SsInternalPlayer::_render_mask_coverage(const DrawFrame& f) {
     uv.columns[1] = Vector2(0, 1.0f / bsize.y);
     uv.columns[2] = Vector2(-bmin.x / bsize.x, -bmin.y / bsize.y);
     _mask_local_to_uv = uv;
-
-    if (dbg) print_line(vformat("[mask] rendered bbox=(%.1f,%.1f)-(%.1f,%.1f) vp=%dx%d", bmin.x, bmin.y, bmax.x, bmax.y, vw, vh));
 
     // Frame mask state consumed by the maskable emit path (P3).
     _mask_uv_xform = Vector4(1.0f / bsize.x, 1.0f / bsize.y, -bmin.x / bsize.x, -bmin.y / bsize.y);
