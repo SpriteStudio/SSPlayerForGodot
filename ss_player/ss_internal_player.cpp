@@ -2030,18 +2030,23 @@ void SsInternalPlayer::_emit_normal_batch(const DrawFrame& f, RID ci,
         // test, which needs per-part uniforms (rank / polarity) — so force the
         // per-part path for them even when their shader is otherwise batchable.
         // visible_inside_mask parts draw ONLY inside a mask, so they must run the
-        // test even when out of scope (no writer covers them -> they discard);
-        // otherwise the scope optimisation would draw them in full.
+        // test even when out of scope. A part opts OUT of masking entirely with
+        // mask_influence=0 (SS "not affected by mask"); write_mask clipping parts
+        // are always treated as affected (their mask_influence encodes the op).
         const uint16_t rank = (uint16_t)(batch->start_rank() + k);
         bool vis_inside = false;
+        bool mask_target = false;
         if (masking_active) {
             auto pm = f.binary ? f.binary->parts() : nullptr;
             if (pm && p_idx >= 0 && p_idx < (int)pm->size()) {
                 const auto* pdv = pm->Get(p_idx);
-                if (pdv) vis_inside = pdv->visible_inside_mask();
+                if (pdv) {
+                    vis_inside = pdv->visible_inside_mask();
+                    mask_target = pdv->mask_influence() || pdv->mask_write();
+                }
             }
         }
-        const bool masked = masking_active && (_part_in_mask_scope(rank) || vis_inside);
+        const bool masked = masking_active && mask_target && (_part_in_mask_scope(rank) || vis_inside);
 
         PartShaderInfo psi = _resolve_part_shader_info(f, part);
         if (psi.is_per_part || masked) {
@@ -2232,19 +2237,22 @@ void SsInternalPlayer::_emit_mesh_batch(const DrawFrame& f, RID ci,
 
         if (!_build_mesh_geometry(f, p_idx, part, inv_tex_size, _mesh_buf)) continue;
 
-        // CBP masking: a masked target must run the mask test, which needs
-        // per-part uniforms — force the per-part path for it. visible_inside_mask
-        // parts draw only inside a mask, so they run the test even out of scope.
+        // CBP masking: a masked target must run the mask test. A part opts out
+        // with mask_influence=0; write_mask clipping parts are always affected.
         const uint16_t rank = (uint16_t)(batch->start_rank() + k);
         bool vis_inside = false;
+        bool mask_target = false;
         if (masking_active) {
             auto pm = f.binary ? f.binary->parts() : nullptr;
             if (pm && p_idx >= 0 && p_idx < (int)pm->size()) {
                 const auto* pdv = pm->Get(p_idx);
-                if (pdv) vis_inside = pdv->visible_inside_mask();
+                if (pdv) {
+                    vis_inside = pdv->visible_inside_mask();
+                    mask_target = pdv->mask_influence() || pdv->mask_write();
+                }
             }
         }
-        const bool masked = masking_active && (_part_in_mask_scope(rank) || vis_inside);
+        const bool masked = masking_active && mask_target && (_part_in_mask_scope(rank) || vis_inside);
 
         PartShaderInfo psi = _resolve_part_shader_info(f, part);
         if (psi.is_per_part || masked) {
