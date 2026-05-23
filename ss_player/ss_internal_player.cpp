@@ -659,43 +659,49 @@ void SsInternalPlayer::_render_mask_coverage(const DrawFrame& f) {
             const SsIntArray* gindices = nullptr;
             bool no_cutout = false; // Shapes have no texture; the geometry is the mask.
 
+            int nv = 0;
             if (kind == ss::runtime::DrawBatchKind_Mesh) {
                 if (!_build_mesh_geometry(f, p_idx, part, inv_tex_size, _mesh_buf)) continue;
                 gverts = &_mesh_buf.verts; guvs = &_mesh_buf.uvs;
                 gcolors = &_mesh_buf.colors; gindices = &_mesh_buf.indices;
+                nv = gverts->size();
             } else if (kind == ss::runtime::DrawBatchKind_Shape) {
                 if (!_build_shape_geometry(f, p_idx, part, draw_m, _shape_buf)) continue;
                 gverts = &_shape_buf.verts; guvs = &_shape_buf.uvs;
                 gcolors = &_shape_buf.colors; gindices = &_shape_buf.indices;
                 no_cutout = true;
+                nv = gverts->size();
             } else {
-                _per_part_normal_verts.resize(MAX_VERTICES_COUNT);
-                _per_part_normal_uvs.resize(MAX_VERTICES_COUNT);
-                _per_part_normal_colors.resize(MAX_VERTICES_COUNT);
-                _per_part_normal_custom0.resize(MAX_VERTICES_COUNT * 4);
+                if (_per_part_normal_verts.size() < MAX_VERTICES_COUNT) {
+                    _per_part_normal_verts.resize(MAX_VERTICES_COUNT);
+                    _per_part_normal_uvs.resize(MAX_VERTICES_COUNT);
+                    _per_part_normal_colors.resize(MAX_VERTICES_COUNT);
+                    _per_part_normal_custom0.resize(MAX_VERTICES_COUNT * 4);
+                }
+                Vector2* verts_ptr = _per_part_normal_verts.ptrw();
+                Vector2* uvs_ptr = _per_part_normal_uvs.ptrw();
+                Color* colors_ptr = _per_part_normal_colors.ptrw();
+                float* custom0_ptr = _per_part_normal_custom0.ptrw();
                 const int vc = _build_normal(f, p_idx, part, draw_m, inv_tex_size,
-                                             _per_part_normal_verts, _per_part_normal_uvs,
-                                             _per_part_normal_colors, _per_part_normal_custom0, 0);
+                                             verts_ptr, uvs_ptr,
+                                             colors_ptr, custom0_ptr, 0);
                 if (vc <= 0) continue;
                 if (vc == MAX_VERTICES_COUNT) {
-                    const int pent[INDICES_COUNT_PENTAGON] = { 0,1,4, 1,3,4, 3,2,4, 2,0,4 };
                     _per_part_normal_indices.resize(INDICES_COUNT_PENTAGON);
                     int32_t* iptr = (int32_t*)_per_part_normal_indices.ptrw();
+                    const int pent[INDICES_COUNT_PENTAGON] = { 0,1,4, 1,3,4, 3,2,4, 2,0,4 };
                     for (int j = 0; j < INDICES_COUNT_PENTAGON; j++) iptr[j] = pent[j];
                 } else {
-                    const int quad[INDICES_COUNT_QUAD] = { 0,1,2, 1,3,2 };
                     _per_part_normal_indices.resize(INDICES_COUNT_QUAD);
                     int32_t* iptr = (int32_t*)_per_part_normal_indices.ptrw();
+                    const int quad[INDICES_COUNT_QUAD] = { 0,1,2, 1,3,2 };
                     for (int j = 0; j < INDICES_COUNT_QUAD; j++) iptr[j] = quad[j];
                 }
-                _per_part_normal_verts.resize(vc);
-                _per_part_normal_uvs.resize(vc);
-                _per_part_normal_colors.resize(vc);
                 gverts = &_per_part_normal_verts; guvs = &_per_part_normal_uvs;
                 gcolors = &_per_part_normal_colors; gindices = &_per_part_normal_indices;
+                nv = vc;
             }
 
-            const int nv = gverts->size();
             if (nv <= 0) continue;
 
             // Accumulate the writer bounding box in player-local space.
@@ -1317,10 +1323,10 @@ int SsInternalPlayer::_build_normal(const DrawFrame& f, int p_idx,
                                     const ss::runtime::PartState* part,
                                     const float* draw_m,
                                     const Vector2& inv_tex_size,
-                                    SsVec2Array& verts,
-                                    SsVec2Array& uvs,
-                                    SsColorArray& colors,
-                                    SsFloatArray& custom0,
+                                    Vector2* verts_ptr,
+                                    Vector2* uvs_ptr,
+                                    Color* colors_ptr,
+                                    float* custom0_ptr,
                                     int vbase)
 {
     const float* part_cell_meta = f.get_cell_meta(p_idx);
@@ -1376,31 +1382,26 @@ int SsInternalPlayer::_build_normal(const DrawFrame& f, int p_idx,
     // ready when the host turns PMA on globally or per texture.
     const float pma_flag = 0.0f;
 
-    Vector2* v_ptr = verts.ptrw();
-    Vector2* u_ptr = uvs.ptrw();
-    Color*   c_ptr = colors.ptrw();
-    float*   x_ptr = custom0.ptrw();
-
     for (int j = 0; j < CORNERS_COUNT; j++) {
-        v_ptr[vbase + j] = xform_raw(draw_m, out_x[j], out_y[j]);
-        u_ptr[vbase + j] = Vector2(out_u[j] * inv_tex_size.x, out_v[j] * inv_tex_size.y);
-        c_ptr[vbase + j] = corner_colors[j];
+        verts_ptr[vbase + j] = xform_raw(draw_m, out_x[j], out_y[j]);
+        uvs_ptr[vbase + j] = Vector2(out_u[j] * inv_tex_size.x, out_v[j] * inv_tex_size.y);
+        colors_ptr[vbase + j] = corner_colors[j];
         const int c0 = (vbase + j) * 4;
-        x_ptr[c0 + 0] = corner_rates[j];
-        x_ptr[c0 + 1] = (float)blend_idx;
-        x_ptr[c0 + 2] = pma_flag;
-        x_ptr[c0 + 3] = 0.0f;
+        custom0_ptr[c0 + 0] = corner_rates[j];
+        custom0_ptr[c0 + 1] = (float)blend_idx;
+        custom0_ptr[c0 + 2] = pma_flag;
+        custom0_ptr[c0 + 3] = 0.0f;
     }
     if (needs_center) {
-        v_ptr[vbase + CORNERS_COUNT] = xform_raw(draw_m, out_x[CORNERS_COUNT], out_y[CORNERS_COUNT]);
-        u_ptr[vbase + CORNERS_COUNT] = Vector2(out_u[CORNERS_COUNT] * inv_tex_size.x, out_v[CORNERS_COUNT] * inv_tex_size.y);
-        c_ptr[vbase + CORNERS_COUNT] = (corner_colors[0] + corner_colors[1] + corner_colors[2] + corner_colors[3]) * 0.25f;
+        verts_ptr[vbase + CORNERS_COUNT] = xform_raw(draw_m, out_x[CORNERS_COUNT], out_y[CORNERS_COUNT]);
+        uvs_ptr[vbase + CORNERS_COUNT] = Vector2(out_u[CORNERS_COUNT] * inv_tex_size.x, out_v[CORNERS_COUNT] * inv_tex_size.y);
+        colors_ptr[vbase + CORNERS_COUNT] = (corner_colors[0] + corner_colors[1] + corner_colors[2] + corner_colors[3]) * 0.25f;
         const float center_rate = (corner_rates[0] + corner_rates[1] + corner_rates[2] + corner_rates[3]) * 0.25f;
         const int c0 = (vbase + CORNERS_COUNT) * 4;
-        x_ptr[c0 + 0] = center_rate;
-        x_ptr[c0 + 1] = (float)blend_idx;
-        x_ptr[c0 + 2] = pma_flag;
-        x_ptr[c0 + 3] = 0.0f;
+        custom0_ptr[c0 + 0] = center_rate;
+        custom0_ptr[c0 + 1] = (float)blend_idx;
+        custom0_ptr[c0 + 2] = pma_flag;
+        custom0_ptr[c0 + 3] = 0.0f;
     }
     return vert_count;
 }
@@ -1749,16 +1750,33 @@ void SsInternalPlayer::_emit_normal_batch(const DrawFrame& f, RID ci,
     const Vector2 tex_size = tex->get_size();
     const Vector2 inv_tex_size = Vector2(1.0f / tex_size.x, 1.0f / tex_size.y);
 
-    _normal_verts.resize((int)batch->vertex_count());
-    _normal_uvs.resize((int)batch->vertex_count());
-    _normal_colors.resize((int)batch->vertex_count());
-    _normal_custom0.resize((int)batch->vertex_count() * 4);
-    _normal_indices.resize((int)batch->index_count());
+    const int vertex_count = (int)batch->vertex_count();
+    if (_normal_verts.size() < vertex_count) {
+        _normal_verts.resize(vertex_count);
+    }
+    if (_normal_uvs.size() < vertex_count) {
+        _normal_uvs.resize(vertex_count);
+    }
+    if (_normal_colors.size() < vertex_count) {
+        _normal_colors.resize(vertex_count);
+    }
+    if (_normal_custom0.size() < vertex_count * 4) {
+        _normal_custom0.resize(vertex_count * 4);
+    }
+    const int index_count = (int)batch->index_count();
+    if (_normal_indices.size() < index_count) {
+        _normal_indices.resize(index_count);
+    }
     SsVec2Array&  verts   = _normal_verts;
     SsVec2Array&  uvs     = _normal_uvs;
     SsColorArray& colors  = _normal_colors;
     SsFloatArray& custom0 = _normal_custom0;
     SsIntArray&   indices = _normal_indices;
+
+    Vector2* verts_ptr = verts.ptrw();
+    Vector2* uvs_ptr = uvs.ptrw();
+    Color* colors_ptr = colors.ptrw();
+    float* custom0_ptr = custom0.ptrw();
     int32_t* indices_ptr = (int32_t*)indices.ptrw();
 
     int vbase = 0;
@@ -1772,11 +1790,21 @@ void SsInternalPlayer::_emit_normal_batch(const DrawFrame& f, RID ci,
 
     // Pre-size the per-part scratch buffers to fit one Normal part at max
     // (5 verts, 12 indices). Resized once here, reused across per-part emits.
-    _per_part_normal_verts.resize(MAX_VERTICES_COUNT);
-    _per_part_normal_uvs.resize(MAX_VERTICES_COUNT);
-    _per_part_normal_colors.resize(MAX_VERTICES_COUNT);
-    _per_part_normal_custom0.resize(MAX_VERTICES_COUNT * 4);
-    _per_part_normal_indices.resize(INDICES_COUNT_PENTAGON);
+    if (_per_part_normal_verts.size() < MAX_VERTICES_COUNT) {
+        _per_part_normal_verts.resize(MAX_VERTICES_COUNT);
+    }
+    if (_per_part_normal_uvs.size() < MAX_VERTICES_COUNT) {
+        _per_part_normal_uvs.resize(MAX_VERTICES_COUNT);
+    }
+    if (_per_part_normal_colors.size() < MAX_VERTICES_COUNT) {
+        _per_part_normal_colors.resize(MAX_VERTICES_COUNT);
+    }
+    if (_per_part_normal_custom0.size() < MAX_VERTICES_COUNT * 4) {
+        _per_part_normal_custom0.resize(MAX_VERTICES_COUNT * 4);
+    }
+    if (_per_part_normal_indices.size() < INDICES_COUNT_PENTAGON) {
+        _per_part_normal_indices.resize(INDICES_COUNT_PENTAGON);
+    }
 
     const bool masking_active = _mask_coverage_valid;
 
@@ -1815,9 +1843,14 @@ void SsInternalPlayer::_emit_normal_batch(const DrawFrame& f, RID ci,
         if (psi.is_per_part || masked) {
             // Per-part path: build into the small scratch buffers (vbase=0),
             // acquire dedicated canvas_item + ShaderMaterial, emit one mesh.
+            Vector2* p_verts_ptr = _per_part_normal_verts.ptrw();
+            Vector2* p_uvs_ptr = _per_part_normal_uvs.ptrw();
+            Color* p_colors_ptr = _per_part_normal_colors.ptrw();
+            float* p_custom0_ptr = _per_part_normal_custom0.ptrw();
+
             const int vc = _build_normal(f, p_idx, part, drawing_m, inv_tex_size,
-                                         _per_part_normal_verts, _per_part_normal_uvs,
-                                         _per_part_normal_colors, _per_part_normal_custom0, 0);
+                                         p_verts_ptr, p_uvs_ptr,
+                                         p_colors_ptr, p_custom0_ptr, 0);
             if (vc == 0) continue;
             int32_t* iptr = (int32_t*)_per_part_normal_indices.ptrw();
             int idx_count;
@@ -1830,14 +1863,9 @@ void SsInternalPlayer::_emit_normal_batch(const DrawFrame& f, RID ci,
                 for (int j = 0; j < INDICES_COUNT_QUAD; j++) iptr[j] = q[j];
                 idx_count = INDICES_COUNT_QUAD;
             }
-            // Trim the index buffer for this emit; _emit_partcolor_mesh reads
-            // size() so a stale-tail Pentagon footprint would emit phantom
-            // triangles for a 4-vert Quad part.
+            // Temporarily resize indices for this emit so _emit_partcolor_mesh reads
+            // the correct size(). We don't shrink verts/uvs/colors/custom0.
             _per_part_normal_indices.resize(idx_count);
-            _per_part_normal_verts.resize(vc);
-            _per_part_normal_uvs.resize(vc);
-            _per_part_normal_colors.resize(vc);
-            _per_part_normal_custom0.resize(vc * 4);
 
             RID part_ci = _acquire_per_part_canvas_item();
             Ref<ShaderMaterial> mat = _acquire_per_part_material(psi.id_hash, ssab_blend);
@@ -1856,19 +1884,14 @@ void SsInternalPlayer::_emit_normal_batch(const DrawFrame& f, RID ci,
                                  _per_part_normal_colors, _per_part_normal_uvs,
                                  _per_part_normal_custom0, tex_rid);
 
-            // Restore per-part scratch buffers to max footprint for the next
-            // per-part emit in this batch.
-            _per_part_normal_verts.resize(MAX_VERTICES_COUNT);
-            _per_part_normal_uvs.resize(MAX_VERTICES_COUNT);
-            _per_part_normal_colors.resize(MAX_VERTICES_COUNT);
-            _per_part_normal_custom0.resize(MAX_VERTICES_COUNT * 4);
+            // Restore index scratch buffer to max footprint for next emit.
             _per_part_normal_indices.resize(INDICES_COUNT_PENTAGON);
             continue;
         }
 
         // Default / shared path: accumulate into the batch arrays.
         const int vert_count = _build_normal(f, p_idx, part, drawing_m, inv_tex_size,
-                                             verts, uvs, colors, custom0, vbase);
+                                             verts_ptr, uvs_ptr, colors_ptr, custom0_ptr, vbase);
         if (vert_count == 0) continue;
 
         // Append per-part indices with vertex base offset.
@@ -1896,14 +1919,9 @@ void SsInternalPlayer::_emit_normal_batch(const DrawFrame& f, RID ci,
         return;
     }
 
-    // Shrink the accumulator to exactly what the Default-pass produced. The
-    // batch's vertex_count / index_count were sized for "all parts go through
-    // the shared mesh"; if some took the per-part path those slots are unused.
+    // Shrink ONLY the index accumulator to exactly what the Default-pass produced.
+    // The vertex arrays keep their capacity.
     indices.resize(ibase);
-    verts.resize(vbase);
-    uvs.resize(vbase);
-    colors.resize(vbase);
-    custom0.resize(vbase * 4);
 
     _apply_partcolor_material(rs, ci, s_default_shader_id_hash, ssab_blend);
     rs->canvas_item_set_transform(ci, Transform2D());
