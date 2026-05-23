@@ -257,12 +257,10 @@ private:
         Ref<Texture2D> map0;
         Ref<Texture2D> map1;
     };
-    // ArrayMesh keep-alive list. canvas_item_add_mesh records the mesh RID
-    // into the canvas item's command stream; the resource has to stay alive
-    // until the next canvas_item_clear. Cleared at the top of _drawAnimation
-    // so each frame's meshes are released exactly when the new frame replaces
-    // their canvas item commands.
-    Vector<Ref<ArrayMesh>> _frame_meshes;
+    // Low-level mesh RID pool. Reused across frames to avoid the overhead of
+    // instantiating Ref<ArrayMesh> resources. Allocated RIDs are freed in the destructor.
+    Vector<RID> _mesh_pool;
+    int _mesh_pool_in_use = 0;
     // Per-batch canvas_item pool. Index == draw_batches[i] order. Recyclable
     // across frames; pool grows monotonically to peak batch count, unused
     // entries are hidden rather than freed.
@@ -658,8 +656,8 @@ private:
     // Returns zero when cell_meta is unavailable; ss-circle / ss-spot then
     // degenerate to "nothing inside the rect" which is the safest fallback.
     Vector4 _resolve_cell_rect_uv(const DrawFrame& f, int p_idx, const Vector2& inv_tex_size);
-    // Build an ArrayMesh from the geometry arrays and attach it to `ci`. The
-    // mesh resource is appended to `_frame_meshes` to outlive the draw call.
+    // Build a low-level mesh from the geometry arrays and attach it to `ci`.
+    // The mesh RID is acquired from the pool `_mesh_pool`.
     void _emit_partcolor_mesh(RenderingServer* rs, RID ci,
                               const SsIntArray& indices,
                               const SsVec2Array& verts,
@@ -667,6 +665,8 @@ private:
                               const SsVec2Array& uvs,
                               const SsFloatArray& custom0,
                               const RID& texture_rid);
+
+    RID _acquire_mesh_rid(RenderingServer* rs);
 
     void _clear_batch_canvas_items();
 };

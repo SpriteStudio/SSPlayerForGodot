@@ -75,6 +75,11 @@ SsInternalPlayer::~SsInternalPlayer() {
     _free_mask_targets();
 
     RenderingServer* rs = RenderingServer::get_singleton();
+    for (int i = 0; i < _mesh_pool.size(); i++) {
+        rs->free_rid(_mesh_pool[i]);
+    }
+    _mesh_pool.clear();
+
     if (_root_ci.is_valid()) {
         rs->free_rid(_root_ci);
         _root_ci = RID();
@@ -814,11 +819,9 @@ void SsInternalPlayer::_drawAnimation(float frame_no, float delta_seconds, bool 
     ss_runtime_get_frame_data(runtime_ctx, frame_no, &data, &len);
     if (!data) return;
 
-    // Release the previous frame's ArrayMesh references. The CanvasItem
-    // commands recorded last frame are about to be overwritten by
-    // canvas_item_clear in the per-batch loop below, so dropping these refs
-    // is safe (the renderer no longer needs the mesh data).
-    _frame_meshes.clear();
+    // Reset the low-level mesh pool cursor so we reuse mesh RIDs from the
+    // front of the pool rather than allocating new ones.
+    _mesh_pool_in_use = 0;
     // Walk the per-part material / canvas_item pool cursors back to 0 so any
     // per-part rendering during this frame re-uses entries from the front of
     // each pool rather than growing them. No-op when no per-part variants
@@ -1600,7 +1603,6 @@ void SsInternalPlayer::_emit_partcolor_mesh(RenderingServer* rs, RID ci,
                                             const SsVec2Array& uvs,
                                             const SsFloatArray& custom0,
                                             const RID& texture_rid) {
-    Ref<ArrayMesh> mesh; mesh.instantiate();
     Array arrays;
     arrays.resize(Mesh::ARRAY_MAX);
     arrays[Mesh::ARRAY_VERTEX] = verts;
@@ -1608,12 +1610,22 @@ void SsInternalPlayer::_emit_partcolor_mesh(RenderingServer* rs, RID ci,
     arrays[Mesh::ARRAY_COLOR]  = colors;
     arrays[Mesh::ARRAY_CUSTOM0] = custom0;
     arrays[Mesh::ARRAY_INDEX]  = indices;
-    // CUSTOM0 carries 4 floats per vertex (ARRAY_CUSTOM_RGBA_FLOAT). The 2D
-    // vertex flag is auto-detected from the PackedVector2Array contents.
+    // CUSTOM0 carries 4 floats per vertex (ARRAY_CUSTOM_RGBA_FLOAT).
     const uint64_t flags = (uint64_t)Mesh::ARRAY_CUSTOM_RGBA_FLOAT << Mesh::ARRAY_FORMAT_CUSTOM0_SHIFT;
-    mesh->add_surface_from_arrays(Mesh::PRIMITIVE_TRIANGLES, arrays, Array(), Dictionary(), flags);
-    _frame_meshes.push_back(mesh);
-    rs->canvas_item_add_mesh(ci, mesh->get_rid(), Transform2D(), Color(1, 1, 1, 1), texture_rid);
+
+    RID mesh_rid = _acquire_mesh_rid(rs);
+    rs->mesh_add_surface_from_arrays(mesh_rid, RenderingServer::PRIMITIVE_TRIANGLES, arrays, Array(), Dictionary(), flags);
+    rs->canvas_item_add_mesh(ci, mesh_rid, Transform2D(), Color(1, 1, 1, 1), texture_rid);
+}
+
+RID SsInternalPlayer::_acquire_mesh_rid(RenderingServer* rs) {
+    if (_mesh_pool_in_use >= _mesh_pool.size()) {
+        RID mesh_rid = rs->mesh_create();
+        _mesh_pool.push_back(mesh_rid);
+    }
+    RID mesh_rid = _mesh_pool[_mesh_pool_in_use++];
+    rs->mesh_clear(mesh_rid);
+    return mesh_rid;
 }
 
 bool SsInternalPlayer::_build_shape_geometry(const DrawFrame& f, int p_idx,
