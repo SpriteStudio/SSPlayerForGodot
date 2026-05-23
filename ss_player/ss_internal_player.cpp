@@ -172,6 +172,19 @@ void SsInternalPlayer::setAnimation(const String& strName) {
         return;
     }
     _strAnimationSelected = strName;
+    _animationSelectedHash = 0;
+    _fetchAnimation();
+    if (_event_sink) {
+        _event_sink->onAnimationChanged(_strAnimationSelected);
+    }
+}
+
+void SsInternalPlayer::setAnimationByHash(uint32_t p_hash) {
+    if (_animationSelectedHash == p_hash) {
+        return;
+    }
+    _animationSelectedHash = p_hash;
+    _strAnimationSelected = "";
     _fetchAnimation();
     if (_event_sink) {
         _event_sink->onAnimationChanged(_strAnimationSelected);
@@ -937,56 +950,35 @@ void SsInternalPlayer::_drawAnimation(float frame_no, float delta_seconds, bool 
     }
 }
 
-static String find_anim_name_in(const Ref<SSABResource>& res, uint32_t name_hash) {
-    if (res.is_null()) return String();
-    auto binary = res->get_ss_anime_binary();
-    if (!binary || !binary->animations()) return String();
-    auto anims = binary->animations();
-    for (uint32_t i = 0; i < anims->size(); i++) {
-        auto a = anims->Get(i);
-        if (a && a->name_hash() == name_hash) {
-            return a->name() ? String::utf8(a->name()->c_str()) : String();
-        }
-    }
-    return String();
-}
 
-String SsInternalPlayer::_resolve_animation_by_hash(uint32_t name_hash, Ref<SSABResource>& out_source) const {
-    out_source = Ref<SSABResource>();
 
+Ref<SSABResource> SsInternalPlayer::_resolve_ssab_by_hash(uint32_t name_hash) const {
     if (!_ssabRes.is_null()) {
         auto binary = _ssabRes->get_ss_anime_binary();
         if (binary && binary->external_instances()) {
-            // external_instances is sorted by anime_name_hash, so binary-search
-            // for the hint, then resolve the owning pack via the pack_hash map.
             const auto* entry = binary->external_instances()->LookupByKey(name_hash);
             if (entry) {
                 const uint32_t pack_hash = entry->anime_pack_name_hash();
                 if (auto* ext_ptr = _external_ssabs_by_pack_hash.getptr(pack_hash)) {
-                    String found = find_anim_name_in(*ext_ptr, name_hash);
-                    if (!found.is_empty()) {
-                        out_source = *ext_ptr;
-                        return found;
+                    auto anim = (*ext_ptr)->find_animation_by_hash(name_hash);
+                    if (anim) {
+                        return *ext_ptr;
                     }
                 }
             }
         }
     }
 
-    String found = find_anim_name_in(_ssabRes, name_hash);
-    if (!found.is_empty()) {
-        out_source = _ssabRes;
-        return found;
+    if (!_ssabRes.is_null() && _ssabRes->find_animation_by_hash(name_hash)) {
+        return _ssabRes;
     }
     for (int i = 0; i < _external_ssabs.size(); i++) {
         const Ref<SSABResource>& ext = _external_ssabs[i];
-        found = find_anim_name_in(ext, name_hash);
-        if (!found.is_empty()) {
-            out_source = ext;
-            return found;
+        if (!ext.is_null() && ext->find_animation_by_hash(name_hash)) {
+            return ext;
         }
     }
-    return String();
+    return Ref<SSABResource>();
 }
 
 void SsInternalPlayer::_load_external_ssabs() {
@@ -1061,10 +1053,9 @@ void SsInternalPlayer::_setup_instance_children() {
         auto pt = p->part_type_as_PartTypeInstance();
         if (!pt) continue;
 
-        Ref<SSABResource> source;
         uint32_t ref_hash = pt->ref_anime_hash();
-        String anim_name = _resolve_animation_by_hash(ref_hash, source);
-        if (anim_name.is_empty() || source.is_null()) {
+        Ref<SSABResource> source = _resolve_ssab_by_hash(ref_hash);
+        if (source.is_null()) {
             ERR_PRINT(vformat("[SS] instance part %d: ref_anime_hash=0x%x not found in current or external SSABs", i, ref_hash));
             continue;
         }
@@ -1074,7 +1065,7 @@ void SsInternalPlayer::_setup_instance_children() {
         // Hand the child the SSAB that actually contains the referenced
         // animation — may be `_ssabRes` itself or an external sibling.
         child->setSSABResource(source);
-        child->setAnimation(anim_name);
+        child->setAnimationByHash(ref_hash);
         child->stop();
         // Keep the child hidden by default; _update_instance_children flips
         // it visible only once an EventInstance becomes active for the slot.
@@ -2127,7 +2118,7 @@ bool SsInternalPlayer::_build_mesh_geometry(const DrawFrame& f, int p_idx,
 }
 
 void SsInternalPlayer::_fetchAnimation() {
-    if (_strAnimationSelected.is_empty() || _ssabRes.is_null()) {
+    if ((_strAnimationSelected.is_empty() && _animationSelectedHash == 0) || _ssabRes.is_null()) {
         ss_runtime_reset(runtime_ctx);
         _reconfigure();
         if (runtime_res != nullptr) {
@@ -2172,16 +2163,27 @@ void SsInternalPlayer::_fetchAnimation() {
     // Per-batch canvas_item pool grows on demand inside _drawAnimation via
     // _ensure_batch_ci(). No per-part CIs are pre-allocated here.
 
-    auto c = _strAnimationSelected.utf8();
-    auto animation = _ssabRes->find_animation(_strAnimationSelected);
+    const ss::format::AnimationData* animation = nullptr;
+    if (_animationSelectedHash != 0) {
+        animation = _ssabRes->find_animation_by_hash(_animationSelectedHash);
+        if (animation && animation->name()) {
+            _strAnimationSelected = String::utf8(animation->name()->c_str());
+        }
+    } else if (!_strAnimationSelected.is_empty()) {
+        animation = _ssabRes->find_animation(_strAnimationSelected);
+        if (animation) {
+            _animationSelectedHash = animation->name_hash();
+        }
+    }
+
     if (!animation) {
         ERR_PRINT("Select Anime is Null");
         return;
     }
     _currentAnimationData = animation;
-    bool setup = ss_runtime_setup_animation(runtime_ctx, c.get_data());
+    bool setup = ss_runtime_setup_animation_by_hash(runtime_ctx, _animationSelectedHash);
     if (!setup) {
-        ERR_PRINT("SSAB Setup Animation Failed: " + _strAnimationSelected);
+        ERR_PRINT("SSAB Setup Animation Failed by hash: " + String::num_int64(_animationSelectedHash));
         return;
     }
 

@@ -187,6 +187,21 @@ ss::format::AnimationData *SSABResource::find_animation(const String &name) {
     return nullptr;
 }
 
+ss::format::AnimationData *SSABResource::find_animation_by_hash(uint32_t name_hash) {
+    if (!is_valid()) {
+        return nullptr;
+    }
+    auto ss_anime_binary = this->get_ss_anime_binary();
+    auto num  = ss_anime_binary->animations()->size();
+    for (int i=0; i < num; i++) {
+        auto animation = ss_anime_binary->animations()->Get(i);
+        if (animation && animation->name_hash() == name_hash) {
+            return (ss::format::AnimationData *)animation;
+        }
+    }
+    return nullptr;
+}
+
 String SSABResource::get_parent_dir() const {
     return this->_parent_dir;
 }
