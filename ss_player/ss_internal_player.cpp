@@ -5,6 +5,7 @@
 #include "format/framedata.h"
 #include <mutex>
 #include <cstring>
+#include <cmath>
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
 #include <godot_cpp/classes/resource_loader.hpp>
@@ -628,8 +629,7 @@ void SsInternalPlayer::_render_mask_coverage(const DrawFrame& f) {
             if (p_idx < 0 || p_idx >= (int)_parts_by_idx.size()) continue;
             const auto* part = _parts_by_idx[p_idx];
             if (!part) continue;
-            const float* draw_m = (f.world_matrices && (uintptr_t)p_idx * 16 < f.world_matrices_len)
-                                  ? f.world_matrices + (p_idx * 16) : nullptr;
+            const float* draw_m = f.get_world_matrix(p_idx);
             if (!draw_m) continue;
 
             // Build the writer's geometry per batch kind into common pointers.
@@ -695,17 +695,18 @@ void SsInternalPlayer::_render_mask_coverage(const DrawFrame& f) {
             // Encode this writer's bit into R/G/B (24 writers; alpha reserved
             // as the premultiplied-blend coverage accumulator).
             const int chan = w->bit / 8;
-            const float bval = (float)(1 << (w->bit % 8)) / 255.0f;
-            Color bit_color(0, 0, 0, 0);
-            if (chan == 0) bit_color.r = bval;
-            else if (chan == 1) bit_color.g = bval;
-            else bit_color.b = bval;
+            const uint8_t bit_val = 1 << (w->bit % 8);
+            uint8_t r = (chan == 0) ? bit_val : 0;
+            uint8_t g = (chan == 1) ? bit_val : 0;
+            uint8_t b = (chan == 2) ? bit_val : 0;
+            Color bit_color = Color::from_rgba8(r, g, b, 0);
+
             // Cutout threshold. Pure masks (PartTypeMask) fade by the MASK
             // strength attribute (0..255; 0 -> empty). Clipping (write_mask)
             // writers carry no strength — they clip with the full sprite/mesh
             // shape (alpha > 0). Shapes have no texture (no_cutout).
             float threshold = no_cutout ? -1.0f
-                            : (w->is_clipping ? 0.0f : (255.0f - part->mask()) / 255.0f);
+                            : (w->is_clipping ? 0.0f : (float)(255 - part->mask()) / 255.0f);
             if (threshold > 1.0f) threshold = 1.0f;
 
             RID mask_ci = _acquire_mask_canvas_item();
@@ -720,12 +721,12 @@ void SsInternalPlayer::_render_mask_coverage(const DrawFrame& f) {
 
     if (!have_bbox) return;
     Vector2 bsize = bmax - bmin;
-    if (bsize.x < 1e-3f) bsize.x = 1e-3f;
-    if (bsize.y < 1e-3f) bsize.y = 1e-3f;
+    if (bsize.x < CMP_EPSILON) bsize.x = CMP_EPSILON;
+    if (bsize.y < CMP_EPSILON) bsize.y = CMP_EPSILON;
     const float longest = bsize.x > bsize.y ? bsize.x : bsize.y;
     const float scale = (float)MASK_COVERAGE_MAX_DIM / longest;
-    int vw = (int)(bsize.x * scale + 0.999f);
-    int vh = (int)(bsize.y * scale + 0.999f);
+    int vw = (int)std::ceil(bsize.x * scale);
+    int vh = (int)std::ceil(bsize.y * scale);
     if (vw < 1) vw = 1; else if (vw > MASK_COVERAGE_MAX_DIM) vw = MASK_COVERAGE_MAX_DIM;
     if (vh < 1) vh = 1; else if (vh > MASK_COVERAGE_MAX_DIM) vh = MASK_COVERAGE_MAX_DIM;
     rs->viewport_set_size(_mask_viewport, vw, vh);
@@ -919,16 +920,14 @@ void SsInternalPlayer::_drawAnimation(float frame_no, float delta_seconds, bool 
             int p_idx = (int)draw_order_data[batch->start_rank()];
             const auto* part = (p_idx >= 0 && p_idx < (int)_parts_by_idx.size()) ? _parts_by_idx[p_idx] : nullptr;
             if (!part) continue;
-            const float* drawing_m = (f.world_matrices && (uintptr_t)p_idx * 16 < f.world_matrices_len)
-                ? f.world_matrices + (p_idx * 16) : nullptr;
+            const float* drawing_m = f.get_world_matrix(p_idx);
             if (!drawing_m) continue;
             _emit_instance_slot(f, ci, p_idx, drawing_m);
         } else if (kind == ss::runtime::DrawBatchKind_Effect) {
             int p_idx = (int)draw_order_data[batch->start_rank()];
             const auto* part = (p_idx >= 0 && p_idx < (int)_parts_by_idx.size()) ? _parts_by_idx[p_idx] : nullptr;
             if (!part) continue;
-            const float* drawing_m = (f.world_matrices && (uintptr_t)p_idx * 16 < f.world_matrices_len)
-                ? f.world_matrices + (p_idx * 16) : nullptr;
+            const float* drawing_m = f.get_world_matrix(p_idx);
             if (!drawing_m) continue;
             _emit_effect_slot(f, ci, p_idx, drawing_m);
         } else if (kind == ss::runtime::DrawBatchKind_Mesh) {
@@ -1330,18 +1329,9 @@ int SsInternalPlayer::_build_normal(const DrawFrame& f, int p_idx,
                                     SsFloatArray& custom0,
                                     int vbase)
 {
-    const float* part_cell_meta = nullptr;
-    if (f.cell_meta && (uintptr_t)p_idx * 6 + 6 <= f.cell_meta_len) {
-        part_cell_meta = f.cell_meta + (p_idx * 6);
-    }
-    const float* part_uvs = nullptr;
-    if (f.local_uvs && (uintptr_t)p_idx * 10 + 10 <= f.local_uvs_len) {
-        part_uvs = f.local_uvs + (p_idx * 10);
-    }
-    const float* part_verts = nullptr;
-    if (f.local_vertices && (uintptr_t)p_idx * 10 + 10 <= f.local_vertices_len) {
-        part_verts = f.local_vertices + (p_idx * 10);
-    }
+    const float* part_cell_meta = f.get_cell_meta(p_idx);
+    const float* part_uvs = f.get_local_uvs(p_idx);
+    const float* part_verts = f.get_local_vertices(p_idx);
     if (!part_cell_meta || !part_uvs || !part_verts) return 0;
 
     const uint64_t flags = part->update_flag();
@@ -1639,18 +1629,9 @@ bool SsInternalPlayer::_build_shape_geometry(const DrawFrame& f, int p_idx,
                                              const ss::runtime::PartState* part,
                                              const float* draw_m,
                                              ShapeGeometryBuffers& out) {
-    const float* part_shape_verts = nullptr;
-    const float* part_shape_box_coords = nullptr;
-    int32_t part_shape_count = 0;
-    if (f.shape_vertices && (uintptr_t)p_idx * 24 + 24 <= f.shape_vertices_len) {
-        part_shape_verts = f.shape_vertices + (p_idx * 24);
-    }
-    if (f.shape_box_coords && (uintptr_t)p_idx * 24 + 24 <= f.shape_box_coords_len) {
-        part_shape_box_coords = f.shape_box_coords + (p_idx * 24);
-    }
-    if (f.shape_vertex_counts && (uintptr_t)p_idx < f.shape_vertex_counts_len) {
-        part_shape_count = f.shape_vertex_counts[p_idx];
-    }
+    const float* part_shape_verts = f.get_shape_vertices(p_idx);
+    const float* part_shape_box_coords = f.get_shape_box_coords(p_idx);
+    int32_t part_shape_count = f.get_shape_vertex_count(p_idx);
     if (!part_shape_verts || !part_shape_box_coords || part_shape_count < 3) return false;
 
     out.vert_count = part_shape_count;
@@ -1802,10 +1783,7 @@ void SsInternalPlayer::_emit_normal_batch(const DrawFrame& f, RID ci,
         const auto* part = _parts_by_idx[p_idx];
         if (!part) continue;
 
-        const float* drawing_m = nullptr;
-        if (f.world_matrices && (uintptr_t)p_idx * 16 < f.world_matrices_len) {
-            drawing_m = f.world_matrices + (p_idx * 16);
-        }
+        const float* drawing_m = f.get_world_matrix(p_idx);
         if (!drawing_m) continue;
 
         // CBP masking: parts inside an active writer's scope must run the mask
@@ -1949,8 +1927,7 @@ void SsInternalPlayer::_emit_shape_batch(const DrawFrame& f, RID ci,
         const auto* part = _parts_by_idx[p_idx];
         if (!part) continue;
 
-        const float* drawing_m = (f.world_matrices && (uintptr_t)p_idx * 16 < f.world_matrices_len)
-            ? f.world_matrices + (p_idx * 16) : nullptr;
+        const float* drawing_m = f.get_world_matrix(p_idx);
         if (!drawing_m) continue;
 
         if (!_build_shape_geometry(f, p_idx, part, drawing_m, _shape_buf)) continue;
