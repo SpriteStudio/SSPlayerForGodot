@@ -113,6 +113,14 @@ const char* SS_BMASK_FS =
 #include "shaders/ss_bmask.fs"
 ;
 
+// CBP mask coverage write shader. Unlike the SS_*_FS fragment bodies above,
+// this is a complete canvas_item shader (its own shader_type / render_mode):
+// it is set verbatim on the coverage-pass material, not combined with the
+// vertex / library stages.
+const char* SS_MASK_WRITE_SHADER =
+#include "shaders/ss_mask_write.gdshader"
+;
+
 // SS6 SDK port: "ss-hsb". Hue/Saturation/Brightness shift driven by
 // ss_param0..2. Defines ss_rgb_to_hsb / ss_hsb_to_rgb helpers inline.
 const char* SS_HSB_FS =
@@ -287,6 +295,7 @@ SsInternalPlayer::~SsInternalPlayer() {
     _clear_effect_slots();
     _clear_batch_canvas_items();
     _free_per_part_canvas_items();
+    _free_mask_targets();
 
     RenderingServer* rs = RenderingServer::get_singleton();
     if (_root_ci.is_valid()) {
@@ -676,6 +685,339 @@ void SsInternalPlayer::update(float delta_seconds) {
     _seek_and_redraw(frame_no, delta_seconds, was_looped);
 }
 
+bool SsInternalPlayer::_build_mask_writers(const DrawFrame& f) {
+    _mask_writers.clear();
+    if (!f.frameData || !f.binary) return false;
+    auto parts_meta = f.binary->parts();
+    auto draw_order = f.frameData->draw_order();
+    if (!parts_meta || !draw_order) return false;
+
+    const int total_meta = (int)parts_meta->size();
+    const uint32_t n = draw_order->size();
+    for (uint32_t rank = 0; rank < n; rank++) {
+        const int p_idx = (int)draw_order->Get(rank);
+        if (p_idx < 0 || p_idx >= total_meta) continue;
+        const auto* pd = parts_meta->Get(p_idx);
+        if (!pd) continue;
+
+        const auto pt = pd->part_type_type();
+        const bool is_mask_part = (pt == ss::format::PartType_PartTypeMask);
+        // A "pure" mask draws no colour and masks the parts drawn BEFORE it: a
+        // Mask part, or a shape/text/nines part flagged as a mask via its
+        // per-type *_mask flag. A write_mask (clipping) writer instead draws
+        // normally AND masks the parts drawn AFTER it.
+        bool pure_mask = is_mask_part;
+        if (!pure_mask && pt == ss::format::PartType_PartTypeShape) {
+            const auto* s = pd->part_type_as_PartTypeShape();
+            pure_mask = s && s->shape_mask();
+        }
+        if (!pure_mask && pt == ss::format::PartType_PartTypeText) {
+            const auto* t = pd->part_type_as_PartTypeText();
+            pure_mask = t && t->text_mask();
+        }
+        if (!pure_mask && pt == ss::format::PartType_PartTypeNines) {
+            const auto* nn = pd->part_type_as_PartTypeNines();
+            pure_mask = nn && nn->nines_mask();
+        }
+        const bool writes = pure_mask || pd->mask_write();
+        if (!writes) continue;
+
+        if ((int)_mask_writers.size() >= MAX_MASK_WRITERS) break; // bitmap holds 32
+
+        MaskWriter w;
+        w.part_index = p_idx;
+        w.draw_rank = (uint16_t)rank;
+        w.bit = (uint8_t)_mask_writers.size();
+        w.op_invert = pd->mask_influence();
+        // Scope: write_mask (clipping) writers mask the parts drawn AFTER them;
+        // pure masks (Mask / shape/text/nines mask) mask the parts BEFORE them
+        // and draw no colour, regardless of write_mask.
+        w.is_clipping = pd->mask_write() && !pure_mask;
+        _mask_writers.push_back(w);
+    }
+    return !_mask_writers.is_empty();
+}
+
+void SsInternalPlayer::_ensure_mask_targets() {
+    RenderingServer* rs = RenderingServer::get_singleton();
+    if (_mask_write_shader.is_null()) {
+        _mask_write_shader.instantiate();
+        _mask_write_shader->set_code(String(SS_MASK_WRITE_SHADER));
+    }
+    if (!_mask_viewport.is_valid()) {
+        _mask_viewport = rs->viewport_create();
+        // UPDATE_ALWAYS: the coverage viewport renders every frame; maskable
+        // parts sample the previous frame's result (one-frame latency), which
+        // avoids depending on inter-viewport render ordering for a first cut.
+        rs->viewport_set_update_mode(_mask_viewport, RenderingServer::VIEWPORT_UPDATE_ALWAYS);
+        rs->viewport_set_clear_mode(_mask_viewport, RenderingServer::VIEWPORT_CLEAR_ALWAYS);
+        rs->viewport_set_transparent_background(_mask_viewport, true);
+        rs->viewport_set_disable_3d(_mask_viewport, true);
+        rs->viewport_set_active(_mask_viewport, true);
+        rs->viewport_set_size(_mask_viewport, 1, 1);
+    }
+    if (!_mask_canvas.is_valid()) {
+        _mask_canvas = rs->canvas_create();
+        rs->viewport_attach_canvas(_mask_viewport, _mask_canvas);
+    }
+}
+
+void SsInternalPlayer::_free_mask_targets() {
+    RenderingServer* rs = RenderingServer::get_singleton();
+    for (int i = 0; i < _mask_canvas_items.size(); i++) {
+        if (_mask_canvas_items[i].is_valid()) rs->free_rid(_mask_canvas_items[i]);
+    }
+    _mask_canvas_items.clear();
+    _mask_canvas_items_in_use = 0;
+    _mask_write_materials.clear();
+    _mask_write_materials_in_use = 0;
+    if (_mask_canvas.is_valid()) { rs->free_rid(_mask_canvas); _mask_canvas = RID(); }
+    if (_mask_viewport.is_valid()) { rs->free_rid(_mask_viewport); _mask_viewport = RID(); }
+    _mask_write_shader = Ref<Shader>();
+    _mask_coverage_valid = false;
+}
+
+RID SsInternalPlayer::_acquire_mask_canvas_item() {
+    RenderingServer* rs = RenderingServer::get_singleton();
+    if (_mask_canvas_items_in_use >= _mask_canvas_items.size()) {
+        RID ci = rs->canvas_item_create();
+        rs->canvas_item_set_parent(ci, _mask_canvas);
+        _mask_canvas_items.push_back(ci);
+    }
+    RID ci = _mask_canvas_items[_mask_canvas_items_in_use++];
+    rs->canvas_item_clear(ci);
+    rs->canvas_item_set_visible(ci, true);
+    return ci;
+}
+
+Ref<ShaderMaterial> SsInternalPlayer::_acquire_mask_write_material() {
+    if (_mask_write_materials_in_use >= _mask_write_materials.size()) {
+        Ref<ShaderMaterial> mat; mat.instantiate();
+        mat->set_shader(_mask_write_shader);
+        _mask_write_materials.push_back(mat);
+    }
+    return _mask_write_materials[_mask_write_materials_in_use++];
+}
+
+void SsInternalPlayer::_render_mask_coverage(const DrawFrame& f) {
+    _mask_coverage_valid = false;
+    if (_mask_writers.is_empty() || !f.frameData) return;
+    _ensure_mask_targets();
+    RenderingServer* rs = f.rs;
+
+    auto draw_batches = f.frameData->draw_batches();
+    auto draw_order = f.frameData->draw_order();
+    if (!draw_batches || !draw_order) return;
+    const uint16_t* draw_order_data = draw_order->data();
+
+    // Recycle the coverage CI / material pools (hide all, cursors back to 0).
+    for (int i = 0; i < _mask_canvas_items.size(); i++) {
+        rs->canvas_item_clear(_mask_canvas_items[i]);
+        rs->canvas_item_set_visible(_mask_canvas_items[i], false);
+    }
+    _mask_canvas_items_in_use = 0;
+    _mask_write_materials_in_use = 0;
+
+    bool have_bbox = false;
+    Vector2 bmin, bmax;
+
+    for (uint32_t bi = 0; bi < draw_batches->size(); bi++) {
+        const auto* batch = draw_batches->Get(bi);
+        if (!batch) continue;
+        const auto kind = batch->kind();
+        if (kind != ss::runtime::DrawBatchKind_Normal && kind != ss::runtime::DrawBatchKind_Mask
+            && kind != ss::runtime::DrawBatchKind_Mesh && kind != ss::runtime::DrawBatchKind_Shape) {
+            continue;
+        }
+
+        RID tex_rid;
+        Vector2 inv_tex_size(1, 1);
+        if (batch->texture_hash() != 0 && _textures.has(batch->texture_hash())) {
+            Ref<Texture2D> tex = _textures[batch->texture_hash()];
+            if (tex.is_valid()) {
+                tex_rid = tex->get_rid();
+                const Vector2 ts = tex->get_size();
+                if (ts.x > 0 && ts.y > 0) inv_tex_size = Vector2(1.0f / ts.x, 1.0f / ts.y);
+            }
+        }
+
+        const uint16_t count = batch->count();
+        for (uint16_t k = 0; k < count; k++) {
+            const int p_idx = (int)draw_order_data[batch->start_rank() + k];
+            const MaskWriter* w = nullptr;
+            for (int wi = 0; wi < _mask_writers.size(); wi++) {
+                if (_mask_writers[wi].part_index == p_idx) { w = &_mask_writers[wi]; break; }
+            }
+            if (!w) continue;
+            if (p_idx < 0 || p_idx >= (int)_parts_by_idx.size()) continue;
+            const auto* part = _parts_by_idx[p_idx];
+            if (!part) continue;
+            const float* draw_m = (f.world_matrices && (uintptr_t)p_idx * 16 < f.world_matrices_len)
+                                  ? f.world_matrices + (p_idx * 16) : nullptr;
+            if (!draw_m) continue;
+
+            // Build the writer's geometry per batch kind into common pointers.
+            // Mesh verts already arrive world-space; Normal/Mask/Shape apply
+            // draw_m inside their builders.
+            const SsVec2Array* gverts = nullptr;
+            const SsVec2Array* guvs = nullptr;
+            const SsColorArray* gcolors = nullptr;
+            const SsIntArray* gindices = nullptr;
+            bool no_cutout = false; // Shapes have no texture; the geometry is the mask.
+
+            if (kind == ss::runtime::DrawBatchKind_Mesh) {
+                if (!_build_mesh_geometry(f, p_idx, part, inv_tex_size, _mesh_buf)) continue;
+                gverts = &_mesh_buf.verts; guvs = &_mesh_buf.uvs;
+                gcolors = &_mesh_buf.colors; gindices = &_mesh_buf.indices;
+            } else if (kind == ss::runtime::DrawBatchKind_Shape) {
+                if (!_build_shape_geometry(f, p_idx, part, draw_m, _shape_buf)) continue;
+                gverts = &_shape_buf.verts; guvs = &_shape_buf.uvs;
+                gcolors = &_shape_buf.colors; gindices = &_shape_buf.indices;
+                no_cutout = true;
+            } else {
+                _per_part_normal_verts.resize(MAX_VERTICES_COUNT);
+                _per_part_normal_uvs.resize(MAX_VERTICES_COUNT);
+                _per_part_normal_colors.resize(MAX_VERTICES_COUNT);
+                _per_part_normal_custom0.resize(MAX_VERTICES_COUNT * 4);
+                const int vc = _build_normal(f, p_idx, part, draw_m, inv_tex_size,
+                                             _per_part_normal_verts, _per_part_normal_uvs,
+                                             _per_part_normal_colors, _per_part_normal_custom0, 0);
+                if (vc <= 0) continue;
+                if (vc == MAX_VERTICES_COUNT) {
+                    const int pent[INDICES_COUNT_PENTAGON] = { 0,1,4, 1,3,4, 3,2,4, 2,0,4 };
+                    _per_part_normal_indices.resize(INDICES_COUNT_PENTAGON);
+                    int32_t* iptr = (int32_t*)_per_part_normal_indices.ptrw();
+                    for (int j = 0; j < INDICES_COUNT_PENTAGON; j++) iptr[j] = pent[j];
+                } else {
+                    const int quad[INDICES_COUNT_QUAD] = { 0,1,2, 1,3,2 };
+                    _per_part_normal_indices.resize(INDICES_COUNT_QUAD);
+                    int32_t* iptr = (int32_t*)_per_part_normal_indices.ptrw();
+                    for (int j = 0; j < INDICES_COUNT_QUAD; j++) iptr[j] = quad[j];
+                }
+                _per_part_normal_verts.resize(vc);
+                _per_part_normal_uvs.resize(vc);
+                _per_part_normal_colors.resize(vc);
+                gverts = &_per_part_normal_verts; guvs = &_per_part_normal_uvs;
+                gcolors = &_per_part_normal_colors; gindices = &_per_part_normal_indices;
+            }
+
+            const int nv = gverts->size();
+            if (nv <= 0) continue;
+
+            // Accumulate the writer bounding box in player-local space.
+            const Vector2* vp = gverts->ptr();
+            for (int j = 0; j < nv; j++) {
+                if (!have_bbox) { bmin = bmax = vp[j]; have_bbox = true; }
+                else {
+                    if (vp[j].x < bmin.x) bmin.x = vp[j].x;
+                    if (vp[j].y < bmin.y) bmin.y = vp[j].y;
+                    if (vp[j].x > bmax.x) bmax.x = vp[j].x;
+                    if (vp[j].y > bmax.y) bmax.y = vp[j].y;
+                }
+            }
+
+            // Encode this writer's bit into R/G/B (24 writers; alpha reserved
+            // as the premultiplied-blend coverage accumulator).
+            const int chan = w->bit / 8;
+            const float bval = (float)(1 << (w->bit % 8)) / 255.0f;
+            Color bit_color(0, 0, 0, 0);
+            if (chan == 0) bit_color.r = bval;
+            else if (chan == 1) bit_color.g = bval;
+            else bit_color.b = bval;
+            // Cutout threshold. Pure masks (PartTypeMask) fade by the MASK
+            // strength attribute (0..255; 0 -> empty). Clipping (write_mask)
+            // writers carry no strength — they clip with the full sprite/mesh
+            // shape (alpha > 0). Shapes have no texture (no_cutout).
+            float threshold = no_cutout ? -1.0f
+                            : (w->is_clipping ? 0.0f : (255.0f - part->mask()) / 255.0f);
+            if (threshold > 1.0f) threshold = 1.0f;
+
+            RID mask_ci = _acquire_mask_canvas_item();
+            Ref<ShaderMaterial> mat = _acquire_mask_write_material();
+            mat->set_shader_parameter("mask_bit_color", bit_color);
+            mat->set_shader_parameter("mask_threshold", threshold);
+            rs->canvas_item_set_material(mask_ci, mat->get_rid());
+            rs->canvas_item_set_transform(mask_ci, Transform2D());
+            rs->canvas_item_add_triangle_array(mask_ci, *gindices, *gverts, *gcolors, *guvs, {}, {}, tex_rid);
+        }
+    }
+
+    if (!have_bbox) return;
+    Vector2 bsize = bmax - bmin;
+    if (bsize.x < 1e-3f) bsize.x = 1e-3f;
+    if (bsize.y < 1e-3f) bsize.y = 1e-3f;
+    const float longest = bsize.x > bsize.y ? bsize.x : bsize.y;
+    const float scale = (float)MASK_COVERAGE_MAX_DIM / longest;
+    int vw = (int)(bsize.x * scale + 0.999f);
+    int vh = (int)(bsize.y * scale + 0.999f);
+    if (vw < 1) vw = 1; else if (vw > MASK_COVERAGE_MAX_DIM) vw = MASK_COVERAGE_MAX_DIM;
+    if (vh < 1) vh = 1; else if (vh > MASK_COVERAGE_MAX_DIM) vh = MASK_COVERAGE_MAX_DIM;
+    rs->viewport_set_size(_mask_viewport, vw, vh);
+
+    // canvas_transform: player-local -> coverage viewport pixels.
+    const Vector2 s((float)vw / bsize.x, (float)vh / bsize.y);
+    Transform2D ct;
+    ct.columns[0] = Vector2(s.x, 0);
+    ct.columns[1] = Vector2(0, s.y);
+    ct.columns[2] = Vector2(-bmin.x * s.x, -bmin.y * s.y);
+    rs->viewport_set_canvas_transform(_mask_viewport, _mask_canvas, ct);
+
+    // player-local -> coverage UV [0,1], handed to maskable shaders (P3).
+    Transform2D uv;
+    uv.columns[0] = Vector2(1.0f / bsize.x, 0);
+    uv.columns[1] = Vector2(0, 1.0f / bsize.y);
+    uv.columns[2] = Vector2(-bmin.x / bsize.x, -bmin.y / bsize.y);
+    _mask_local_to_uv = uv;
+
+    // Frame mask state consumed by the maskable emit path (P3).
+    _mask_uv_xform = Vector4(1.0f / bsize.x, 1.0f / bsize.y, -bmin.x / bsize.x, -bmin.y / bsize.y);
+    _mask_coverage_tex = rs->viewport_get_texture(_mask_viewport);
+    _mask_max_mask_slot = -1.0f;
+    _mask_min_clip_slot = -1.0f;
+    _mask_meta_array.clear();
+    _mask_meta_array.resize(_mask_writers.size());
+    for (int i = 0; i < _mask_writers.size(); i++) {
+        const MaskWriter& w = _mask_writers[i];
+        _mask_meta_array[i] = Vector4((float)w.draw_rank, (float)w.bit,
+                                      w.op_invert ? 1.0f : 0.0f, w.is_clipping ? 1.0f : 0.0f);
+        if (w.is_clipping) {
+            if (_mask_min_clip_slot < 0.0f || (float)w.draw_rank < _mask_min_clip_slot) {
+                _mask_min_clip_slot = (float)w.draw_rank;
+            }
+        } else if ((float)w.draw_rank > _mask_max_mask_slot) {
+            _mask_max_mask_slot = (float)w.draw_rank;
+        }
+    }
+    _mask_coverage_valid = true;
+}
+
+bool SsInternalPlayer::_part_in_mask_scope(uint16_t rank) const {
+    const float r = (float)rank;
+    if (_mask_max_mask_slot >= 0.0f && r < _mask_max_mask_slot) return true;
+    if (_mask_min_clip_slot >= 0.0f && r > _mask_min_clip_slot) return true;
+    return false;
+}
+
+bool SsInternalPlayer::_is_pure_mask_part(int p_idx) const {
+    for (int i = 0; i < _mask_writers.size(); i++) {
+        if (_mask_writers[i].part_index == p_idx) return !_mask_writers[i].is_clipping;
+    }
+    return false;
+}
+
+void SsInternalPlayer::_apply_mask_uniforms(Ref<ShaderMaterial> mat, uint16_t rank, bool visible_inside) {
+    mat->set_shader_parameter("ss_mask_enabled", true);
+    mat->set_shader_parameter("ss_mask_uv_xform", _mask_uv_xform);
+    mat->set_shader_parameter("ss_mask_count", (int)_mask_writers.size());
+    mat->set_shader_parameter("ss_mask_meta", _mask_meta_array);
+    mat->set_shader_parameter("ss_mask_rank", (float)rank);
+    mat->set_shader_parameter("ss_mask_visible_inside", visible_inside ? 1.0f : 0.0f);
+    if (_mask_coverage_tex.is_valid()) {
+        // Bind the coverage viewport's texture (RID) to the sampler uniform.
+        RenderingServer::get_singleton()->material_set_param(mat->get_rid(), "ss_mask_coverage", _mask_coverage_tex);
+    }
+}
+
 void SsInternalPlayer::_drawAnimation(float frame_no, float delta_seconds, bool parent_looped) {
     unsigned char* data = nullptr;
     uintptr_t len = 0;
@@ -733,6 +1075,13 @@ void SsInternalPlayer::_drawAnimation(float frame_no, float delta_seconds, bool 
         }
     }
 
+    // CBP masking: collect this frame's mask writers, then render the coverage
+    // bitmap. The top-root player owns the mask state (instance children are
+    // masked by it in P3), so only render coverage when not parent-driven.
+    if (_build_mask_writers(f) && !_parent_driven) {
+        _render_mask_coverage(f);
+    }
+
     const uint16_t* draw_order_data = draw_order->data();
     const uint32_t batch_count = draw_batches->size();
 
@@ -756,6 +1105,9 @@ void SsInternalPlayer::_drawAnimation(float frame_no, float delta_seconds, bool 
         }
     }
 
+    // Per-frame draw-order counter: batch CIs and per-part CIs draw in the
+    // order they are emitted (rank order), not in CI-pool allocation order.
+    _draw_seq = 0;
     for (uint32_t bi = 0; bi < batch_count; bi++) {
         const auto* batch = draw_batches->Get(bi);
         RID ci = _ensure_batch_ci((int)bi);
@@ -773,9 +1125,16 @@ void SsInternalPlayer::_drawAnimation(float frame_no, float delta_seconds, bool 
         // Using global z_index would cause character parts to interleave with
         // other nodes in the scene. Tree order (child index) is not usable here
         // because our CI pool is reused and ordering is fixed at allocation.
-        f.rs->canvas_item_set_draw_index(ci, (int)bi);
+        f.rs->canvas_item_set_draw_index(ci, _draw_seq++);
 
         const auto kind = batch->kind();
+        // Pure masks feed only the coverage bitmap and must not draw their own
+        // colour (PartTypeMask has no draw branch below; this also suppresses
+        // shape/text/nines *_mask color draws so they read as holes, not fills).
+        if (_mask_coverage_valid && batch->count() > 0
+            && _is_pure_mask_part((int)draw_order_data[batch->start_rank()])) {
+            continue;
+        }
         if (kind == ss::runtime::DrawBatchKind_Normal) {
             _emit_normal_batch(f, ci, batch, draw_order_data);
         } else if (kind == ss::runtime::DrawBatchKind_Shape) {
@@ -1364,6 +1723,7 @@ RID SsInternalPlayer::_acquire_per_part_canvas_item() {
     }
     RID ci = _per_part_canvas_items[_per_part_canvas_items_in_use++];
     rs->canvas_item_set_visible(ci, true);
+    rs->canvas_item_set_draw_index(ci, _draw_seq++);
     return ci;
 }
 
@@ -1652,6 +2012,8 @@ void SsInternalPlayer::_emit_normal_batch(const DrawFrame& f, RID ci,
     _per_part_normal_custom0.resize(MAX_VERTICES_COUNT * 4);
     _per_part_normal_indices.resize(INDICES_COUNT_PENTAGON);
 
+    const bool masking_active = _mask_coverage_valid;
+
     for (uint16_t k = 0; k < count; k++) {
         int p_idx = (int)draw_order_data[batch->start_rank() + k];
         if (p_idx < 0 || p_idx >= (int)_parts_by_idx.size()) continue;
@@ -1664,8 +2026,30 @@ void SsInternalPlayer::_emit_normal_batch(const DrawFrame& f, RID ci,
         }
         if (!drawing_m) continue;
 
+        // CBP masking: parts inside an active writer's scope must run the mask
+        // test, which needs per-part uniforms (rank / polarity) — so force the
+        // per-part path for them even when their shader is otherwise batchable.
+        // visible_inside_mask parts draw ONLY inside a mask, so they must run the
+        // test even when out of scope. A part opts OUT of masking entirely with
+        // mask_influence=0 (SS "not affected by mask"); write_mask clipping parts
+        // are always treated as affected (their mask_influence encodes the op).
+        const uint16_t rank = (uint16_t)(batch->start_rank() + k);
+        bool vis_inside = false;
+        bool mask_target = false;
+        if (masking_active) {
+            auto pm = f.binary ? f.binary->parts() : nullptr;
+            if (pm && p_idx >= 0 && p_idx < (int)pm->size()) {
+                const auto* pdv = pm->Get(p_idx);
+                if (pdv) {
+                    vis_inside = pdv->visible_inside_mask();
+                    mask_target = pdv->mask_influence() || pdv->mask_write();
+                }
+            }
+        }
+        const bool masked = masking_active && mask_target && (_part_in_mask_scope(rank) || vis_inside);
+
         PartShaderInfo psi = _resolve_part_shader_info(f, part);
-        if (psi.is_per_part) {
+        if (psi.is_per_part || masked) {
             // Per-part path: build into the small scratch buffers (vbase=0),
             // acquire dedicated canvas_item + ShaderMaterial, emit one mesh.
             const int vc = _build_normal(f, p_idx, part, drawing_m, inv_tex_size,
@@ -1696,6 +2080,12 @@ void SsInternalPlayer::_emit_normal_batch(const DrawFrame& f, RID ci,
             Ref<ShaderMaterial> mat = _acquire_per_part_material(psi.id_hash, ssab_blend);
             const Vector4 cell_rect = _resolve_cell_rect_uv(f, p_idx, inv_tex_size);
             _apply_per_part_uniforms(mat, psi.params, psi.map0, psi.map1, cell_rect);
+            if (masked) {
+                _apply_mask_uniforms(mat, rank, vis_inside);
+            } else {
+                // Reuse of a pooled material — make sure masking is off.
+                mat->set_shader_parameter("ss_mask_enabled", false);
+            }
             rs->canvas_item_set_material(part_ci, mat->get_rid());
             rs->canvas_item_set_transform(part_ci, Transform2D());
             _emit_partcolor_mesh(rs, part_ci,
@@ -1837,6 +2227,7 @@ void SsInternalPlayer::_emit_mesh_batch(const DrawFrame& f, RID ci,
     const auto ssab_blend = (ss::format::BlendType)batch->blend_type();
     const RID tex_rid = tex->get_rid();
     bool batch_material_applied = false;
+    const bool masking_active = _mask_coverage_valid;
 
     for (uint16_t k = 0; k < count; k++) {
         int p_idx = (int)draw_order_data[batch->start_rank() + k];
@@ -1846,12 +2237,34 @@ void SsInternalPlayer::_emit_mesh_batch(const DrawFrame& f, RID ci,
 
         if (!_build_mesh_geometry(f, p_idx, part, inv_tex_size, _mesh_buf)) continue;
 
+        // CBP masking: a masked target must run the mask test. A part opts out
+        // with mask_influence=0; write_mask clipping parts are always affected.
+        const uint16_t rank = (uint16_t)(batch->start_rank() + k);
+        bool vis_inside = false;
+        bool mask_target = false;
+        if (masking_active) {
+            auto pm = f.binary ? f.binary->parts() : nullptr;
+            if (pm && p_idx >= 0 && p_idx < (int)pm->size()) {
+                const auto* pdv = pm->Get(p_idx);
+                if (pdv) {
+                    vis_inside = pdv->visible_inside_mask();
+                    mask_target = pdv->mask_influence() || pdv->mask_write();
+                }
+            }
+        }
+        const bool masked = masking_active && mask_target && (_part_in_mask_scope(rank) || vis_inside);
+
         PartShaderInfo psi = _resolve_part_shader_info(f, part);
-        if (psi.is_per_part) {
+        if (psi.is_per_part || masked) {
             RID part_ci = _acquire_per_part_canvas_item();
             Ref<ShaderMaterial> mat = _acquire_per_part_material(psi.id_hash, ssab_blend);
             const Vector4 cell_rect = _resolve_cell_rect_uv(f, p_idx, inv_tex_size);
             _apply_per_part_uniforms(mat, psi.params, psi.map0, psi.map1, cell_rect);
+            if (masked) {
+                _apply_mask_uniforms(mat, rank, vis_inside);
+            } else {
+                mat->set_shader_parameter("ss_mask_enabled", false);
+            }
             f.rs->canvas_item_set_material(part_ci, mat->get_rid());
             _emit_partcolor_mesh(f.rs, part_ci, _mesh_buf.indices, _mesh_buf.verts,
                                  _mesh_buf.colors, _mesh_buf.uvs, _mesh_buf.custom0,
