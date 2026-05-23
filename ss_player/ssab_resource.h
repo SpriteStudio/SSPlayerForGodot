@@ -48,6 +48,7 @@ public:
   const uint8_t *get_data_ptr();
   int64_t get_data_size();
   ss::format::AnimationData *find_animation(const String &name);
+  ss::format::AnimationData *find_animation_by_hash(uint32_t name_hash);
   String get_parent_dir() const;
 
 #ifndef SPRITESTUDIO_GODOT_EXTENSION

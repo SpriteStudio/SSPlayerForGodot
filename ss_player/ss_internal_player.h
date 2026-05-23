@@ -99,6 +99,7 @@ public:
     void setSSABResource(const Ref<SSABResource>& p_res);
     Ref<SSABResource> getSSABResource() const { return _ssabRes; }
     void setAnimation(const String& p_name);
+    void setAnimationByHash(uint32_t p_hash);
     String getAnimation() const { return _strAnimationSelected; }
     // Cached AnimationData* for the currently selected animation. Null until
     // setAnimation+_fetchAnimation succeed; lets callers skip a redundant
@@ -268,6 +269,7 @@ private:
     Vector<RID> _batch_canvas_items;
     LocalVector<const ss::runtime::PartState*> _parts_by_idx;
     String _strAnimationSelected;
+    uint32_t _animationSelectedHash = 0;
     const ss::format::AnimationData* _currentAnimationData = nullptr;
     void* runtime_ctx = nullptr;
     void* runtime_res = nullptr;
@@ -612,7 +614,7 @@ private:
     void _seek_and_redraw(float frame_no, float delta_seconds, bool parent_looped);
 
     void _load_external_ssabs();
-    String _resolve_animation_by_hash(uint32_t name_hash, Ref<SSABResource>& out_source) const;
+    Ref<SSABResource> _resolve_ssab_by_hash(uint32_t name_hash) const;
     void _apply_blend_material(RenderingServer* rs, RID ci, ss::format::BlendType blend_type);
     // ShaderMaterial variant for Normal and Mesh batches. PartColor is handled
     // in the shader (per-vertex CUSTOM0 carries rate / blend_idx / pma flag).
