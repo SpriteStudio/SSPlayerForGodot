@@ -50,6 +50,16 @@ bool ss_mask_passes() {
     if (!ss_mask_enabled || ss_mask_count <= 0) {
         return true;
     }
+    // The coverage bitmap only spans the mask writers' bounding box. A fragment
+    // outside it (uv beyond [0,1]) is covered by no writer, so it must not be
+    // masked. Without this, filter_nearest + edge clamp smear an edge writer's
+    // bits across everything beyond the bbox — and the bbox shrinks/grows with
+    // the writer set, so e.g. toggling one writer's mask_write would spuriously
+    // clip parts drawn outside the remaining writers' extent.
+    if (ss_mask_uv.x < 0.0 || ss_mask_uv.x > 1.0 || ss_mask_uv.y < 0.0 || ss_mask_uv.y > 1.0) {
+        // masked_state = false: visible_inside=0 draws, visible_inside=1 discards.
+        return ss_mask_visible_inside <= 0.5;
+    }
     vec4 cov = texture(ss_mask_coverage, ss_mask_uv);
     int byte0 = int(cov.r * 255.0 + 0.5);
     int byte1 = int(cov.g * 255.0 + 0.5);
