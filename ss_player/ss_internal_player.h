@@ -338,6 +338,61 @@ private:
         const float* mesh_uvs;               uintptr_t mesh_uvs_len;
         const int32_t* mesh_indices;         uintptr_t mesh_indices_len;
         const uint32_t* mesh_index_offsets;  uintptr_t mesh_index_offsets_len;
+
+        inline const float* get_world_matrix(int p_idx) const {
+            constexpr int FLOATS_PER_MATRIX = 16;
+            if (world_matrices && (uintptr_t)p_idx * FLOATS_PER_MATRIX < world_matrices_len) {
+                return world_matrices + (p_idx * FLOATS_PER_MATRIX);
+            }
+            return nullptr;
+        }
+
+        inline const float* get_cell_meta(int p_idx) const {
+            constexpr int STRIDE = 6;
+            if (cell_meta && (uintptr_t)p_idx * STRIDE + STRIDE <= cell_meta_len) {
+                return cell_meta + (p_idx * STRIDE);
+            }
+            return nullptr;
+        }
+
+        inline const float* get_local_uvs(int p_idx) const {
+            constexpr int STRIDE = 10;
+            if (local_uvs && (uintptr_t)p_idx * STRIDE + STRIDE <= local_uvs_len) {
+                return local_uvs + (p_idx * STRIDE);
+            }
+            return nullptr;
+        }
+
+        inline const float* get_local_vertices(int p_idx) const {
+            constexpr int STRIDE = 10;
+            if (local_vertices && (uintptr_t)p_idx * STRIDE + STRIDE <= local_vertices_len) {
+                return local_vertices + (p_idx * STRIDE);
+            }
+            return nullptr;
+        }
+
+        inline const float* get_shape_vertices(int p_idx) const {
+            constexpr int STRIDE = 24;
+            if (shape_vertices && (uintptr_t)p_idx * STRIDE + STRIDE <= shape_vertices_len) {
+                return shape_vertices + (p_idx * STRIDE);
+            }
+            return nullptr;
+        }
+
+        inline const float* get_shape_box_coords(int p_idx) const {
+            constexpr int STRIDE = 24;
+            if (shape_box_coords && (uintptr_t)p_idx * STRIDE + STRIDE <= shape_box_coords_len) {
+                return shape_box_coords + (p_idx * STRIDE);
+            }
+            return nullptr;
+        }
+
+        inline int32_t get_shape_vertex_count(int p_idx) const {
+            if (shape_vertex_counts && (uintptr_t)p_idx < shape_vertex_counts_len) {
+                return shape_vertex_counts[p_idx];
+            }
+            return 0;
+        }
     };
 
     // Shape batches share the shader pipeline with Normal/Mesh. Without a
