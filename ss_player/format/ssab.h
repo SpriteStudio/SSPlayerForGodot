@@ -2093,8 +2093,9 @@ struct Cell FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
     VT_RECTANGLE = 8,
     VT_PIVOT = 10,
     VT_ROTATED = 12,
-    VT_TABLE_COORDINATE = 14,
-    VT_TABLE_INDEX_VERTEX = 16
+    VT_TABLE_COORD_X = 14,
+    VT_TABLE_COORD_Y = 16,
+    VT_TABLE_INDEX_VERTEX = 18
   };
   uint32_t name_hash() const {
     return GetField<uint32_t>(VT_NAME_HASH, 0);
@@ -2117,8 +2118,11 @@ struct Cell FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   bool rotated() const {
     return GetField<uint8_t>(VT_ROTATED, 0) != 0;
   }
-  const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::Vec2>> *table_coordinate() const {
-    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::Vec2>> *>(VT_TABLE_COORDINATE);
+  const ::flatbuffers::Vector<float> *table_coord_x() const {
+    return GetPointer<const ::flatbuffers::Vector<float> *>(VT_TABLE_COORD_X);
+  }
+  const ::flatbuffers::Vector<float> *table_coord_y() const {
+    return GetPointer<const ::flatbuffers::Vector<float> *>(VT_TABLE_COORD_Y);
   }
   const ::flatbuffers::Vector<uint16_t> *table_index_vertex() const {
     return GetPointer<const ::flatbuffers::Vector<uint16_t> *>(VT_TABLE_INDEX_VERTEX);
@@ -2134,9 +2138,10 @@ struct Cell FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyOffset(verifier, VT_PIVOT) &&
            verifier.VerifyTable(pivot()) &&
            VerifyField<uint8_t>(verifier, VT_ROTATED, 1) &&
-           VerifyOffset(verifier, VT_TABLE_COORDINATE) &&
-           verifier.VerifyVector(table_coordinate()) &&
-           verifier.VerifyVectorOfTables(table_coordinate()) &&
+           VerifyOffset(verifier, VT_TABLE_COORD_X) &&
+           verifier.VerifyVector(table_coord_x()) &&
+           VerifyOffset(verifier, VT_TABLE_COORD_Y) &&
+           verifier.VerifyVector(table_coord_y()) &&
            VerifyOffset(verifier, VT_TABLE_INDEX_VERTEX) &&
            verifier.VerifyVector(table_index_vertex()) &&
            verifier.EndTable();
@@ -2162,8 +2167,11 @@ struct CellBuilder {
   void add_rotated(bool rotated) {
     fbb_.AddElement<uint8_t>(Cell::VT_ROTATED, static_cast<uint8_t>(rotated), 0);
   }
-  void add_table_coordinate(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::Vec2>>> table_coordinate) {
-    fbb_.AddOffset(Cell::VT_TABLE_COORDINATE, table_coordinate);
+  void add_table_coord_x(::flatbuffers::Offset<::flatbuffers::Vector<float>> table_coord_x) {
+    fbb_.AddOffset(Cell::VT_TABLE_COORD_X, table_coord_x);
+  }
+  void add_table_coord_y(::flatbuffers::Offset<::flatbuffers::Vector<float>> table_coord_y) {
+    fbb_.AddOffset(Cell::VT_TABLE_COORD_Y, table_coord_y);
   }
   void add_table_index_vertex(::flatbuffers::Offset<::flatbuffers::Vector<uint16_t>> table_index_vertex) {
     fbb_.AddOffset(Cell::VT_TABLE_INDEX_VERTEX, table_index_vertex);
@@ -2186,11 +2194,13 @@ inline ::flatbuffers::Offset<Cell> CreateCell(
     ::flatbuffers::Offset<ss::format::Rect> rectangle = 0,
     ::flatbuffers::Offset<ss::format::Vec2> pivot = 0,
     bool rotated = false,
-    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::Vec2>>> table_coordinate = 0,
+    ::flatbuffers::Offset<::flatbuffers::Vector<float>> table_coord_x = 0,
+    ::flatbuffers::Offset<::flatbuffers::Vector<float>> table_coord_y = 0,
     ::flatbuffers::Offset<::flatbuffers::Vector<uint16_t>> table_index_vertex = 0) {
   CellBuilder builder_(_fbb);
   builder_.add_table_index_vertex(table_index_vertex);
-  builder_.add_table_coordinate(table_coordinate);
+  builder_.add_table_coord_y(table_coord_y);
+  builder_.add_table_coord_x(table_coord_x);
   builder_.add_pivot(pivot);
   builder_.add_rectangle(rectangle);
   builder_.add_name(name);
@@ -2206,10 +2216,12 @@ inline ::flatbuffers::Offset<Cell> CreateCellDirect(
     ::flatbuffers::Offset<ss::format::Rect> rectangle = 0,
     ::flatbuffers::Offset<ss::format::Vec2> pivot = 0,
     bool rotated = false,
-    const std::vector<::flatbuffers::Offset<ss::format::Vec2>> *table_coordinate = nullptr,
+    const std::vector<float> *table_coord_x = nullptr,
+    const std::vector<float> *table_coord_y = nullptr,
     const std::vector<uint16_t> *table_index_vertex = nullptr) {
   auto name__ = name ? _fbb.CreateString(name) : 0;
-  auto table_coordinate__ = table_coordinate ? _fbb.CreateVector<::flatbuffers::Offset<ss::format::Vec2>>(*table_coordinate) : 0;
+  auto table_coord_x__ = table_coord_x ? _fbb.CreateVector<float>(*table_coord_x) : 0;
+  auto table_coord_y__ = table_coord_y ? _fbb.CreateVector<float>(*table_coord_y) : 0;
   auto table_index_vertex__ = table_index_vertex ? _fbb.CreateVector<uint16_t>(*table_index_vertex) : 0;
   return ss::format::CreateCell(
       _fbb,
@@ -2218,7 +2230,8 @@ inline ::flatbuffers::Offset<Cell> CreateCellDirect(
       rectangle,
       pivot,
       rotated,
-      table_coordinate__,
+      table_coord_x__,
+      table_coord_y__,
       table_index_vertex__);
 }
 
@@ -4330,11 +4343,15 @@ inline ::flatbuffers::Offset<PartAttributeEffect> CreatePartAttributeEffect(
 struct PartAttributeDeform FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   typedef PartAttributeDeformBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
-    VT_COORDINATE = 4,
-    VT_INDEX = 6
+    VT_COORD_X = 4,
+    VT_COORD_Y = 6,
+    VT_INDEX = 8
   };
-  const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::Vec2>> *coordinate() const {
-    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::Vec2>> *>(VT_COORDINATE);
+  const ::flatbuffers::Vector<float> *coord_x() const {
+    return GetPointer<const ::flatbuffers::Vector<float> *>(VT_COORD_X);
+  }
+  const ::flatbuffers::Vector<float> *coord_y() const {
+    return GetPointer<const ::flatbuffers::Vector<float> *>(VT_COORD_Y);
   }
   const ::flatbuffers::Vector<int16_t> *index() const {
     return GetPointer<const ::flatbuffers::Vector<int16_t> *>(VT_INDEX);
@@ -4342,9 +4359,10 @@ struct PartAttributeDeform FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Tabl
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyOffset(verifier, VT_COORDINATE) &&
-           verifier.VerifyVector(coordinate()) &&
-           verifier.VerifyVectorOfTables(coordinate()) &&
+           VerifyOffset(verifier, VT_COORD_X) &&
+           verifier.VerifyVector(coord_x()) &&
+           VerifyOffset(verifier, VT_COORD_Y) &&
+           verifier.VerifyVector(coord_y()) &&
            VerifyOffset(verifier, VT_INDEX) &&
            verifier.VerifyVector(index()) &&
            verifier.EndTable();
@@ -4355,8 +4373,11 @@ struct PartAttributeDeformBuilder {
   typedef PartAttributeDeform Table;
   ::flatbuffers::FlatBufferBuilder &fbb_;
   ::flatbuffers::uoffset_t start_;
-  void add_coordinate(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::Vec2>>> coordinate) {
-    fbb_.AddOffset(PartAttributeDeform::VT_COORDINATE, coordinate);
+  void add_coord_x(::flatbuffers::Offset<::flatbuffers::Vector<float>> coord_x) {
+    fbb_.AddOffset(PartAttributeDeform::VT_COORD_X, coord_x);
+  }
+  void add_coord_y(::flatbuffers::Offset<::flatbuffers::Vector<float>> coord_y) {
+    fbb_.AddOffset(PartAttributeDeform::VT_COORD_Y, coord_y);
   }
   void add_index(::flatbuffers::Offset<::flatbuffers::Vector<int16_t>> index) {
     fbb_.AddOffset(PartAttributeDeform::VT_INDEX, index);
@@ -4374,23 +4395,28 @@ struct PartAttributeDeformBuilder {
 
 inline ::flatbuffers::Offset<PartAttributeDeform> CreatePartAttributeDeform(
     ::flatbuffers::FlatBufferBuilder &_fbb,
-    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::Vec2>>> coordinate = 0,
+    ::flatbuffers::Offset<::flatbuffers::Vector<float>> coord_x = 0,
+    ::flatbuffers::Offset<::flatbuffers::Vector<float>> coord_y = 0,
     ::flatbuffers::Offset<::flatbuffers::Vector<int16_t>> index = 0) {
   PartAttributeDeformBuilder builder_(_fbb);
   builder_.add_index(index);
-  builder_.add_coordinate(coordinate);
+  builder_.add_coord_y(coord_y);
+  builder_.add_coord_x(coord_x);
   return builder_.Finish();
 }
 
 inline ::flatbuffers::Offset<PartAttributeDeform> CreatePartAttributeDeformDirect(
     ::flatbuffers::FlatBufferBuilder &_fbb,
-    const std::vector<::flatbuffers::Offset<ss::format::Vec2>> *coordinate = nullptr,
+    const std::vector<float> *coord_x = nullptr,
+    const std::vector<float> *coord_y = nullptr,
     const std::vector<int16_t> *index = nullptr) {
-  auto coordinate__ = coordinate ? _fbb.CreateVector<::flatbuffers::Offset<ss::format::Vec2>>(*coordinate) : 0;
+  auto coord_x__ = coord_x ? _fbb.CreateVector<float>(*coord_x) : 0;
+  auto coord_y__ = coord_y ? _fbb.CreateVector<float>(*coord_y) : 0;
   auto index__ = index ? _fbb.CreateVector<int16_t>(*index) : 0;
   return ss::format::CreatePartAttributeDeform(
       _fbb,
-      coordinate__,
+      coord_x__,
+      coord_y__,
       index__);
 }
 
