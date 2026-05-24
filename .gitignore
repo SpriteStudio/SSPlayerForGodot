@@ -8,6 +8,7 @@ compile_commands.json
 /ss_player/gen
 /ss_player/runtime/include
 /ss_player/runtime/libs
+/ss_player/runtime/*.md
 /examples/dev_gdextension/ssab_generated
 /examples/dev_module/ssab_generated
 /examples/*/addons/spritestudio

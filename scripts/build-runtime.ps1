@@ -88,6 +88,20 @@ New-Item -ItemType Directory -Path $INCLUDE_OUTPUT -Force | Out-Null
 Copy-Item "$SDK_DIR/libs/ssconverter/target/ssconverter.h" "$INCLUDE_OUTPUT/" -Force
 Copy-Item "$SDK_DIR/libs/ssruntime/target/ssruntime.h" "$INCLUDE_OUTPUT/" -Force
 
+# 1.5. Collect Licenses
+$RUNTIME_OUTPUT = "$rootDirectory/ss_player/runtime"
+if (Test-Path "$SDK_DIR/LICENSE.md") {
+    Copy-Item "$SDK_DIR/LICENSE.md" "$RUNTIME_OUTPUT/" -Force
+}
+if (Test-Path "$SDK_DIR/libs/ssruntime/DEPENDENCIES.md") {
+    Copy-Item "$SDK_DIR/libs/ssruntime/DEPENDENCIES.md" "$RUNTIME_OUTPUT/ssruntime-THIRD-PARTY-LICENSES.md" -Force
+}
+if ($PLATFORM -eq "macos" -or $PLATFORM -eq "windows" -or $PLATFORM -eq "linux") {
+    if (Test-Path "$SDK_DIR/libs/ssconverter/DEPENDENCIES.md") {
+        Copy-Item "$SDK_DIR/libs/ssconverter/DEPENDENCIES.md" "$RUNTIME_OUTPUT/ssconverter-THIRD-PARTY-LICENSES.md" -Force
+    }
+}
+
 # 2. Collect Libraries
 if ($PLATFORM -eq "macos" -or $PLATFORM -eq "ios" -or $PLATFORM -eq "web") {
     $LIB_OUTPUT = "$rootDirectory/ss_player/runtime/libs/$PLATFORM"

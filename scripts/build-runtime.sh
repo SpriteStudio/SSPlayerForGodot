@@ -137,6 +137,13 @@ if [[ "$PLATFORM" == "macos" || "$PLATFORM" == "windows" || "$PLATFORM" == "linu
     cp ${SDK_DIR}/libs/ssconverter/target/ssconverter.h ${RUNTIME_DIR}/include/
 fi
 
+# Licenses
+cp ${SDK_DIR}/LICENSE.md ${RUNTIME_DIR}/
+cp ${SDK_DIR}/libs/ssruntime/DEPENDENCIES.md ${RUNTIME_DIR}/ssruntime-THIRD-PARTY-LICENSES.md
+if [[ "$PLATFORM" == "macos" || "$PLATFORM" == "windows" || "$PLATFORM" == "linux" ]]; then
+    cp ${SDK_DIR}/libs/ssconverter/DEPENDENCIES.md ${RUNTIME_DIR}/ssconverter-THIRD-PARTY-LICENSES.md
+fi
+
 # Libs Destination
 if [[ "$PLATFORM" == "macos" || "$PLATFORM" == "ios" || "$PLATFORM" == "web" ]]; then
     LIB_OUT_DIR=${RUNTIME_DIR}/libs/${PLATFORM}
