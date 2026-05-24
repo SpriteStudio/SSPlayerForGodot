@@ -1354,7 +1354,7 @@ int SsInternalPlayer::_build_normal(const DrawFrame& f, int p_idx,
     int blend_idx = 0;
 
     const auto partColorIndex = part->part_color();
-    if ((flags & ss::runtime::UpdateAttributeFlags_AttributePartColor) && partColorIndex >= 0) {
+    if ((flags & ss::runtime::UpdateAttributeFlags_AttributePartColor) && partColorIndex >= 0 && f.frameData->parts_color() != nullptr) {
         auto pc = f.frameData->parts_color()->Get(partColorIndex);
         // SDK converter has applied SS6-style mediation; ssab fields now carry
         // a consistent semantic regardless of the source (blend_type, target):
@@ -1654,7 +1654,7 @@ bool SsInternalPlayer::_build_shape_geometry(const DrawFrame& f, int p_idx,
     int blend_idx = 0;
 
     const auto partColorIndex = part->part_color();
-    if ((flags & ss::runtime::UpdateAttributeFlags_AttributePartColor) && partColorIndex >= 0) {
+    if ((flags & ss::runtime::UpdateAttributeFlags_AttributePartColor) && partColorIndex >= 0 && f.frameData->parts_color() != nullptr) {
         auto pc = f.frameData->parts_color()->Get(partColorIndex);
         // SDK-mediated semantic — see _build_normal for the field meanings.
         // Shape paths additionally get the (blend_type == Mix → rgba.a = 255)
@@ -2105,7 +2105,7 @@ bool SsInternalPlayer::_build_mesh_geometry(const DrawFrame& f, int p_idx,
     int blend_idx = 0;
     const uint64_t flags = part->update_flag();
     const auto partColorIndex = part->part_color();
-    if ((flags & ss::runtime::UpdateAttributeFlags_AttributePartColor) && partColorIndex >= 0) {
+    if ((flags & ss::runtime::UpdateAttributeFlags_AttributePartColor) && partColorIndex >= 0 && f.frameData->parts_color() != nullptr) {
         auto pc = f.frameData->parts_color()->Get(partColorIndex);
         auto to_color = [part_alpha](const ss::runtime::SsAttributePartColorKeyValueColor& c) {
             return Color(c.rgba().r()/255.0f, c.rgba().g()/255.0f, c.rgba().b()/255.0f,
