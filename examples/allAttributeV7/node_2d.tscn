@@ -1,9 +1,0 @@
-[gd_scene format=3 uid="uid://dy8r8x0tuhd03"]
-
-[ext_resource type="SSABResource" uid="uid://c0uups0bnn3ed" path="res://ssab_generated/allAttributeV7/cell.ssab" id="1_wtcfe"]
-
-[node name="Node2D" type="Node2D" unique_id=985238581]
-
-[node name="SpriteStudioPlayer2D" type="SpriteStudioPlayer2D" parent="." unique_id=832038944]
-ssab = ExtResource("1_wtcfe")
-animation = "anime_1"
