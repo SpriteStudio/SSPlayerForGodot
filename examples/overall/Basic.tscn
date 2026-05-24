@@ -1,13 +1,14 @@
 [gd_scene format=3 uid="uid://b0y04qjf3x2yw"]
 
-[ext_resource type="SSABResource" uid="uid://djltvw4ppc4d6" path="res://ssab_generated/overall/Basic.ssab" id="1_svhdt"]
+[ext_resource type="SSABResource" uid="uid://buldrj4c1edl7" path="res://ssab_generated/overall/Basic.ssab" id="1_svhdt"]
 
 [node name="Node2D" type="Node2D" unique_id=1493255327]
 
-[node name="SpriteStudioPlayer2D" type="SpriteStudioPlayer2D" parent="." unique_id=156293884]
+[node name="Basic" type="SpriteStudioPlayer2D" parent="." unique_id=662331212]
 ssab = ExtResource("1_svhdt")
-sub_frame_enabled = true
 animation = "anime_1"
 playing = true
+animation_section_start = 0
+animation_section_end = 20
 cellmaps/common = null
 cellmaps/common_2.png = null

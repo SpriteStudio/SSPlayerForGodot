@@ -1,12 +1,14 @@
 [gd_scene format=3 uid="uid://dxr71lkltwqb6"]
 
-[ext_resource type="SSABResource" uid="uid://bmhldd3q7vc4w" path="res://ssab_generated/Ringo/Ringo.ssab" id="1_w6qk1"]
+[ext_resource type="SSABResource" uid="uid://cmjtnhtns0pal" path="res://ssab_generated/Ringo/Ringo.ssab" id="1_w6qk1"]
 
 [node name="Node2D" type="Node2D" unique_id=107841525]
 
-[node name="SpriteStudioPlayer2D" type="SpriteStudioPlayer2D" parent="." unique_id=1083310280]
+[node name="Ringo" type="SpriteStudioPlayer2D" parent="." unique_id=129351898]
 ssab = ExtResource("1_w6qk1")
-sub_frame_enabled = true
 animation = "attack1"
 playing = true
+animation_section_start = 0
+animation_section_end = 19
+sub_frame_enabled = true
 cellmaps/Ringo = null
