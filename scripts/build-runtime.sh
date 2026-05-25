@@ -112,7 +112,7 @@ else
             SRC_DIR="target/$BUILD_MODE"
             ;;
         web)
-            ./scripts/release-wasm.sh $BUILD_MODE
+            ./scripts/release-emscripten.sh $BUILD_MODE
             SRC_DIR="target/wasm32-unknown-unknown/$BUILD_MODE"
             ;;
         windows)
