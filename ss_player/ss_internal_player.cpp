@@ -477,6 +477,55 @@ void SsInternalPlayer::update(float delta_seconds) {
                 }
             }
 
+            if (auto signals_vec = events_per_frame->signals()) {
+                for (uint32_t j = 0; j < signals_vec->size(); j++) {
+                    auto sig_event = signals_vec->Get(j);
+                    if (!sig_event || !sig_event->value()) continue;
+                    auto val = sig_event->value();
+                    if (!val->active() || !val->command_id()) continue;
+
+                    String command = String::utf8(val->command_id()->c_str());
+                    Dictionary value_dict;
+
+                    if (auto params = val->params()) {
+                        for (uint32_t k = 0; k < params->size(); k++) {
+                            auto param = params->Get(k);
+                            if (!param || !param->param_id()) continue;
+                            String p_id = String::utf8(param->param_id()->c_str());
+
+                            switch (param->value_type()) {
+                                case ss::format::SignalCommandParamValue_Bool: {
+                                    if (auto b = param->value_as_Bool()) value_dict[p_id] = b->value();
+                                    break;
+                                }
+                                case ss::format::SignalCommandParamValue_Index: {
+                                    if (auto i = param->value_as_Index()) value_dict[p_id] = i->value();
+                                    break;
+                                }
+                                case ss::format::SignalCommandParamValue_Integer: {
+                                    if (auto i = param->value_as_Integer()) value_dict[p_id] = i->value();
+                                    break;
+                                }
+                                case ss::format::SignalCommandParamValue_Floating: {
+                                    if (auto f = param->value_as_Floating()) value_dict[p_id] = f->value();
+                                    break;
+                                }
+                                case ss::format::SignalCommandParamValue_Text: {
+                                    if (auto t = param->value_as_Text()) {
+                                        if (t->value()) value_dict[p_id] = String::utf8(t->value()->c_str());
+                                    }
+                                    break;
+                                }
+                                default:
+                                    break;
+                            }
+                        }
+                    }
+
+                    if (_event_sink) _event_sink->onSignal(command, value_dict);
+                }
+            }
+
             if (auto audios = events_per_frame->audios()) {
                 // TODO: Audio integration
             }

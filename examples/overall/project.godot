@@ -15,7 +15,7 @@ compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 [application]
 
 config/name="overall"
-run/main_scene="uid://b0y04qjf3x2yw"
+run/main_scene="uid://dnijei7f6aclq"
 config/features=PackedStringArray("4.6", "GL Compatibility")
 config/icon="res://icon.svg"
 
