@@ -75,7 +75,7 @@ if ($IS_HOST_BUILD) {
     } elseif ($PLATFORM -eq "ios" -and $IOS_SIMULATOR -eq "yes") {
         & sh ./scripts/release-ios-sim.sh $BUILD_MODE
     } elseif ($PLATFORM -eq "web") {
-        & sh ./scripts/release-wasm.sh $BUILD_MODE
+        & sh ./scripts/release-emscripten.sh $BUILD_MODE
     } else {
         & sh "./scripts/release-$PLATFORM.sh" $BUILD_MODE
     }
