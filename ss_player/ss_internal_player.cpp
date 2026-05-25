@@ -780,12 +780,8 @@ void SsInternalPlayer::_render_mask_coverage(const DrawFrame& f) {
             uint8_t b = (chan == 2) ? bit_val : 0;
             Color bit_color = Color::from_rgba8(r, g, b, 0);
 
-            // Cutout threshold. Pure masks (PartTypeMask) fade by the MASK
-            // strength attribute (0..255; 0 -> empty). Clipping (write_mask)
-            // writers carry no strength — they clip with the full sprite/mesh
-            // shape (alpha > 0). Shapes have no texture (no_cutout).
             float threshold = no_cutout ? -1.0f
-                            : (w->is_clipping ? 0.0f : (float)(255 - part->mask()) / 255.0f);
+                            : (float)(255 - part->mask()) / 255.0f;
             if (threshold > 1.0f) threshold = 1.0f;
 
             RID mask_ci = _acquire_mask_canvas_item();
