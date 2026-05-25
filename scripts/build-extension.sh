@@ -131,16 +131,19 @@ done
 MAIN_PROJECT="dev_gdextension"
 OTHER_PROJECTS=("overall_gdextension" "Ringo")
 
-# Ensure MAIN_PROJECT has the .gdextension
+# Ensure MAIN_PROJECT has the .gdextension and icons
 /bin/cp misc/spritestudio.gdextension "./examples/${MAIN_PROJECT}/addons/spritestudio/"
+/bin/mkdir -p "./examples/${MAIN_PROJECT}/addons/spritestudio/icons"
+/bin/cp ss_player/icons/icon_*.svg "./examples/${MAIN_PROJECT}/addons/spritestudio/icons/"
 
 # Copy from MAIN_PROJECT to OTHER_PROJECTS
 for project in "${OTHER_PROJECTS[@]}"; do
     DEST_DIR="./examples/${project}/addons/spritestudio"
     /bin/mkdir -p "${DEST_DIR}"
     /bin/cp misc/spritestudio.gdextension "${DEST_DIR}/"
-    echo "Syncing binaries to ${project}..."
+    echo "Syncing binaries and icons to ${project}..."
     /bin/cp -R "./examples/${MAIN_PROJECT}/addons/spritestudio/bin" "${DEST_DIR}/"
+    /bin/cp -R "./examples/${MAIN_PROJECT}/addons/spritestudio/icons" "${DEST_DIR}/"
 done
 
 popd > /dev/null # ${ROOTDIR}
