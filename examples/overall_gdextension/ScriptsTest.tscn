@@ -1,0 +1,67 @@
+[gd_scene format=3 uid="uid://brj1ki824pka4"]
+
+[ext_resource type="SSABResource" uid="uid://da7kedmvis1jr" path="res://ssab_generated/overall/Basic.ssab" id="1_ssab"]
+[ext_resource type="Script" uid="uid://c1jyhx805w0rk" path="res://scripts/start_on_ready.gd" id="2_start"]
+[ext_resource type="Script" uid="uid://b8bwojmg5f6u0" path="res://scripts/ssab_load.gd" id="3_load"]
+[ext_resource type="Script" uid="uid://bk0c7g35mcfef" path="res://scripts/texture_change.gd" id="4_tex"]
+[ext_resource type="Texture2D" uid="uid://cy6hoqru8rsm0" path="res://icon.svg" id="5_icon"]
+[ext_resource type="Script" uid="uid://betpintqx3yii" path="res://scripts/signal.gd" id="6_sig"]
+[ext_resource type="Script" uid="uid://c7lt4qxuuay1c" path="res://scripts/user_data.gd" id="7_user"]
+[ext_resource type="SSABResource" uid="uid://i4f4sui52eom" path="res://ssab_generated/overall/UserData.ssab" id="8_userdata"]
+[ext_resource type="SSABResource" uid="uid://cpspi8jbmhlgt" path="res://ssab_generated/overall/Signal.ssab" id="9_signal"]
+[ext_resource type="SSABResource" uid="uid://bb83irbnvdiwu" path="res://ssab_generated/overall/TextureChange.ssab" id="10_texchange"]
+
+[node name="ScriptsTest" type="Node2D" unique_id=1565974729]
+
+[node name="StartOnReady" type="SpriteStudioPlayer2D" parent="." unique_id=1976356657]
+ssab = ExtResource("1_ssab")
+animation = "anime_1"
+playing = false
+animation_section_start = 0
+animation_section_end = 20
+cellmaps/common = null
+cellmaps/common_2.png = null
+position = Vector2(230, 229)
+script = ExtResource("2_start")
+
+[node name="SsabLoad" type="SpriteStudioPlayer2D" parent="." unique_id=1843681821]
+position = Vector2(700, 229)
+script = ExtResource("3_load")
+
+[node name="TextureChangeNode" type="Node2D" parent="." unique_id=1406501596]
+position = Vector2(86, 452)
+script = ExtResource("4_tex")
+to_texture = ExtResource("5_icon")
+change = true
+
+[node name="SpriteStudioPlayer2D" type="SpriteStudioPlayer2D" parent="TextureChangeNode" unique_id=983116712]
+ssab = ExtResource("10_texchange")
+animation = "anime_1"
+playing = false
+animation_section_start = 0
+animation_section_end = 10
+cellmaps/common = null
+cellmaps/common_2.png = null
+position = Vector2(397, 49)
+
+[node name="SignalTest" type="SpriteStudioPlayer2D" parent="." unique_id=1881612194]
+ssab = ExtResource("9_signal")
+animation = "anime_1"
+playing = true
+animation_section_start = 0
+animation_section_end = 30
+cellmaps/box_00_00 = null
+cellmaps/common_2.png = null
+position = Vector2(758, 526)
+script = ExtResource("6_sig")
+
+[node name="UserDataTest" type="SpriteStudioPlayer2D" parent="." unique_id=961771702]
+ssab = ExtResource("8_userdata")
+animation = "anime_1"
+playing = true
+animation_section_start = 0
+animation_section_end = 10
+cellmaps/common = null
+cellmaps/common_2.png = null
+position = Vector2(1000, 539)
+script = ExtResource("7_user")

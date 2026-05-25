@@ -3,7 +3,7 @@ extends SpriteStudioPlayer2D
 # Example script demonstrating how to dynamically load an .ssab resource,
 # list its animations, and handle the animation_finished signal.
 
-var ssab_paths = ["res://path/to/first.ssab", "res://path/to/second.ssab"]
+var ssab_paths = ["res://ssab_generated/overall/Basic.ssab"]
 var current_index = 0
 
 func _ready():
