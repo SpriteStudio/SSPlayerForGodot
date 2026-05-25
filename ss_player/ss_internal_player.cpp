@@ -295,6 +295,12 @@ bool SsInternalPlayer::isSkipFrames() const {
 
 void SsInternalPlayer::setSubFrameEnabled(bool p_enabled) {
     _sub_frame_enabled = p_enabled;
+    for (uint32_t i = 0; i < _instance_children.size(); i++) {
+        SsInternalPlayer* child = _instance_children[i].player;
+        if (child) {
+            child->setSubFrameEnabled(p_enabled);
+        }
+    }
     if (runtime_ctx) {
         _seek_and_redraw(ss_runtime_get_frame_no(runtime_ctx), 0.0f, false);
     }
@@ -1071,6 +1077,7 @@ void SsInternalPlayer::_setup_instance_children() {
 
         SsInternalPlayer* child = memnew(SsInternalPlayer);
         child->setParentDriven(true);
+        child->setSubFrameEnabled(_sub_frame_enabled);
         // Hand the child the SSAB that actually contains the referenced
         // animation — may be `_ssabRes` itself or an external sibling.
         child->setSSABResource(source);
