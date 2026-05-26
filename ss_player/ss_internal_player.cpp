@@ -821,8 +821,10 @@ void SsInternalPlayer::_render_mask_coverage(const DrawFrame& f) {
     uv.columns[2] = Vector2(-bmin.x / bsize.x, -bmin.y / bsize.y);
     _mask_local_to_uv = uv;
 
-    // Frame mask state consumed by the maskable emit path (P3).
-    _mask_uv_xform = Vector4(1.0f / bsize.x, 1.0f / bsize.y, -bmin.x / bsize.x, -bmin.y / bsize.y);
+    // Frame mask state consumed by the maskable emit path (P3). The
+    // player-local -> coverage UV map is `_mask_local_to_uv` (above); maskable
+    // materials receive it (composed with the slot matrix for Instance children)
+    // via `_set_mask_uv_uniform`.
     _mask_coverage_tex = rs->viewport_get_texture(_mask_viewport);
     _mask_max_mask_slot = -1.0f;
     _mask_min_clip_slot = -1.0f;
@@ -857,9 +859,20 @@ bool SsInternalPlayer::_is_pure_mask_part(int p_idx) const {
     return false;
 }
 
+void SsInternalPlayer::_set_mask_uv_uniform(Ref<ShaderMaterial> mat, const Transform2D& local_to_uv) {
+    if (mat.is_null()) return;
+    // Transform2D::xform(v) = columns[0]*v.x + columns[1]*v.y + columns[2]. The
+    // shader computes uv = (dot(basis.xy, VERTEX), dot(basis.zw, VERTEX)) + off,
+    // so basis row0 = (c0.x, c1.x), row1 = (c0.y, c1.y) and off = origin.
+    mat->set_shader_parameter("ss_mask_uv_basis",
+        Vector4(local_to_uv.columns[0].x, local_to_uv.columns[1].x,
+                local_to_uv.columns[0].y, local_to_uv.columns[1].y));
+    mat->set_shader_parameter("ss_mask_uv_off", local_to_uv.columns[2]);
+}
+
 void SsInternalPlayer::_apply_mask_uniforms(Ref<ShaderMaterial> mat, uint16_t rank, bool visible_inside) {
     mat->set_shader_parameter("ss_mask_enabled", true);
-    mat->set_shader_parameter("ss_mask_uv_xform", _mask_uv_xform);
+    _set_mask_uv_uniform(mat, _mask_local_to_uv);
     mat->set_shader_parameter("ss_mask_count", (int)_mask_writers.size());
     mat->set_shader_parameter("ss_mask_meta", _mask_meta_array);
     mat->set_shader_parameter("ss_mask_rank", (float)rank);
@@ -867,6 +880,43 @@ void SsInternalPlayer::_apply_mask_uniforms(Ref<ShaderMaterial> mat, uint16_t ra
     if (_mask_coverage_tex.is_valid()) {
         // Bind the coverage viewport's texture (RID) to the sampler uniform.
         RenderingServer::get_singleton()->material_set_param(mat->get_rid(), "ss_mask_coverage", _mask_coverage_tex);
+    }
+}
+
+void SsInternalPlayer::_apply_inherited_mask(bool active, RID coverage_tex, const Array& meta,
+                                             int count, const Transform2D& local_to_uv,
+                                             float rank, bool visible_inside) {
+    RenderingServer* rs = RenderingServer::get_singleton();
+    // Walk every material this child handed out this frame — the shared batch
+    // materials (one per shader+blend) and each per-part pool's in-use entries —
+    // and stamp the inherited parent-mask state uniformly. The whole instance
+    // occupies one draw rank in the parent, so a single rank / UV map / coverage
+    // applies to all of the child's geometry. `active == false` resets stale
+    // state left from a frame where the parent mask covered this instance.
+    auto stamp = [&](const Ref<ShaderMaterial>& mat) {
+        if (mat.is_null()) return;
+        if (!active) {
+            mat->set_shader_parameter("ss_mask_enabled", false);
+            return;
+        }
+        mat->set_shader_parameter("ss_mask_enabled", true);
+        _set_mask_uv_uniform(mat, local_to_uv);
+        mat->set_shader_parameter("ss_mask_count", count);
+        mat->set_shader_parameter("ss_mask_meta", meta);
+        mat->set_shader_parameter("ss_mask_rank", rank);
+        mat->set_shader_parameter("ss_mask_visible_inside", visible_inside ? 1.0f : 0.0f);
+        if (coverage_tex.is_valid()) {
+            rs->material_set_param(mat->get_rid(), "ss_mask_coverage", coverage_tex);
+        }
+    };
+    for (KeyValue<uint64_t, Ref<ShaderMaterial>>& kv : _partcolor_materials) {
+        stamp(kv.value);
+    }
+    for (KeyValue<uint64_t, PerPartMaterialPool>& kv : _per_part_material_pools) {
+        PerPartMaterialPool& pool = kv.value;
+        for (int i = 0; i < pool.in_use; i++) {
+            stamp(pool.materials[i]);
+        }
     }
 }
 
@@ -995,7 +1045,7 @@ void SsInternalPlayer::_drawAnimation(float frame_no, float delta_seconds, bool 
             if (!part) continue;
             const float* drawing_m = f.get_world_matrix(p_idx);
             if (!drawing_m) continue;
-            _emit_instance_slot(f, ci, p_idx, drawing_m);
+            _emit_instance_slot(f, ci, p_idx, drawing_m, batch->start_rank());
         } else if (kind == ss::runtime::DrawBatchKind_Effect) {
             int p_idx = (int)draw_order_data[batch->start_rank()];
             const auto* part = (p_idx >= 0 && p_idx < (int)_parts_by_idx.size()) ? _parts_by_idx[p_idx] : nullptr;
@@ -1248,7 +1298,7 @@ void SsInternalPlayer::_seek_and_redraw(float frame_no, float delta_seconds, boo
     _drawAnimation(draw_frame, delta_seconds, parent_looped);
 }
 
-void SsInternalPlayer::_emit_instance_slot(const DrawFrame& /*f*/, RID ci, int p_idx, const float* slot_matrix) {
+void SsInternalPlayer::_emit_instance_slot(const DrawFrame& f, RID ci, int p_idx, const float* slot_matrix, uint16_t rank) {
     if (p_idx < 0 || (uint32_t)p_idx >= _instance_children.size()) return;
     SsInternalPlayer* child = _instance_children[p_idx].player;
     if (!child) return;
@@ -1256,9 +1306,38 @@ void SsInternalPlayer::_emit_instance_slot(const DrawFrame& /*f*/, RID ci, int p
     // Re-parent every frame: the batch CI pool can shuffle as draw_batches
     // ordering changes, so the slot CI for a given Instance part is not
     // guaranteed to be the same RID across frames.
+    const Transform2D slot_xf = matrix_to_transform2d(slot_matrix);
     child->setParentCanvasItem(ci);
-    child->setRootTransform(matrix_to_transform2d(slot_matrix));
+    child->setRootTransform(slot_xf);
     child->setRootVisible(true);
+
+    // CBP masking (P3): when this parent player has an active mask whose scope
+    // spans the Instance part's draw rank, the parent mask must clip the child's
+    // whole sub-animation. Mirror the flat-part gate (mask_influence / mask_write
+    // mark a target; visible_inside_mask runs even out of scope). The child draws
+    // in its own local space, so compose player-local->UV with the slot matrix to
+    // land the child's vertices in the parent's coverage bitmap. `_emit_instance_slot`
+    // runs after the parent's coverage pass and after the child has drawn this
+    // frame, so the child's materials already exist and can be stamped here.
+    bool vis_inside = false;
+    bool mask_target = false;
+    if (_mask_coverage_valid && f.binary && f.binary->parts()
+        && p_idx < (int)f.binary->parts()->size()) {
+        const auto* pdv = f.binary->parts()->Get(p_idx);
+        if (pdv) {
+            vis_inside = pdv->visible_inside_mask();
+            mask_target = pdv->mask_influence() || pdv->mask_write();
+        }
+    }
+    const bool mask_on = _mask_coverage_valid && mask_target
+                         && (_part_in_mask_scope(rank) || vis_inside);
+    if (mask_on) {
+        child->_apply_inherited_mask(true, _mask_coverage_tex, _mask_meta_array,
+                                     (int)_mask_writers.size(),
+                                     _mask_local_to_uv * slot_xf, (float)rank, vis_inside);
+    } else {
+        child->_apply_inherited_mask(false, RID(), Array(), 0, Transform2D(), 0.0f, false);
+    }
 }
 
 void SsInternalPlayer::_emit_effect_slot(const DrawFrame& f, RID ci, int p_idx, const float* slot_matrix) {
