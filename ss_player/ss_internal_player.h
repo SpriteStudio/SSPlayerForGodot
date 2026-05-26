@@ -493,8 +493,7 @@ private:
     void _render_mask_coverage(const DrawFrame& f);
 
     // Frame mask state derived by _render_mask_coverage and consumed when
-    // emitting maskable parts (P3). `_mask_local_to_uv` (above) maps the draw
-    // space to coverage UV. `_mask_meta_array` is one Vec4 per writer:
+    // emitting maskable parts (P3). `_mask_meta_array` is one Vec4 per writer:
     // (draw_rank, bit, op_invert, is_clipping). The two slot bounds bracket
     // which ranks can be affected (Mask: rank < max mask slot; clipping: rank >
     // min clip slot) so out-of-scope parts skip the test.
@@ -508,15 +507,7 @@ private:
     // write_mask (clipping) writers are NOT pure — they draw AND mask.
     bool _is_pure_mask_part(int p_idx) const;
     void _apply_mask_uniforms(Ref<ShaderMaterial> mat, uint16_t rank, bool visible_inside);
-    // Stamp the local->coverage-UV affine (2x2 basis + offset) onto a maskable
-    // material. Flat parts pass `_mask_local_to_uv`; an Instance child passes it
-    // composed with the slot matrix (which may rotate).
     void _set_mask_uv_uniform(Ref<ShaderMaterial> mat, const Transform2D& local_to_uv);
-    // Propagate this (parent) player's active mask onto an Instance child so the
-    // parent's mask clips the child's whole sub-animation. The instance occupies
-    // a single draw rank in the parent, so one rank / UV affine / coverage
-    // applies uniformly to every material the child drew this frame. `active`
-    // false clears any stale inherited mask. Called from `_emit_instance_slot`.
     void _apply_inherited_mask(bool active, RID coverage_tex, const Array& meta,
                                int count, const Transform2D& local_to_uv,
                                float rank, bool visible_inside);

@@ -10,10 +10,7 @@ void vertex() {
         CUSTOM0.z
     );
     partcolor_color = COLOR;
-    // CBP masking: coverage UV from the local vertex position via a 2x2 basis +
-    // offset. Flat parts pass the player-local->UV diagonal; Instance children
-    // fold in their slot matrix (which can rotate), so a per-axis scale is not
-    // enough — the mapping needs a full 2x2.
+    // CBP masking: coverage UV from the player-local vertex position.
     ss_mask_uv = vec2(dot(ss_mask_uv_basis.xy, VERTEX), dot(ss_mask_uv_basis.zw, VERTEX)) + ss_mask_uv_off;
 }
 )GLSL"

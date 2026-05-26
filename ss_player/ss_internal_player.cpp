@@ -132,10 +132,6 @@ RID SsInternalPlayer::_ensure_batch_ci(int batch_idx) {
 void SsInternalPlayer::setSSABResource(const Ref<SSABResource>& ssabRes) {
     _ssabRes = ssabRes;
     _strAnimationSelected = "";
-    // Reset the cached hash too: _fetchAnimation prefers the hash branch when
-    // it is non-zero, so a stale hash from the previous resource would be
-    // looked up in the new SSAB (and fail) instead of resolving the new first
-    // animation by name. See _fetchAnimation's selection order.
     _animationSelectedHash = 0;
 
     if (!_ssabRes.is_null()) {
@@ -826,10 +822,7 @@ void SsInternalPlayer::_render_mask_coverage(const DrawFrame& f) {
     uv.columns[2] = Vector2(-bmin.x / bsize.x, -bmin.y / bsize.y);
     _mask_local_to_uv = uv;
 
-    // Frame mask state consumed by the maskable emit path (P3). The
-    // player-local -> coverage UV map is `_mask_local_to_uv` (above); maskable
-    // materials receive it (composed with the slot matrix for Instance children)
-    // via `_set_mask_uv_uniform`.
+    // Frame mask state consumed by the maskable emit path (P3).
     _mask_coverage_tex = rs->viewport_get_texture(_mask_viewport);
     _mask_max_mask_slot = -1.0f;
     _mask_min_clip_slot = -1.0f;
@@ -866,9 +859,6 @@ bool SsInternalPlayer::_is_pure_mask_part(int p_idx) const {
 
 void SsInternalPlayer::_set_mask_uv_uniform(Ref<ShaderMaterial> mat, const Transform2D& local_to_uv) {
     if (mat.is_null()) return;
-    // Transform2D::xform(v) = columns[0]*v.x + columns[1]*v.y + columns[2]. The
-    // shader computes uv = (dot(basis.xy, VERTEX), dot(basis.zw, VERTEX)) + off,
-    // so basis row0 = (c0.x, c1.x), row1 = (c0.y, c1.y) and off = origin.
     mat->set_shader_parameter("ss_mask_uv_basis",
         Vector4(local_to_uv.columns[0].x, local_to_uv.columns[1].x,
                 local_to_uv.columns[0].y, local_to_uv.columns[1].y));
@@ -892,12 +882,6 @@ void SsInternalPlayer::_apply_inherited_mask(bool active, RID coverage_tex, cons
                                              int count, const Transform2D& local_to_uv,
                                              float rank, bool visible_inside) {
     RenderingServer* rs = RenderingServer::get_singleton();
-    // Walk every material this child handed out this frame — the shared batch
-    // materials (one per shader+blend) and each per-part pool's in-use entries —
-    // and stamp the inherited parent-mask state uniformly. The whole instance
-    // occupies one draw rank in the parent, so a single rank / UV map / coverage
-    // applies to all of the child's geometry. `active == false` resets stale
-    // state left from a frame where the parent mask covered this instance.
     auto stamp = [&](const Ref<ShaderMaterial>& mat) {
         if (mat.is_null()) return;
         if (!active) {
@@ -1316,14 +1300,6 @@ void SsInternalPlayer::_emit_instance_slot(const DrawFrame& f, RID ci, int p_idx
     child->setRootTransform(slot_xf);
     child->setRootVisible(true);
 
-    // CBP masking (P3): when this parent player has an active mask whose scope
-    // spans the Instance part's draw rank, the parent mask must clip the child's
-    // whole sub-animation. Mirror the flat-part gate (mask_influence / mask_write
-    // mark a target; visible_inside_mask runs even out of scope). The child draws
-    // in its own local space, so compose player-local->UV with the slot matrix to
-    // land the child's vertices in the parent's coverage bitmap. `_emit_instance_slot`
-    // runs after the parent's coverage pass and after the child has drawn this
-    // frame, so the child's materials already exist and can be stamped here.
     bool vis_inside = false;
     bool mask_target = false;
     if (_mask_coverage_valid && f.binary && f.binary->parts()

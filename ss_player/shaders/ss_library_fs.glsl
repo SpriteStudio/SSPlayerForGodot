@@ -22,14 +22,14 @@ uniform float ss_param7;
 // Coverage bitmap (offscreen RGBA8 = 32 writer bits), per-frame writer
 // metadata, and this part's rank / polarity. Masking is off by default
 // (ss_mask_enabled == false) so non-masked draws are untouched. `ss_mask_uv`
-// is the fragment's coverage UV, written in the vertex stage from the local
-// position via the `ss_mask_uv_basis` / `ss_mask_uv_off` affine.
+// is the fragment's coverage UV, written in the vertex stage from the
+// player-local position via `ss_mask_uv_basis` / `ss_mask_uv_off`.
 // MUST be nearest: the coverage packs writer bits into the RGBA8 channels, so
 // any linear blending across texels corrupts the per-bit decode (edge halos).
 uniform sampler2D ss_mask_coverage : filter_nearest;
 uniform bool ss_mask_enabled;
-uniform vec4 ss_mask_uv_basis;        // local->coverage-UV 2x2 (row0 = .xy, row1 = .zw)
-uniform vec2 ss_mask_uv_off;          // local->coverage-UV translation
+uniform vec4 ss_mask_uv_basis;        // (basis.xy = row0, basis.zw = row1)
+uniform vec2 ss_mask_uv_off;          // (offset.x, offset.y)
 uniform int ss_mask_count;            // active writer count (0..32)
 uniform vec4 ss_mask_meta[32];        // per writer: (slot, bit, op_invert, is_clipping)
 uniform float ss_mask_rank;           // this part's draw-order rank
