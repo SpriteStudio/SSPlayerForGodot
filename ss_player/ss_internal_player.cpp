@@ -132,6 +132,11 @@ RID SsInternalPlayer::_ensure_batch_ci(int batch_idx) {
 void SsInternalPlayer::setSSABResource(const Ref<SSABResource>& ssabRes) {
     _ssabRes = ssabRes;
     _strAnimationSelected = "";
+    // Reset the cached hash too: _fetchAnimation prefers the hash branch when
+    // it is non-zero, so a stale hash from the previous resource would be
+    // looked up in the new SSAB (and fail) instead of resolving the new first
+    // animation by name. See _fetchAnimation's selection order.
+    _animationSelectedHash = 0;
 
     if (!_ssabRes.is_null()) {
         if (!_ssabRes->is_valid()) {
