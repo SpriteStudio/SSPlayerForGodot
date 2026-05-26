@@ -74,7 +74,7 @@ Error SSQBResource::copy_from(const Ref<Resource> &p_resource) {
 Variant SSQBResourceFormatLoader::_load(const String &path,
                                           const String &original_path,
                                           bool use_sub_threads,
-                                          int32_t cache_mode) {
+                                          int32_t cache_mode) const {
 #else
 Ref<Resource> SSQBResourceFormatLoader::load(
     const String &path, const String &original_path, Error *error,
@@ -98,7 +98,7 @@ Ref<Resource> SSQBResourceFormatLoader::load(
 }
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
-PackedStringArray SSQBResourceFormatLoader::_get_recognized_extensions() {
+PackedStringArray SSQBResourceFormatLoader::_get_recognized_extensions() const {
   PackedStringArray extensions;
   extensions.push_back("ssqb");
   return extensions;
@@ -111,7 +111,7 @@ void SSQBResourceFormatLoader::get_recognized_extensions(
 #endif
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
-String SSQBResourceFormatLoader::_get_resource_type(const String &path) {
+String SSQBResourceFormatLoader::_get_resource_type(const String &path) const {
 #else
 String SSQBResourceFormatLoader::get_resource_type(const String &path) const {
 #endif
@@ -119,7 +119,7 @@ String SSQBResourceFormatLoader::get_resource_type(const String &path) const {
 }
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
-bool SSQBResourceFormatLoader::_handles_type(const StringName &type) {
+bool SSQBResourceFormatLoader::_handles_type(const StringName &type) const {
 #else
 bool SSQBResourceFormatLoader::handles_type(const String &type) const {
 #endif
@@ -141,7 +141,7 @@ Error SSQBResourceFormatSaver::save(const Ref<Resource> &resource,
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
 PackedStringArray SSQBResourceFormatSaver::_get_recognized_extensions(
-    const Ref<Resource> &resource) {
+    const Ref<Resource> &resource) const {
   PackedStringArray extensions;
   if (Object::cast_to<SSQBResource>(*resource)) {
     extensions.push_back("ssqb");
@@ -158,7 +158,7 @@ void SSQBResourceFormatSaver::get_recognized_extensions(
 #endif
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
-bool SSQBResourceFormatSaver::_recognize(const Ref<Resource> &resource) {
+bool SSQBResourceFormatSaver::_recognize(const Ref<Resource> &resource) const {
 #else
 bool SSQBResourceFormatSaver::recognize(const Ref<Resource> &resource) const {
 #endif
