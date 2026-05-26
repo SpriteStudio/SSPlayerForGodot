@@ -224,7 +224,7 @@ Error SSABResource::copy_from(const Ref<Resource> &p_resource) {
 Variant SSABResourceFormatLoader::_load(const String &path,
                                                  const String &original_path,
                                                  bool use_sub_threads,
-                                                 int32_t cache_mode) {
+                                                 int32_t cache_mode) const {
 #else
 Ref<Resource> SSABResourceFormatLoader::load(const String &path,
                                                        const String &original_path,
@@ -250,7 +250,7 @@ Ref<Resource> SSABResourceFormatLoader::load(const String &path,
 }
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
-PackedStringArray SSABResourceFormatLoader::_get_recognized_extensions() {
+PackedStringArray SSABResourceFormatLoader::_get_recognized_extensions() const {
   PackedStringArray extensions;
   extensions.push_back("ssab");
   return extensions;
@@ -262,7 +262,7 @@ void SSABResourceFormatLoader::get_recognized_extensions(List<String> *extension
 #endif
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
-String SSABResourceFormatLoader::_get_resource_type(const String &path) {
+String SSABResourceFormatLoader::_get_resource_type(const String &path) const {
 #else
 String SSABResourceFormatLoader::get_resource_type(const String &path) const {
 #endif
@@ -270,7 +270,7 @@ String SSABResourceFormatLoader::get_resource_type(const String &path) const {
 }
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
-bool SSABResourceFormatLoader::_handles_type(const StringName &type) {
+bool SSABResourceFormatLoader::_handles_type(const StringName &type) const {
 #else
 bool SSABResourceFormatLoader::handles_type(const String &type) const {
 #endif
@@ -288,7 +288,7 @@ Error SSABResourceFormatSaver::save(const Ref<Resource> &resource, const String 
 }
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
-PackedStringArray SSABResourceFormatSaver::_get_recognized_extensions(const Ref<Resource> &resource) {
+PackedStringArray SSABResourceFormatSaver::_get_recognized_extensions(const Ref<Resource> &resource) const {
   PackedStringArray extensions;
   if (Object::cast_to<SSABResource>(*resource)) {
     extensions.push_back("ssab");
@@ -304,7 +304,7 @@ void SSABResourceFormatSaver::get_recognized_extensions(const Ref<Resource> &res
 #endif
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
-bool SSABResourceFormatSaver::_recognize(const Ref<Resource> &resource) {
+bool SSABResourceFormatSaver::_recognize(const Ref<Resource> &resource) const {
 #else
 bool SSABResourceFormatSaver::recognize(const Ref<Resource> &resource) const {
 #endif
