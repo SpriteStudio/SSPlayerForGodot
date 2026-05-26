@@ -13,6 +13,11 @@ using namespace godot;
 // Transparent Control installed as a child of CanvasItemEditorViewport that
 // claims drops of .ssab files and turns them into SpriteStudioPlayer2D nodes.
 //
+// To prevent intercepting standard mouse input (which breaks 2D scene picking
+// and sibling controls), this overlay uses MOUSE_FILTER_IGNORE by default.
+// It listens to NOTIFICATION_DRAG_BEGIN/END to temporarily switch to
+// MOUSE_FILTER_PASS while a drag is active.
+//
 // Non-.ssab drops are explicitly rejected so that Godot's drop walk continues
 // up to the host viewport (which still handles PNG/PackedScene/AudioStream).
 // This relies on Viewport::_gui_drop walking parent CanvasItems when a child
@@ -33,6 +38,9 @@ public:
     bool can_drop_data(const Point2 &p_point, const Variant &p_data) const override;
     void drop_data(const Point2 &p_point, const Variant &p_data) override;
 #endif
+
+protected:
+    void _notification(int p_what);
 
 private:
     PackedStringArray _extract_ssab_paths(const Variant &p_data) const;
