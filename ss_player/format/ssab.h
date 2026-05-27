@@ -8089,27 +8089,32 @@ inline ::flatbuffers::Offset<ExternalTexture> CreateExternalTextureDirect(
 struct ExternalInstance FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   typedef ExternalInstanceBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
-    VT_ANIME_PACK_NAME_HASH = 4,
-    VT_ANIME_PACK_NAME = 6
+    VT_ANIME_PACK_NAME = 4,
+    VT_ANIME_PACK_NAME_HASH = 6,
+    VT_ANIME_NAME = 8,
+    VT_ANIME_NAME_HASH = 10
   };
+  const ::flatbuffers::String *anime_pack_name() const {
+    return GetPointer<const ::flatbuffers::String *>(VT_ANIME_PACK_NAME);
+  }
   uint32_t anime_pack_name_hash() const {
     return GetField<uint32_t>(VT_ANIME_PACK_NAME_HASH, 0);
   }
-  bool KeyCompareLessThan(const ExternalInstance * const o) const {
-    return anime_pack_name_hash() < o->anime_pack_name_hash();
+  const ::flatbuffers::String *anime_name() const {
+    return GetPointer<const ::flatbuffers::String *>(VT_ANIME_NAME);
   }
-  int KeyCompareWithValue(uint32_t _anime_pack_name_hash) const {
-    return static_cast<int>(anime_pack_name_hash() > _anime_pack_name_hash) - static_cast<int>(anime_pack_name_hash() < _anime_pack_name_hash);
-  }
-  const ::flatbuffers::String *anime_pack_name() const {
-    return GetPointer<const ::flatbuffers::String *>(VT_ANIME_PACK_NAME);
+  uint32_t anime_name_hash() const {
+    return GetField<uint32_t>(VT_ANIME_NAME_HASH, 0);
   }
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<uint32_t>(verifier, VT_ANIME_PACK_NAME_HASH, 4) &&
            VerifyOffset(verifier, VT_ANIME_PACK_NAME) &&
            verifier.VerifyString(anime_pack_name()) &&
+           VerifyField<uint32_t>(verifier, VT_ANIME_PACK_NAME_HASH, 4) &&
+           VerifyOffset(verifier, VT_ANIME_NAME) &&
+           verifier.VerifyString(anime_name()) &&
+           VerifyField<uint32_t>(verifier, VT_ANIME_NAME_HASH, 4) &&
            verifier.EndTable();
   }
 };
@@ -8118,11 +8123,17 @@ struct ExternalInstanceBuilder {
   typedef ExternalInstance Table;
   ::flatbuffers::FlatBufferBuilder &fbb_;
   ::flatbuffers::uoffset_t start_;
+  void add_anime_pack_name(::flatbuffers::Offset<::flatbuffers::String> anime_pack_name) {
+    fbb_.AddOffset(ExternalInstance::VT_ANIME_PACK_NAME, anime_pack_name);
+  }
   void add_anime_pack_name_hash(uint32_t anime_pack_name_hash) {
     fbb_.AddElement<uint32_t>(ExternalInstance::VT_ANIME_PACK_NAME_HASH, anime_pack_name_hash, 0);
   }
-  void add_anime_pack_name(::flatbuffers::Offset<::flatbuffers::String> anime_pack_name) {
-    fbb_.AddOffset(ExternalInstance::VT_ANIME_PACK_NAME, anime_pack_name);
+  void add_anime_name(::flatbuffers::Offset<::flatbuffers::String> anime_name) {
+    fbb_.AddOffset(ExternalInstance::VT_ANIME_NAME, anime_name);
+  }
+  void add_anime_name_hash(uint32_t anime_name_hash) {
+    fbb_.AddElement<uint32_t>(ExternalInstance::VT_ANIME_NAME_HASH, anime_name_hash, 0);
   }
   explicit ExternalInstanceBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
@@ -8137,23 +8148,32 @@ struct ExternalInstanceBuilder {
 
 inline ::flatbuffers::Offset<ExternalInstance> CreateExternalInstance(
     ::flatbuffers::FlatBufferBuilder &_fbb,
+    ::flatbuffers::Offset<::flatbuffers::String> anime_pack_name = 0,
     uint32_t anime_pack_name_hash = 0,
-    ::flatbuffers::Offset<::flatbuffers::String> anime_pack_name = 0) {
+    ::flatbuffers::Offset<::flatbuffers::String> anime_name = 0,
+    uint32_t anime_name_hash = 0) {
   ExternalInstanceBuilder builder_(_fbb);
-  builder_.add_anime_pack_name(anime_pack_name);
+  builder_.add_anime_name_hash(anime_name_hash);
+  builder_.add_anime_name(anime_name);
   builder_.add_anime_pack_name_hash(anime_pack_name_hash);
+  builder_.add_anime_pack_name(anime_pack_name);
   return builder_.Finish();
 }
 
 inline ::flatbuffers::Offset<ExternalInstance> CreateExternalInstanceDirect(
     ::flatbuffers::FlatBufferBuilder &_fbb,
+    const char *anime_pack_name = nullptr,
     uint32_t anime_pack_name_hash = 0,
-    const char *anime_pack_name = nullptr) {
+    const char *anime_name = nullptr,
+    uint32_t anime_name_hash = 0) {
   auto anime_pack_name__ = anime_pack_name ? _fbb.CreateString(anime_pack_name) : 0;
+  auto anime_name__ = anime_name ? _fbb.CreateString(anime_name) : 0;
   return ss::format::CreateExternalInstance(
       _fbb,
+      anime_pack_name__,
       anime_pack_name_hash,
-      anime_pack_name__);
+      anime_name__,
+      anime_name_hash);
 }
 
 struct EmbeddedAsset FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
@@ -8423,7 +8443,7 @@ inline ::flatbuffers::Offset<SsAnimeBinary> CreateSsAnimeBinaryDirect(
     std::vector<::flatbuffers::Offset<ss::format::SoundList>> *sound_lists = nullptr,
     std::vector<::flatbuffers::Offset<ss::format::FontBitmap>> *font_bitmaps = nullptr,
     std::vector<::flatbuffers::Offset<ss::format::ExternalTexture>> *external_textures = nullptr,
-    std::vector<::flatbuffers::Offset<ss::format::ExternalInstance>> *external_instances = nullptr,
+    const std::vector<::flatbuffers::Offset<ss::format::ExternalInstance>> *external_instances = nullptr,
     std::vector<::flatbuffers::Offset<ss::format::EmbeddedAsset>> *embedded_assets = nullptr) {
   auto name__ = name ? _fbb.CreateString(name) : 0;
   auto parts__ = parts ? _fbb.CreateVector<::flatbuffers::Offset<ss::format::PartData>>(*parts) : 0;
@@ -8433,7 +8453,7 @@ inline ::flatbuffers::Offset<SsAnimeBinary> CreateSsAnimeBinaryDirect(
   auto sound_lists__ = sound_lists ? _fbb.CreateVectorOfSortedTables<ss::format::SoundList>(sound_lists) : 0;
   auto font_bitmaps__ = font_bitmaps ? _fbb.CreateVectorOfSortedTables<ss::format::FontBitmap>(font_bitmaps) : 0;
   auto external_textures__ = external_textures ? _fbb.CreateVectorOfSortedTables<ss::format::ExternalTexture>(external_textures) : 0;
-  auto external_instances__ = external_instances ? _fbb.CreateVectorOfSortedTables<ss::format::ExternalInstance>(external_instances) : 0;
+  auto external_instances__ = external_instances ? _fbb.CreateVector<::flatbuffers::Offset<ss::format::ExternalInstance>>(*external_instances) : 0;
   auto embedded_assets__ = embedded_assets ? _fbb.CreateVectorOfSortedTables<ss::format::EmbeddedAsset>(embedded_assets) : 0;
   return ss::format::CreateSsAnimeBinary(
       _fbb,
