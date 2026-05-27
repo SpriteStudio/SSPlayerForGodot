@@ -61,23 +61,27 @@ inline const char *EnumNameSequenceType(SequenceType e) {
 struct SequenceItem FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   typedef SequenceItemBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
-    VT_REF_ANIME_PACK = 4,
-    VT_REF_ANIME_PACK_HASH = 6,
-    VT_REF_ANIME = 8,
-    VT_REF_ANIME_HASH = 10,
-    VT_REPEAT_COUNT = 12
+    VT_REF_ANIME_PACK_AND_NAME_HASH = 4,
+    VT_REF_ANIME_PACK = 6,
+    VT_REF_ANIME_PACK_HASH = 8,
+    VT_REF_ANIME_NAME = 10,
+    VT_REF_ANIME_NAME_HASH = 12,
+    VT_REPEAT_COUNT = 14
   };
+  uint32_t ref_anime_pack_and_name_hash() const {
+    return GetField<uint32_t>(VT_REF_ANIME_PACK_AND_NAME_HASH, 0);
+  }
   const ::flatbuffers::String *ref_anime_pack() const {
     return GetPointer<const ::flatbuffers::String *>(VT_REF_ANIME_PACK);
   }
   uint32_t ref_anime_pack_hash() const {
     return GetField<uint32_t>(VT_REF_ANIME_PACK_HASH, 0);
   }
-  const ::flatbuffers::String *ref_anime() const {
-    return GetPointer<const ::flatbuffers::String *>(VT_REF_ANIME);
+  const ::flatbuffers::String *ref_anime_name() const {
+    return GetPointer<const ::flatbuffers::String *>(VT_REF_ANIME_NAME);
   }
-  uint32_t ref_anime_hash() const {
-    return GetField<uint32_t>(VT_REF_ANIME_HASH, 0);
+  uint32_t ref_anime_name_hash() const {
+    return GetField<uint32_t>(VT_REF_ANIME_NAME_HASH, 0);
   }
   int32_t repeat_count() const {
     return GetField<int32_t>(VT_REPEAT_COUNT, 0);
@@ -85,12 +89,13 @@ struct SequenceItem FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
+           VerifyField<uint32_t>(verifier, VT_REF_ANIME_PACK_AND_NAME_HASH, 4) &&
            VerifyOffset(verifier, VT_REF_ANIME_PACK) &&
            verifier.VerifyString(ref_anime_pack()) &&
            VerifyField<uint32_t>(verifier, VT_REF_ANIME_PACK_HASH, 4) &&
-           VerifyOffset(verifier, VT_REF_ANIME) &&
-           verifier.VerifyString(ref_anime()) &&
-           VerifyField<uint32_t>(verifier, VT_REF_ANIME_HASH, 4) &&
+           VerifyOffset(verifier, VT_REF_ANIME_NAME) &&
+           verifier.VerifyString(ref_anime_name()) &&
+           VerifyField<uint32_t>(verifier, VT_REF_ANIME_NAME_HASH, 4) &&
            VerifyField<int32_t>(verifier, VT_REPEAT_COUNT, 4) &&
            verifier.EndTable();
   }
@@ -100,17 +105,20 @@ struct SequenceItemBuilder {
   typedef SequenceItem Table;
   ::flatbuffers::FlatBufferBuilder &fbb_;
   ::flatbuffers::uoffset_t start_;
+  void add_ref_anime_pack_and_name_hash(uint32_t ref_anime_pack_and_name_hash) {
+    fbb_.AddElement<uint32_t>(SequenceItem::VT_REF_ANIME_PACK_AND_NAME_HASH, ref_anime_pack_and_name_hash, 0);
+  }
   void add_ref_anime_pack(::flatbuffers::Offset<::flatbuffers::String> ref_anime_pack) {
     fbb_.AddOffset(SequenceItem::VT_REF_ANIME_PACK, ref_anime_pack);
   }
   void add_ref_anime_pack_hash(uint32_t ref_anime_pack_hash) {
     fbb_.AddElement<uint32_t>(SequenceItem::VT_REF_ANIME_PACK_HASH, ref_anime_pack_hash, 0);
   }
-  void add_ref_anime(::flatbuffers::Offset<::flatbuffers::String> ref_anime) {
-    fbb_.AddOffset(SequenceItem::VT_REF_ANIME, ref_anime);
+  void add_ref_anime_name(::flatbuffers::Offset<::flatbuffers::String> ref_anime_name) {
+    fbb_.AddOffset(SequenceItem::VT_REF_ANIME_NAME, ref_anime_name);
   }
-  void add_ref_anime_hash(uint32_t ref_anime_hash) {
-    fbb_.AddElement<uint32_t>(SequenceItem::VT_REF_ANIME_HASH, ref_anime_hash, 0);
+  void add_ref_anime_name_hash(uint32_t ref_anime_name_hash) {
+    fbb_.AddElement<uint32_t>(SequenceItem::VT_REF_ANIME_NAME_HASH, ref_anime_name_hash, 0);
   }
   void add_repeat_count(int32_t repeat_count) {
     fbb_.AddElement<int32_t>(SequenceItem::VT_REPEAT_COUNT, repeat_count, 0);
@@ -128,35 +136,39 @@ struct SequenceItemBuilder {
 
 inline ::flatbuffers::Offset<SequenceItem> CreateSequenceItem(
     ::flatbuffers::FlatBufferBuilder &_fbb,
+    uint32_t ref_anime_pack_and_name_hash = 0,
     ::flatbuffers::Offset<::flatbuffers::String> ref_anime_pack = 0,
     uint32_t ref_anime_pack_hash = 0,
-    ::flatbuffers::Offset<::flatbuffers::String> ref_anime = 0,
-    uint32_t ref_anime_hash = 0,
+    ::flatbuffers::Offset<::flatbuffers::String> ref_anime_name = 0,
+    uint32_t ref_anime_name_hash = 0,
     int32_t repeat_count = 0) {
   SequenceItemBuilder builder_(_fbb);
   builder_.add_repeat_count(repeat_count);
-  builder_.add_ref_anime_hash(ref_anime_hash);
-  builder_.add_ref_anime(ref_anime);
+  builder_.add_ref_anime_name_hash(ref_anime_name_hash);
+  builder_.add_ref_anime_name(ref_anime_name);
   builder_.add_ref_anime_pack_hash(ref_anime_pack_hash);
   builder_.add_ref_anime_pack(ref_anime_pack);
+  builder_.add_ref_anime_pack_and_name_hash(ref_anime_pack_and_name_hash);
   return builder_.Finish();
 }
 
 inline ::flatbuffers::Offset<SequenceItem> CreateSequenceItemDirect(
     ::flatbuffers::FlatBufferBuilder &_fbb,
+    uint32_t ref_anime_pack_and_name_hash = 0,
     const char *ref_anime_pack = nullptr,
     uint32_t ref_anime_pack_hash = 0,
-    const char *ref_anime = nullptr,
-    uint32_t ref_anime_hash = 0,
+    const char *ref_anime_name = nullptr,
+    uint32_t ref_anime_name_hash = 0,
     int32_t repeat_count = 0) {
   auto ref_anime_pack__ = ref_anime_pack ? _fbb.CreateString(ref_anime_pack) : 0;
-  auto ref_anime__ = ref_anime ? _fbb.CreateString(ref_anime) : 0;
+  auto ref_anime_name__ = ref_anime_name ? _fbb.CreateString(ref_anime_name) : 0;
   return ss::format::CreateSequenceItem(
       _fbb,
+      ref_anime_pack_and_name_hash,
       ref_anime_pack__,
       ref_anime_pack_hash,
-      ref_anime__,
-      ref_anime_hash,
+      ref_anime_name__,
+      ref_anime_name_hash,
       repeat_count);
 }
 

@@ -308,9 +308,9 @@ private:
     // External SSAB resources auto-loaded from the parent's directory based
     // on `external_instances`. Cleared and rebuilt on every setSSABResource.
     Vector<Ref<SSABResource>> _external_ssabs;
-    // Same set as `_external_ssabs`, keyed by SsAnimeBinary.name_hash so
-    // hash-based pack resolution is O(1). Built by `_load_external_ssabs`.
-    HashMap<uint32_t, Ref<SSABResource>> _external_ssabs_by_pack_hash;
+    // Same set as `_external_ssabs`, keyed by pack name so
+    // pack resolution is O(1). Built by `_load_external_ssabs`.
+    HashMap<String, Ref<SSABResource>> _external_ssabs_by_pack_name;
 
     // Per-frame draw context: SoA pointers and frame-shared bindings fetched
     // once at the top of `drawAnimation`.
@@ -615,7 +615,7 @@ private:
     void _seek_and_redraw(float frame_no, float delta_seconds, bool parent_looped);
 
     void _load_external_ssabs();
-    Ref<SSABResource> _resolve_ssab_by_hash(uint32_t name_hash) const;
+
     void _apply_blend_material(RenderingServer* rs, RID ci, ss::format::BlendType blend_type);
     // ShaderMaterial variant for Normal and Mesh batches. PartColor is handled
     // in the shader (per-vertex CUSTOM0 carries rate / blend_idx / pma flag).
