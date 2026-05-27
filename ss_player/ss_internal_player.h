@@ -265,6 +265,7 @@ private:
     // across frames; pool grows monotonically to peak batch count, unused
     // entries are hidden rather than freed.
     Vector<RID> _batch_canvas_items;
+    int _batch_canvas_items_in_use = 0;
     LocalVector<const ss::runtime::PartState*> _parts_by_idx;
     String _strAnimationSelected;
     uint32_t _animationSelectedHash = 0;

@@ -156,8 +156,19 @@ SpriteStudioPlayer2D *_add_children_with_undo(
 } // namespace
 
 SSCanvasDropOverlay::SSCanvasDropOverlay() {
-    set_mouse_filter(MOUSE_FILTER_PASS);
+    set_mouse_filter(MOUSE_FILTER_IGNORE);
     set_anchors_and_offsets_preset(PRESET_FULL_RECT);
+}
+
+void SSCanvasDropOverlay::_notification(int p_what) {
+    switch (p_what) {
+        case NOTIFICATION_DRAG_BEGIN: {
+            set_mouse_filter(MOUSE_FILTER_PASS);
+        } break;
+        case NOTIFICATION_DRAG_END: {
+            set_mouse_filter(MOUSE_FILTER_IGNORE);
+        } break;
+    }
 }
 
 PackedStringArray SSCanvasDropOverlay::_extract_ssab_paths(const Variant &p_data) const {

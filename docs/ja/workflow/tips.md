@@ -9,11 +9,20 @@ func _ready():
     # ユーザーデータシグナルに接続
     ss_player.user_data.connect(_on_ss_user_data)
 
+    # 「シグナル」イベントに接続
+    # 注意: 'signal' は GDScript の予約語であるため、ドット構文ではなく文字列で接続します
+    ss_player.connect("signal", _on_ss_signal)
+
 func _on_ss_user_data(payload: Dictionary):
     # 例: ユーザーデータに基づいて SE を再生する
     if payload.has("se"):
         audio_player.stream = load(payload["se"])
         audio_player.play()
+
+func _on_ss_signal(command: String, value: Dictionary):
+    # command にコマンドID文字列、value に各パラメータが Dictionary として格納されます
+    print("Signal command received: ", command)
+    print("Params: ", value)
 ```
 
 ## 動的なテクスチャ差し替え (CellMap Overrides)

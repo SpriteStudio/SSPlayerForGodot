@@ -116,6 +116,7 @@ void SsInternalPlayer::_clear_batch_canvas_items() {
         rs->free_rid(_batch_canvas_items[i]);
     }
     _batch_canvas_items.clear();
+    _batch_canvas_items_in_use = 0;
     _blend_materials.clear();
 }
 
@@ -622,7 +623,10 @@ void SsInternalPlayer::_free_mask_targets() {
     _mask_canvas_items_in_use = 0;
     _mask_write_materials.clear();
     _mask_write_materials_in_use = 0;
-    if (_mask_canvas.is_valid()) { rs->free_rid(_mask_canvas); _mask_canvas = RID(); }
+    if (_mask_canvas.is_valid()) {
+        rs->free_rid(_mask_canvas);
+        _mask_canvas = RID();
+    }
     if (_mask_viewport.is_valid()) { rs->free_rid(_mask_viewport); _mask_viewport = RID(); }
     _mask_write_shader = Ref<Shader>();
     _mask_coverage_valid = false;
@@ -975,7 +979,7 @@ void SsInternalPlayer::_drawAnimation(float frame_no, float delta_seconds, bool 
     const uint32_t batch_count = draw_batches->size();
 
     // Hide / clear unused entries in the pool (peak-retain policy).
-    for (int i = (int)batch_count; i < _batch_canvas_items.size(); i++) {
+    for (int i = (int)batch_count; i < _batch_canvas_items_in_use; i++) {
         f.rs->canvas_item_clear(_batch_canvas_items[i]);
         f.rs->canvas_item_set_visible(_batch_canvas_items[i], false);
     }
@@ -1047,6 +1051,8 @@ void SsInternalPlayer::_drawAnimation(float frame_no, float delta_seconds, bool 
         }
         // DrawBatchKind_Text / Nines / Mask: not yet implemented.
     }
+
+    _batch_canvas_items_in_use = (int)batch_count;
 }
 
 
@@ -2277,6 +2283,7 @@ void SsInternalPlayer::_fetchAnimation() {
         _clear_effect_slots();
         _clear_batch_canvas_items();
         _free_per_part_canvas_items();
+        _free_mask_targets();
         return;
     }
 
@@ -2284,6 +2291,7 @@ void SsInternalPlayer::_fetchAnimation() {
     _clear_effect_slots();
     _clear_batch_canvas_items();
     _free_per_part_canvas_items();
+    _free_mask_targets();
 
     if (runtime_res != nullptr) {
         ss_resource_destroy(runtime_res);
@@ -2311,7 +2319,9 @@ void SsInternalPlayer::_fetchAnimation() {
         if (animation && animation->name()) {
             _strAnimationSelected = String::utf8(animation->name()->c_str());
         }
-    } else if (!_strAnimationSelected.is_empty()) {
+    }
+    
+    if (!animation && !_strAnimationSelected.is_empty()) {
         animation = _ssabRes->find_animation(_strAnimationSelected);
         if (animation) {
             _animationSelectedHash = animation->name_hash();

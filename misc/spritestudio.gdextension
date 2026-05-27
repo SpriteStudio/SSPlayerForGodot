@@ -31,3 +31,9 @@ web.release.wasm32 = "bin/web/libSSGodot.web.template_release.wasm32.nothreads.w
 linux.editor.x86_64 = "bin/linux/libSSGodot.linux.editor.x86_64.so"
 linux.debug.x86_64 = "bin/linux/libSSGodot.linux.template_debug.x86_64.so"
 linux.release.x86_64 = "bin/linux/libSSGodot.linux.template_release.x86_64.so"
+
+[icons]
+
+SpriteStudioPlayer2D = "res://addons/spritestudio/icons/icon_sprite_studio_player_2d.svg"
+SSABResource = "res://addons/spritestudio/icons/icon_ssab_resource.svg"
+SSQBResource = "res://addons/spritestudio/icons/icon_ssqb_resource.svg"

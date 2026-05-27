@@ -9,11 +9,20 @@ func _ready():
     # Connect to the user_data signal
     ss_player.user_data.connect(_on_ss_user_data)
 
+    # Connect to the "signal" event
+    # Note: 'signal' is a GDScript keyword, so we must use a string-based connection
+    ss_player.connect("signal", _on_ss_signal)
+
 func _on_ss_user_data(payload: Dictionary):
     # Example: Playing a sound effect based on user data
     if payload.has("se"):
         audio_player.stream = load(payload["se"])
         audio_player.play()
+
+func _on_ss_signal(command: String, value: Dictionary):
+    # 'command' contains the Command ID, 'value' contains the parameters
+    print("Signal command received: ", command)
+    print("Params: ", value)
 ```
 
 ## Dynamic Texture Overrides (CellMap Overrides)

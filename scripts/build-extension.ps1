@@ -89,16 +89,19 @@ Invoke-Expression "scons $scons_command_opts"
 $MAIN_PROJECT = "dev_gdextension"
 $OTHER_PROJECTS = @("overall_gdextension", "Ringo")
 
-# Ensure MAIN_PROJECT has the .gdextension
+# Ensure MAIN_PROJECT has the .gdextension and icons
 Copy-Item "misc\spritestudio.gdextension" "examples\$MAIN_PROJECT\addons\spritestudio\spritestudio.gdextension" -Force
+mkdir "examples\$MAIN_PROJECT\addons\spritestudio\icons" -Force | Out-Null
+Copy-Item "ss_player\icons\icon_*.svg" "examples\$MAIN_PROJECT\addons\spritestudio\icons\" -Force
 
 # Copy from MAIN_PROJECT to OTHER_PROJECTS
 foreach ($project in $OTHER_PROJECTS) {
     $dest_dir = "examples\$project\addons\spritestudio"
     mkdir $dest_dir -Force | Out-Null
     Copy-Item "misc\spritestudio.gdextension" "$dest_dir\spritestudio.gdextension" -Force
-    Write-Host "Syncing binaries to $project..."
+    Write-Host "Syncing binaries and icons to $project..."
     Copy-Item "examples\$MAIN_PROJECT\addons\spritestudio\bin" "$dest_dir\" -Recurse -Force
+    Copy-Item "examples\$MAIN_PROJECT\addons\spritestudio\icons" "$dest_dir\" -Recurse -Force
 }
 
 popd
