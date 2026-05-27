@@ -439,7 +439,7 @@ void SSImportControl::_show_recent_context_menu(const String &p_path) {
     recent_popup->clear();
     String os_name = OS::get_singleton()->get_name();
     if (os_name != "Linux") {
-        recent_popup->add_item(tr("Open Source SSPJ"), RECENT_MENU_OPEN_IN_EDITOR);
+        recent_popup->add_item(tr("Open SSPJ"), RECENT_MENU_OPEN_IN_EDITOR);
     }
     recent_popup->add_item(tr("Reconvert"), RECENT_MENU_RECONVERT);
     recent_popup->add_item(tr("Reveal"), RECENT_MENU_REVEAL);

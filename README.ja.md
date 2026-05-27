@@ -19,9 +19,11 @@
 
 ### クイックリンク (日本語)
 - [インストール](./docs/ja/setup/install.md)
-- [データのインポート](./docs/ja/workflow/import.md)
-- [基本的な使い方](./docs/ja/workflow/usage.md)
-- [応用的な使い方・Tips](./docs/ja/workflow/tips.md)
+- [基本的な使い方](./docs/ja/workflow/usage_basic.md)
+- [エディタ連携とアセットイテレーション](./docs/ja/workflow/usage_asset_pipeline.md)
+- [スクリプト制御とイベント](./docs/ja/workflow/usage_scripting.md)
+- [CLI コンバートと自動化](./docs/ja/workflow/import.md)
+- [パフォーマンスと高度な設定](./docs/ja/workflow/tips.md)
 - [ビルドガイド](./docs/ja/setup/build.md)
 
 ## GDExtension を用いたクイックスタート
@@ -32,8 +34,8 @@
 
 1. **Godot Engine の準備**: [公式サイト](https://godotengine.org/download/) から 4.6 系のエディタをダウンロードします。
 2. **GDExtension の取得**: [Releases](https://github.com/SpriteStudio/SSPlayerForGodot/releases) から最新パッケージをダウンロードし、展開します。
-3. **サンプルの準備**: 取得した `addons` フォルダを、本リポジトリの `examples/Ringo` フォルダ内にコピーします。
-4. **確認**: Godot Engine で `examples/Ringo` プロジェクトを開き、`Ringo.tscn` を開くことですぐにアニメーションの動作を確認できます。
+3. **サンプルの準備**: 取得した `addons` フォルダを、本リポジトリの `[examples/Ringo](./examples/Ringo)` フォルダ内にコピーします。
+4. **確認**: Godot Engine で `[examples/Ringo](./examples/Ringo)` プロジェクトを開き、`Ringo.tscn` を開くことですぐにアニメーションの動作を確認できます。
 
 ### 2. 自身のプロジェクトへ導入する
 
@@ -45,22 +47,33 @@
 
 ## 概要 (Overview)
 
-SpriteStudio のソースアセットから Godot で再生されるまでのデータフローは以下の通りです。
+本プラグインは、**SpriteStudio と Godot エディタをシームレスに行き来できる強力なアセットパイプライン**を備え、一瞬でアセットを更新することが可能です。詳しくは [エディタ連携とアセットイテレーション](./docs/ja/workflow/usage_asset_pipeline.md) をご覧ください。
+
+SpriteStudio のソースアセットから Godot で再生されるまでの基本的なデータフローは以下の通りです。
 
 ```mermaid
 graph LR
     SS[" .sspj / 画像<br>(ソースアセット) "]
 
-    subgraph Godot ["Godot プロジェクト (res://)"]
-        DOCK[[" SS Import Dock "]]
-        BIN[" 生成された .ssab "]
-        NODE[[ SpriteStudioPlayer2D ]]
+    subgraph Convert ["変換プロセス"]
+        DOCK[[" SS Import Dock<br>(Godotエディタ内蔵) "]]
+        CLI[[" ssconverter-cli<br>(CLIツール) "]]
     end
 
-    SS -- "D&Dでインポート" --> DOCK
+    subgraph Godot ["Godot ランタイム (res://)"]
+        BIN[" .ssab / .ssqb "]
+        NODE[[ SpriteStudioPlayer2D ]]
+        RT(" libssruntime ")
+    end
+
+    SS -- "ドラッグ＆ドロップ" --> DOCK
+    SS -- "CI/CDや手動" --> CLI
     DOCK -. "自動生成" .-> BIN
+    CLI -. "生成" .-> BIN
+    
     BIN -- "インスペクタにセット" --> NODE
-    NODE -- "再生" --> RENDER{{" 画面 "}}
+    NODE -. "高速再生" .-> RT
+    NODE -- "描画" --> RENDER{{" 画面 "}}
 
     classDef generated stroke-dasharray: 5 5;
     class BIN generated;
@@ -81,8 +94,6 @@ graph LR
 - [overall_gdextension](./examples/overall_gdextension) — GDExtension 版での総合テスト
 - [ParticleEffect](./examples/ParticleEffect) — エフェクト機能のテスト
 - [Ringo](./examples/Ringo) — Ringoのテスト
-- [dev_module](./examples/dev_module) — モジュール版開発用プロジェクト
-- [dev_gdextension](./examples/dev_gdextension) — GDExtension 版開発用プロジェクト
 
 ## 関連リポジトリ
 

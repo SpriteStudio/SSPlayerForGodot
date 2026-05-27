@@ -13,7 +13,7 @@
 本プラグインは、Godot Engine 上で SpriteStudio 7 の表現力をフルに引き出すために設計されています。
 
 *   **完全な機能サポート:** ボーン階層、メッシュ＆デフォーム、パーティクルエフェクトなど、SpriteStudio 7 の全機能を標準でサポートします。
-*   **シームレスな統合:** Godot のエディタ内に統合された「SS Import Dock」により、ドラッグ＆ドロップで簡単にデータを変換・インポートできます。
+*   **シームレスな統合と強力なアセットパイプライン:** Godot のエディタ内に統合された「SS Import Dock」による簡単なインポートに加え、インスペクタから直接 SpriteStudio を開いて再コンバートできる、**SpriteStudio と Godot をシームレスに行き来できる強力なアセットパイプライン**を提供します。詳しくは [USAGE: エディタ連携とアセットイテレーション](workflow/usage_asset_pipeline.md) をご覧ください。
 *   **動的な着せ替え (CellMap Overrides):** 実行時にテクスチャ（セルマップ）を差し替えることで、キャラクターのカラーバリエーションや装備変更を簡単に実装できます。
 *   **シグナルとイベント:** タイムライン上に設定した「ユーザーデータ」や「シグナル」を Godot のシグナルとして受け取り、足音の再生やスクリプトのトリガーを正確なタイミングで行えます。
 *   **滑らかなスローモーション:** サブフレーム補間（Sub-frame interpolation）をサポートし、高リフレッシュレートのモニターやスローモーション演出でもカクつかない滑らかな再生が可能です。
@@ -25,27 +25,27 @@
 
 ```mermaid
 graph LR
-    subgraph Assets ["プロジェクトアセット"]
-        SS[" .sspj / .ssae / .ssce "]
-        IMG[" 画像ファイル / .png "]
+    SS[" .sspj / 画像<br>(ソースアセット) "]
+
+    subgraph Convert ["変換プロセス"]
+        DOCK[[" SS Import Dock<br>(Godotエディタ内蔵) "]]
+        CLI[[" ssconverter-cli<br>(CLIツール) "]]
     end
 
-    subgraph Convert ["変換 (いずれか一方)"]
-        DOCK[[" SS Import Dock<br>(Godot Editor 内蔵) "]]
-        CLI[[" ssconverter-cli<br>(SS7-SDK Releases) "]]
-        SS --> DOCK
-        SS --> CLI
-        DOCK --> BIN[" .ssab / .ssqb "]
-        CLI --> BIN
+    subgraph Godot ["Godot ランタイム (res://)"]
+        BIN[" .ssab / .ssqb "]
+        NODE[[ SpriteStudioPlayer2D ]]
+        RT(" libssruntime ")
     end
 
-    subgraph Runtime ["Godot ランタイム (再生時)"]
-        BIN --> RES(" SSABResource ")
-        RES --> NODE(" SpriteStudioPlayer2D ")
-        NODE -.-> RT(" libssruntime ")
-        IMG --> NODE
-        NODE --> RENDER[[" Godot レンダリング "]]
-    end
+    SS -- "ドラッグ＆ドロップ" --> DOCK
+    SS -- "CI/CDや手動" --> CLI
+    DOCK -. "自動生成" .-> BIN
+    CLI -. "生成" .-> BIN
+    
+    BIN -- "インスペクタにセット" --> NODE
+    NODE -. "高速再生" .-> RT
+    NODE -- "描画" --> RENDER{{" 画面 "}}
 
     classDef generated stroke-dasharray: 5 5;
     class BIN generated;
@@ -65,14 +65,12 @@ Windows / macOS でのビルドおよび実行を確認しています。
 
 リポジトリの `examples/` フォルダに SDK のテストプロジェクトに基づいたサンプルプロジェクトがあります。
 
-- `allAttributeV7` — 全属性の機能テスト
-- `allPartsV7` — 全パーツ種の機能テスト
-- `overall` — 総合的な機能テスト
-- `overall_gdextension` — GDExtension 版での総合テスト
-- `ParticleEffect` — エフェクト機能のテスト
-- `Ringo` — Ringoのテスト
-- `dev_module` — モジュール版開発用プロジェクト
-- `dev_gdextension` — GDExtension 版開発用プロジェクト
+- [allAttributeV7](../../examples/allAttributeV7) — 全属性の機能テスト
+- [allPartsV7](../../examples/allPartsV7) — 全パーツ種の機能テスト
+- [overall](../../examples/overall) — 総合的な機能テスト
+- [overall_gdextension](../../examples/overall_gdextension) — GDExtension 版での総合テスト
+- [ParticleEffect](../../examples/ParticleEffect) — エフェクト機能のテスト
+- [Ringo](../../examples/Ringo) — Ringoのテスト
 
 ## 関連リポジトリ
 

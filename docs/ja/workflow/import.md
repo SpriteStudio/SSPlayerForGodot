@@ -1,28 +1,21 @@
-# SpriteStudio データのインポート
+# CLI ツールによるコンバートと自動化
 
-SpriteStudio のプロジェクト (`.sspj`) は **`.ssab` (アニメバイナリ)** および **`.ssqb` (シーケンスバイナリ)** へ変換し、Godot プロジェクト配下に配置することで `SpriteStudioPlayer2D` から利用できます。
-変換方法は以下の2通りです。どちらの方法で生成したファイルも同じく `SSABResource` / `SSQBResource` として読み込めます。
+Godot エディタの「SS Import Dock」を使った直感的なインポート方法は [エディタ連携とアセットイテレーション](usage_asset_pipeline.md) を参照してください。
 
-## 方法 A: Godot エディタの SS Import Dock を使う
+このドキュメントでは、Godot エディタを起動せずにコマンドラインから変換を行う方法を解説します。
+これは CI/CD (継続的インテグレーション) やビルドパイプラインに変換処理を組み込みたい場合、あるいは大量のアセットを一括変換したい場合に非常に便利です。
 
-エディタを起動するとプロジェクトドック側に SpriteStudio 用のインポートコントロールが追加されます。
-最初に変換成果物の出力先を指定します。
+## SpriteStudio7-SDK の `ssconverter-cli` を使う
 
-* デフォルトの出力先: `res://ssab_generated`
-* 設定キー (プロジェクト設定): `spritestudio/output_directory`
+SpriteStudio プロジェクト (`.sspj`) から Godot 用のアニメーションバイナリ (`.ssab` / `.ssqb`) への変換は、SDK に同梱されている `ssconverter-cli` という独立したコマンドラインツールを使用して行われます（エディタ内蔵のインポータも裏ではこれを呼び出しています）。
 
-出力先はインポートコントロール上の `Browse` ボタンまたは入力欄から変更できます。
+### 1. ツールの取得
 
-以下のいずれかの操作で変換が行われます。
+[SpriteStudio7-SDK の Releases](https://github.com/SpriteStudio/SpriteStudio7-SDK/releases) から該当プラットフォーム (Windows / macOS / Linux) 向けの `ssconverter-cli` バイナリをダウンロードします。
 
-* `.sspj` ファイルをエディタウィンドウへドラッグ＆ドロップする
-* インポートコントロールに表示される履歴から再実行する
+### 2. コマンドラインからの実行
 
-変換中は進捗ダイアログが表示され、完了後は出力先ディレクトリ配下に `.ssab` (アニメパック単位) と `.ssqb` (シーケンス単位) が生成されます。
-
-## 方法 B: SpriteStudio7-SDK の `ssconverter-cli` を直接使う
-
-[SpriteStudio7-SDK の Releases](https://github.com/SpriteStudio/SpriteStudio7-SDK/releases) から該当プラットフォーム向けの `ssconverter-cli` をダウンロードし、コマンドラインから `.sspj` を変換します。
+ターミナル（またはコマンドプロンプト）を開き、`.sspj` ファイルへのパスを引数に渡して実行します。
 
 **Windows:**
 ```powershell
@@ -34,7 +27,15 @@ SpriteStudio のプロジェクト (`.sspj`) は **`.ssab` (アニメバイナ�
 ./ssconverter-cli path/to/your.sspj
 ```
 
-変換結果は `.sspj` と同じディレクトリの `<sspj 名>_ssab/` 配下に `.ssab` / `.ssqb` として生成されます。
-このディレクトリ名を変更して Godot プロジェクト配下にコピーすると、`SSABResource` / `SSQBResource` として読み込めるようになります。
+### 3. 生成物の配置
 
-CI / ビルドパイプラインに変換処理を組み込みたい場合や、Godot エディタを起動せずに変換のみを行いたい場合に便利です。`ssconverter-cli` の詳細なオプションは [`SpriteStudio7-SDK/cli/README.ja.md`](https://github.com/SpriteStudio/SpriteStudio7-SDK/blob/main/cli/README.ja.md) を参照してください。
+変換結果は、元の `.sspj` と同じディレクトリに `<sspj 名>_ssab/` というフォルダが作成され、その配下に `.ssab` (アニメパック単位) および `.ssqb` (シーケンス単位) として出力されます。
+
+生成されたファイルを Godot プロジェクトの `res://` 配下の任意のディレクトリにコピーすることで、Godot 上で `SSABResource` / `SSQBResource` として読み込めるようになります。
+
+---
+
+## 高度なオプション
+
+`ssconverter-cli` には、変換時の挙動を制御するためのオプションが用意されています。
+詳細なオプション一覧や仕様については、SDK リポジトリの [cli/README.ja.md](https://github.com/SpriteStudio/SpriteStudio7-SDK/blob/main/cli/README.ja.md) を参照してください。
