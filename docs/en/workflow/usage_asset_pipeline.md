@@ -31,7 +31,7 @@ When working in Godot and feeling the need to tweak an animation, you don't have
 2. Click to expand the **`SSAB Resource` property** in the Inspector.
 3. Click the **"Open SSPJ" button** located next to the resource preview.
 
-This action automatically opens the underlying `.sspj` file in SpriteStudio via OS file association, allowing you to start editing immediately.
+This action automatically launches SpriteStudio and opens the underlying `.sspj` file, allowing you to start editing immediately.
 
 > [!NOTE]
 > ![Opening SSPJ from the Inspector](../../assets/open_sspj_from_inspector.png)
