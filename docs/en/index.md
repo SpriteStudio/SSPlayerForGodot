@@ -3,7 +3,7 @@
 This `develop` branch is a work-in-progress version.  
 The stable version can be obtained from the [main branch](https://github.com/SpriteStudio/SSPlayerForGodot/tree/main) or from [Releases](https://github.com/SpriteStudio/SSPlayerForGodot/releases).  
 No warranty or support is provided for this branch, and we cannot respond to feature requests or bug reports.  
-Interfaces may change without notice. A migration guide for v1.x users will be provided as a separate document.  
+Interfaces may change without notice.  
 
 A plugin for playing back animations created with [OPTPiX SpriteStudio](https://www.webtech.co.jp/spritestudio/) inside [Godot Engine](https://godotengine.org/).
 Animation playback uses `libssruntime` provided by [SpriteStudio7-SDK](https://github.com/SpriteStudio/SpriteStudio7-SDK).
@@ -76,6 +76,12 @@ Sample projects based on SDK test projects are available under the `examples/` f
 
 - [SpriteStudio7-SDK](https://github.com/SpriteStudio/SpriteStudio7-SDK) — The SDK itself, providing `libssruntime` / `libssconverter`
 
+## Migration
+
+For instructions on migrating from versions prior to v1.x, please refer to the [Migration Guide](migration_from_v1.md).
+
 ## License
 
 See [LICENSE.txt](../../LICENSE.txt).
+
+

@@ -5,7 +5,7 @@
 本developブランチは現在開発中のバージョンです。  
 安定版は [mainブランチ](https://github.com/SpriteStudio/SSPlayerForGodot/tree/main) または、[Releases](https://github.com/SpriteStudio/SSPlayerForGodot/releases)から取得してください。  
 
-> **注意:** 本書で扱う API・ワークフローは現在開発中のため、予告なく変更される可能性があります。また、本ブランチに関していかなる保証もサポートも提供せず、リクエストやバグ報告への返信もできません。v1.x からの移行手順は別途マイグレーションドキュメントを用意予定です。
+> **注意:** 本書で扱う API・ワークフローは現在開発中のため、予告なく変更される可能性があります。また、本ブランチに関していかなる保証もサポートも提供せず、リクエストやバグ報告への返信もできません。
 
 [OPTPiX SpriteStudio 7](https://www.webtech.co.jp/spritestudio/) で作成したアニメーションを [Godot Engine](https://godotengine.org/) 上で再生するためのハイパフォーマンスなプラグインです。
 このプラグインを使用することで、ラスターベースの2Dアニメーションを Godot プロジェクトへ簡単に実装・再生することができます。
@@ -25,6 +25,7 @@
 - [CLI コンバートと自動化](./docs/ja/workflow/import.md)
 - [パフォーマンスと高度な設定](./docs/ja/workflow/tips.md)
 - [ビルドガイド](./docs/ja/setup/build.md)
+- [v1.x からのマイグレーション](./docs/ja/migration_from_v1.md)
 
 ## GDExtension を用いたクイックスタート
 
