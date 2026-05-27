@@ -14,6 +14,7 @@ If there is no `.ssab` in your Godot project yet, you first need to import (conv
 3. **Drag and drop the `.sspj` file** from your Explorer/Finder into the "SS Import" dock.
 
 This triggers the conversion process, generating `.ssab` and `.ssqb` files in the specified output directory.
+Drag and drop the generated `.ssab` file into the 2D viewport to place a `SpriteStudioPlayer2D` node in advance (see [Basic Usage](usage_basic.md) for details).
 
 > [!TIP]
 > <video autoplay loop muted playsinline width="100%">

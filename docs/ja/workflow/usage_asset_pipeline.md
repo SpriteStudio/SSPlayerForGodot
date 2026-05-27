@@ -14,6 +14,7 @@ SpriteStudioPlayerForGodot は、単にアニメーションを再生するだ�
 3. エクスプローラーや Finder から、目的の **`.sspj` ファイルを「SS Import」ドックへドラッグ＆ドロップ** します。
 
 これだけでコンバート処理が走り、指定した出力先に `.ssab` と `.ssqb` が生成されます。
+生成された `.ssab` を 2D ビューポートへドラッグ＆ドロップして、あらかじめ `SpriteStudioPlayer2D` ノードを配置しておきましょう（詳細は [基本的な使い方](usage_basic.md) を参照）。
 
 > [!TIP]
 > <video autoplay loop muted playsinline width="100%">
