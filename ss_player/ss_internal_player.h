@@ -308,9 +308,7 @@ private:
     // External SSAB resources auto-loaded from the parent's directory based
     // on `external_instances`. Cleared and rebuilt on every setSSABResource.
     Vector<Ref<SSABResource>> _external_ssabs;
-    // Same set as `_external_ssabs`, keyed by pack name so
-    // pack resolution is O(1). Built by `_load_external_ssabs`.
-    HashMap<String, Ref<SSABResource>> _external_ssabs_by_pack_name;
+    HashMap<uint32_t, Ref<SSABResource>> _external_ssabs_by_pack_hash;
 
     // Per-frame draw context: SoA pointers and frame-shared bindings fetched
     // once at the top of `drawAnimation`.

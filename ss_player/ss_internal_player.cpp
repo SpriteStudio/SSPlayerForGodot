@@ -1061,7 +1061,7 @@ void SsInternalPlayer::_drawAnimation(float frame_no, float delta_seconds, bool 
 
 void SsInternalPlayer::_load_external_ssabs() {
     _external_ssabs.clear();
-    _external_ssabs_by_pack_name.clear();
+    _external_ssabs_by_pack_hash.clear();
     if (_ssabRes.is_null()) return;
     auto binary = _ssabRes->get_ss_anime_binary();
     if (!binary) return;
@@ -1069,12 +1069,13 @@ void SsInternalPlayer::_load_external_ssabs() {
 
     auto exts = binary->external_instances();
     String parent_dir = _ssabRes->get_parent_dir();
+    HashSet<String> loaded_packs;
     for (uint32_t i = 0; i < exts->size(); i++) {
         auto entry = exts->Get(i);
         if (!entry || !entry->anime_pack_name()) continue;
         String pack = String::utf8(entry->anime_pack_name()->c_str());
-        if (pack.is_empty()) continue;
-        if (_external_ssabs_by_pack_name.has(pack)) continue;
+        if (pack.is_empty() || loaded_packs.has(pack)) continue;
+        loaded_packs.insert(pack);
         String path = parent_dir.path_join(pack + ".ssab");
         Ref<Resource> res =
         #ifdef SPRITESTUDIO_GODOT_EXTENSION
@@ -1092,7 +1093,9 @@ void SsInternalPlayer::_load_external_ssabs() {
             continue;
         }
         _external_ssabs.push_back(ssab);
-        _external_ssabs_by_pack_name[pack] = ssab;
+        if (ssab->get_ss_anime_binary()) {
+            _external_ssabs_by_pack_hash[ssab->get_ss_anime_binary()->name_hash()] = ssab;
+        }
     }
 }
 
@@ -1142,7 +1145,7 @@ void SsInternalPlayer::_setup_instance_children() {
             }
         } else {
             // それ以外の場合は外部のSSAB（external）から検索
-            if (auto* ext_ptr = _external_ssabs_by_pack_name.getptr(pack_name)) {
+            if (auto* ext_ptr = _external_ssabs_by_pack_hash.getptr(pack_name_hash)) {
                 if ((*ext_ptr)->find_animation_by_hash(anim_name_hash)) {
                     source = *ext_ptr;
                 }
