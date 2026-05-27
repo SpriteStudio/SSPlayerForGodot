@@ -15,7 +15,7 @@ Godot エディタの強力な機能を活かし、最短の手順でアニメ�
 > <video autoplay loop muted playsinline width="100%">
 >   <source src="../../assets/setup_drag_and_drop.webm" type="video/webm">
 > </video>
-> *(※上記に .ssab を D&D してノードが自動生成される様子を示す動画が入ります)*
+> *(※上記に .ssab をドラッグ＆ドロップしてノードが自動生成される様子を示す動画が入ります)*
 
 ---
 

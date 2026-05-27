@@ -66,7 +66,7 @@ graph LR
         RT(" libssruntime ")
     end
 
-    SS -- "D&Dでインポート" --> DOCK
+    SS -- "ドラッグ＆ドロップ" --> DOCK
     SS -- "CI/CDや手動" --> CLI
     DOCK -. "自動生成" .-> BIN
     CLI -. "生成" .-> BIN
