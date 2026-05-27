@@ -494,12 +494,10 @@ private:
     void _render_mask_coverage(const DrawFrame& f);
 
     // Frame mask state derived by _render_mask_coverage and consumed when
-    // emitting maskable parts (P3). `_mask_uv_xform` maps player-local ->
-    // coverage UV as (scale.x, scale.y, offset.x, offset.y). `_mask_meta_array`
-    // is one Vec4 per writer: (draw_rank, bit, op_invert, is_clipping). The two
-    // slot bounds bracket which ranks can be affected (Mask: rank < max mask
-    // slot; clipping: rank > min clip slot) so out-of-scope parts skip the test.
-    Vector4 _mask_uv_xform;
+    // emitting maskable parts (P3). `_mask_meta_array` is one Vec4 per writer:
+    // (draw_rank, bit, op_invert, is_clipping). The two slot bounds bracket
+    // which ranks can be affected (Mask: rank < max mask slot; clipping: rank >
+    // min clip slot) so out-of-scope parts skip the test.
     float _mask_max_mask_slot = -1.0f;
     float _mask_min_clip_slot = -1.0f;
     Array _mask_meta_array;
@@ -510,6 +508,10 @@ private:
     // write_mask (clipping) writers are NOT pure — they draw AND mask.
     bool _is_pure_mask_part(int p_idx) const;
     void _apply_mask_uniforms(Ref<ShaderMaterial> mat, uint16_t rank, bool visible_inside);
+    void _set_mask_uv_uniform(Ref<ShaderMaterial> mat, const Transform2D& local_to_uv);
+    void _apply_inherited_mask(bool active, RID coverage_tex, const Array& meta,
+                               int count, const Transform2D& local_to_uv,
+                               float rank, bool visible_inside);
 
     void _reconfigure();
     void _loadTextures(const Ref<SSABResource>& res);
@@ -521,7 +523,7 @@ private:
     // transform. The child's own draw + simulation already happened earlier
     // in `_update_instance_children` (sim phase), so this is positioning
     // only — no event scanning, no playback config, no frame stepping.
-    void _emit_instance_slot(const DrawFrame& f, RID ci, int p_idx, const float* slot_matrix);
+    void _emit_instance_slot(const DrawFrame& f, RID ci, int p_idx, const float* slot_matrix, uint16_t rank);
     void _emit_effect_slot(const DrawFrame& f, RID ci, int p_idx, const float* slot_matrix);
 
     int _build_normal(const DrawFrame& f, int p_idx,

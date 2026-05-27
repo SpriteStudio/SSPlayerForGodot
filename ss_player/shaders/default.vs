@@ -11,6 +11,6 @@ void vertex() {
     );
     partcolor_color = COLOR;
     // CBP masking: coverage UV from the player-local vertex position.
-    ss_mask_uv = VERTEX * ss_mask_uv_xform.xy + ss_mask_uv_xform.zw;
+    ss_mask_uv = vec2(dot(ss_mask_uv_basis.xy, VERTEX), dot(ss_mask_uv_basis.zw, VERTEX)) + ss_mask_uv_off;
 }
 )GLSL"
