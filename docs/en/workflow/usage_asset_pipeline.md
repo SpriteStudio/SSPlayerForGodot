@@ -71,6 +71,6 @@ While this powerful cross-editor integration (`Open SSPJ` and `Reconvert`) is in
 > Because it relies on a local absolute path, if you clone the project to another PC via Git, the paths will no longer match, and these buttons will not function.
 >
 > **3. SpriteStudio installation is required**
-> The `Open SSPJ` button relies on OS file associations to launch the application. Therefore, SpriteStudio 7 must be installed on the PC you are using.
+> Clicking the "Open SSPJ" button will launch SpriteStudio. Therefore, [OPTPiX SpriteStudio 7](https://www.webtech.co.jp/spritestudio/) must be installed on the PC you are using.
 
 Due to these limitations, if you need to update or share `.ssab` files within a team development environment or CI/CD pipeline, bulk conversion using the CLI tool is more appropriate. For details, please refer to [CLI Conversion and Automation](import.md).
