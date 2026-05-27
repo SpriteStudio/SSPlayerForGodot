@@ -51,6 +51,12 @@ With just the following steps, your changes will instantly reflect in the game (
 > **The shortest workflow: "Open" -> "Save" -> "Reconvert"**
 > You can call SpriteStudio directly from the Inspector with the node selected, and immediately reconvert in Godot after editing. **This powerful asset pipeline that allows seamless transition between SpriteStudio and Godot** drastically lowers the cost of trial and error during animation adjustments.
 
+> [!TIP]
+> <video autoplay loop muted playsinline width="100%">
+>   <source src="../../assets/fast_iteration_inspector.webm" type="video/webm">
+> </video>
+> *(※A video demonstrating the fast workflow: Open from Inspector -> Save in SpriteStudio -> Reconvert in Inspector -> Preview updates instantly)*
+
 ---
 
 ## Limitations and Team Development Notes
@@ -68,9 +74,3 @@ While this powerful cross-editor integration (`Open SSPJ` and `Reconvert`) is in
 > The `Open SSPJ` button relies on OS file associations to launch the application. Therefore, SpriteStudio 7 must be installed on the PC you are using.
 
 Due to these limitations, if you need to update or share `.ssab` files within a team development environment or CI/CD pipeline, bulk conversion using the CLI tool is more appropriate. For details, please refer to [CLI Conversion and Automation](import.md).
-
-> [!TIP]
-> <video autoplay loop muted playsinline width="100%">
->   <source src="../../assets/fast_iteration_inspector.webm" type="video/webm">
-> </video>
-> *(※ Video showing the workflow: Open from Inspector -> Save in SpriteStudio -> Reconvert in Inspector -> Preview updates instantly)*

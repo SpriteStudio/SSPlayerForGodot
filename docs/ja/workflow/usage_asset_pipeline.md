@@ -51,6 +51,12 @@ SpriteStudio 側でアニメーションを修正して保存したら、Godot �
 > **「開く」→「保存」→「再コンバート」の最短ワークフロー**
 > ノードを選択したままインスペクタから SpriteStudio を呼び出し、編集後すぐに Godot 上で再コンバートをかけることができます。**SpriteStudio と Godot をシームレスに行き来できるこの強力なアセットパイプライン**により、アニメーション調整におけるトライアンドエラーのコストが劇的に下がります。
 
+> [!TIP]
+> <video autoplay loop muted playsinline width="100%">
+>   <source src="../../assets/fast_iteration_inspector.webm" type="video/webm">
+> </video>
+> *(※上記に「インスペクタから開く -> SpriteStudioで保存 -> インスペクタでReconvert -> プレビューが即座に変わる」という一連の高速ワークフロー動画が入ります)*
+
 ---
 
 ## 制限事項とチーム開発時の注意点
@@ -68,9 +74,3 @@ SpriteStudio 側でアニメーションを修正して保存したら、Godot �
 > `Open SSPJ` ボタンは、OS のファイル関連付けを利用して起動します。そのため、操作するPC自体に SpriteStudio がインストールされている必要があります。
 
 これらの制限があるため、チーム開発環境や CI/CD パイプラインで `.ssab` を更新・共有したい場合は、CLI ツールを用いた一括コンバートが適しています。詳しくは [CLI コンバートと自動化](import.md) を参照してください。
-
-> [!TIP]
-> <video autoplay loop muted playsinline width="100%">
->   <source src="../../assets/fast_iteration_inspector.webm" type="video/webm">
-> </video>
-> *(※上記に「インスペクタから開く -> SpriteStudioで保存 -> インスペクタでReconvert -> プレビューが即座に変わる」という一連の高速ワークフロー動画が入ります)*
