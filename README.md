@@ -5,7 +5,7 @@
 This `develop` branch is a work-in-progress version.  
 The stable version can be obtained from the [main branch](https://github.com/SpriteStudio/SSPlayerForGodot/tree/main) or from [Releases](https://github.com/SpriteStudio/SSPlayerForGodot/releases).  
 
-> **Note:** The APIs and workflows described here are still under active development and may change without notice. No warranty or support is provided for this branch, and we cannot respond to feature requests or bug reports. A migration guide for v1.x users will be provided as a separate document.
+> **Note:** The APIs and workflows described here are still under active development and may change without notice. No warranty or support is provided for this branch, and we cannot respond to feature requests or bug reports.
 
 A high-performance plugin for playing back animations created with [OPTPiX SpriteStudio 7](https://www.webtech.co.jp/spritestudio/) inside [Godot Engine](https://godotengine.org/).
 This plugin allows you to easily implement and play back raster-based 2D animations within your Godot projects.
@@ -25,6 +25,7 @@ Comprehensive documentation is available in the `docs/` folder:
 - [CLI Conversion and Automation](./docs/en/workflow/import.md)
 - [Performance and Advanced Settings](./docs/en/workflow/tips.md)
 - [Build Guide](./docs/en/setup/build.md)
+- [Migration from v1.x](./docs/en/migration_from_v1.md)
 
 ## Quick Start with GDExtension
 

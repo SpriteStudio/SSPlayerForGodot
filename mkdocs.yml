@@ -50,3 +50,4 @@ nav:
   - API Reference:
       - SpriteStudioPlayer2D: api/player.md
       - Resource Classes: api/resource.md
+  - Migration Guide: migration_from_v1.md
