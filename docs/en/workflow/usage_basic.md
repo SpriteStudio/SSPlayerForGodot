@@ -19,6 +19,16 @@ This action automatically creates a `SpriteStudioPlayer2D` node and assigns the 
 
 ---
 
+## Manual Node Addition and Attachment
+
+If you want to place the node in a specific location within an existing node hierarchy, you can add it manually and assign the resource.
+
+1. Add a `SpriteStudioPlayer2D` node to your scene tree using the "+" button in the Scene dock.
+2. Select the added node and open the Inspector.
+3. Drag and drop the `.ssab` file from the FileSystem dock into the **`SSAB Resource`** property box in the Inspector to attach it.
+
+---
+
 ## Inspector Settings and Preview
 
 Once the node is selected, you can adjust various settings from Godot's Inspector.
