@@ -1,0 +1,57 @@
+# 基本的な使い方
+
+このページでは、Godot のシーン上に SpriteStudio のアニメーションを配置して再生するまでの基本的な手順を解説します。
+
+## 最速セットアップ: ドラッグ＆ドロップによるノード生成
+
+Godot エディタの強力な機能を活かし、最短の手順でアニメーションをセットアップできます。
+
+1. **ファイルシステムドック**から、インポート済みの **`.ssab` ファイル** を探します。
+2. そのファイルを **2D ワークスペース (シーンビュー)** へドラッグ＆ドロップします。
+
+これだけで自動的に `SpriteStudioPlayer2D` ノードがシーンに追加され、リソースの割り当ても完了します。
+
+> [!TIP]
+> <video autoplay loop muted playsinline width="100%">
+>   <source src="../../assets/setup_drag_and_drop.webm" type="video/webm">
+> </video>
+> *(※上記に .ssab を D&D してノードが自動生成される様子を示す動画が入ります)*
+
+---
+
+## インスペクタでの設定とプレビュー
+
+ノードを選択すると、Godot のインスペクタから各種設定を行えます。
+
+1. **`Animation` の選択**
+   インスペクタの `Animation` プロパティのドロップダウンを開くと、`.ssab` に含まれるアニメーションのリストが表示されます。再生したいアニメーション名を選択してください。
+
+2. **エディタ上でのプレビュー**
+   インスペクタにある **`Playing`** プロパティにチェックを入れると、**ゲームを実行しなくてもエディタ上でアニメーションが再生されます**。
+   `Frame` や `Speed`、`Loop` などのパラメータを変更するとリアルタイムにプレビューへ反映されるため、素早い調整が可能です。
+
+> [!TIP]
+> <video autoplay loop muted playsinline width="100%">
+>   <source src="../../assets/inspector_preview.webm" type="video/webm">
+> </video>
+> *(※上記に Playing にチェックを入れてエディタ上でプレビューが動く様子を示す動画が入ります)*
+
+---
+
+## 主なインスペクタプロパティ
+
+| プロパティ                | 型     | 説明                                                                |
+| -------------------------- | ------ | ------------------------------------------------------------------- |
+| `SSAB Resource`           | Resource | 再生対象の `SSABResource` (`.ssab` ファイル)                     |
+| `Animation`                | String | 選択中のアニメーション名                                            |
+| `Frame`                    | float  | 現在のフレーム位置                                                  |
+| `Speed`                    | float  | 再生速度倍率 (既定: 1.0)                                            |
+| `Frame Rate`               | int    | FPS                                                                 |
+| `Loop`                     | int    | ループ回数 (`-1` で無限ループ)                                      |
+| `Playing`                  | bool   | 再生フラグ                                                          |
+| `Animation Section Start` | int    | 部分再生の開始フレーム                                              |
+| `Animation Section End`   | int    | 部分再生の終了フレーム                                              |
+| `Playback Direction`       | int    | 再生方向                                                            |
+| `Playback Style`           | int    | 再生スタイル (片道/往復 等)                                         |
+| `Skip Frames`              | bool   | 描画間隔がフレーム間隔を超えた際にフレームを飛ばすか                |
+| `Sub Frame Enabled`        | bool   | サブフレーム補間を有効化するか                                      |

@@ -19,9 +19,11 @@ Comprehensive documentation is available in the `docs/` folder:
 
 ### Quick Links (English)
 - [Installation](./docs/en/setup/install.md)
-- [Importing Data](./docs/en/workflow/import.md)
-- [Basic Usage](./docs/en/workflow/usage.md)
-- [Tips & Advanced](./docs/en/workflow/tips.md)
+- [Basic Usage](./docs/en/workflow/usage_basic.md)
+- [Editor Integration and Asset Iteration](./docs/en/workflow/usage_asset_pipeline.md)
+- [Scripting and Events](./docs/en/workflow/usage_scripting.md)
+- [CLI Conversion and Automation](./docs/en/workflow/import.md)
+- [Performance and Advanced Settings](./docs/en/workflow/tips.md)
 - [Build Guide](./docs/en/setup/build.md)
 
 ## Quick Start with GDExtension
@@ -45,22 +47,33 @@ For more details, see the [Installation Guide](./docs/en/setup/install.md).
 
 ## Overview
 
-The following diagram shows the data flow from SpriteStudio source assets to Godot runtime.
+This plugin features a **seamless asset update workflow that allows you to effortlessly transition between SpriteStudio and the Godot editor, updating assets instantly**. For details, please refer to [Editor Integration and Asset Iteration](./docs/en/workflow/usage_asset_pipeline.md).
+
+The following diagram shows the basic data flow from SpriteStudio source assets to Godot runtime.
 
 ```mermaid
 graph LR
     SS[" .sspj / Images<br>(Source Assets) "]
 
-    subgraph Godot ["Godot Project (res://)"]
-        DOCK[[" SS Import Dock "]]
-        BIN[" Generated .ssab "]
+    subgraph Convert ["Conversion Process"]
+        DOCK[[" SS Import Dock<br>(Built-in Editor) "]]
+        CLI[[" ssconverter-cli<br>(CLI Tool) "]]
+    end
+
+    subgraph Godot ["Godot Runtime (res://)"]
+        BIN[" .ssab / .ssqb "]
         NODE[[ SpriteStudioPlayer2D ]]
+        RT(" libssruntime ")
     end
 
     SS -- "Drag & Drop" --> DOCK
+    SS -- "CI/CD or Manual" --> CLI
     DOCK -. "Auto-generate" .-> BIN
+    CLI -. "Generate" .-> BIN
+    
     BIN -- "Assign in Inspector" --> NODE
-    NODE -- "Play" --> RENDER{{" Screen "}}
+    NODE -. "High-speed playback" .-> RT
+    NODE -- "Render" --> RENDER{{" Screen "}}
 
     classDef generated stroke-dasharray: 5 5;
     class BIN generated;
@@ -81,8 +94,6 @@ Sample projects based on SDK test projects are available under the [examples fol
 - [overall_gdextension](./examples/overall_gdextension) — Comprehensive test for GDExtension
 - [ParticleEffect](./examples/ParticleEffect) — Test for effect features
 - [Ringo](./examples/Ringo) — Test for Ringo
-- [dev_module](./examples/dev_module) — Development project for Module version
-- [dev_gdextension](./examples/dev_gdextension) — Development project for GDExtension version
 
 ## Related Repositories
 

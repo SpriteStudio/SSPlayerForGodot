@@ -1,49 +1,25 @@
-# Advanced Usage & Tips
+# Performance Tuning and Advanced Settings
 
-## Handling Signals and User Data
+This section introduces settings and tips to extract maximum performance from SpriteStudioPlayerForGodot and perform advanced playback control.
 
-SpriteStudio allows you to embed custom data in your animations. In Godot, you can listen for these via signals.
+## Performance and Quality Settings
 
-```gdscript
-func _ready():
-    # Connect to the user_data signal
-    ss_player.user_data.connect(_on_ss_user_data)
+### Skip Frames Enabled
+This setting is useful in environments with high rendering loads, such as mobile devices or scenes displaying a large number of characters.
+When the `Skip Frames Enabled` property of `SpriteStudioPlayer2D` is activated, if rendering processing is delayed, intermediate drawing is skipped to maintain the animation's playback speed (time progression within the game).
 
-    # Connect to the "signal" event
-    # Note: 'signal' is a GDScript keyword, so we must use a string-based connection
-    ss_player.connect("signal", _on_ss_signal)
+### Sub Frame Enabled
+This is extremely effective when rendering on high-refresh-rate monitors (e.g., 144Hz) or when performing slow-motion effects within Godot.
+Normally, animations are played back frame-by-frame according to the set FPS (e.g., 30FPS or 60FPS). However, enabling `Sub Frame Enabled` automatically interpolates between keyframes based on the current time, resulting in incredibly smooth and fluid animation.
 
-func _on_ss_user_data(payload: Dictionary):
-    # Example: Playing a sound effect based on user data
-    if payload.has("se"):
-        audio_player.stream = load(payload["se"])
-        audio_player.play()
+---
 
-func _on_ss_signal(command: String, value: Dictionary):
-    # 'command' contains the Command ID, 'value' contains the parameters
-    print("Signal command received: ", command)
-    print("Params: ", value)
-```
+## Choosing Between SSAB and SSQB
 
-## Dynamic Texture Overrides (CellMap Overrides)
+There are two types of animation binaries imported into Godot:
 
-You can swap out textures at runtime. This is useful for character customization or multi-colored variants of the same animation.
-
-```gdscript
-# Replace the texture for a specific cellmap
-var new_skin = load("res://textures/hero_red.png")
-ss_player.set_cellmap_texture("chara_skin", new_skin)
-
-# To reset to the original texture, pass null
-ss_player.set_cellmap_texture("chara_skin", null)
-```
-
-## Performance Considerations
-
-### SSAB vs. SSQB
-- Use **SSAB** for standard animations.
-- Use **SSQB** (Sequences) when you want to manage multiple animations as a single timeline or state machine within SpriteStudio.
-
-### Skip Frames and Sub-frames
-- **Skip Frames**: Enable this for heavy animations to maintain playback speed even if rendering drops frames.
-- **Sub Frame Enabled**: Enable this for smooth interpolation between keyframes, especially for slow-motion playback.
+- **SSAB (Animation Binary)**
+  - This is standard animation data. Generally, you will use this format.
+- **SSQB (Sequence Binary)**
+  - This is a "sequence" of multiple animations (e.g., `Walk` -> `Run` -> `Jump`) linked together on the timeline within SpriteStudio.
+  - Use this when you want to reproduce the exact continuous playback designed in SpriteStudio directly in Godot, without writing complex state transition logic in your GDScript.

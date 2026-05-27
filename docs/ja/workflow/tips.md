@@ -1,49 +1,25 @@
-# 応用的な使い方と Tips
+# パフォーマンスチューニングと高度な設定
 
-## シグナルとユーザーデータの利用
-
-SpriteStudio ではアニメーションのタイムライン上にカスタムデータを埋め込むことができます。Godot ではこれらをシグナルとして受け取れます。
-
-```gdscript
-func _ready():
-    # ユーザーデータシグナルに接続
-    ss_player.user_data.connect(_on_ss_user_data)
-
-    # 「シグナル」イベントに接続
-    # 注意: 'signal' は GDScript の予約語であるため、ドット構文ではなく文字列で接続します
-    ss_player.connect("signal", _on_ss_signal)
-
-func _on_ss_user_data(payload: Dictionary):
-    # 例: ユーザーデータに基づいて SE を再生する
-    if payload.has("se"):
-        audio_player.stream = load(payload["se"])
-        audio_player.play()
-
-func _on_ss_signal(command: String, value: Dictionary):
-    # command にコマンドID文字列、value に各パラメータが Dictionary として格納されます
-    print("Signal command received: ", command)
-    print("Params: ", value)
-```
-
-## 動的なテクスチャ差し替え (CellMap Overrides)
-
-実行時に特定のセルマップのテクスチャを差し替えることができます。キャラの着せ替えや色違いパターンの実装に役立ちます。
-
-```gdscript
-# 特定のセルマップのテクスチャを差し替える
-var new_skin = load("res://textures/hero_red.png")
-ss_player.set_cellmap_texture("chara_skin", new_skin)
-
-# 元に戻す場合は null を渡します
-ss_player.set_cellmap_texture("chara_skin", null)
-```
+SpriteStudioPlayerForGodot で最高のパフォーマンスを引き出し、高度な再生制御を行うための設定や Tips を紹介します。
 
 ## パフォーマンスと品質の設定
 
-### SSAB と SSQB の使い分け
-- **SSAB**: 通常のアニメーションに使用します。
-- **SSQB**: 複数のアニメーションを連結した「シーケンス」を、SpriteStudio 側で制御した状態で再生したい場合に使用します。
+### フレームスキップ (Skip Frames Enabled)
+モバイル端末や多数のキャラクターを表示するシーンなど、描画負荷が高い環境で有効な設定です。
+`SpriteStudioPlayer2D` の `Skip Frames Enabled` プロパティを有効にすると、描画処理が遅延した場合に中間の描画をスキップし、アニメーションの再生速度（ゲーム内での時間進行）を優先して維持します。
 
-### フレームスキップとサブフレーム
-- **Skip Frames**: 負荷が高いアニメーションで、描画が遅れても再生速度を維持したい場合に有効にします。
-- **Sub Frame Enabled**: キーフレーム間を補完して滑らかに再生します。スロー再生などを行う場合に特に効果的です。
+### サブフレーム補間 (Sub Frame Enabled)
+高リフレッシュレート（144Hz など）のモニターでの描画や、Godot 側でスローモーション演出を行う場合に非常に効果的です。
+通常のアニメーションは設定された FPS (例: 30FPS や 60FPS) に従ってカクカクとコマ送りされますが、`Sub Frame Enabled` を有効にすると、現在の時間に基づいてキーフレーム間が自動的に補間計算され、非常に滑らかなアニメーションが実現できます。
+
+---
+
+## SSAB と SSQB の使い分け
+
+Godot へインポートされたアニメーションバイナリには、2つの種類があります。
+
+- **SSAB (Animation Binary)**
+  - 通常のアニメーションデータです。基本的にはこちらを使用します。
+- **SSQB (Sequence Binary)**
+  - 複数のアニメーション（例: `歩き` → `走り` → `ジャンプ`）を SpriteStudio 側で「シーケンス」としてタイムライン上に連結したものです。
+  - プログラム（GDScript）側で複雑な状態遷移を書かずとも、デザイナーが SpriteStudio 上で設定した通りの連続再生を Godot 上でそのまま再現したい場合に使用します。
