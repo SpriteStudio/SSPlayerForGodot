@@ -39,7 +39,7 @@ This action automatically opens the underlying `.sspj` file in SpriteStudio via 
 
 ---
 
-## 3. High-Speed Asset Iteration (One-Click Reconvert)
+## 3. Powerful Asset Pipeline (Seamless Editor Integration)
 
 After modifying and saving the animation in SpriteStudio, return to the Godot editor.
 With just the following steps, your changes will instantly reflect in the game (and in the editor preview).
@@ -49,7 +49,7 @@ With just the following steps, your changes will instantly reflect in the game (
 
 > [!IMPORTANT]
 > **The shortest workflow: "Open" -> "Save" -> "Reconvert"**
-> You can call SpriteStudio directly from the Inspector with the node selected, and immediately reconvert in Godot after editing. This seamless integration drastically lowers the cost of trial and error during animation adjustments.
+> You can call SpriteStudio directly from the Inspector with the node selected, and immediately reconvert in Godot after editing. **This powerful asset pipeline that allows seamless transition between SpriteStudio and Godot** drastically lowers the cost of trial and error during animation adjustments.
 
 > [!TIP]
 > <video autoplay loop muted playsinline width="100%">

@@ -13,7 +13,7 @@ Animation playback uses `libssruntime` provided by [SpriteStudio7-SDK](https://g
 This plugin is designed to bring the full expressive power of SpriteStudio 7 to Godot Engine seamlessly.
 
 *   **Full Feature Support:** Fully supports SpriteStudio 7 features including bone hierarchies, mesh & deformations, and high-performance particle effects.
-*   **Seamless Integration and Fast Iteration:** In addition to easy drag-and-drop importing via the built-in "SS Import Dock", you can open SpriteStudio directly from the Inspector and reconvert with a single click, providing a **seamless asset update workflow**. For details, see [Editor Integration and Asset Iteration](workflow/usage_asset_pipeline.md).
+*   **Seamless Integration and a Powerful Asset Pipeline:** In addition to easy drag-and-drop importing via the built-in "SS Import Dock", you can open SpriteStudio directly from the Inspector and reconvert with a single click, providing a **powerful asset pipeline that allows you to seamlessly transition between SpriteStudio and Godot**. For details, see [Editor Integration and Asset Iteration](workflow/usage_asset_pipeline.md).
 *   **Dynamic Customization (CellMap Overrides):** Easily swap textures at runtime to implement character equipment changes or color variations.
 *   **Signals & Events:** Receive "User Data" and "Signals" from your animation timeline directly as Godot Signals, allowing frame-perfect triggers for audio or logic.
 *   **Smooth Slow-Motion:** Built-in sub-frame interpolation ensures buttery-smooth playback even on high-refresh-rate displays or during slow-motion effects.

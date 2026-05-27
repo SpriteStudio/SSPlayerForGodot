@@ -47,7 +47,7 @@ For more details, see the [Installation Guide](./docs/en/setup/install.md).
 
 ## Overview
 
-This plugin features a **seamless asset update workflow that allows you to effortlessly transition between SpriteStudio and the Godot editor, updating assets instantly**. For details, please refer to [Editor Integration and Asset Iteration](./docs/en/workflow/usage_asset_pipeline.md).
+This plugin features a **powerful asset pipeline that allows you to seamlessly transition between SpriteStudio and Godot**, enabling you to update assets instantly. For details, please refer to [Editor Integration and Asset Iteration](./docs/en/workflow/usage_asset_pipeline.md).
 
 The following diagram shows the basic data flow from SpriteStudio source assets to Godot runtime.
 

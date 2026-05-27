@@ -47,7 +47,7 @@
 
 ## 概要 (Overview)
 
-本プラグインは、**SpriteStudio と Godot エディタをシームレスに行き来し、一瞬でアセットを更新できるシームレスなアセット更新ワークフロー**を備えています。詳しくは [エディタ連携とアセットイテレーション](./docs/ja/workflow/usage_asset_pipeline.md) をご覧ください。
+本プラグインは、**SpriteStudio と Godot エディタをシームレスに行き来できる強力なアセットパイプライン**を備え、一瞬でアセットを更新することが可能です。詳しくは [エディタ連携とアセットイテレーション](./docs/ja/workflow/usage_asset_pipeline.md) をご覧ください。
 
 SpriteStudio のソースアセットから Godot で再生されるまでの基本的なデータフローは以下の通りです。
 
