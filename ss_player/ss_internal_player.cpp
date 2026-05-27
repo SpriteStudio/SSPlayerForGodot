@@ -1099,6 +1099,23 @@ void SsInternalPlayer::_load_external_ssabs() {
     }
 }
 
+Ref<SSABResource> SsInternalPlayer::_resolve_ssab_by_hash(uint32_t pack_hash, uint32_t name_hash) const {
+    if (pack_hash != 0) {
+        if (auto* ext_ptr = _external_ssabs_by_pack_hash.getptr(pack_hash)) {
+            auto anim = (*ext_ptr)->find_animation_by_hash(name_hash);
+            if (anim) {
+                return *ext_ptr;
+            }
+        }
+    }
+    // Not external or not found; check current binary.
+    if (!_ssabRes.is_null()) {
+        auto anim = _ssabRes->find_animation_by_hash(name_hash);
+        if (anim) return _ssabRes;
+    }
+    return Ref<SSABResource>();
+}
+
 void SsInternalPlayer::_clear_instance_children() {
     for (uint32_t i = 0; i < _instance_children.size(); i++) {
         InstanceChildState& st = _instance_children[i];
@@ -1137,20 +1154,7 @@ void SsInternalPlayer::_setup_instance_children() {
         uint32_t pack_name_hash = pt->ref_anime_pack_hash();
         uint32_t anim_name_hash = pt->ref_anime_name_hash();
 
-        Ref<SSABResource> source;
-        if (!_ssabRes.is_null() && _ssabRes->get_ss_anime_binary() && _ssabRes->get_ss_anime_binary()->name_hash() == pack_name_hash) {
-            // パック名ハッシュが自分自身と一致する場合は、内部のSSABから検索
-            if (_ssabRes->find_animation_by_hash(anim_name_hash)) {
-                source = _ssabRes;
-            }
-        } else {
-            // それ以外の場合は外部のSSAB（external）から検索
-            if (auto* ext_ptr = _external_ssabs_by_pack_hash.getptr(pack_name_hash)) {
-                if ((*ext_ptr)->find_animation_by_hash(anim_name_hash)) {
-                    source = *ext_ptr;
-                }
-            }
-        }
+        Ref<SSABResource> source = _resolve_ssab_by_hash(pack_name_hash, anim_name_hash);
 
         if (source.is_null()) {
             ERR_PRINT(vformat("[SS] instance part %d: animation '%s' (pack '%s') not found in current or external SSABs", i, anim_name, pack_name));

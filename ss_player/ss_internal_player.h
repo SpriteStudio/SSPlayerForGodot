@@ -615,6 +615,7 @@ private:
     void _seek_and_redraw(float frame_no, float delta_seconds, bool parent_looped);
 
     void _load_external_ssabs();
+    Ref<SSABResource> _resolve_ssab_by_hash(uint32_t pack_hash, uint32_t name_hash) const;
 
     void _apply_blend_material(RenderingServer* rs, RID ci, ss::format::BlendType blend_type);
     // ShaderMaterial variant for Normal and Mesh batches. PartColor is handled
