@@ -8,6 +8,7 @@
 #include <godot_cpp/classes/shader_material.hpp>
 #include <godot_cpp/classes/texture2d.hpp>
 #include <godot_cpp/templates/hash_map.hpp>
+#include <godot_cpp/templates/hash_set.hpp>
 #include <godot_cpp/templates/local_vector.hpp>
 #include <godot_cpp/templates/vector.hpp>
 #include <godot_cpp/variant/dictionary.hpp>
@@ -22,6 +23,7 @@ using namespace godot;
 #include "core/object/ref_counted.h"
 #include "core/string/ustring.h"
 #include "core/templates/hash_map.h"
+#include "core/templates/hash_set.h"
 #include "core/templates/local_vector.h"
 #include "core/templates/vector.h"
 #include "core/variant/dictionary.h"
