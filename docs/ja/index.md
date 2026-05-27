@@ -65,12 +65,12 @@ Windows / macOS でのビルドおよび実行を確認しています。
 
 リポジトリの `examples/` フォルダに SDK のテストプロジェクトに基づいたサンプルプロジェクトがあります。
 
+- [Ringo](../../examples/Ringo) — 「りんご」のテスト
 - [allAttributeV7](../../examples/allAttributeV7) — 全属性の機能テスト
 - [allPartsV7](../../examples/allPartsV7) — 全パーツ種の機能テスト
 - [overall](../../examples/overall) — 総合的な機能テスト
 - [overall_gdextension](../../examples/overall_gdextension) — GDExtension 版での総合テスト
 - [ParticleEffect](../../examples/ParticleEffect) — エフェクト機能のテスト
-- [Ringo](../../examples/Ringo) — Ringoのテスト
 
 ## 関連リポジトリ
 
