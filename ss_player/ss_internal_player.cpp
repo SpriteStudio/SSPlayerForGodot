@@ -1057,34 +1057,7 @@ void SsInternalPlayer::_drawAnimation(float frame_no, float delta_seconds, bool 
 
 
 
-Ref<SSABResource> SsInternalPlayer::_resolve_ssab_by_hash(uint32_t name_hash) const {
-    if (!_ssabRes.is_null()) {
-        auto binary = _ssabRes->get_ss_anime_binary();
-        if (binary && binary->external_instances()) {
-            const auto* entry = binary->external_instances()->LookupByKey(name_hash);
-            if (entry) {
-                const uint32_t pack_hash = entry->anime_pack_name_hash();
-                if (auto* ext_ptr = _external_ssabs_by_pack_hash.getptr(pack_hash)) {
-                    auto anim = (*ext_ptr)->find_animation_by_hash(name_hash);
-                    if (anim) {
-                        return *ext_ptr;
-                    }
-                }
-            }
-        }
-    }
 
-    if (!_ssabRes.is_null() && _ssabRes->find_animation_by_hash(name_hash)) {
-        return _ssabRes;
-    }
-    for (int i = 0; i < _external_ssabs.size(); i++) {
-        const Ref<SSABResource>& ext = _external_ssabs[i];
-        if (!ext.is_null() && ext->find_animation_by_hash(name_hash)) {
-            return ext;
-        }
-    }
-    return Ref<SSABResource>();
-}
 
 void SsInternalPlayer::_load_external_ssabs() {
     _external_ssabs.clear();
@@ -1096,14 +1069,13 @@ void SsInternalPlayer::_load_external_ssabs() {
 
     auto exts = binary->external_instances();
     String parent_dir = _ssabRes->get_parent_dir();
+    HashSet<String> loaded_packs;
     for (uint32_t i = 0; i < exts->size(); i++) {
         auto entry = exts->Get(i);
         if (!entry || !entry->anime_pack_name()) continue;
-        const uint32_t pack_hash = entry->anime_pack_name_hash();
-        if (_external_ssabs_by_pack_hash.has(pack_hash)) continue;
-
         String pack = String::utf8(entry->anime_pack_name()->c_str());
-        if (pack.is_empty()) continue;
+        if (pack.is_empty() || loaded_packs.has(pack)) continue;
+        loaded_packs.insert(pack);
         String path = parent_dir.path_join(pack + ".ssab");
         Ref<Resource> res =
         #ifdef SPRITESTUDIO_GODOT_EXTENSION
@@ -1121,7 +1093,9 @@ void SsInternalPlayer::_load_external_ssabs() {
             continue;
         }
         _external_ssabs.push_back(ssab);
-        _external_ssabs_by_pack_hash[pack_hash] = ssab;
+        if (ssab->get_ss_anime_binary()) {
+            _external_ssabs_by_pack_hash[ssab->get_ss_anime_binary()->name_hash()] = ssab;
+        }
     }
 }
 
@@ -1158,10 +1132,28 @@ void SsInternalPlayer::_setup_instance_children() {
         auto pt = p->part_type_as_PartTypeInstance();
         if (!pt) continue;
 
-        uint32_t ref_hash = pt->ref_anime_hash();
-        Ref<SSABResource> source = _resolve_ssab_by_hash(ref_hash);
+        String pack_name = pt->ref_anime_pack() ? String::utf8(pt->ref_anime_pack()->c_str()) : String();
+        String anim_name = pt->ref_anime_name() ? String::utf8(pt->ref_anime_name()->c_str()) : String();
+        uint32_t pack_name_hash = pt->ref_anime_pack_hash();
+        uint32_t anim_name_hash = pt->ref_anime_name_hash();
+
+        Ref<SSABResource> source;
+        if (!_ssabRes.is_null() && _ssabRes->get_ss_anime_binary() && _ssabRes->get_ss_anime_binary()->name_hash() == pack_name_hash) {
+            // パック名ハッシュが自分自身と一致する場合は、内部のSSABから検索
+            if (_ssabRes->find_animation_by_hash(anim_name_hash)) {
+                source = _ssabRes;
+            }
+        } else {
+            // それ以外の場合は外部のSSAB（external）から検索
+            if (auto* ext_ptr = _external_ssabs_by_pack_hash.getptr(pack_name_hash)) {
+                if ((*ext_ptr)->find_animation_by_hash(anim_name_hash)) {
+                    source = *ext_ptr;
+                }
+            }
+        }
+
         if (source.is_null()) {
-            ERR_PRINT(vformat("[SS] instance part %d: ref_anime_hash=0x%x not found in current or external SSABs", i, ref_hash));
+            ERR_PRINT(vformat("[SS] instance part %d: animation '%s' (pack '%s') not found in current or external SSABs", i, anim_name, pack_name));
             continue;
         }
 
@@ -1171,7 +1163,7 @@ void SsInternalPlayer::_setup_instance_children() {
         // Hand the child the SSAB that actually contains the referenced
         // animation — may be `_ssabRes` itself or an external sibling.
         child->setSSABResource(source);
-        child->setAnimationByHash(ref_hash);
+        child->setAnimationByHash(anim_name_hash);
         child->stop();
         // Keep the child hidden by default; _update_instance_children flips
         // it visible only once an EventInstance becomes active for the slot.

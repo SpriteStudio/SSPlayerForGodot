@@ -5840,15 +5840,32 @@ inline ::flatbuffers::Offset<PartTypeNines> CreatePartTypeNines(
 struct PartTypeInstance FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   typedef PartTypeInstanceBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
-    VT_REF_ANIME_HASH = 4
+    VT_REF_ANIME_PACK = 4,
+    VT_REF_ANIME_PACK_HASH = 6,
+    VT_REF_ANIME_NAME = 8,
+    VT_REF_ANIME_NAME_HASH = 10
   };
-  uint32_t ref_anime_hash() const {
-    return GetField<uint32_t>(VT_REF_ANIME_HASH, 0);
+  const ::flatbuffers::String *ref_anime_pack() const {
+    return GetPointer<const ::flatbuffers::String *>(VT_REF_ANIME_PACK);
+  }
+  uint32_t ref_anime_pack_hash() const {
+    return GetField<uint32_t>(VT_REF_ANIME_PACK_HASH, 0);
+  }
+  const ::flatbuffers::String *ref_anime_name() const {
+    return GetPointer<const ::flatbuffers::String *>(VT_REF_ANIME_NAME);
+  }
+  uint32_t ref_anime_name_hash() const {
+    return GetField<uint32_t>(VT_REF_ANIME_NAME_HASH, 0);
   }
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<uint32_t>(verifier, VT_REF_ANIME_HASH, 4) &&
+           VerifyOffset(verifier, VT_REF_ANIME_PACK) &&
+           verifier.VerifyString(ref_anime_pack()) &&
+           VerifyField<uint32_t>(verifier, VT_REF_ANIME_PACK_HASH, 4) &&
+           VerifyOffset(verifier, VT_REF_ANIME_NAME) &&
+           verifier.VerifyString(ref_anime_name()) &&
+           VerifyField<uint32_t>(verifier, VT_REF_ANIME_NAME_HASH, 4) &&
            verifier.EndTable();
   }
 };
@@ -5857,8 +5874,17 @@ struct PartTypeInstanceBuilder {
   typedef PartTypeInstance Table;
   ::flatbuffers::FlatBufferBuilder &fbb_;
   ::flatbuffers::uoffset_t start_;
-  void add_ref_anime_hash(uint32_t ref_anime_hash) {
-    fbb_.AddElement<uint32_t>(PartTypeInstance::VT_REF_ANIME_HASH, ref_anime_hash, 0);
+  void add_ref_anime_pack(::flatbuffers::Offset<::flatbuffers::String> ref_anime_pack) {
+    fbb_.AddOffset(PartTypeInstance::VT_REF_ANIME_PACK, ref_anime_pack);
+  }
+  void add_ref_anime_pack_hash(uint32_t ref_anime_pack_hash) {
+    fbb_.AddElement<uint32_t>(PartTypeInstance::VT_REF_ANIME_PACK_HASH, ref_anime_pack_hash, 0);
+  }
+  void add_ref_anime_name(::flatbuffers::Offset<::flatbuffers::String> ref_anime_name) {
+    fbb_.AddOffset(PartTypeInstance::VT_REF_ANIME_NAME, ref_anime_name);
+  }
+  void add_ref_anime_name_hash(uint32_t ref_anime_name_hash) {
+    fbb_.AddElement<uint32_t>(PartTypeInstance::VT_REF_ANIME_NAME_HASH, ref_anime_name_hash, 0);
   }
   explicit PartTypeInstanceBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
@@ -5873,10 +5899,32 @@ struct PartTypeInstanceBuilder {
 
 inline ::flatbuffers::Offset<PartTypeInstance> CreatePartTypeInstance(
     ::flatbuffers::FlatBufferBuilder &_fbb,
-    uint32_t ref_anime_hash = 0) {
+    ::flatbuffers::Offset<::flatbuffers::String> ref_anime_pack = 0,
+    uint32_t ref_anime_pack_hash = 0,
+    ::flatbuffers::Offset<::flatbuffers::String> ref_anime_name = 0,
+    uint32_t ref_anime_name_hash = 0) {
   PartTypeInstanceBuilder builder_(_fbb);
-  builder_.add_ref_anime_hash(ref_anime_hash);
+  builder_.add_ref_anime_name_hash(ref_anime_name_hash);
+  builder_.add_ref_anime_name(ref_anime_name);
+  builder_.add_ref_anime_pack_hash(ref_anime_pack_hash);
+  builder_.add_ref_anime_pack(ref_anime_pack);
   return builder_.Finish();
+}
+
+inline ::flatbuffers::Offset<PartTypeInstance> CreatePartTypeInstanceDirect(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    const char *ref_anime_pack = nullptr,
+    uint32_t ref_anime_pack_hash = 0,
+    const char *ref_anime_name = nullptr,
+    uint32_t ref_anime_name_hash = 0) {
+  auto ref_anime_pack__ = ref_anime_pack ? _fbb.CreateString(ref_anime_pack) : 0;
+  auto ref_anime_name__ = ref_anime_name ? _fbb.CreateString(ref_anime_name) : 0;
+  return ss::format::CreatePartTypeInstance(
+      _fbb,
+      ref_anime_pack__,
+      ref_anime_pack_hash,
+      ref_anime_name__,
+      ref_anime_name_hash);
 }
 
 struct PartTypeEffect FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
@@ -8041,38 +8089,27 @@ inline ::flatbuffers::Offset<ExternalTexture> CreateExternalTextureDirect(
 struct ExternalInstance FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   typedef ExternalInstanceBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
-    VT_ANIME_NAME_HASH = 4,
-    VT_ANIME_PACK_NAME_HASH = 6,
-    VT_ANIME_PACK_NAME = 8,
-    VT_ANIME_NAME = 10
+    VT_ANIME_PACK_NAME_HASH = 4,
+    VT_ANIME_PACK_NAME = 6
   };
-  uint32_t anime_name_hash() const {
-    return GetField<uint32_t>(VT_ANIME_NAME_HASH, 0);
-  }
-  bool KeyCompareLessThan(const ExternalInstance * const o) const {
-    return anime_name_hash() < o->anime_name_hash();
-  }
-  int KeyCompareWithValue(uint32_t _anime_name_hash) const {
-    return static_cast<int>(anime_name_hash() > _anime_name_hash) - static_cast<int>(anime_name_hash() < _anime_name_hash);
-  }
   uint32_t anime_pack_name_hash() const {
     return GetField<uint32_t>(VT_ANIME_PACK_NAME_HASH, 0);
+  }
+  bool KeyCompareLessThan(const ExternalInstance * const o) const {
+    return anime_pack_name_hash() < o->anime_pack_name_hash();
+  }
+  int KeyCompareWithValue(uint32_t _anime_pack_name_hash) const {
+    return static_cast<int>(anime_pack_name_hash() > _anime_pack_name_hash) - static_cast<int>(anime_pack_name_hash() < _anime_pack_name_hash);
   }
   const ::flatbuffers::String *anime_pack_name() const {
     return GetPointer<const ::flatbuffers::String *>(VT_ANIME_PACK_NAME);
   }
-  const ::flatbuffers::String *anime_name() const {
-    return GetPointer<const ::flatbuffers::String *>(VT_ANIME_NAME);
-  }
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<uint32_t>(verifier, VT_ANIME_NAME_HASH, 4) &&
            VerifyField<uint32_t>(verifier, VT_ANIME_PACK_NAME_HASH, 4) &&
            VerifyOffset(verifier, VT_ANIME_PACK_NAME) &&
            verifier.VerifyString(anime_pack_name()) &&
-           VerifyOffset(verifier, VT_ANIME_NAME) &&
-           verifier.VerifyString(anime_name()) &&
            verifier.EndTable();
   }
 };
@@ -8081,17 +8118,11 @@ struct ExternalInstanceBuilder {
   typedef ExternalInstance Table;
   ::flatbuffers::FlatBufferBuilder &fbb_;
   ::flatbuffers::uoffset_t start_;
-  void add_anime_name_hash(uint32_t anime_name_hash) {
-    fbb_.AddElement<uint32_t>(ExternalInstance::VT_ANIME_NAME_HASH, anime_name_hash, 0);
-  }
   void add_anime_pack_name_hash(uint32_t anime_pack_name_hash) {
     fbb_.AddElement<uint32_t>(ExternalInstance::VT_ANIME_PACK_NAME_HASH, anime_pack_name_hash, 0);
   }
   void add_anime_pack_name(::flatbuffers::Offset<::flatbuffers::String> anime_pack_name) {
     fbb_.AddOffset(ExternalInstance::VT_ANIME_PACK_NAME, anime_pack_name);
-  }
-  void add_anime_name(::flatbuffers::Offset<::flatbuffers::String> anime_name) {
-    fbb_.AddOffset(ExternalInstance::VT_ANIME_NAME, anime_name);
   }
   explicit ExternalInstanceBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
@@ -8106,32 +8137,23 @@ struct ExternalInstanceBuilder {
 
 inline ::flatbuffers::Offset<ExternalInstance> CreateExternalInstance(
     ::flatbuffers::FlatBufferBuilder &_fbb,
-    uint32_t anime_name_hash = 0,
     uint32_t anime_pack_name_hash = 0,
-    ::flatbuffers::Offset<::flatbuffers::String> anime_pack_name = 0,
-    ::flatbuffers::Offset<::flatbuffers::String> anime_name = 0) {
+    ::flatbuffers::Offset<::flatbuffers::String> anime_pack_name = 0) {
   ExternalInstanceBuilder builder_(_fbb);
-  builder_.add_anime_name(anime_name);
   builder_.add_anime_pack_name(anime_pack_name);
   builder_.add_anime_pack_name_hash(anime_pack_name_hash);
-  builder_.add_anime_name_hash(anime_name_hash);
   return builder_.Finish();
 }
 
 inline ::flatbuffers::Offset<ExternalInstance> CreateExternalInstanceDirect(
     ::flatbuffers::FlatBufferBuilder &_fbb,
-    uint32_t anime_name_hash = 0,
     uint32_t anime_pack_name_hash = 0,
-    const char *anime_pack_name = nullptr,
-    const char *anime_name = nullptr) {
+    const char *anime_pack_name = nullptr) {
   auto anime_pack_name__ = anime_pack_name ? _fbb.CreateString(anime_pack_name) : 0;
-  auto anime_name__ = anime_name ? _fbb.CreateString(anime_name) : 0;
   return ss::format::CreateExternalInstance(
       _fbb,
-      anime_name_hash,
       anime_pack_name_hash,
-      anime_pack_name__,
-      anime_name__);
+      anime_pack_name__);
 }
 
 struct EmbeddedAsset FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
