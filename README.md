@@ -88,12 +88,12 @@ graph LR
 
 Sample projects based on SDK test projects are available under the [examples folder](./examples/).
 
+- [Ringo](./examples/Ringo) — Test for Ringo
 - [allAttributeV7](./examples/allAttributeV7) — Functional test for all attributes
 - [allPartsV7](./examples/allPartsV7) — Functional test for all part types
 - [overall](./examples/overall) — Comprehensive functional test
 - [overall_gdextension](./examples/overall_gdextension) — Comprehensive test for GDExtension
 - [ParticleEffect](./examples/ParticleEffect) — Test for effect features
-- [Ringo](./examples/Ringo) — Test for Ringo
 
 ## Related Repositories
 
