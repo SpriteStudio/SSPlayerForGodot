@@ -83,7 +83,7 @@ void SSResourceInspectorPlugin::_add_action_buttons(const String &p_path) {
 
     if (!_is_unsupported_for_editor()) {
         Button *open_btn = memnew(Button);
-        open_btn->set_text(tr("Open Source SSPJ"));
+        open_btn->set_text(tr("Open SSPJ"));
         open_btn->set_tooltip_text(sspj.is_empty() ? missing_tip : sspj);
         open_btn->connect("pressed", callable_mp(this, &SSResourceInspectorPlugin::_on_open_pressed).bind(p_path));
         hbox->add_child(open_btn);

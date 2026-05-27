@@ -34,8 +34,8 @@ We provide two Quick Starts: one for quickly checking the operation using a samp
 
 1. **Get Godot Engine**: Download a 4.6-series editor from the [official site](https://godotengine.org/download/).
 2. **Download GDExtension**: Get the latest package from [Releases](https://github.com/SpriteStudio/SSPlayerForGodot/releases) and extract it.
-3. **Prepare Sample**: Copy the extracted `addons` folder into the `examples/Ringo` folder of this repository.
-4. **Check**: Open the `examples/Ringo` project in Godot Engine and open `Ringo.tscn` to immediately see the animation working.
+3. **Prepare Sample**: Copy the extracted `addons` folder into the `[examples/Ringo](./examples/Ringo)` folder of this repository.
+4. **Check**: Open the `[examples/Ringo](./examples/Ringo)` project in Godot Engine and open `Ringo.tscn` to immediately see the animation working.
 
 ### 2. Introduce to Your Project
 
