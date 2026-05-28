@@ -2,6 +2,9 @@
 
 This page explains the basic workflow for placing and playing SpriteStudio animations in your Godot scene.
 
+> [!NOTE]
+> This page assumes that **an `.ssab` file has already been imported into your Godot project**. If you do not have an `.ssab` yet, first see [Asset Import and Editor Integration](usage_asset_pipeline.md) (editor-based import) or [CLI Conversion and Automation](import.md) (CLI-based import).
+
 ## Fastest Setup: Auto Node Creation via Drag & Drop
 
 Taking advantage of Godot's powerful editor, you can set up an animation with the shortest possible workflow.

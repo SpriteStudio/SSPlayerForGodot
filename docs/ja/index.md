@@ -8,12 +8,29 @@
 [OPTPiX SpriteStudio](https://www.webtech.co.jp/spritestudio/) で作成したアニメーションを [Godot Engine](https://godotengine.org/) 上で再生するためのプラグインです。
 再生処理は [SpriteStudio7-SDK](https://github.com/SpriteStudio/SpriteStudio7-SDK) が提供する `libssruntime` を介して行います。
 
+## 目次
+
+- **セットアップ**
+    - [インストール](setup/install.md)
+    - [ビルドガイド](setup/build.md)
+- **ワークフロー**
+    - [基本的な使い方](workflow/usage_basic.md)
+    - [アセットのインポートとエディタ連携](workflow/usage_asset_pipeline.md)（初回の `.sspj` インポートはこちら）
+    - [スクリプト制御とイベント](workflow/usage_scripting.md)
+- **応用**
+    - [CLI コンバートと自動化](workflow/import.md)
+    - [パフォーマンスチューニングと高度な設定](workflow/tips.md)
+- **API リファレンス**
+    - [SpriteStudioPlayer2D](api/player.md)
+    - [リソース管理クラス](api/resource.md)
+- [v1.x からのマイグレーション](migration_from_v1.md)
+
 ## 主な機能 (Key Features)
 
 本プラグインは、Godot Engine 上で SpriteStudio 7 の表現力をフルに引き出すために設計されています。
 
 *   **完全な機能サポート:** ボーン階層、メッシュ＆デフォーム、パーティクルエフェクトなど、SpriteStudio 7 の全機能を標準でサポートします。
-*   **シームレスな統合と強力なアセットパイプライン:** Godot のエディタ内に統合された「SS Import Dock」による簡単なインポートに加え、インスペクタから直接 SpriteStudio を開いて再コンバートできる、**SpriteStudio と Godot をシームレスに行き来できる強力なアセットパイプライン**を提供します。詳しくは [USAGE: エディタ連携とアセットイテレーション](workflow/usage_asset_pipeline.md) をご覧ください。
+*   **シームレスな統合と強力なアセットパイプライン:** Godot のエディタ内に統合された「SS Import Dock」による簡単なインポートに加え、インスペクタから直接 SpriteStudio を開いて再コンバートできる、**SpriteStudio と Godot をシームレスに行き来できる強力なアセットパイプライン**を提供します。詳しくは [アセットのインポートとエディタ連携](workflow/usage_asset_pipeline.md) をご覧ください。
 *   **動的な着せ替え (CellMap Overrides):** 実行時にテクスチャ（セルマップ）を差し替えることで、キャラクターのカラーバリエーションや装備変更を簡単に実装できます。
 *   **シグナルとイベント:** タイムライン上に設定した「ユーザーデータ」や「シグナル」を Godot のシグナルとして受け取り、足音の再生やスクリプトのトリガーを正確なタイミングで行えます。
 *   **滑らかなスローモーション:** サブフレーム補間（Sub-frame interpolation）をサポートし、高リフレッシュレートのモニターやスローモーション演出でもカクつかない滑らかな再生が可能です。

@@ -11,10 +11,10 @@ GDExtension またはカスタムモジュール組み込み Godot Engine を自
 
 ## ソース取得
 
-本リポジトリをサブモジュールごと取得し、ビルド対象に応じて Godot Engine / godot-cpp を取得します。
+本リポジトリを取得し、ビルド対象に応じて Godot Engine / godot-cpp を取得します。
 
 ```bash
-git clone --recursive https://github.com/SpriteStudio/SSPlayerForGodot.git
+git clone https://github.com/SpriteStudio/SSPlayerForGodot.git
 cd SSPlayerForGodot
 git clone https://github.com/godotengine/godot.git -b 4.6
 git clone https://github.com/godotengine/godot-cpp.git -b master
@@ -22,6 +22,9 @@ git clone https://github.com/godotengine/godot-cpp.git -b master
 
 `godot` ディレクトリはカスタムモジュール組み込み Godot Engine をビルドする場合に必要です。
 `godot-cpp` ディレクトリは GDExtension をビルドする場合に必要です。
+
+> [!NOTE]
+> SDK のリリース成果物を使う一般的なビルドでは、サブモジュール `ss_player/SpriteStudio7-SDK/` の取得は不要です（`--recursive` を付けずにクローンして構いません）。SS7-SDK 自体を手元で開発・ビルドする場合のみ、後述の [SS7-SDK 開発者向け](#ss7-sdk-開発者向け) に従って `git submodule update --init --recursive` でサブモジュールを初期化してください。
 
 ## ビルド環境のセットアップ
 
@@ -136,8 +139,13 @@ FlatBuffers のヘッダを再生成する場合は別途 `flatc` (FlatBuffers �
 
 ### libssruntime を自前でビルドする
 
-[ソース取得](#ソース取得) の段階で SS7-SDK サブモジュール (`ss_player/SpriteStudio7-SDK/`) が初期化済みであることが前提です。
-以下を実行すると Rust ランタイム/コンバータがビルドされ、`ss_player/runtime/` 配下に成果物が自動配置されます。
+SS7-SDK サブモジュール (`ss_player/SpriteStudio7-SDK/`) が初期化済みであることが前提です。未初期化の場合は以下で取得してください。
+
+```bash
+git submodule update --init --recursive
+```
+
+その後、以下を実行すると Rust ランタイム/コンバータがビルドされ、`ss_player/runtime/` 配下に成果物が自動配置されます。
 
 **macOS / Linux**
 

@@ -2,10 +2,7 @@
 
 # SpriteStudioPlayer for Godot
 
-本developブランチは現在開発中のバージョンです。  
-安定版は [mainブランチ](https://github.com/SpriteStudio/SSPlayerForGodot/tree/main) または、[Releases](https://github.com/SpriteStudio/SSPlayerForGodot/releases)から取得してください。  
-
-> **注意:** 本書で扱う API・ワークフローは現在開発中のため、予告なく変更される可能性があります。また、本ブランチに関していかなる保証もサポートも提供せず、リクエストやバグ報告への返信もできません。
+> **注意:** 本 `develop` ブランチは現在開発中のバージョンです。安定版は [main ブランチ](https://github.com/SpriteStudio/SSPlayerForGodot/tree/main) または [Releases](https://github.com/SpriteStudio/SSPlayerForGodot/releases) から取得してください。本ブランチで扱う API・ワークフローは予告なく変更される可能性があり、いかなる保証もサポートも提供しません（リクエストやバグ報告への返信もできません）。
 
 [OPTPiX SpriteStudio 7](https://www.webtech.co.jp/spritestudio/) で作成したアニメーションを [Godot Engine](https://godotengine.org/) 上で再生するためのハイパフォーマンスなプラグインです。
 このプラグインを使用することで、ラスターベースの2Dアニメーションを Godot プロジェクトへ簡単に実装・再生することができます。
@@ -20,10 +17,10 @@
 ### クイックリンク (日本語)
 - [インストール](./docs/ja/setup/install.md)
 - [基本的な使い方](./docs/ja/workflow/usage_basic.md)
-- [エディタ連携とアセットイテレーション](./docs/ja/workflow/usage_asset_pipeline.md)
+- [アセットのインポートとエディタ連携](./docs/ja/workflow/usage_asset_pipeline.md)
 - [スクリプト制御とイベント](./docs/ja/workflow/usage_scripting.md)
 - [CLI コンバートと自動化](./docs/ja/workflow/import.md)
-- [パフォーマンスと高度な設定](./docs/ja/workflow/tips.md)
+- [パフォーマンスチューニングと高度な設定](./docs/ja/workflow/tips.md)
 - [ビルドガイド](./docs/ja/setup/build.md)
 - [v1.x からのマイグレーション](./docs/ja/migration_from_v1.md)
 
@@ -35,8 +32,8 @@
 
 1. **Godot Engine の準備**: [公式サイト](https://godotengine.org/download/) から 4.6 系のエディタをダウンロードします。
 2. **GDExtension の取得**: [Releases](https://github.com/SpriteStudio/SSPlayerForGodot/releases) から最新パッケージをダウンロードし、展開します。
-3. **サンプルの準備**: 取得した `addons` フォルダを、本リポジトリの `[examples/Ringo](./examples/Ringo)` フォルダ内にコピーします。
-4. **確認**: Godot Engine で `[examples/Ringo](./examples/Ringo)` プロジェクトを開き、`Ringo.tscn` を開くことですぐにアニメーションの動作を確認できます。
+3. **サンプルの準備**: 取得した `addons` フォルダを、本リポジトリの [examples/Ringo](./examples/Ringo) フォルダ内にコピーします。
+4. **確認**: Godot Engine で [examples/Ringo](./examples/Ringo) プロジェクトを開き、`Ringo.tscn` を開くことですぐにアニメーションの動作を確認できます。
 
 ### 2. 自身のプロジェクトへ導入する
 
@@ -48,42 +45,9 @@
 
 ## 概要 (Overview)
 
-本プラグインは、**SpriteStudio と Godot エディタをシームレスに行き来できる強力なアセットパイプライン**を備え、一瞬でアセットを更新することが可能です。詳しくは [エディタ連携とアセットイテレーション](./docs/ja/workflow/usage_asset_pipeline.md) をご覧ください。
+本プラグインは、**SpriteStudio と Godot エディタをシームレスに行き来できる強力なアセットパイプライン**を備え、一瞬でアセットを更新することが可能です。
 
-SpriteStudio のソースアセットから Godot で再生されるまでの基本的なデータフローは以下の通りです。
-
-```mermaid
-graph LR
-    SS[" .sspj / 画像<br>(ソースアセット) "]
-
-    subgraph Convert ["変換プロセス"]
-        DOCK[[" SS Import Dock<br>(Godotエディタ内蔵) "]]
-        CLI[[" ssconverter-cli<br>(CLIツール) "]]
-    end
-
-    subgraph Godot ["Godot ランタイム (res://)"]
-        BIN[" .ssab / .ssqb "]
-        NODE[[ SpriteStudioPlayer2D ]]
-        RT(" libssruntime ")
-    end
-
-    SS -- "ドラッグ＆ドロップ" --> DOCK
-    SS -- "CI/CDや手動" --> CLI
-    DOCK -. "自動生成" .-> BIN
-    CLI -. "生成" .-> BIN
-    
-    BIN -- "インスペクタにセット" --> NODE
-    NODE -. "高速再生" .-> RT
-    NODE -- "描画" --> RENDER{{" 画面 "}}
-
-    classDef generated stroke-dasharray: 5 5;
-    class BIN generated;
-```
-
-1.  **ソースアセット**: SpriteStudio 7 で作成されたアニメーションは `.sspj`（プロジェクト）、`.ssae`（アニメ）、`.ssce`（セルマップ）および画像として構成されます。
-2.  **変換 (Conversion)**: Godot での高速な再生を実現するため、専用の **SS Import Dock**（エディタ内蔵）または **ssconverter-cli** を使用して、最適化されたバイナリ形式（`.ssab` / `.ssqb`）に変換します。
-3.  **Godot ランタイム**: 生成されたバイナリを `SSABResource` として読み込み、`SpriteStudioPlayer2D` ノードを通じて再生します。内部では `libssruntime` が高速なレンダリング処理を行います。
-
+データフロー図、主な機能、対応バージョンなどの詳細は **[ドキュメント (日本語)](./docs/ja/index.md)** を参照してください。
 
 ## サンプル
 
