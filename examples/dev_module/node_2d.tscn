@@ -1,15 +1,21 @@
 [gd_scene format=3 uid="uid://crm5d340adlbm"]
 
-[ext_resource type="SSABResource" uid="uid://bxou6b7daw1se" path="res://ssab_generated/Mask/True_Light.ssab" id="1_wtcfe"]
+[node name="Node2D" type="Node2D" unique_id=2106903659]
 
-[node name="Node2D" type="Node2D" unique_id=1299694310]
+[node name="00_spr_03_action_01_level3" type="SpriteStudioPlayer2D" parent="." unique_id=1405222810]
+position = Vector2(139, 381)
 
-[node name="00_spr_03_action_01_level3" type="SpriteStudioPlayer2D" parent="." unique_id=222078339]
-position = Vector2(564, 609)
-ssab = ExtResource("1_wtcfe")
-animation = "True_light"
-playing = false
-animation_section_start = 0
-animation_section_end = 120
-sub_frame_enabled = true
-cellmaps/Mask_parts = null
+[node name="00_spr_03_action_01_level3" type="SpriteStudioPlayer2D" parent="00_spr_03_action_01_level3" unique_id=1174840223]
+position = Vector2(174, -3)
+
+[node name="00_spr_03_action_01_level3" type="SpriteStudioPlayer2D" parent="00_spr_03_action_01_level3/00_spr_03_action_01_level3" unique_id=6772756]
+position = Vector2(176, 11)
+
+[node name="00_spr_03_action_01_level3" type="SpriteStudioPlayer2D" parent="00_spr_03_action_01_level3/00_spr_03_action_01_level3/00_spr_03_action_01_level3" unique_id=1915863492]
+position = Vector2(188, -5)
+
+[node name="00_spr_03_action_01_level3" type="SpriteStudioPlayer2D" parent="00_spr_03_action_01_level3/00_spr_03_action_01_level3/00_spr_03_action_01_level3/00_spr_03_action_01_level3" unique_id=2104474040]
+position = Vector2(170, -9)
+
+[node name="00_spr_03_action_01_level3" type="SpriteStudioPlayer2D" parent="00_spr_03_action_01_level3/00_spr_03_action_01_level3/00_spr_03_action_01_level3/00_spr_03_action_01_level3/00_spr_03_action_01_level3" unique_id=1999012952]
+position = Vector2(164, 9)
