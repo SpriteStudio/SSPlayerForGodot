@@ -73,7 +73,7 @@ void SSFileSystemContextMenu::get_options(const Vector<String> &p_paths) {
 
 void SSFileSystemContextMenu::_on_open_in_editor(const PackedStringArray &p_paths) {
     if (!importer) {
-        print_line("SSFileSystemContextMenu: importer not set.");
+        ERR_PRINT("SSFileSystemContextMenu: importer not set.");
         return;
     }
 
@@ -103,17 +103,17 @@ void SSFileSystemContextMenu::_on_open_in_editor(const PackedStringArray &p_path
     if (pending_count == 1) {
         _ask_user_for_sspj(pending_ssab_for_dialog, ACTION_OPEN_IN_EDITOR);
     } else if (pending_count > 1) {
-        print_line(vformat("SSFileSystemContextMenu: %d file(s) without source record skipped. Right-click each individually to set their sspj.", pending_count));
+        WARN_PRINT(vformat("SSFileSystemContextMenu: %d file(s) without source record skipped. Right-click each individually to set their sspj.", pending_count));
     }
 }
 
 void SSFileSystemContextMenu::_on_convert(const PackedStringArray &p_paths) {
     if (!importer) {
-        print_line("SSFileSystemContextMenu: importer not set.");
+        ERR_PRINT("SSFileSystemContextMenu: importer not set.");
         return;
     }
     if (importer->is_importing()) {
-        print_line("SSFileSystemContextMenu: Already importing. Please wait.");
+        WARN_PRINT("SSFileSystemContextMenu: Already importing. Please wait.");
         return;
     }
 
@@ -151,14 +151,14 @@ void SSFileSystemContextMenu::_on_convert(const PackedStringArray &p_paths) {
     if (pending_count == 1 && sspjs.is_empty()) {
         _ask_user_for_sspj(pending_ssab_for_dialog, ACTION_CONVERT);
     } else if (pending_count > 0) {
-        print_line(vformat("SSFileSystemContextMenu: %d file(s) without source record skipped. Right-click each individually to set their sspj.", pending_count));
+        WARN_PRINT(vformat("SSFileSystemContextMenu: %d file(s) without source record skipped. Right-click each individually to set their sspj.", pending_count));
     }
 }
 
 void SSFileSystemContextMenu::_do_open_in_editor(const String &p_sspj_path) {
     Error err = OS::get_singleton()->shell_open(p_sspj_path);
     if (err != OK) {
-        print_line(vformat("SSFileSystemContextMenu: failed to open sspj (%s) via OS shell. error=%d", p_sspj_path, (int)err));
+        ERR_PRINT(vformat("SSFileSystemContextMenu: failed to open sspj (%s) via OS shell. error=%d", p_sspj_path, (int)err));
     }
 }
 

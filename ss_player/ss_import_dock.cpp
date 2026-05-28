@@ -3,6 +3,7 @@
 #include "ss_macros.h"
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
+#include <godot_cpp/classes/accept_dialog.hpp>
 #include <godot_cpp/classes/dir_access.hpp>
 #include <godot_cpp/classes/display_server.hpp>
 #include <godot_cpp/classes/editor_file_system.hpp>
@@ -19,6 +20,7 @@ using namespace godot;
 #include "core/os/os.h"
 #include "editor/editor_interface.h"
 #include "editor/settings/editor_settings.h"
+#include "scene/gui/dialogs.h"
 #include "scene/main/window.h"
 #if VERSION_MAJOR >= 4
     #if VERSION_MINOR >= 5
@@ -51,23 +53,6 @@ void SSImportControl::_bind_methods() {
 SSImportControl::SSImportControl() {
     set_h_size_flags(Control::SIZE_EXPAND_FILL);
     set_v_size_flags(Control::SIZE_EXPAND_FILL);
-
-    // 1. Header: converter version
-    {
-        HBoxContainer *hbox = memnew(HBoxContainer);
-        add_child(hbox);
-
-        Label *label = memnew(Label);
-        label->set_text(tr("converter:"));
-        hbox->add_child(label);
-
-        SSClickableLabel *clickable_label = memnew(SSClickableLabel);
-        const char *v = ss_converter_version();
-        clickable_label->set_text(String(v));
-        ss_converter_version_free((char *)v);
-        v = nullptr;
-        hbox->add_child(clickable_label);
-    }
 
     // 2. Output Dir row
     {
@@ -172,6 +157,23 @@ SSImportControl::SSImportControl() {
     recent_popup->connect("id_pressed", Callable(this, "_on_recent_menu_id_pressed"));
     add_child(recent_popup);
 
+    // 6. Footer: converter version (moved to bottom)
+    {
+        HBoxContainer *hbox = memnew(HBoxContainer);
+        add_child(hbox);
+
+        Label *label = memnew(Label);
+        label->set_text(tr("converter:"));
+        hbox->add_child(label);
+
+        SSClickableLabel *clickable_label = memnew(SSClickableLabel);
+        const char *v = ss_converter_version();
+        clickable_label->set_text(String(v));
+        ss_converter_version_free((char *)v);
+        v = nullptr;
+        hbox->add_child(clickable_label);
+    }
+
     _load_settings();
 }
 
@@ -266,7 +268,7 @@ void SSImportControl::_on_window_files_dropped(const Vector<String> &p_files) {
     if (get_global_rect().has_point(get_global_mouse_position())) {
 
         if (importer && importer->is_importing()) {
-            print_line("SSImportControl: Already importing. Please wait.");
+            WARN_PRINT("SSImportControl: Already importing. Please wait.");
             return;
         }
 
@@ -284,7 +286,14 @@ void SSImportControl::_on_window_files_dropped(const Vector<String> &p_files) {
             }
         }
         if (sspj_files.is_empty()) {
-            print_line("SSImportControl: sspj files not found.");
+            ERR_PRINT("SSImportControl: No .sspj files found.");
+            AcceptDialog *dialog = memnew(AcceptDialog);
+            dialog->set_title(tr("Import Error"));
+            dialog->set_text(tr("No .sspj files found.\nPlease drop SpriteStudio project (.sspj) files."));
+            EditorInterface::get_singleton()->get_base_control()->add_child(dialog);
+            dialog->connect("confirmed", Callable(dialog, "queue_free"));
+            dialog->connect("canceled", Callable(dialog, "queue_free"));
+            dialog->popup_centered();
             return;
         }
 
@@ -300,7 +309,7 @@ void SSImportControl::_start_import(const PackedStringArray &p_sspj_files) {
 void SSImportControl::_start_import(const Vector<String> &p_sspj_files) {
 #endif
     if (!importer) {
-        print_line("SSImportControl: importer is not set.");
+        ERR_PRINT("SSImportControl: importer is not set.");
         return;
     }
 
@@ -370,7 +379,7 @@ void SSImportControl::_on_open_dir_button_pressed() {
     String global_path = ProjectSettings::get_singleton()->globalize_path(path);
     Error err = OS::get_singleton()->shell_open(global_path);
     if (err != OK) {
-        print_line(vformat("SSImportControl: failed to open output directory %s. error=%d", global_path, (int)err));
+        ERR_PRINT(vformat("SSImportControl: failed to open output directory %s. error=%d", global_path, (int)err));
     }
 }
 
@@ -382,7 +391,7 @@ void SSImportControl::_on_dir_selected(const String &p_path) {
 
 void SSImportControl::_on_recent_file_pressed(const String &p_path) {
     if (importer && importer->is_importing()) {
-        print_line("SSImportControl: Already importing. Please wait.");
+        WARN_PRINT("SSImportControl: Already importing. Please wait.");
         return;
     }
     _reconvert_sspj(p_path);
@@ -466,18 +475,18 @@ void SSImportControl::_on_recent_menu_id_pressed(int p_id) {
         case RECENT_MENU_OPEN_IN_EDITOR: {
             Error err = OS::get_singleton()->shell_open(path);
             if (err != OK) {
-                print_line(vformat("SSImportControl: failed to open sspj %s. error=%d", path, (int)err));
+                ERR_PRINT(vformat("SSImportControl: failed to open sspj %s. error=%d", path, (int)err));
             }
         } break;
         case RECENT_MENU_REVEAL: {
             Error err = OS::get_singleton()->shell_show_in_file_manager(path, false);
             if (err != OK) {
-                print_line(vformat("SSImportControl: failed to reveal %s. error=%d", path, (int)err));
+                ERR_PRINT(vformat("SSImportControl: failed to reveal %s. error=%d", path, (int)err));
             }
         } break;
         case RECENT_MENU_RECONVERT: {
             if (importer && importer->is_importing()) {
-                print_line("SSImportControl: Already importing. Please wait.");
+                WARN_PRINT("SSImportControl: Already importing. Please wait.");
                 return;
             }
             _reconvert_sspj(path);
