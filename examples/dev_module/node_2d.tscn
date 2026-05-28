@@ -1,21 +1,65 @@
 [gd_scene format=3 uid="uid://crm5d340adlbm"]
 
+[ext_resource type="SSABResource" uid="uid://eymruor4ksd5" path="res://ssab_generated/spr_00_00/00_spr_03_action_01_level3.ssab" id="1_wtcfe"]
+
 [node name="Node2D" type="Node2D" unique_id=2106903659]
 
 [node name="00_spr_03_action_01_level3" type="SpriteStudioPlayer2D" parent="." unique_id=1405222810]
 position = Vector2(139, 381)
+ssab = ExtResource("1_wtcfe")
+animation = "00_action_01_left"
+playing = false
+animation_section_start = 0
+animation_section_end = 373
+cellmaps/spr_00_00_1 = null
+cellmaps/spr_00_00_0 = null
 
 [node name="00_spr_03_action_01_level3" type="SpriteStudioPlayer2D" parent="00_spr_03_action_01_level3" unique_id=1174840223]
 position = Vector2(174, -3)
+ssab = ExtResource("1_wtcfe")
+animation = "00_action_01_left"
+playing = false
+animation_section_start = 0
+animation_section_end = 373
+cellmaps/spr_00_00_1 = null
+cellmaps/spr_00_00_0 = null
 
 [node name="00_spr_03_action_01_level3" type="SpriteStudioPlayer2D" parent="00_spr_03_action_01_level3/00_spr_03_action_01_level3" unique_id=6772756]
 position = Vector2(176, 11)
+ssab = ExtResource("1_wtcfe")
+animation = "00_action_01_left"
+playing = false
+animation_section_start = 0
+animation_section_end = 373
+cellmaps/spr_00_00_1 = null
+cellmaps/spr_00_00_0 = null
 
 [node name="00_spr_03_action_01_level3" type="SpriteStudioPlayer2D" parent="00_spr_03_action_01_level3/00_spr_03_action_01_level3/00_spr_03_action_01_level3" unique_id=1915863492]
 position = Vector2(188, -5)
+ssab = ExtResource("1_wtcfe")
+animation = "00_action_01_left"
+playing = false
+animation_section_start = 0
+animation_section_end = 373
+cellmaps/spr_00_00_1 = null
+cellmaps/spr_00_00_0 = null
 
 [node name="00_spr_03_action_01_level3" type="SpriteStudioPlayer2D" parent="00_spr_03_action_01_level3/00_spr_03_action_01_level3/00_spr_03_action_01_level3/00_spr_03_action_01_level3" unique_id=2104474040]
 position = Vector2(170, -9)
+ssab = ExtResource("1_wtcfe")
+animation = "00_action_01_left"
+playing = false
+animation_section_start = 0
+animation_section_end = 373
+cellmaps/spr_00_00_1 = null
+cellmaps/spr_00_00_0 = null
 
 [node name="00_spr_03_action_01_level3" type="SpriteStudioPlayer2D" parent="00_spr_03_action_01_level3/00_spr_03_action_01_level3/00_spr_03_action_01_level3/00_spr_03_action_01_level3/00_spr_03_action_01_level3" unique_id=1999012952]
 position = Vector2(164, 9)
+ssab = ExtResource("1_wtcfe")
+animation = "00_action_01_left"
+playing = true
+animation_section_start = 0
+animation_section_end = 373
+cellmaps/spr_00_00_1 = null
+cellmaps/spr_00_00_0 = null
