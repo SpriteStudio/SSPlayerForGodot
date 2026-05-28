@@ -6,6 +6,7 @@
 #include "ss_progress_dialog.h"
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
+#include <godot_cpp/classes/accept_dialog.hpp>
 #include <godot_cpp/classes/dir_access.hpp>
 #include <godot_cpp/classes/editor_file_system.hpp>
 #include <godot_cpp/classes/editor_interface.hpp>
@@ -22,6 +23,7 @@ using namespace godot;
 #include "core/io/resource.h"
 #include "editor/editor_interface.h"
 #include "editor/settings/editor_settings.h"
+#include "scene/gui/dialogs.h"
 #if VERSION_MAJOR >= 4
     #if VERSION_MINOR >= 5
     #include "editor/file_system/editor_file_system.h"
@@ -71,7 +73,18 @@ void SSImporter::_notification(int p_what) {
             }
 
             if (finished_num != _import_prev_num) {
-                _import_dialog->step(vformat("%s %d/%d", _session_title, finished_num, _import_finished_contexts.size()), finished_num);
+                String running_file = "";
+                for (size_t i = 0; i < _import_finished_contexts.size(); ++i) {
+                    if (!_import_finished_contexts[i]) {
+                        running_file = _import_src_files[i].get_file();
+                        break;
+                    }
+                }
+                if (!running_file.is_empty()) {
+                    _import_dialog->step(vformat("%s %d/%d (%s)", _session_title, finished_num, _import_finished_contexts.size(), running_file), finished_num);
+                } else {
+                    _import_dialog->step(vformat("%s %d/%d", _session_title, finished_num, _import_finished_contexts.size()), finished_num);
+                }
                 _import_prev_num = finished_num;
             }
 
@@ -101,6 +114,9 @@ void SSImporter::_finalize_import() {
     Dictionary source_map = _load_source_map();
     bool any_success = false;
 
+    Vector<String> failed_files;
+    Vector<String> failed_reasons;
+
     for (size_t i = 0; i < _import_contexts.size(); ++i) {
         void *ctx = _import_contexts[i];
         CConverterError result = ss_converter_get_result((Context *)ctx);
@@ -113,8 +129,26 @@ void SSImporter::_finalize_import() {
             ss_converter_get_error((Context *)ctx, &err_msg, &err_len);
             String err_str = err_msg ? String::utf8(err_msg) : String("Unknown error");
             ERR_PRINT(vformat("SSImporter: convert failed for %s (error %d): %s", _import_src_files[i], (int)result, err_str));
+            failed_files.push_back(_import_src_files[i].get_file());
+            failed_reasons.push_back(err_str);
         }
         ss_converter_destroy((Context *)ctx);
+    }
+
+    if (!failed_files.is_empty()) {
+        String msg = tr("Some files failed to import.\n\n");
+        for (int i = 0; i < failed_files.size(); ++i) {
+            msg += vformat("- %s: %s\n", failed_files[i], failed_reasons[i]);
+        }
+        msg += tr("\nPlease check the Output tab for details.");
+
+        AcceptDialog *dialog = memnew(AcceptDialog);
+        dialog->set_title(tr("Import Error"));
+        dialog->set_text(msg);
+        EditorInterface::get_singleton()->get_base_control()->add_child(dialog);
+        dialog->connect("confirmed", Callable(dialog, "queue_free"));
+        dialog->connect("canceled", Callable(dialog, "queue_free"));
+        dialog->popup_centered();
     }
 
     if (any_success) {
@@ -269,7 +303,12 @@ void SSImporter::_start_session(const String &p_dialog_title) {
     _import_finished_contexts.resize(_import_contexts.size());
     _import_prev_num = 0;
     _is_importing = true;
-    _import_dialog->step(vformat("%s %d/%d", _session_title, 0, _import_finished_contexts.size()), 0);
+    String first_file = _import_src_files.is_empty() ? "" : _import_src_files[0].get_file();
+    if (!first_file.is_empty()) {
+        _import_dialog->step(vformat("%s %d/%d (%s)", _session_title, 0, _import_finished_contexts.size(), first_file), 0);
+    } else {
+        _import_dialog->step(vformat("%s %d/%d", _session_title, 0, _import_finished_contexts.size()), 0);
+    }
 
     set_process(true);
 
@@ -282,7 +321,7 @@ void SSImporter::queue_import(const PackedStringArray &p_sspj_files, const Strin
 void SSImporter::queue_import(const Vector<String> &p_sspj_files, const String &p_output_dir) {
 #endif
     if (_is_importing) {
-        print_line("SSImporter: Already importing. Please wait.");
+        WARN_PRINT("SSImporter: Already importing. Please wait.");
         return;
     }
     if (p_sspj_files.is_empty()) {
@@ -306,7 +345,7 @@ void SSImporter::queue_import(const Vector<String> &p_sspj_files, const String &
 
 void SSImporter::queue_reconvert(const PackedStringArray &p_sspj_files, const PackedStringArray &p_dst_dirs) {
     if (_is_importing) {
-        print_line("SSImporter: Already importing. Please wait.");
+        WARN_PRINT("SSImporter: Already importing. Please wait.");
         return;
     }
     if (p_sspj_files.is_empty() || p_sspj_files.size() != p_dst_dirs.size()) {

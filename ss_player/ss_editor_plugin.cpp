@@ -52,7 +52,7 @@ void SSEditorPlugin::_install_canvas_drop_overlay() {
 #endif
 
     if (viewport_control == nullptr) {
-        print_line("SSEditorPlugin: CanvasItemEditorViewport not found; .ssab drop-to-viewport disabled.");
+        WARN_PRINT("SSEditorPlugin: CanvasItemEditorViewport not found; .ssab drop-to-viewport disabled.");
         return;
     }
 

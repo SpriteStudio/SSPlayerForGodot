@@ -126,7 +126,7 @@ void SSResourceInspectorPlugin::_on_reveal_pressed(const String &p_resource_path
     String global = ProjectSettings::get_singleton()->globalize_path(p_resource_path);
     Error err = OS::get_singleton()->shell_show_in_file_manager(global, false);
     if (err != OK) {
-        print_line(vformat("SSResourceInspectorPlugin: failed to reveal %s. error=%d", global, (int)err));
+        ERR_PRINT(vformat("SSResourceInspectorPlugin: failed to reveal %s. error=%d", global, (int)err));
     }
 }
 
