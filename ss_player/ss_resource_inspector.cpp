@@ -11,6 +11,7 @@
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
 #include <godot_cpp/classes/button.hpp>
+#include <godot_cpp/classes/editor_interface.hpp>
 #include <godot_cpp/classes/h_box_container.hpp>
 #include <godot_cpp/classes/os.hpp>
 #include <godot_cpp/classes/project_settings.hpp>
@@ -22,6 +23,7 @@ using namespace godot;
 #include "core/config/project_settings.h"
 #include "core/io/resource.h"
 #include "core/os/os.h"
+#include "editor/editor_interface.h"
 #include "scene/gui/box_container.h"
 #include "scene/gui/button.h"
 #endif
@@ -81,9 +83,12 @@ void SSResourceInspectorPlugin::_add_action_buttons(const String &p_path) {
 
     HBoxContainer *hbox = memnew(HBoxContainer);
 
+    Control *base = EditorInterface::get_singleton()->get_base_control();
+
     if (!_is_unsupported_for_editor()) {
         Button *open_btn = memnew(Button);
         open_btn->set_text(tr("Open SSPJ"));
+        if (base) open_btn->set_button_icon(base->get_theme_icon(SNAME("Load"), SNAME("EditorIcons")));
         open_btn->set_tooltip_text(sspj.is_empty() ? missing_tip : sspj);
         open_btn->connect("pressed", callable_mp(this, &SSResourceInspectorPlugin::_on_open_pressed).bind(p_path));
         hbox->add_child(open_btn);
@@ -91,12 +96,14 @@ void SSResourceInspectorPlugin::_add_action_buttons(const String &p_path) {
 
     Button *reconvert_btn = memnew(Button);
     reconvert_btn->set_text(tr("Reconvert"));
+    if (base) reconvert_btn->set_button_icon(base->get_theme_icon(SNAME("Reload"), SNAME("EditorIcons")));
     reconvert_btn->set_tooltip_text(sspj.is_empty() ? missing_tip : tr("Reconvert from") + " " + sspj);
     reconvert_btn->connect("pressed", callable_mp(this, &SSResourceInspectorPlugin::_on_reconvert_pressed).bind(p_path));
     hbox->add_child(reconvert_btn);
 
     Button *reveal_btn = memnew(Button);
     reveal_btn->set_text(tr("Reveal"));
+    if (base) reveal_btn->set_button_icon(base->get_theme_icon(SNAME("Filesystem"), SNAME("EditorIcons")));
     reveal_btn->set_tooltip_text(tr("Show this file in the OS file manager."));
     reveal_btn->connect("pressed", callable_mp(this, &SSResourceInspectorPlugin::_on_reveal_pressed).bind(p_path));
     hbox->add_child(reveal_btn);

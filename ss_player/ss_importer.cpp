@@ -38,6 +38,7 @@ using namespace godot;
 void SSImporter::_bind_methods() {
     ADD_SIGNAL(MethodInfo("import_started"));
     ADD_SIGNAL(MethodInfo("import_finished"));
+    ClassDB::bind_method(D_METHOD("_on_filesystem_changed", "dir"), &SSImporter::_on_filesystem_changed);
 }
 
 SSImporter::SSImporter() {
@@ -177,6 +178,14 @@ void SSImporter::_finalize_import() {
         efs->scan_changes();
 #endif
     }
+
+    if (any_success && !_import_dst_dirs.is_empty()) {
+        String target_dir = _import_dst_dirs[_import_dst_dirs.size() - 1].get_base_dir();
+        if (!efs->is_connected("filesystem_changed", Callable(this, "_on_filesystem_changed"))) {
+            efs->connect("filesystem_changed", Callable(this, "_on_filesystem_changed").bind(target_dir), Object::CONNECT_ONE_SHOT);
+        }
+    }
+
     _import_dst_dirs.clear();
     _import_generated_files.clear();
     _needs_full_scan = false;
@@ -185,6 +194,13 @@ void SSImporter::_finalize_import() {
     set_process(false);
 
     emit_signal("import_finished");
+}
+
+void SSImporter::_on_filesystem_changed(const String &p_dir) {
+    Object *fs_dock = (Object *)EditorInterface::get_singleton()->get_file_system_dock();
+    if (fs_dock) {
+        fs_dock->call_deferred("navigate_to_path", p_dir);
+    }
 }
 
 Dictionary SSImporter::_load_source_map() const {

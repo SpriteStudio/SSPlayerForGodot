@@ -137,7 +137,6 @@ SSImportControl::SSImportControl() {
         recent_header->add_child(recent_label);
 
         clear_recent_button = memnew(Button);
-        clear_recent_button->set_text(tr("Clear"));
         clear_recent_button->set_tooltip_text(tr("Clear recent SSPJ files"));
         clear_recent_button->connect("pressed", Callable(this, "_on_clear_recent_pressed"));
         recent_header->add_child(clear_recent_button);
@@ -187,6 +186,7 @@ void SSImportControl::_notification(int p_what) {
             if (browse_button) browse_button->set_button_icon(get_theme_icon(SNAME("Load"), SNAME("EditorIcons")));
             if (reset_button) reset_button->set_button_icon(get_theme_icon(SNAME("Reload"), SNAME("EditorIcons")));
             if (open_dir_button) open_dir_button->set_button_icon(get_theme_icon(SNAME("Filesystem"), SNAME("EditorIcons")));
+            if (clear_recent_button) clear_recent_button->set_button_icon(get_theme_icon(SNAME("Clear"), SNAME("EditorIcons")));
         } break;
         case NOTIFICATION_ENTER_TREE: {
             start_intercepting();

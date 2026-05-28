@@ -77,6 +77,7 @@ private:
   void _enqueue_one(const String &p_sspj_path, const String &p_dst_dir);
   void _start_session(const String &p_dialog_title);
   void _finalize_import();
+  void _on_filesystem_changed(const String &p_dir);
 
   Dictionary _load_source_map() const;
   void _save_source_map(const Dictionary &p_map);
