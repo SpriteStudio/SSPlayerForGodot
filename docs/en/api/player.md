@@ -32,21 +32,46 @@ func _ready() -> void:
 * `set_speed(speed: float)` / `get_speed() -> float`
 * `set_frame_rate(fps: int)` / `get_frame_rate() -> int`
 * `set_animation_section(start: int, end: int)`: Limits the playback to a specific frame range.
-* `set_playback_direction(direction: int, style: int)`: 
-  * `direction`: `0` = Forward, `1` = Backward.
-  * `style`: `0` = Normal (One-way), `1` = PingPong (Round-trip).
+* `set_playback_direction(direction: int, style: int)`: Sets the playback direction and style. See the table below for values.
 * `set_loop_count(count: int)` / `get_loop_count() -> int`: `-1` means infinite loop. `0` plays once with no repeat. `n` repeats `n` times.
 * `set_frame_skip_enabled(enabled: bool)` / `is_frame_skip_enabled() -> bool` (default: `true`)
 * `set_sub_frame_enabled(enabled: bool)` / `is_sub_frame_enabled() -> bool` (default: `false`)
 * `set_cellmap_texture(cellmap_name: String, texture: Texture2D)` / `get_cellmap_texture(cellmap_name: String) -> Texture2D`
 
+### Arguments for `set_playback_direction`
+
+| Argument | Value | Meaning |
+| --- | --- | --- |
+| `direction` | `0` | Forward |
+| `direction` | `1` | Backward |
+| `style` | `0` | Normal / One-way |
+| `style` | `1` | PingPong (Round-trip) |
+
 ## Signals
 
-* `animation_started(anim_name: String)`: Emitted when playback starts.
-* `animation_changed(anim_name: String)`: Emitted when the animation name is changed.
-* `animation_finished(anim_name: String)`: Emitted when playback reaches the end (non-looping).
-* `animation_looped(anim_name: String)`: Emitted when the animation loops.
-* `user_data(payload: Dictionary)`: Emitted when a "User Data" keyframe is hit.
-* `signal(command: String, value: Dictionary)`: Emitted when a "Signal" keyframe is hit.
+| Signal | Arguments | Emitted When |
+| --- | --- | --- |
+| `animation_started` | `anim_name: String` | Playback starts |
+| `animation_changed` | `anim_name: String` | The animation name is changed |
+| `animation_finished` | `anim_name: String` | Playback reaches the end (non-looping only) |
+| `animation_looped` | `anim_name: String` | The animation loops back to the start |
+| `user_data` | `payload: Dictionary` | A "User Data" keyframe on the timeline is hit |
+| `signal` | `command: String, value: Dictionary` | A "Signal" keyframe on the timeline is hit |
 
-For exact behavior and accepted argument values, refer to `ss_player/ss_player_node_2d.h`.
+### `user_data` payload fields
+
+The User Data values configured in SpriteStudio are delivered as a `Dictionary`. **Only the keys that were set are present** — unset fields are omitted entirely.
+
+| Key | Type | Meaning |
+| --- | --- | --- |
+| `integer` | `int` | Integer value |
+| `point` | `Vector2` | Point value |
+| `rect` | `Rect2` | Rectangle value (`x`, `y`, `width`, `height`) |
+| `string` | `String` | String value |
+
+### `signal` value fields
+
+The parameters configured on the timeline "Signal" keyframe are delivered as a `Dictionary` keyed by parameter ID, with each value as `bool` / `int` / `float` / `String`, etc. The `command` argument receives the signal name (`command_id`).
+
+> [!NOTE]
+> For the exact types and the latest set of accepted values, also refer to the implementation files `ss_player/ss_player_node_2d.h` and `ss_player/ss_internal_player.cpp`.

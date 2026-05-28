@@ -8,12 +8,29 @@ Interfaces may change without notice.
 A plugin for playing back animations created with [OPTPiX SpriteStudio](https://www.webtech.co.jp/spritestudio/) inside [Godot Engine](https://godotengine.org/).
 Animation playback uses `libssruntime` provided by [SpriteStudio7-SDK](https://github.com/SpriteStudio/SpriteStudio7-SDK).
 
+## Table of Contents
+
+- **Setup**
+    - [Installation](setup/install.md)
+    - [Build Guide](setup/build.md)
+- **Workflow**
+    - [Basic Usage](workflow/usage_basic.md)
+    - [Asset Import and Editor Integration](workflow/usage_asset_pipeline.md) (start here for the initial `.sspj` import)
+    - [Scripting and Events](workflow/usage_scripting.md)
+- **Advanced Topics**
+    - [CLI Conversion and Automation](workflow/import.md)
+    - [Performance Tuning and Advanced Settings](workflow/tips.md)
+- **API Reference**
+    - [SpriteStudioPlayer2D](api/player.md)
+    - [Resource Classes](api/resource.md)
+- [Migration from v1.x](migration_from_v1.md)
+
 ## Key Features
 
 This plugin is designed to bring the full expressive power of SpriteStudio 7 to Godot Engine seamlessly.
 
 *   **Full Feature Support:** Fully supports SpriteStudio 7 features including bone hierarchies, mesh & deformations, and high-performance particle effects.
-*   **Seamless Integration and a Powerful Asset Pipeline:** In addition to easy drag-and-drop importing via the built-in "SS Import Dock", you can open SpriteStudio directly from the Inspector and reconvert with a single click, providing a **powerful asset pipeline that allows you to seamlessly transition between SpriteStudio and Godot**. For details, see [Editor Integration and Asset Iteration](workflow/usage_asset_pipeline.md).
+*   **Seamless Integration and a Powerful Asset Pipeline:** In addition to easy drag-and-drop importing via the built-in "SS Import Dock", you can open SpriteStudio directly from the Inspector and reconvert with a single click, providing a **powerful asset pipeline that allows you to seamlessly transition between SpriteStudio and Godot**. For details, see [Asset Import and Editor Integration](workflow/usage_asset_pipeline.md).
 *   **Dynamic Customization (CellMap Overrides):** Easily swap textures at runtime to implement character equipment changes or color variations.
 *   **Signals & Events:** Receive "User Data" and "Signals" from your animation timeline directly as Godot Signals, allowing frame-perfect triggers for audio or logic.
 *   **Smooth Slow-Motion:** Built-in sub-frame interpolation ensures buttery-smooth playback even on high-refresh-rate displays or during slow-motion effects.

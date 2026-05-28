@@ -11,10 +11,10 @@ The flow for producing Godot binaries from this repository is as follows:
 
 ## Get the Source
 
-Clone this repository (with submodules) and clone Godot Engine / godot-cpp depending on your build target.
+Clone this repository, and clone Godot Engine / godot-cpp depending on your build target.
 
 ```bash
-git clone --recursive https://github.com/SpriteStudio/SSPlayerForGodot.git
+git clone https://github.com/SpriteStudio/SSPlayerForGodot.git
 cd SSPlayerForGodot
 git clone https://github.com/godotengine/godot.git -b 4.6
 git clone https://github.com/godotengine/godot-cpp.git -b master
@@ -22,6 +22,9 @@ git clone https://github.com/godotengine/godot-cpp.git -b master
 
 The `godot` directory is required when building a custom-module Godot Engine.
 The `godot-cpp` directory is required when building the GDExtension.
+
+> [!NOTE]
+> For typical builds that consume SDK release artifacts, the `ss_player/SpriteStudio7-SDK/` submodule does **not** need to be initialized (a non-recursive clone is fine). Only when developing/building SS7-SDK itself, follow [For SS7-SDK Developers](#for-ss7-sdk-developers) below and initialize the submodule with `git submodule update --init --recursive`.
 
 ## Build Environment Setup
 
@@ -136,8 +139,13 @@ If you also need to regenerate FlatBuffers headers, install `flatc` (the FlatBuf
 
 ### Building libssruntime from source
 
-Requires the SS7-SDK submodule (`ss_player/SpriteStudio7-SDK/`) to be initialized.
-Running the script below builds the Rust runtime/converter and places the artifacts under `ss_player/runtime/` automatically.
+Requires the SS7-SDK submodule (`ss_player/SpriteStudio7-SDK/`) to be initialized. If it is not initialized yet, run:
+
+```bash
+git submodule update --init --recursive
+```
+
+Then run the script below to build the Rust runtime/converter; the artifacts are placed under `ss_player/runtime/` automatically.
 
 **macOS / Linux**
 

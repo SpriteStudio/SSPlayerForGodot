@@ -15,3 +15,10 @@ SpriteStudioPlayer for Godot を使い始めるための手順です。
 ## B. SSPlayerForGodot のカスタムモジュールを組み込んだ Godot Engine を利用する
 
 カスタムモジュールとしてビルドして利用する場合は、[ビルドガイド](./build.md) を参照してください。
+
+## 次のステップ
+
+インストールが完了したら、以下のいずれかへ進んでください。
+
+- まだ `.ssab` を持っていない場合 → [アセットのインポートとエディタ連携](../workflow/usage_asset_pipeline.md) で SpriteStudio プロジェクト（`.sspj`）から `.ssab` を生成します。
+- すでに `.ssab` がプロジェクト内にある場合 → [基本的な使い方](../workflow/usage_basic.md) でシーンへの配置と再生を行います。

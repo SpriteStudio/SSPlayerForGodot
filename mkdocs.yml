@@ -42,11 +42,11 @@ nav:
       - Build Guide: setup/build.md
   - Workflow:
       - Basic Usage: workflow/usage_basic.md
-      - Editor Integration & Asset Pipeline: workflow/usage_asset_pipeline.md
+      - Asset Import & Editor Integration: workflow/usage_asset_pipeline.md
       - Scripting & Events: workflow/usage_scripting.md
   - Advanced Topics:
       - CLI Conversion & CI/CD: workflow/import.md
-      - Performance & Tuning: workflow/tips.md
+      - Performance Tuning & Advanced Settings: workflow/tips.md
   - API Reference:
       - SpriteStudioPlayer2D: api/player.md
       - Resource Classes: api/resource.md

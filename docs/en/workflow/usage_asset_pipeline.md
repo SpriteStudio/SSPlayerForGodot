@@ -1,7 +1,8 @@
-# Editor Integration and Asset Iteration
+# Asset Import and Editor Integration
 
-SpriteStudioPlayerForGodot does not just play animations; it provides a **powerful asset pipeline for seamless transitions between SpriteStudio and Godot**.
-This allows you to iterate at lightning speed, from tweaking animations to seeing them reflected in-game.
+This page explains **how to bring your `.sspj` into a Godot project (the initial conversion)** and the workflows for iterating quickly between SpriteStudio and Godot afterwards.
+
+SpriteStudioPlayerForGodot does not just play animations; it provides a **powerful asset pipeline for seamless transitions between SpriteStudio and Godot**, allowing you to iterate quickly from tweaking animations to seeing them reflected in-game.
 
 ---
 

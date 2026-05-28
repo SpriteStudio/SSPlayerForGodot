@@ -1,6 +1,6 @@
 # CLI Conversion and Automation
 
-For the intuitive import method using the Godot editor's "SS Import Dock", please refer to [Editor Integration and Asset Iteration](usage_asset_pipeline.md).
+For the intuitive import method using the Godot editor's "SS Import Dock", please refer to [Asset Import and Editor Integration](usage_asset_pipeline.md).
 
 This document explains how to perform conversion from the command line without launching the Godot editor.
 This is highly useful when you want to integrate the conversion process into your CI/CD (Continuous Integration/Continuous Deployment) pipeline, build systems, or when you need to batch convert a large number of assets.
@@ -8,6 +8,9 @@ This is highly useful when you want to integrate the conversion process into you
 ## Using SpriteStudio7-SDK's `ssconverter-cli`
 
 The conversion from a SpriteStudio project (`.sspj`) to Godot animation binaries (`.ssab` / `.ssqb`) is handled by a standalone command-line tool called `ssconverter-cli`, which is included in the SDK (the built-in editor importer also calls this tool under the hood).
+
+> [!NOTE]
+> The `ssconverter-cli` binary is **only distributed with the SpriteStudio7-SDK releases**. It is **not** bundled with the SSPlayerForGodot GDExtension package (`addons/spritestudio/`), so download it separately from the SDK side when you need the CLI.
 
 ### 1. Obtaining the Tool
 
