@@ -6,7 +6,7 @@
 	<description>
 		Node that plays a SpriteStudio 7 animation imported as an [code].ssab[/code] resource ([SSABResource]).
 		Assign a resource to [member ssab], pick an animation with [member animation], then drive playback from code with [method play], [method pause] and [method stop], or preview it in the editor from the [b]SpriteStudio[/b] bottom panel (shown while the node is selected).
-		[b]Editor preview:[/b] with the node selected, the bottom panel provides transport controls (play / play-backwards / pause / stop), a frame scrubber, loop and speed. Its keyboard shortcuts mirror the AnimationPlayer editor ([kbd]D[/kbd] play, [kbd]A[/kbd] play backwards, [kbd]Shift+D[/kbd] play from start, [kbd]S[/kbd] pause/stop).
+		[b]Editor preview:[/b] with the node selected, the bottom panel provides transport controls (play from start / play from current / stop), a frame scrubber, loop and speed. Its keyboard shortcuts mirror the AnimationPlayer editor ([kbd]D[/kbd] play from current, [kbd]Shift+D[/kbd] play from start, [kbd]S[/kbd] stop).
 	</description>
 	<tutorials>
 	</tutorials>

@@ -40,7 +40,7 @@ Once the node is selected, you can adjust various settings from Godot's Inspecto
    Open the dropdown for the `Animation` property in the Inspector. You will see a list of animations contained in the `.ssab`. Select the name of the animation you want to play.
 
 2. **In-Editor Preview**
-   With the node selected, the **SpriteStudio** bottom panel appears. Use its transport controls (play / play-backwards / pause / stop and the frame scrubber) to **play the animation directly in the editor without running the game**. Keyboard shortcuts mirror the AnimationPlayer editor: **D** play, **A** play backwards, **Shift+D** play from start, **S** pause/stop (active while the panel is focused).
+   With the node selected, the **SpriteStudio** bottom panel appears. Use its transport controls (play from start / play from current / stop and the frame scrubber) to **play the animation directly in the editor without running the game**. Keyboard shortcuts mirror the AnimationPlayer editor: **D** play from current, **Shift+D** play from start, **S** stop (active while the panel is visible).
    Changes to parameters like `Frame`, `Speed`, and `Loop Count` are reflected in the preview in real-time, enabling quick adjustments.
 
 > [!TIP]

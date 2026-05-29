@@ -76,23 +76,11 @@ void SSPlaybackPanel::_build_ui() {
     _play_start_btn->connect("pressed", callable_mp(this, &SSPlaybackPanel::_on_play_start_pressed));
     toolbar->add_child(_play_start_btn);
 
-    _play_back_btn = memnew(Button);
-    _play_back_btn->set_flat(true);
-    _play_back_btn->set_tooltip_text(tr("Play backwards from current position"));
-    _play_back_btn->connect("pressed", callable_mp(this, &SSPlaybackPanel::_on_play_back_pressed));
-    toolbar->add_child(_play_back_btn);
-
     _play_btn = memnew(Button);
     _play_btn->set_flat(true);
     _play_btn->set_tooltip_text(tr("Play from current position"));
     _play_btn->connect("pressed", callable_mp(this, &SSPlaybackPanel::_on_play_pressed));
     toolbar->add_child(_play_btn);
-
-    _pause_btn = memnew(Button);
-    _pause_btn->set_flat(true);
-    _pause_btn->set_tooltip_text(tr("Pause"));
-    _pause_btn->connect("pressed", callable_mp(this, &SSPlaybackPanel::_on_pause_pressed));
-    toolbar->add_child(_pause_btn);
 
     _stop_btn = memnew(Button);
     _stop_btn->set_flat(true);
@@ -107,12 +95,10 @@ void SSPlaybackPanel::_build_ui() {
     // focus, which forces the user to click first. Tooltip key hints are
     // written manually to avoid the "(Physical)" suffix get_as_text() adds.
     _sc_play_start = _ss_make_shortcut('D', true);   // Play from start
-    _sc_play_back = _ss_make_shortcut('A', false);   // Play backwards
     _sc_play = _ss_make_shortcut('D', false);        // Play from current
-    _sc_stop = _ss_make_shortcut('S', false);        // Pause/Stop
+    _sc_stop = _ss_make_shortcut('S', false);        // Stop
 
     _play_start_btn->set_tooltip_text(_play_start_btn->get_tooltip_text() + " (Shift+D)");
-    _play_back_btn->set_tooltip_text(_play_back_btn->get_tooltip_text() + " (A)");
     _play_btn->set_tooltip_text(_play_btn->get_tooltip_text() + " (D)");
     _stop_btn->set_tooltip_text(_stop_btn->get_tooltip_text() + " (S)");
 
@@ -176,17 +162,13 @@ void SSPlaybackPanel::_apply_button_icons() {
         return;
     }
     _play_start_btn->set_button_icon(base->get_theme_icon(SNAME("PlayStart"), SNAME("EditorIcons")));
-    _play_back_btn->set_button_icon(base->get_theme_icon(SNAME("PlayBackwards"), SNAME("EditorIcons")));
     _play_btn->set_button_icon(base->get_theme_icon(SNAME("Play"), SNAME("EditorIcons")));
-    _pause_btn->set_button_icon(base->get_theme_icon(SNAME("Pause"), SNAME("EditorIcons")));
     _stop_btn->set_button_icon(base->get_theme_icon(SNAME("Stop"), SNAME("EditorIcons")));
 }
 
 void SSPlaybackPanel::_set_controls_enabled(bool p_enabled) {
     _play_start_btn->set_disabled(!p_enabled);
-    _play_back_btn->set_disabled(!p_enabled);
     _play_btn->set_disabled(!p_enabled);
-    _pause_btn->set_disabled(!p_enabled);
     _stop_btn->set_disabled(!p_enabled);
     _loop_btn->set_disabled(!p_enabled);
     _speed_spin->set_editable(p_enabled);
@@ -310,9 +292,6 @@ void SSPlaybackPanel::shortcut_input(const Ref<InputEvent> &p_event) {
     if (_sc_play_start->matches_event(p_event)) {
         _on_play_start_pressed();
         accept_event();
-    } else if (_sc_play_back->matches_event(p_event)) {
-        _on_play_back_pressed();
-        accept_event();
     } else if (_sc_play->matches_event(p_event)) {
         _on_play_pressed();
         accept_event();
@@ -334,21 +313,11 @@ void SSPlaybackPanel::_on_play_pressed() {
     if (!_player) {
         return;
     }
-    _player->play();
-}
-
-void SSPlaybackPanel::_on_play_back_pressed() {
-    if (!_player) {
-        return;
-    }
-    _player->setPlaybackDirection(1, _player->getPlaybackStyle());
-    _player->play();
-}
-
-void SSPlaybackPanel::_on_pause_pressed() {
-    if (_player) {
-        _player->pause();
-    }
+    // Play from the current frame explicitly. play() with no arg resumes via
+    // ss_runtime_play, which does not restart from a stopped state; passing the
+    // current frame routes through play_with_start_frame so it reliably plays
+    // from wherever the playhead is.
+    _player->play(_player->getFrame());
 }
 
 void SSPlaybackPanel::_on_stop_pressed() {

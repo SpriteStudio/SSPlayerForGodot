@@ -70,8 +70,6 @@ private:
 
     Button *_play_start_btn = nullptr;
     Button *_play_btn = nullptr;
-    Button *_play_back_btn = nullptr;
-    Button *_pause_btn = nullptr;
     Button *_stop_btn = nullptr;
     CheckButton *_loop_btn = nullptr;
     SpinBox *_speed_spin = nullptr;
@@ -86,7 +84,6 @@ private:
     // Playback shortcuts, matched in shortcut_input(). Stored so the central
     // handler can compare against the live event.
     Ref<Shortcut> _sc_play_start;
-    Ref<Shortcut> _sc_play_back;
     Ref<Shortcut> _sc_play;
     Ref<Shortcut> _sc_stop;
 
@@ -98,8 +95,6 @@ private:
 
     void _on_play_start_pressed();
     void _on_play_pressed();
-    void _on_play_back_pressed();
-    void _on_pause_pressed();
     void _on_stop_pressed();
     void _on_loop_toggled(bool p_on);
     void _on_speed_changed(double p_value);
