@@ -122,8 +122,10 @@ if platform == "ios":
 # --- DocData Generation ---
 if env["target"] in ["editor", "template_debug"]:
     try:
-        # Output to ss_player/gen instead of src/gen
-        doc_data = env.GodotCPPDocData("ss_player/gen/doc_data.gen.cpp", source=Glob("doc_classes/*.xml"))
+        # Output to ss_player/gen instead of src/gen.
+        # XML lives in ss_player/doc_classes so the same files feed the custom
+        # module build (Godot auto-collects <module>/doc_classes via config.py).
+        doc_data = env.GodotCPPDocData("ss_player/gen/doc_data.gen.cpp", source=Glob("ss_player/doc_classes/*.xml"))
         sources_list.append(doc_data)
     except AttributeError:
         print("Not including class reference as we're targeting a pre-4.3 baseline.")

@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="SpriteStudioPlayer2D" inherits="Node2D" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+	<brief_description>
+		Plays a SpriteStudio 7 animation ([code].ssab[/code]) in a 2D scene.
+	</brief_description>
+	<description>
+		Node that plays a SpriteStudio 7 animation imported as an [code].ssab[/code] resource ([SSABResource]).
+		Assign a resource to [member ssab], pick an animation with [member animation], then drive playback from code with [method play], [method pause] and [method stop], or preview it in the editor from the [b]SpriteStudio[/b] bottom panel (shown while the node is selected).
+		[b]Editor preview:[/b] with the node selected, the bottom panel provides transport controls (play from start / play from current / stop), a frame scrubber, loop and speed. Its keyboard shortcuts mirror the AnimationPlayer editor ([kbd]D[/kbd] play from current, [kbd]Shift+D[/kbd] play from start, [kbd]S[/kbd] stop).
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="play">
+			<return type="void" />
+			<param index="0" name="start_frame" type="float" default="-1.0" />
+			<description>
+				Starts playback. If [param start_frame] is [code]-1.0[/code], plays from the current frame (or the start of the section); otherwise jumps to [param start_frame] first.
+			</description>
+		</method>
+		<method name="pause">
+			<return type="void" />
+			<description>
+				Pauses playback, keeping the current frame.
+			</description>
+		</method>
+		<method name="stop">
+			<return type="void" />
+			<description>
+				Stops playback and resets the playback state.
+			</description>
+		</method>
+		<method name="is_playing" qualifiers="const">
+			<return type="bool" />
+			<description>
+				Returns [code]true[/code] while the animation is playing.
+			</description>
+		</method>
+		<method name="is_pausing" qualifiers="const">
+			<return type="bool" />
+			<description>
+				Returns [code]true[/code] while playback is paused.
+			</description>
+		</method>
+		<method name="get_total_frames" qualifiers="const">
+			<return type="int" />
+			<description>
+				Returns the total number of frames in the current animation.
+			</description>
+		</method>
+		<method name="set_animation_section">
+			<return type="void" />
+			<param index="0" name="start" type="int" />
+			<param index="1" name="end" type="int" />
+			<description>
+				Limits playback to the inclusive frame range [code][start, end][/code].
+			</description>
+		</method>
+		<method name="set_playback_direction">
+			<return type="void" />
+			<param index="0" name="direction" type="int" />
+			<param index="1" name="style" type="int" />
+			<description>
+				Sets the playback direction ([code]0[/code] = forward, non-zero = backward) and style ([code]0[/code] = normal, [code]1[/code] = ping-pong).
+			</description>
+		</method>
+		<method name="set_cellmap_texture">
+			<return type="void" />
+			<param index="0" name="cellmap_name" type="String" />
+			<param index="1" name="texture" type="Texture2D" />
+			<description>
+				Overrides the texture used for the named cell map. Pass an invalid texture to clear the override.
+			</description>
+		</method>
+	</methods>
+	<members>
+		<member name="ssab" type="SSABResource">
+			The SpriteStudio animation resource ([code].ssab[/code]) to play.
+		</member>
+		<member name="animation" type="String">
+			Name of the animation to play, chosen from the animations contained in [member ssab].
+		</member>
+		<member name="autoplay" type="bool" default="false">
+			If [code]true[/code], the selected animation starts playing automatically when the scene runs.
+		</member>
+		<member name="frame" type="float">
+			Current playback frame (editor-only display). Can be keyframed from an [AnimationPlayer] to drive playback from a timeline.
+		</member>
+		<member name="speed_scale" type="float" default="1.0">
+			Playback speed multiplier. [code]1.0[/code] is normal speed.
+		</member>
+		<member name="loop_count" type="int" default="0">
+			Number of loops. [code]-1[/code] loops forever, [code]0[/code] plays once, [code]n[/code] repeats [code]n[/code] times.
+		</member>
+		<member name="frame_rate" type="int">
+			Playback frame rate (FPS).
+		</member>
+		<member name="frame_skip_enabled" type="bool" default="true">
+			If [code]true[/code], frames may be skipped to keep real-time playback under load.
+		</member>
+		<member name="sub_frame_enabled" type="bool" default="false">
+			If [code]true[/code], interpolates between integer frames for smoother sub-frame playback.
+		</member>
+	</members>
+	<signals>
+		<signal name="animation_started">
+			<param index="0" name="anim_name" type="String" />
+			<description>
+				Emitted when playback of an animation starts.
+			</description>
+		</signal>
+		<signal name="animation_changed">
+			<param index="0" name="anim_name" type="String" />
+			<description>
+				Emitted when the current animation changes.
+			</description>
+		</signal>
+		<signal name="animation_finished">
+			<param index="0" name="anim_name" type="String" />
+			<description>
+				Emitted when a non-looping animation reaches its end.
+			</description>
+		</signal>
+		<signal name="animation_looped">
+			<param index="0" name="anim_name" type="String" />
+			<description>
+				Emitted each time a looping animation wraps around.
+			</description>
+		</signal>
+		<signal name="user_data">
+			<param index="0" name="payload" type="Dictionary" />
+			<description>
+				Emitted when a user-data key on the timeline is reached. [param payload] carries the user-data values for that frame.
+			</description>
+		</signal>
+		<signal name="signal_emitted">
+			<param index="0" name="command" type="String" />
+			<param index="1" name="value" type="Dictionary" />
+			<description>
+				Emitted when a signal attribute on the timeline fires. [param command] is the command id; [param value] holds its parameters.
+			</description>
+		</signal>
+	</signals>
+</class>

@@ -2,7 +2,10 @@
 
 #include "ss_editor_plugin.h"
 
+#include "ss_player_node_2d.h"
+
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
+#include <godot_cpp/classes/button.hpp>
 #include <godot_cpp/classes/editor_interface.hpp>
 #include <godot_cpp/variant/utility_functions.hpp>
 using namespace godot;
@@ -12,6 +15,7 @@ SSEditorPlugin::SSEditorPlugin() {
 #include "editor/editor_interface.h"
 #include "editor/editor_node.h"
 #include "editor/scene/canvas_item_editor_plugin.h"
+#include "scene/gui/button.h"
 SSEditorPlugin::SSEditorPlugin(EditorNode *node) {
 }
 #endif
@@ -73,6 +77,69 @@ void SSEditorPlugin::_remove_canvas_drop_overlay() {
     canvas_drop_overlay = nullptr;
 }
 
+void SSEditorPlugin::_install_playback_panel() {
+    if (playback_panel != nullptr) {
+        return;
+    }
+    playback_panel = memnew(SSPlaybackPanel);
+    playback_panel->set_name(String::utf8("SSPlayback"));
+    playback_panel_button = add_control_to_bottom_panel(playback_panel, String::utf8("SpriteStudio"), Ref<Shortcut>());
+    // Contextual: only reveal the tab while a SpriteStudioPlayer2D is selected.
+    if (playback_panel_button) {
+        playback_panel_button->hide();
+    }
+}
+
+void SSEditorPlugin::_remove_playback_panel() {
+    if (playback_panel == nullptr) {
+        return;
+    }
+    remove_control_from_bottom_panel(playback_panel);
+    playback_panel->queue_free();
+    playback_panel = nullptr;
+    playback_panel_button = nullptr;
+}
+
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+bool SSEditorPlugin::_handles(Object *p_object) const {
+#else
+bool SSEditorPlugin::handles(Object *p_object) const {
+#endif
+    return Object::cast_to<SpriteStudioPlayer2D>(p_object) != nullptr;
+}
+
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+void SSEditorPlugin::_edit(Object *p_object) {
+#else
+void SSEditorPlugin::edit(Object *p_object) {
+#endif
+    if (playback_panel) {
+        playback_panel->set_player(Object::cast_to<SpriteStudioPlayer2D>(p_object));
+    }
+}
+
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+void SSEditorPlugin::_make_visible(bool p_visible) {
+#else
+void SSEditorPlugin::make_visible(bool p_visible) {
+#endif
+    if (p_visible) {
+        if (playback_panel_button) {
+            playback_panel_button->show();
+        }
+        if (playback_panel) {
+            make_bottom_panel_item_visible(playback_panel);
+        }
+    } else {
+        if (playback_panel_button) {
+            playback_panel_button->hide();
+        }
+        if (playback_panel) {
+            playback_panel->set_player(nullptr);
+        }
+    }
+}
+
 void SSEditorPlugin::_notification(int what) {
     switch (what) {
         case NOTIFICATION_ENTER_TREE: {
@@ -103,10 +170,12 @@ void SSEditorPlugin::_notification(int what) {
             }
 
             _install_canvas_drop_overlay();
+            _install_playback_panel();
         } break;
 
         case NOTIFICATION_EXIT_TREE: {
             _remove_canvas_drop_overlay();
+            _remove_playback_panel();
 
             if (inspector_plugin.is_valid()) {
                 remove_inspector_plugin(inspector_plugin);
