@@ -27,6 +27,9 @@ public:
     void setAnimation( const String& strName );
     String getAnimation() const;
 
+    void setAutoplay( bool p_autoplay );
+    bool isAutoplay() const;
+
     bool isPlaying() const;
     void play( float p_start_frame = -1.0f );
     bool isPausing() const;
@@ -73,6 +76,7 @@ private:
     SsInternalPlayer* _internal = nullptr;
 
     HashMap<String, Ref<Texture2D>> _cellmap_overrides;
+    bool _autoplay = false;
 
     // Adapter that turns SsInternalPlayer event callbacks into Node-level
     // emit_signal calls. Lifetime tied to the Node; lives in the cpp file.
