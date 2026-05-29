@@ -5947,7 +5947,7 @@ struct PartData FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
     VT_VISIBLE_INSIDE_MASK = 12,
     VT_MASK_WRITE = 14,
     VT_MASK_INFLUENCE = 16,
-    VT_MASK_MODE = 18,
+    VT_DRAW_AS_MASK = 18,
     VT_OUTPUT_INFLUENCE = 20,
     VT_MESH_BINDING = 22,
     VT_PART_TYPE_TYPE = 24,
@@ -5974,8 +5974,8 @@ struct PartData FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   bool mask_influence() const {
     return GetField<uint8_t>(VT_MASK_INFLUENCE, 0) != 0;
   }
-  bool mask_mode() const {
-    return GetField<uint8_t>(VT_MASK_MODE, 0) != 0;
+  bool draw_as_mask() const {
+    return GetField<uint8_t>(VT_DRAW_AS_MASK, 0) != 0;
   }
   bool output_influence() const {
     return GetField<uint8_t>(VT_OUTPUT_INFLUENCE, 1) != 0;
@@ -6051,7 +6051,7 @@ struct PartData FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyField<uint8_t>(verifier, VT_VISIBLE_INSIDE_MASK, 1) &&
            VerifyField<uint8_t>(verifier, VT_MASK_WRITE, 1) &&
            VerifyField<uint8_t>(verifier, VT_MASK_INFLUENCE, 1) &&
-           VerifyField<uint8_t>(verifier, VT_MASK_MODE, 1) &&
+           VerifyField<uint8_t>(verifier, VT_DRAW_AS_MASK, 1) &&
            VerifyField<uint8_t>(verifier, VT_OUTPUT_INFLUENCE, 1) &&
            VerifyOffset(verifier, VT_MESH_BINDING) &&
            verifier.VerifyTable(mesh_binding()) &&
@@ -6087,8 +6087,8 @@ struct PartDataBuilder {
   void add_mask_influence(bool mask_influence) {
     fbb_.AddElement<uint8_t>(PartData::VT_MASK_INFLUENCE, static_cast<uint8_t>(mask_influence), 0);
   }
-  void add_mask_mode(bool mask_mode) {
-    fbb_.AddElement<uint8_t>(PartData::VT_MASK_MODE, static_cast<uint8_t>(mask_mode), 0);
+  void add_draw_as_mask(bool draw_as_mask) {
+    fbb_.AddElement<uint8_t>(PartData::VT_DRAW_AS_MASK, static_cast<uint8_t>(draw_as_mask), 0);
   }
   void add_output_influence(bool output_influence) {
     fbb_.AddElement<uint8_t>(PartData::VT_OUTPUT_INFLUENCE, static_cast<uint8_t>(output_influence), 1);
@@ -6122,7 +6122,7 @@ inline ::flatbuffers::Offset<PartData> CreatePartData(
     bool visible_inside_mask = false,
     bool mask_write = false,
     bool mask_influence = false,
-    bool mask_mode = false,
+    bool draw_as_mask = false,
     bool output_influence = true,
     ::flatbuffers::Offset<ss::format::PartMeshBinding> mesh_binding = 0,
     ss::format::PartType part_type_type = ss::format::PartType_NONE,
@@ -6134,7 +6134,7 @@ inline ::flatbuffers::Offset<PartData> CreatePartData(
   builder_.add_parent_index(parent_index);
   builder_.add_part_type_type(part_type_type);
   builder_.add_output_influence(output_influence);
-  builder_.add_mask_mode(mask_mode);
+  builder_.add_draw_as_mask(draw_as_mask);
   builder_.add_mask_influence(mask_influence);
   builder_.add_mask_write(mask_write);
   builder_.add_visible_inside_mask(visible_inside_mask);
@@ -6152,7 +6152,7 @@ inline ::flatbuffers::Offset<PartData> CreatePartDataDirect(
     bool visible_inside_mask = false,
     bool mask_write = false,
     bool mask_influence = false,
-    bool mask_mode = false,
+    bool draw_as_mask = false,
     bool output_influence = true,
     ::flatbuffers::Offset<ss::format::PartMeshBinding> mesh_binding = 0,
     ss::format::PartType part_type_type = ss::format::PartType_NONE,
@@ -6167,7 +6167,7 @@ inline ::flatbuffers::Offset<PartData> CreatePartDataDirect(
       visible_inside_mask,
       mask_write,
       mask_influence,
-      mask_mode,
+      draw_as_mask,
       output_influence,
       mesh_binding,
       part_type_type,

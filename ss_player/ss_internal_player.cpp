@@ -555,10 +555,10 @@ bool SsInternalPlayer::_build_mask_writers(const DrawFrame& f) {
         const auto pt = pd->part_type_type();
         const bool is_mask_part = (pt == ss::format::PartType_PartTypeMask);
         // A "pure" mask draws no colour and masks the parts drawn BEFORE it: a
-        // Mask part, or a drawing part flagged via the unified mask_mode flag.
+        // Mask part, or a drawing part flagged via the unified draw_as_mask flag.
         // A write_mask (clipping) writer instead draws normally AND masks the
         // parts drawn AFTER it.
-        const bool pure_mask = is_mask_part || pd->mask_mode();
+        const bool pure_mask = is_mask_part || pd->draw_as_mask();
         const bool writes = pure_mask || pd->mask_write();
         if (!writes) continue;
 
