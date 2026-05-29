@@ -5520,20 +5520,15 @@ inline ::flatbuffers::Offset<InitialEvents> CreateInitialEvents(
 struct PartTypeShape FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   typedef PartTypeShapeBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
-    VT_SHAPE_TYPE = 4,
-    VT_SHAPE_MASK = 6
+    VT_SHAPE_TYPE = 4
   };
   ss::format::ShapeType shape_type() const {
     return static_cast<ss::format::ShapeType>(GetField<uint8_t>(VT_SHAPE_TYPE, 0));
-  }
-  bool shape_mask() const {
-    return GetField<uint8_t>(VT_SHAPE_MASK, 0) != 0;
   }
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<uint8_t>(verifier, VT_SHAPE_TYPE, 1) &&
-           VerifyField<uint8_t>(verifier, VT_SHAPE_MASK, 1) &&
            verifier.EndTable();
   }
 };
@@ -5544,9 +5539,6 @@ struct PartTypeShapeBuilder {
   ::flatbuffers::uoffset_t start_;
   void add_shape_type(ss::format::ShapeType shape_type) {
     fbb_.AddElement<uint8_t>(PartTypeShape::VT_SHAPE_TYPE, static_cast<uint8_t>(shape_type), 0);
-  }
-  void add_shape_mask(bool shape_mask) {
-    fbb_.AddElement<uint8_t>(PartTypeShape::VT_SHAPE_MASK, static_cast<uint8_t>(shape_mask), 0);
   }
   explicit PartTypeShapeBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
@@ -5561,10 +5553,8 @@ struct PartTypeShapeBuilder {
 
 inline ::flatbuffers::Offset<PartTypeShape> CreatePartTypeShape(
     ::flatbuffers::FlatBufferBuilder &_fbb,
-    ss::format::ShapeType shape_type = ss::format::ShapeType_Unknown,
-    bool shape_mask = false) {
+    ss::format::ShapeType shape_type = ss::format::ShapeType_Unknown) {
   PartTypeShapeBuilder builder_(_fbb);
-  builder_.add_shape_mask(shape_mask);
   builder_.add_shape_type(shape_type);
   return builder_.Finish();
 }
@@ -5579,10 +5569,9 @@ struct PartTypeText FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
     VT_TEXT_SIZE = 12,
     VT_TEXT_SPACE = 14,
     VT_TEXT_SMOOTH = 16,
-    VT_TEXT_MASK = 18,
-    VT_TEXT_WIDTH = 20,
-    VT_TEXT_HEIGHT = 22,
-    VT_E_ANCHOR = 24
+    VT_TEXT_WIDTH = 18,
+    VT_TEXT_HEIGHT = 20,
+    VT_E_ANCHOR = 22
   };
   const ::flatbuffers::String *text() const {
     return GetPointer<const ::flatbuffers::String *>(VT_TEXT);
@@ -5604,9 +5593,6 @@ struct PartTypeText FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   }
   bool text_smooth() const {
     return GetField<uint8_t>(VT_TEXT_SMOOTH, 0) != 0;
-  }
-  bool text_mask() const {
-    return GetField<uint8_t>(VT_TEXT_MASK, 0) != 0;
   }
   int32_t text_width() const {
     return GetField<int32_t>(VT_TEXT_WIDTH, 0);
@@ -5630,7 +5616,6 @@ struct PartTypeText FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyField<int32_t>(verifier, VT_TEXT_SIZE, 4) &&
            VerifyField<float>(verifier, VT_TEXT_SPACE, 4) &&
            VerifyField<uint8_t>(verifier, VT_TEXT_SMOOTH, 1) &&
-           VerifyField<uint8_t>(verifier, VT_TEXT_MASK, 1) &&
            VerifyField<int32_t>(verifier, VT_TEXT_WIDTH, 4) &&
            VerifyField<int32_t>(verifier, VT_TEXT_HEIGHT, 4) &&
            VerifyField<uint8_t>(verifier, VT_E_ANCHOR, 1) &&
@@ -5663,9 +5648,6 @@ struct PartTypeTextBuilder {
   void add_text_smooth(bool text_smooth) {
     fbb_.AddElement<uint8_t>(PartTypeText::VT_TEXT_SMOOTH, static_cast<uint8_t>(text_smooth), 0);
   }
-  void add_text_mask(bool text_mask) {
-    fbb_.AddElement<uint8_t>(PartTypeText::VT_TEXT_MASK, static_cast<uint8_t>(text_mask), 0);
-  }
   void add_text_width(int32_t text_width) {
     fbb_.AddElement<int32_t>(PartTypeText::VT_TEXT_WIDTH, text_width, 0);
   }
@@ -5695,7 +5677,6 @@ inline ::flatbuffers::Offset<PartTypeText> CreatePartTypeText(
     int32_t text_size = 0,
     float text_space = 0.0f,
     bool text_smooth = false,
-    bool text_mask = false,
     int32_t text_width = 0,
     int32_t text_height = 0,
     ss::format::TextAnchor e_anchor = ss::format::TextAnchor_LT) {
@@ -5708,7 +5689,6 @@ inline ::flatbuffers::Offset<PartTypeText> CreatePartTypeText(
   builder_.add_text_family(text_family);
   builder_.add_text(text);
   builder_.add_e_anchor(e_anchor);
-  builder_.add_text_mask(text_mask);
   builder_.add_text_smooth(text_smooth);
   builder_.add_text_bitmap(text_bitmap);
   return builder_.Finish();
@@ -5723,7 +5703,6 @@ inline ::flatbuffers::Offset<PartTypeText> CreatePartTypeTextDirect(
     int32_t text_size = 0,
     float text_space = 0.0f,
     bool text_smooth = false,
-    bool text_mask = false,
     int32_t text_width = 0,
     int32_t text_height = 0,
     ss::format::TextAnchor e_anchor = ss::format::TextAnchor_LT) {
@@ -5739,7 +5718,6 @@ inline ::flatbuffers::Offset<PartTypeText> CreatePartTypeTextDirect(
       text_size,
       text_space,
       text_smooth,
-      text_mask,
       text_width,
       text_height,
       e_anchor);
@@ -5752,8 +5730,7 @@ struct PartTypeNines FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
     VT_NINES_MARGIN_R = 6,
     VT_NINES_MARGIN_T = 8,
     VT_NINES_MARGIN_B = 10,
-    VT_NINES_FILL_MODE = 12,
-    VT_NINES_MASK = 14
+    VT_NINES_FILL_MODE = 12
   };
   int32_t nines_margin_l() const {
     return GetField<int32_t>(VT_NINES_MARGIN_L, 0);
@@ -5770,9 +5747,6 @@ struct PartTypeNines FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   int32_t nines_fill_mode() const {
     return GetField<int32_t>(VT_NINES_FILL_MODE, 0);
   }
-  bool nines_mask() const {
-    return GetField<uint8_t>(VT_NINES_MASK, 0) != 0;
-  }
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
@@ -5781,7 +5755,6 @@ struct PartTypeNines FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyField<int32_t>(verifier, VT_NINES_MARGIN_T, 4) &&
            VerifyField<int32_t>(verifier, VT_NINES_MARGIN_B, 4) &&
            VerifyField<int32_t>(verifier, VT_NINES_FILL_MODE, 4) &&
-           VerifyField<uint8_t>(verifier, VT_NINES_MASK, 1) &&
            verifier.EndTable();
   }
 };
@@ -5805,9 +5778,6 @@ struct PartTypeNinesBuilder {
   void add_nines_fill_mode(int32_t nines_fill_mode) {
     fbb_.AddElement<int32_t>(PartTypeNines::VT_NINES_FILL_MODE, nines_fill_mode, 0);
   }
-  void add_nines_mask(bool nines_mask) {
-    fbb_.AddElement<uint8_t>(PartTypeNines::VT_NINES_MASK, static_cast<uint8_t>(nines_mask), 0);
-  }
   explicit PartTypeNinesBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
@@ -5825,15 +5795,13 @@ inline ::flatbuffers::Offset<PartTypeNines> CreatePartTypeNines(
     int32_t nines_margin_r = 0,
     int32_t nines_margin_t = 0,
     int32_t nines_margin_b = 0,
-    int32_t nines_fill_mode = 0,
-    bool nines_mask = false) {
+    int32_t nines_fill_mode = 0) {
   PartTypeNinesBuilder builder_(_fbb);
   builder_.add_nines_fill_mode(nines_fill_mode);
   builder_.add_nines_margin_b(nines_margin_b);
   builder_.add_nines_margin_t(nines_margin_t);
   builder_.add_nines_margin_r(nines_margin_r);
   builder_.add_nines_margin_l(nines_margin_l);
-  builder_.add_nines_mask(nines_mask);
   return builder_.Finish();
 }
 
@@ -5979,10 +5947,11 @@ struct PartData FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
     VT_VISIBLE_INSIDE_MASK = 12,
     VT_MASK_WRITE = 14,
     VT_MASK_INFLUENCE = 16,
-    VT_OUTPUT_INFLUENCE = 18,
-    VT_MESH_BINDING = 20,
-    VT_PART_TYPE_TYPE = 22,
-    VT_PART_TYPE = 24
+    VT_MASK_MODE = 18,
+    VT_OUTPUT_INFLUENCE = 20,
+    VT_MESH_BINDING = 22,
+    VT_PART_TYPE_TYPE = 24,
+    VT_PART_TYPE = 26
   };
   const ::flatbuffers::String *name() const {
     return GetPointer<const ::flatbuffers::String *>(VT_NAME);
@@ -6004,6 +5973,9 @@ struct PartData FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   }
   bool mask_influence() const {
     return GetField<uint8_t>(VT_MASK_INFLUENCE, 0) != 0;
+  }
+  bool mask_mode() const {
+    return GetField<uint8_t>(VT_MASK_MODE, 0) != 0;
   }
   bool output_influence() const {
     return GetField<uint8_t>(VT_OUTPUT_INFLUENCE, 1) != 0;
@@ -6079,6 +6051,7 @@ struct PartData FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyField<uint8_t>(verifier, VT_VISIBLE_INSIDE_MASK, 1) &&
            VerifyField<uint8_t>(verifier, VT_MASK_WRITE, 1) &&
            VerifyField<uint8_t>(verifier, VT_MASK_INFLUENCE, 1) &&
+           VerifyField<uint8_t>(verifier, VT_MASK_MODE, 1) &&
            VerifyField<uint8_t>(verifier, VT_OUTPUT_INFLUENCE, 1) &&
            VerifyOffset(verifier, VT_MESH_BINDING) &&
            verifier.VerifyTable(mesh_binding()) &&
@@ -6114,6 +6087,9 @@ struct PartDataBuilder {
   void add_mask_influence(bool mask_influence) {
     fbb_.AddElement<uint8_t>(PartData::VT_MASK_INFLUENCE, static_cast<uint8_t>(mask_influence), 0);
   }
+  void add_mask_mode(bool mask_mode) {
+    fbb_.AddElement<uint8_t>(PartData::VT_MASK_MODE, static_cast<uint8_t>(mask_mode), 0);
+  }
   void add_output_influence(bool output_influence) {
     fbb_.AddElement<uint8_t>(PartData::VT_OUTPUT_INFLUENCE, static_cast<uint8_t>(output_influence), 1);
   }
@@ -6146,6 +6122,7 @@ inline ::flatbuffers::Offset<PartData> CreatePartData(
     bool visible_inside_mask = false,
     bool mask_write = false,
     bool mask_influence = false,
+    bool mask_mode = false,
     bool output_influence = true,
     ::flatbuffers::Offset<ss::format::PartMeshBinding> mesh_binding = 0,
     ss::format::PartType part_type_type = ss::format::PartType_NONE,
@@ -6157,6 +6134,7 @@ inline ::flatbuffers::Offset<PartData> CreatePartData(
   builder_.add_parent_index(parent_index);
   builder_.add_part_type_type(part_type_type);
   builder_.add_output_influence(output_influence);
+  builder_.add_mask_mode(mask_mode);
   builder_.add_mask_influence(mask_influence);
   builder_.add_mask_write(mask_write);
   builder_.add_visible_inside_mask(visible_inside_mask);
@@ -6174,6 +6152,7 @@ inline ::flatbuffers::Offset<PartData> CreatePartDataDirect(
     bool visible_inside_mask = false,
     bool mask_write = false,
     bool mask_influence = false,
+    bool mask_mode = false,
     bool output_influence = true,
     ::flatbuffers::Offset<ss::format::PartMeshBinding> mesh_binding = 0,
     ss::format::PartType part_type_type = ss::format::PartType_NONE,
@@ -6188,6 +6167,7 @@ inline ::flatbuffers::Offset<PartData> CreatePartDataDirect(
       visible_inside_mask,
       mask_write,
       mask_influence,
+      mask_mode,
       output_influence,
       mesh_binding,
       part_type_type,
