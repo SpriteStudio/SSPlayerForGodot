@@ -16,7 +16,7 @@ func _ready() -> void:
 
     # Play
     ssnode.set_loop_count(-1)  # -1 = infinite loop
-    ssnode.set_speed(1.0)
+    ssnode.set_speed_scale(1.0)
     ssnode.play()
 ```
 
@@ -25,13 +25,13 @@ func _ready() -> void:
 * `set_ssab_resource(res: SSABResource)` / `get_ssab_resource() -> SSABResource`
 * `set_animation(name: String)` / `get_animation() -> String`
 * `set_autoplay(autoplay: bool)` / `is_autoplay() -> bool`: Determines if the selected animation plays automatically when the scene starts.
-* `editor_playing` (bool, Editor-only property): Checking this in the inspector plays the animation as a preview in the editor. This property is never saved in the scene.
+* **In-editor preview**: Select the node and use the **SpriteStudio** bottom panel (play / pause / stop / frame scrubber) to preview without running the game. *(The former `editor_playing` inspector toggle has been replaced by this panel.)*
 * `play(start_frame: float = -1.0)`: Starts playback. If `start_frame` is `-1.0`, it plays from the current frame or the start of the section.
 * `pause()`: Pauses playback while retaining the current frame.
 * `stop()`: Stops playback and typically resets the state.
 * `is_playing() -> bool` / `is_pausing() -> bool`
 * `set_frame(frame: float)` / `get_frame() -> float` / `get_total_frames() -> int`
-* `set_speed(speed: float)` / `get_speed() -> float`
+* `set_speed_scale(speed_scale: float)` / `get_speed_scale() -> float`
 * `set_frame_rate(fps: int)` / `get_frame_rate() -> int`
 * `set_animation_section(start: int, end: int)`: Limits the playback to a specific frame range.
 * `set_playback_direction(direction: int, style: int)`: Sets the playback direction and style. See the table below for values.
@@ -58,7 +58,7 @@ func _ready() -> void:
 | `animation_finished` | `anim_name: String` | Playback reaches the end (non-looping only) |
 | `animation_looped` | `anim_name: String` | The animation loops back to the start |
 | `user_data` | `payload: Dictionary` | A "User Data" keyframe on the timeline is hit |
-| `signal` | `command: String, value: Dictionary` | A "Signal" keyframe on the timeline is hit |
+| `signal_emitted` | `command: String, value: Dictionary` | A "Signal" keyframe on the timeline is hit |
 
 ### `user_data` payload fields
 
@@ -71,7 +71,7 @@ The User Data values configured in SpriteStudio are delivered as a `Dictionary`.
 | `rect` | `Rect2` | Rectangle value (`x`, `y`, `width`, `height`) |
 | `string` | `String` | String value |
 
-### `signal` value fields
+### `signal_emitted` value fields
 
 The parameters configured on the timeline "Signal" keyframe are delivered as a `Dictionary` keyed by parameter ID, with each value as `bool` / `int` / `float` / `String`, etc. The `command` argument receives the signal name (`command_id`).
 

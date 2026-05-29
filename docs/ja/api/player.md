@@ -16,7 +16,7 @@ func _ready() -> void:
 
     # 再生
     ssnode.set_loop_count(-1)  # -1 で無限ループ
-    ssnode.set_speed(1.0)
+    ssnode.set_speed_scale(1.0)
     ssnode.play()
 ```
 
@@ -25,13 +25,13 @@ func _ready() -> void:
 * `set_ssab_resource(res: SSABResource)` / `get_ssab_resource() -> SSABResource`
 * `set_animation(name: String)` / `get_animation() -> String`
 * `set_autoplay(autoplay: bool)` / `is_autoplay() -> bool`: シーン開始時に自動再生するかどうか。
-* `editor_playing` (bool, エディタ専用プロパティ): インスペクタ上でチェックを入れるとエディタでのみプレビュー再生を行います（シーンには保存されません）。
+* **エディタ内プレビュー**: ノードを選択すると表示される **SpriteStudio** ボトムパネル（再生 / 一時停止 / 停止 / フレームスクラバ）でゲームを実行せずにプレビューできます。*(旧 `editor_playing` インスペクタトグルはこのパネルに置き換えられました。)*
 * `play(start_frame: float = -1.0)`: 再生を開始します。`-1.0` を指定した場合は、現在のフレームまたは区間の先頭から再生します。
 * `pause()`: 再生を一時停止します。
 * `stop()`: 再生を停止します。
 * `is_playing() -> bool` / `is_pausing() -> bool`
 * `set_frame(frame: float)` / `get_frame() -> float` / `get_total_frames() -> int`
-* `set_speed(speed: float)` / `get_speed() -> float`
+* `set_speed_scale(speed_scale: float)` / `get_speed_scale() -> float`
 * `set_frame_rate(fps: int)` / `get_frame_rate() -> int`
 * `set_animation_section(start: int, end: int)`: 再生するフレーム区間を限定します。
 * `set_playback_direction(direction: int, style: int)`: 再生方向と再生スタイルを指定します。値の意味は下表を参照してください。
@@ -58,7 +58,7 @@ func _ready() -> void:
 | `animation_finished` | `anim_name: String` | 再生が終了した時（非ループ時のみ） |
 | `animation_looped` | `anim_name: String` | ループして先頭に戻った時 |
 | `user_data` | `payload: Dictionary` | タイムライン上の「ユーザーデータ」キーに到達した時 |
-| `signal` | `command: String, value: Dictionary` | タイムライン上の「シグナル」キーに到達した時 |
+| `signal_emitted` | `command: String, value: Dictionary` | タイムライン上の「シグナル」キーに到達した時 |
 
 ### `user_data` の `payload` フィールド
 
@@ -71,7 +71,7 @@ SpriteStudio 上でユーザーデータに設定した値が `Dictionary` と�
 | `rect` | `Rect2` | 矩形値（`x`, `y`, `width`, `height`） |
 | `string` | `String` | 文字列値 |
 
-### `signal` の `value` フィールド
+### `signal_emitted` の `value` フィールド
 
 タイムライン上の「シグナル」に設定したパラメータが `Dictionary` として渡されます。パラメータ ID をキーに、各値（`bool` / `int` / `float` / `String` 等）が格納されます。`command` 引数にはシグナル名（`command_id`）が入ります。
 

@@ -11,22 +11,22 @@ public:
     explicit _SignalSink(SpriteStudioPlayer2D* p_owner) : _owner(p_owner) {}
 
     void onAnimationStarted(const String& anim_name) override {
-        _owner->emit_signal("animation_started", anim_name);
+        _owner->emit_signal(SNAME("animation_started"), anim_name);
     }
     void onAnimationChanged(const String& anim_name) override {
-        _owner->emit_signal("animation_changed", anim_name);
+        _owner->emit_signal(SNAME("animation_changed"), anim_name);
     }
     void onAnimationFinished(const String& anim_name) override {
-        _owner->emit_signal("animation_finished", anim_name);
+        _owner->emit_signal(SNAME("animation_finished"), anim_name);
     }
     void onAnimationLooped(const String& anim_name) override {
-        _owner->emit_signal("animation_looped", anim_name);
+        _owner->emit_signal(SNAME("animation_looped"), anim_name);
     }
     void onUserData(const Dictionary& payload) override {
-        _owner->emit_signal("user_data", payload);
+        _owner->emit_signal(SNAME("user_data"), payload);
     }
     void onSignal(const String& command, const Dictionary& value) override {
-        _owner->emit_signal("signal", command, value);
+        _owner->emit_signal(SNAME("signal_emitted"), command, value);
     }
 
 private:
@@ -64,6 +64,7 @@ void SpriteStudioPlayer2D::setSSABResource(const Ref<SSABResource>& ssabRes) {
     _internal->setSSABResource(ssabRes);
 
     NOTIFY_PROPERTY_LIST_CHANGED();
+    update_configuration_warnings();
 
     Ref<SSABResource> now = _internal->getSSABResource();
     if (now.is_valid()) {
@@ -89,6 +90,7 @@ void SpriteStudioPlayer2D::_on_ssab_changed() {
         }
     }
     NOTIFY_PROPERTY_LIST_CHANGED();
+    update_configuration_warnings();
 }
 
 Ref<SSABResource> SpriteStudioPlayer2D::getSSABResource() const {
@@ -119,6 +121,7 @@ Ref<Texture2D> SpriteStudioPlayer2D::get_cellmap_texture(const String &cellmap_n
 void SpriteStudioPlayer2D::setAnimation(const String& strName) {
     _internal->setAnimation(strName);
     NOTIFY_PROPERTY_LIST_CHANGED();
+    update_configuration_warnings();
 }
 
 String SpriteStudioPlayer2D::getAnimation() const {
@@ -139,8 +142,8 @@ bool SpriteStudioPlayer2D::isPausing() const { return _internal->isPausing(); }
 void SpriteStudioPlayer2D::pause() { _internal->pause(); }
 void SpriteStudioPlayer2D::stop() { _internal->stop(); }
 
-void SpriteStudioPlayer2D::setSpeed(float p_speed) { _internal->setSpeed(p_speed); }
-float SpriteStudioPlayer2D::getSpeed() const { return _internal->getSpeed(); }
+void SpriteStudioPlayer2D::setSpeedScale(float p_speed) { _internal->setSpeed(p_speed); }
+float SpriteStudioPlayer2D::getSpeedScale() const { return _internal->getSpeed(); }
 
 void SpriteStudioPlayer2D::setFrame(float p_frame) { _internal->setFrame(p_frame); }
 float SpriteStudioPlayer2D::getFrame() const { return _internal->getFrame(); }
@@ -186,8 +189,8 @@ void SpriteStudioPlayer2D::_bind_methods() {
     ClassDB::bind_method( D_METHOD( "pause" ), &SpriteStudioPlayer2D::pause );
     ClassDB::bind_method( D_METHOD( "stop" ), &SpriteStudioPlayer2D::stop );
 
-    ClassDB::bind_method( D_METHOD( "set_speed", "speed" ), &SpriteStudioPlayer2D::setSpeed );
-    ClassDB::bind_method( D_METHOD( "get_speed" ), &SpriteStudioPlayer2D::getSpeed );
+    ClassDB::bind_method( D_METHOD( "set_speed_scale", "speed_scale" ), &SpriteStudioPlayer2D::setSpeedScale );
+    ClassDB::bind_method( D_METHOD( "get_speed_scale" ), &SpriteStudioPlayer2D::getSpeedScale );
     ClassDB::bind_method( D_METHOD( "set_frame", "frame" ), &SpriteStudioPlayer2D::setFrame );
     ClassDB::bind_method( D_METHOD( "get_frame" ), &SpriteStudioPlayer2D::getFrame );
 
@@ -226,7 +229,7 @@ void SpriteStudioPlayer2D::_bind_methods() {
     );
     ADD_SIGNAL(
         MethodInfo(
-            "signal",
+            "signal_emitted",
             PropertyInfo(Variant::STRING, "command"),
             PropertyInfo(Variant::DICTIONARY, "value")
         )
@@ -263,21 +266,14 @@ bool SpriteStudioPlayer2D::_set(const StringName& p_name, const Variant& p_prope
     } else if (name == "loop_count") {
         setLoopCount(p_property);
         return true;
-    } else if (name == "speed") {
-        setSpeed(p_property);
+    } else if (name == "speed_scale") {
+        setSpeedScale(p_property);
         return true;
     } else if (name == "frame_skip_enabled") {
         setFrameSkipEnabled(p_property);
         return true;
     } else if (name == "sub_frame_enabled") {
         setSubFrameEnabled(p_property);
-        return true;
-    } else if (name == "editor_playing") {
-        if (p_property) {
-            play();
-        } else {
-            stop();
-        }
         return true;
     } else if (name == "playback_direction") {
         setPlaybackDirection((int)p_property, getPlaybackStyle());
@@ -319,17 +315,14 @@ bool SpriteStudioPlayer2D::_get(const StringName& p_name, Variant& r_property) c
     } else if (name == "loop_count") {
         r_property = getLoopCount();
         return true;
-    } else if (name == "speed") {
-        r_property = getSpeed();
+    } else if (name == "speed_scale") {
+        r_property = getSpeedScale();
         return true;
     } else if (name == "frame_skip_enabled") {
         r_property = isFrameSkipEnabled();
         return true;
     } else if (name == "sub_frame_enabled") {
         r_property = isSubFrameEnabled();
-        return true;
-    } else if (name == "editor_playing") {
-        r_property = isPlaying();
         return true;
     } else if (name == "playback_direction") {
         r_property = getPlaybackDirection();
@@ -370,14 +363,12 @@ void SpriteStudioPlayer2D::_get_property_list(List<PropertyInfo>* p_list) const 
         p_list->push_back(PropertyInfo(Variant::STRING, "animation", PROPERTY_HINT_ENUM, String(",").join(anim_names)));
         p_list->push_back(PropertyInfo(Variant::BOOL, "autoplay"));
 
-        p_list->push_back(PropertyInfo(Variant::BOOL, "editor_playing", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_EDITOR));
-
         int total = getTotalFrames();
         int max_frame = total > 0 ? total - 1 : 0;
         p_list->push_back(PropertyInfo(Variant::FLOAT, "frame", PROPERTY_HINT_RANGE, "0," + String::num(max_frame) + ",0.01", PROPERTY_USAGE_EDITOR));
     }
 
-    p_list->push_back(PropertyInfo(Variant::FLOAT, "speed", PROPERTY_HINT_RANGE, "0,4,0.01,or_greater"));
+    p_list->push_back(PropertyInfo(Variant::FLOAT, "speed_scale", PROPERTY_HINT_RANGE, "0,4,0.01,or_greater"));
     p_list->push_back(PropertyInfo(Variant::INT, "loop_count", PROPERTY_HINT_RANGE, "-1,9999,1,or_greater"));
 
     if (has_res) {
@@ -406,6 +397,21 @@ void SpriteStudioPlayer2D::_get_property_list(List<PropertyInfo>* p_list) const 
             }
         }
     }
+}
+
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+PackedStringArray SpriteStudioPlayer2D::_get_configuration_warnings() const {
+    PackedStringArray warnings;
+#else
+PackedStringArray SpriteStudioPlayer2D::get_configuration_warnings() const {
+    PackedStringArray warnings = Node2D::get_configuration_warnings();
+#endif
+    if (getSSABResource().is_null()) {
+        warnings.push_back(tr("Assign an SSABResource to the \"ssab\" property to play an animation."));
+    } else if (getAnimation().is_empty()) {
+        warnings.push_back(tr("Select an animation in the \"animation\" property."));
+    }
+    return warnings;
 }
 
 void SpriteStudioPlayer2D::_notification(int p_notification) {

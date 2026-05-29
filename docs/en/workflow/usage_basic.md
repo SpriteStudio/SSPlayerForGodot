@@ -40,14 +40,14 @@ Once the node is selected, you can adjust various settings from Godot's Inspecto
    Open the dropdown for the `Animation` property in the Inspector. You will see a list of animations contained in the `.ssab`. Select the name of the animation you want to play.
 
 2. **In-Editor Preview**
-   Checking the **`Editor Playing`** property in the Inspector allows the animation to **play directly in the editor without running the game** (this state is not saved to the scene).
+   With the node selected, the **SpriteStudio** bottom panel appears. Use its transport controls (play / play-backwards / pause / stop and the frame scrubber) to **play the animation directly in the editor without running the game**. Keyboard shortcuts mirror the AnimationPlayer editor: **D** play, **A** play backwards, **Shift+D** play from start, **S** pause/stop (active while the panel is focused).
    Changes to parameters like `Frame`, `Speed`, and `Loop Count` are reflected in the preview in real-time, enabling quick adjustments.
 
 > [!TIP]
 > <video autoplay loop muted playsinline width="100%">
 >   <source src="../../assets/inspector_preview.webm" type="video/webm">
 > </video>
-> *(※ Video showing the animation playing in the editor after checking the Editor Playing property will be placed here)*
+> *(※ Video showing the animation preview via the SpriteStudio bottom panel will be placed here)*
 
 ---
 
@@ -58,9 +58,8 @@ Once the node is selected, you can adjust various settings from Godot's Inspecto
 | `SSAB Resource`            | Resource | The target `SSABResource` (`.ssab` file) to play                    |
 | `Animation`                | String   | The name of the currently selected animation                        |
 | `Autoplay`                 | bool     | Whether to play automatically when the game starts                  |
-| `Editor Playing`           | bool     | An editor-only flag to preview the animation in the editor          |
 | `Frame`                    | float    | The current frame position                                          |
-| `Speed`                    | float    | Playback speed multiplier (Default: 1.0)                            |
+| `Speed Scale`              | float    | Playback speed multiplier (Default: 1.0)                            |
 | `Frame Rate`               | int      | FPS                                                                 |
 | `Loop Count`               | int      | Number of loops (`-1` for infinite loop)                            |
 | `Animation Section Start`  | int      | Start frame for partial playback                                    |
