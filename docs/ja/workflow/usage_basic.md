@@ -40,14 +40,14 @@ Godot エディタの強力な機能を活かし、最短の手順でアニメ�
    インスペクタの `Animation` プロパティのドロップダウンを開くと、`.ssab` に含まれるアニメーションのリストが表示されます。再生したいアニメーション名を選択してください。
 
 2. **エディタ上でのプレビュー**
-   インスペクタにある **`Playing`** プロパティにチェックを入れると、**ゲームを実行しなくてもエディタ上でアニメーションが再生されます**。
+   インスペクタにある **`Editor Playing`** プロパティにチェックを入れると、**ゲームを実行しなくてもエディタ上でアニメーションが再生されます**（この状態はシーンには保存されません）。
    `Frame` や `Speed`、`Loop` などのパラメータを変更するとリアルタイムにプレビューへ反映されるため、素早い調整が可能です。
 
 > [!TIP]
 > <video autoplay loop muted playsinline width="100%">
 >   <source src="../../assets/inspector_preview.webm" type="video/webm">
 > </video>
-> *(※上記に Playing にチェックを入れてエディタ上でプレビューが動く様子を示す動画が入ります)*
+> *(※上記に Editor Playing にチェックを入れてエディタ上でプレビューが動く様子を示す動画が入ります)*
 
 ---
 
@@ -57,11 +57,12 @@ Godot エディタの強力な機能を活かし、最短の手順でアニメ�
 | -------------------------- | ------ | ------------------------------------------------------------------- |
 | `SSAB Resource`           | Resource | 再生対象の `SSABResource` (`.ssab` ファイル)                     |
 | `Animation`                | String | 選択中のアニメーション名                                            |
+| `Autoplay`                 | bool   | ゲーム開始時に自動再生するかどうか                                  |
+| `Editor Playing`           | bool   | エディタ上でのみ再生するプレビュー用フラグ                          |
 | `Frame`                    | float  | 現在のフレーム位置                                                  |
 | `Speed`                    | float  | 再生速度倍率 (既定: 1.0)                                            |
 | `Frame Rate`               | int    | FPS                                                                 |
-| `Loop`                     | int    | ループ回数 (`-1` で無限ループ)                                      |
-| `Playing`                  | bool   | 再生フラグ                                                          |
+| `Loop Count`               | int    | ループ回数 (`-1` で無限ループ)                                      |
 | `Animation Section Start` | int    | 部分再生の開始フレーム                                              |
 | `Animation Section End`   | int    | 部分再生の終了フレーム                                              |
 | `Playback Direction`       | int    | 再生方向                                                            |

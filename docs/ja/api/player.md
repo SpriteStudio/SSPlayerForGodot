@@ -24,6 +24,8 @@ func _ready() -> void:
 
 * `set_ssab_resource(res: SSABResource)` / `get_ssab_resource() -> SSABResource`
 * `set_animation(name: String)` / `get_animation() -> String`
+* `set_autoplay(autoplay: bool)` / `is_autoplay() -> bool`: シーン開始時に自動再生するかどうか。
+* `editor_playing` (bool, エディタ専用プロパティ): インスペクタ上でチェックを入れるとエディタでのみプレビュー再生を行います（シーンには保存されません）。
 * `play(start_frame: float = -1.0)`: 再生を開始します。`-1.0` を指定した場合は、現在のフレームまたは区間の先頭から再生します。
 * `pause()`: 再生を一時停止します。
 * `stop()`: 再生を停止します。

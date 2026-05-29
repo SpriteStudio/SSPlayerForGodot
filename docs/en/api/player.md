@@ -24,6 +24,8 @@ func _ready() -> void:
 
 * `set_ssab_resource(res: SSABResource)` / `get_ssab_resource() -> SSABResource`
 * `set_animation(name: String)` / `get_animation() -> String`
+* `set_autoplay(autoplay: bool)` / `is_autoplay() -> bool`: Determines if the selected animation plays automatically when the scene starts.
+* `editor_playing` (bool, Editor-only property): Checking this in the inspector plays the animation as a preview in the editor. This property is never saved in the scene.
 * `play(start_frame: float = -1.0)`: Starts playback. If `start_frame` is `-1.0`, it plays from the current frame or the start of the section.
 * `pause()`: Pauses playback while retaining the current frame.
 * `stop()`: Stops playback and typically resets the state.
