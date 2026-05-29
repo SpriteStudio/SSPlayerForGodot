@@ -1,5 +1,11 @@
 #include "ss_player_node_2d.h"
 
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+#include <godot_cpp/classes/engine.hpp>
+#else
+#include "core/config/engine.h"
+#endif
+
 class SpriteStudioPlayer2D::_SignalSink : public SsPlayerEventSink {
 public:
     explicit _SignalSink(SpriteStudioPlayer2D* p_owner) : _owner(p_owner) {}
@@ -119,6 +125,14 @@ String SpriteStudioPlayer2D::getAnimation() const {
     return _internal->getAnimation();
 }
 
+void SpriteStudioPlayer2D::setAutoplay(bool p_autoplay) {
+    _autoplay = p_autoplay;
+}
+
+bool SpriteStudioPlayer2D::isAutoplay() const {
+    return _autoplay;
+}
+
 bool SpriteStudioPlayer2D::isPlaying() const { return _internal->isPlaying(); }
 void SpriteStudioPlayer2D::play(float p_start_frame) { _internal->play(p_start_frame); }
 bool SpriteStudioPlayer2D::isPausing() const { return _internal->isPausing(); }
@@ -162,6 +176,9 @@ void SpriteStudioPlayer2D::_bind_methods() {
     ClassDB::bind_method( D_METHOD( "get_ssab_resource" ), &SpriteStudioPlayer2D::getSSABResource );
     ClassDB::bind_method( D_METHOD( "set_animation", "name" ), &SpriteStudioPlayer2D::setAnimation );
     ClassDB::bind_method( D_METHOD( "get_animation" ), &SpriteStudioPlayer2D::getAnimation );
+
+    ClassDB::bind_method( D_METHOD( "set_autoplay", "autoplay" ), &SpriteStudioPlayer2D::setAutoplay );
+    ClassDB::bind_method( D_METHOD( "is_autoplay" ), &SpriteStudioPlayer2D::isAutoplay );
 
     ClassDB::bind_method( D_METHOD( "is_playing" ), &SpriteStudioPlayer2D::isPlaying );
     ClassDB::bind_method( D_METHOD( "play", "start_frame" ), &SpriteStudioPlayer2D::play, DEFVAL(-1.0f) );
@@ -237,6 +254,9 @@ bool SpriteStudioPlayer2D::_set(const StringName& p_name, const Variant& p_prope
     if (name == "animation") {
         setAnimation(p_property);
         return true;
+    } else if (name == "autoplay") {
+        setAutoplay(p_property);
+        return true;
     } else if (name == "frame") {
         setFrame(p_property);
         return true;
@@ -252,7 +272,7 @@ bool SpriteStudioPlayer2D::_set(const StringName& p_name, const Variant& p_prope
     } else if (name == "sub_frame_enabled") {
         setSubFrameEnabled(p_property);
         return true;
-    } else if (name == "playing") {
+    } else if (name == "editor_playing") {
         if (p_property) {
             play();
         } else {
@@ -290,6 +310,9 @@ bool SpriteStudioPlayer2D::_get(const StringName& p_name, Variant& r_property) c
     if (name == "animation") {
         r_property = getAnimation();
         return true;
+    } else if (name == "autoplay") {
+        r_property = isAutoplay();
+        return true;
     } else if (name == "frame") {
         r_property = getFrame();
         return true;
@@ -305,7 +328,7 @@ bool SpriteStudioPlayer2D::_get(const StringName& p_name, Variant& r_property) c
     } else if (name == "sub_frame_enabled") {
         r_property = isSubFrameEnabled();
         return true;
-    } else if (name == "playing") {
+    } else if (name == "editor_playing") {
         r_property = isPlaying();
         return true;
     } else if (name == "playback_direction") {
@@ -345,7 +368,9 @@ void SpriteStudioPlayer2D::_get_property_list(List<PropertyInfo>* p_list) const 
         Vector<String> anim_names = res->get_animation_names();
 #endif
         p_list->push_back(PropertyInfo(Variant::STRING, "animation", PROPERTY_HINT_ENUM, String(",").join(anim_names)));
-        p_list->push_back(PropertyInfo(Variant::BOOL, "playing"));
+        p_list->push_back(PropertyInfo(Variant::BOOL, "autoplay"));
+
+        p_list->push_back(PropertyInfo(Variant::BOOL, "editor_playing", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_EDITOR));
 
         int total = getTotalFrames();
         int max_frame = total > 0 ? total - 1 : 0;
@@ -385,6 +410,13 @@ void SpriteStudioPlayer2D::_get_property_list(List<PropertyInfo>* p_list) const 
 
 void SpriteStudioPlayer2D::_notification(int p_notification) {
     switch (p_notification) {
+        case NOTIFICATION_READY:
+            if (!Engine::get_singleton()->is_editor_hint()) {
+                if (_autoplay) {
+                    play();
+                }
+            }
+            break;
         case NOTIFICATION_ENTER_TREE:
             // Re-parent the InternalPlayer's root canvas item to ours so the
             // Node2D's transform / visibility / Z-order propagate. Also done
