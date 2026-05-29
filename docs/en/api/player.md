@@ -77,3 +77,17 @@ The parameters configured on the timeline "Signal" keyframe are delivered as a `
 
 > [!NOTE]
 > For the exact types and the latest set of accepted values, also refer to the implementation files `ss_player/ss_player_node_2d.h` and `ss_player/ss_internal_player.cpp`.
+
+## Driving from an AnimationPlayer
+
+The `frame` property is animatable, so an `AnimationPlayer` can scrub a SpriteStudio animation in lockstep with its own timeline (and any other tracks on it — audio, calls, other nodes).
+
+1. Assign `SSAB Resource` and pick an `Animation` on the `SpriteStudioPlayer2D` as usual.
+2. In the `AnimationPlayer`, add a **Property Track** targeting the node's `frame` property.
+3. Keyframe `frame` over time (e.g. `0` → the last frame across the desired duration). `frame` is a float, so values interpolate.
+4. Play the `AnimationPlayer`.
+
+> [!IMPORTANT]
+> While the `AnimationPlayer` drives `frame`, do **not** let the node play itself — leave `Autoplay` off and don't call `play()`. Otherwise the node's own playback and the keyframed `frame` fight each other every frame.
+
+No setup beyond this is required: keyframe values live in the `AnimationPlayer`'s animation (the node's `frame` is not stored in the scene), and the same track drives playback at runtime.

@@ -77,3 +77,17 @@ SpriteStudio 上でユーザーデータに設定した値が `Dictionary` と�
 
 > [!NOTE]
 > 引数の正確な型・最新の取り得る値は実装 `ss_player/ss_player_node_2d.h` / `ss_player/ss_internal_player.cpp` を併せて参照してください。
+
+## AnimationPlayer から駆動する
+
+`frame` プロパティはアニメート可能なので、`AnimationPlayer` のタイムライン（音・メソッド呼び出し・他ノードなど他トラック）と同期させて SpriteStudio アニメをスクラブできます。
+
+1. `SpriteStudioPlayer2D` に通常どおり `SSAB Resource` を割り当て、`Animation` を選択。
+2. `AnimationPlayer` で、ノードの `frame` プロパティを対象に **プロパティトラック** を追加。
+3. `frame` を時間に沿ってキーフレーム（例：尺に合わせて `0` → 最終フレーム）。`frame` は float なので補間されます。
+4. `AnimationPlayer` を再生。
+
+> [!IMPORTANT]
+> `AnimationPlayer` が `frame` を駆動している間は、ノードを**自走させない**でください（`Autoplay` をオフにし、`play()` も呼ばない）。さもないとノード自身の再生とキーフレームの `frame` が毎フレーム競合します。
+
+これ以上の準備は不要です。キー値は `AnimationPlayer` のアニメーション側に保存され（ノードの `frame` はシーンに保存されません）、同じトラックがランタイムでも再生を駆動します。

@@ -4,9 +4,8 @@ extends SpriteStudioPlayer2D
 # from a SpriteStudio animation in v2.x.
 
 func _ready():
-	# Connect to the "signal" signal emitted by SpriteStudioPlayer2D
-	# Note: 'signal' is a keyword in GDScript, so we must use string-based connect
-	self.connect("signal", _on_ss_signal)
+	# Connect to the "signal_emitted" signal of SpriteStudioPlayer2D
+	self.signal_emitted.connect(_on_ss_signal)
 
 func _on_ss_signal(command: String, value: Dictionary):
 	print("on_signal()")
