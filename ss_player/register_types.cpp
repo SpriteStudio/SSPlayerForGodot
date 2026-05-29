@@ -15,6 +15,7 @@ using namespace godot;
 #include "ss_filesystem_menu.h"
 #include "ss_progress_dialog.h"
 #include "ss_importer.h"
+#include "ss_playback_panel.h"
 #include "ss_resource_inspector.h"
 #include "ss_editor_plugin.h"
 
@@ -136,6 +137,7 @@ void initialize_ss_player_module(ModuleInitializationLevel level) {
     GDREGISTER_CLASS(SSClickableLabel);
     GDREGISTER_CLASS(SSProgressDialog);
     GDREGISTER_CLASS(SSCanvasDropOverlay);
+    GDREGISTER_CLASS(SSPlaybackPanel);
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
     GDREGISTER_CLASS(SSEditorPlugin);

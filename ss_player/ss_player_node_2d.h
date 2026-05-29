@@ -22,6 +22,12 @@ class SpriteStudioPlayer2D : public Node2D {
     void _notification( int p_notification );
 
 public:
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+    PackedStringArray _get_configuration_warnings() const override;
+#else
+    PackedStringArray get_configuration_warnings() const override;
+#endif
+
     void setSSABResource( const Ref<SSABResource>& ssabRes );
     Ref<SSABResource> getSSABResource() const;
     void setAnimation( const String& strName );
@@ -36,8 +42,8 @@ public:
     void pause();
     void stop();
 
-    void setSpeed( float p_speed );
-    float getSpeed() const;
+    void setSpeedScale( float p_speed );
+    float getSpeedScale() const;
     void setFrame( float p_frame );
     float getFrame() const;
 
