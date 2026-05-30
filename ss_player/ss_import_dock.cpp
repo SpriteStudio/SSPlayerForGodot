@@ -592,7 +592,13 @@ void SSImportControl::_load_settings() {
     cfg.instantiate();
     cfg->load(SSPLAYER_SOURCES_CFG_PATH);
     
-    String path = cfg->get_value("settings", "output_directory", DEFAULT_PATH);
+    String path = DEFAULT_PATH;
+    if (cfg->has_section_key("settings", "output_directory")) {
+        path = cfg->get_value("settings", "output_directory");
+    } else {
+        cfg->set_value("settings", "output_directory", path);
+        cfg->save(SSPLAYER_SOURCES_CFG_PATH);
+    }
 
     path_line_edit->set_text(path);
 
