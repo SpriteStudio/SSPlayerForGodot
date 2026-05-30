@@ -5,6 +5,8 @@
 #ifndef SS_MACROS_H
 #define SS_MACROS_H
 
+#define SSPLAYER_SOURCES_CFG_PATH "res://.ssplayer_sources.cfg"
+
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
   #include <godot_cpp/core/version.hpp>
   #include <godot_cpp/variant/string_name.hpp>

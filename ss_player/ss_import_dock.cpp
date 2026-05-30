@@ -11,6 +11,8 @@
 #include <godot_cpp/classes/editor_settings.hpp>
 #include <godot_cpp/classes/input_event_mouse_button.hpp>
 #include <godot_cpp/classes/os.hpp>
+#include <godot_cpp/classes/config_file.hpp>
+#include <godot_cpp/classes/control.hpp>
 #include <godot_cpp/classes/window.hpp>
 #include <godot_cpp/variant/utility_functions.hpp>
 using namespace godot;
@@ -18,6 +20,7 @@ using namespace godot;
 #include "core/input/input_event.h"
 #include "core/io/dir_access.h"
 #include "core/os/os.h"
+#include "core/io/config_file.h"
 #include "editor/editor_interface.h"
 #include "editor/settings/editor_settings.h"
 #include "scene/gui/dialogs.h"
@@ -585,13 +588,16 @@ void SSImportControl::_add_to_recent_files(const String &p_path) {
 }
 
 void SSImportControl::_load_settings() {
-    ProjectSettings *ps = ProjectSettings::get_singleton();
+    Ref<ConfigFile> cfg;
+    cfg.instantiate();
+    cfg->load(SSPLAYER_SOURCES_CFG_PATH);
+    
     String path = DEFAULT_PATH;
-
-    if (ps->has_setting(SETTING_KEY)) {
-        path = ps->get_setting(SETTING_KEY);
+    if (cfg->has_section_key("general", "output_directory")) {
+        path = cfg->get_value("general", "output_directory");
     } else {
-        ps->set_setting(SETTING_KEY, DEFAULT_PATH);
+        cfg->set_value("general", "output_directory", path);
+        cfg->save(SSPLAYER_SOURCES_CFG_PATH);
     }
 
     path_line_edit->set_text(path);
@@ -601,9 +607,11 @@ void SSImportControl::_load_settings() {
 }
 
 void SSImportControl::_save_settings() {
-    ProjectSettings *ps = ProjectSettings::get_singleton();
-    ps->set_setting(SETTING_KEY, path_line_edit->get_text());
-    ps->save();
+    Ref<ConfigFile> cfg;
+    cfg.instantiate();
+    cfg->load(SSPLAYER_SOURCES_CFG_PATH);
+    cfg->set_value("general", "output_directory", path_line_edit->get_text());
+    cfg->save(SSPLAYER_SOURCES_CFG_PATH);
 }
 
 void SSImportControl::_ensure_output_dir_exists() {

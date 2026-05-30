@@ -24,6 +24,4 @@ config/icon="res://icon.svg"
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
 
-[spritestudio]
 
-output_directory="res://ssab_generated"

@@ -205,8 +205,6 @@ void SSImporter::_on_filesystem_changed(const String &p_dir) {
     }
 }
 
-#define SSPLAYER_SOURCES_CFG_PATH "res://.ssplayer_sources.cfg"
-
 String SSImporter::_make_relative_path(const String &p_abs_path) const {
     String base_dir = ProjectSettings::get_singleton()->globalize_path("res://");
     base_dir = base_dir.replace("\\", "/");
