@@ -586,10 +586,10 @@ void SsInternalPlayer::_ensure_mask_targets() {
     }
     if (!_mask_viewport.is_valid()) {
         _mask_viewport = rs->viewport_create();
-        // UPDATE_ALWAYS: the coverage viewport renders every frame; maskable
-        // parts sample the previous frame's result (one-frame latency), which
+        // UPDATE_ONCE: the coverage viewport only renders when explicitly requested.
+        // maskable parts sample the previous frame's result (one-frame latency), which
         // avoids depending on inter-viewport render ordering for a first cut.
-        rs->viewport_set_update_mode(_mask_viewport, RenderingServer::VIEWPORT_UPDATE_ALWAYS);
+        rs->viewport_set_update_mode(_mask_viewport, RenderingServer::VIEWPORT_UPDATE_ONCE);
         rs->viewport_set_clear_mode(_mask_viewport, RenderingServer::VIEWPORT_CLEAR_ALWAYS);
         rs->viewport_set_transparent_background(_mask_viewport, true);
         rs->viewport_set_disable_3d(_mask_viewport, true);
@@ -647,6 +647,7 @@ void SsInternalPlayer::_render_mask_coverage(const DrawFrame& f) {
     if (_mask_writers.is_empty() || !f.frameData) return;
     _ensure_mask_targets();
     RenderingServer* rs = f.rs;
+    rs->viewport_set_update_mode(_mask_viewport, RenderingServer::VIEWPORT_UPDATE_ONCE);
 
     auto draw_batches = f.frameData->draw_batches();
     auto draw_order = f.frameData->draw_order();
@@ -947,7 +948,7 @@ void SsInternalPlayer::_drawAnimation(float frame_no, float delta_seconds, bool 
         const int total = f.binary->parts() ? (int)f.binary->parts()->size() : 0;
         if ((int)_parts_by_idx.size() != total) _parts_by_idx.resize(total);
         if (total > 0) {
-            for (int i = 0; i < total; i++) _parts_by_idx[i] = nullptr;
+            memset(_parts_by_idx.ptr(), 0, total * sizeof(void*));
         }
         for (uint32_t i = 0; i < parts->size(); i++) {
             auto p = parts->Get(i);
