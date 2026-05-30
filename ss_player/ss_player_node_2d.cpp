@@ -449,29 +449,27 @@ void SpriteStudioPlayer2D::_get_property_list(List<PropertyInfo>* p_list) const 
         Vector<String> anim_names = res->get_animation_names();
 #endif
         p_list->push_back(PropertyInfo(Variant::STRING, "animation", PROPERTY_HINT_ENUM, String(",").join(anim_names)));
-        p_list->push_back(PropertyInfo(Variant::BOOL, "autoplay"));
-
-        int total = getTotalFrames();
-        int max_frame = total > 0 ? total - 1 : 0;
-        p_list->push_back(PropertyInfo(Variant::FLOAT, "frame", PROPERTY_HINT_RANGE, "0," + String::num(max_frame) + ",0.01", PROPERTY_USAGE_EDITOR));
+    } else {
+        p_list->push_back(PropertyInfo(Variant::STRING, "animation", PROPERTY_HINT_ENUM, ""));
     }
 
-    p_list->push_back(PropertyInfo(Variant::FLOAT, "speed_scale", PROPERTY_HINT_RANGE, "0,4,0.01,or_greater"));
+    int total = getTotalFrames();
+    int max_frame = total > 0 ? total - 1 : 0;
+    p_list->push_back(PropertyInfo(Variant::BOOL, "autoplay"));
+    p_list->push_back(PropertyInfo(Variant::FLOAT, "frame", PROPERTY_HINT_RANGE, "0," + String::num(max_frame) + ",0.01", PROPERTY_USAGE_EDITOR));
+
     p_list->push_back(PropertyInfo(Variant::INT, "loop_count", PROPERTY_HINT_RANGE, "-1,9999,1,or_greater"));
+    p_list->push_back(PropertyInfo(Variant::FLOAT, "speed_scale", PROPERTY_HINT_RANGE, "0,4,0.01,or_greater"));
 
     p_list->push_back(PropertyInfo(Variant::NIL, "Playback Options", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_GROUP));
     p_list->push_back(PropertyInfo(Variant::BOOL, "frame_skip_enabled"));
     p_list->push_back(PropertyInfo(Variant::BOOL, "sub_frame_enabled"));
     p_list->push_back(PropertyInfo(Variant::INT, "animation_process_mode", PROPERTY_HINT_ENUM, "Physics,Idle"));
 
-    if (has_res) {
-        int total = getTotalFrames();
-        int max_frame = total > 0 ? total - 1 : 0;
-        String section_range = "0," + String::num(max_frame) + ",1";
-        p_list->push_back(PropertyInfo(Variant::NIL, "Section", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_GROUP));
-        p_list->push_back(PropertyInfo(Variant::INT, "animation_section_start", PROPERTY_HINT_RANGE, section_range));
-        p_list->push_back(PropertyInfo(Variant::INT, "animation_section_end", PROPERTY_HINT_RANGE, section_range));
-    }
+    String section_range = "0," + String::num(max_frame) + ",1";
+    p_list->push_back(PropertyInfo(Variant::NIL, "Section", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_GROUP));
+    p_list->push_back(PropertyInfo(Variant::INT, "animation_section_start", PROPERTY_HINT_RANGE, section_range));
+    p_list->push_back(PropertyInfo(Variant::INT, "animation_section_end", PROPERTY_HINT_RANGE, section_range));
 
     p_list->push_back(PropertyInfo(Variant::NIL, "Offset", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_GROUP));
     p_list->push_back(PropertyInfo(Variant::VECTOR2, "offset"));

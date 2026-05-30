@@ -219,6 +219,8 @@ void SSImportControl::start_intercepting() {
         Callable target = conn.callable;
 #endif
 
+        // Note: Disconnecting other plugins' drag-and-drop handlers is a brittle hack to work around Godot's
+        // single-handler limitation for OS drag-and-drop. This might conflict if other plugins do the same.
         if (target.get_object() == this) continue;
 
         original_drop_handler = target;
@@ -226,6 +228,7 @@ void SSImportControl::start_intercepting() {
 
         break;
     }
+
 
     if (!window->is_connected("files_dropped", Callable(this, "_on_window_files_dropped"))) {
         window->connect("files_dropped", Callable(this, "_on_window_files_dropped"));
