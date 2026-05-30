@@ -24,7 +24,11 @@ func _ready() -> void:
 
 * `set_ssab_resource(res: SSABResource)` / `get_ssab_resource() -> SSABResource`
 * `set_animation(name: String)` / `get_animation() -> String`
-* `set_autoplay(autoplay: bool)` / `is_autoplay() -> bool`: Determines if the selected animation plays automatically when the scene starts.
+* `set_autoplay(autoplay: bool)` / `is_autoplay() -> bool`: Whether to start playing automatically when the scene starts.
+* `set_offset(offset: Vector2)` / `get_offset() -> Vector2`: Shifts the drawing position without moving the Node2D's origin.
+* `set_flip_h(flip: bool)` / `is_flipped_h() -> bool`: Flips the animation horizontally.
+* `set_flip_v(flip: bool)` / `is_flipped_v() -> bool`: Flips the animation vertically.
+* `set_animation_process_mode(mode: int)` / `get_animation_process_mode() -> int`: Sets whether to sync with `_physics_process` (`0` / Physics) or `_process` (`1` / Idle).
 * **In-editor preview**: Select the node and use the **SpriteStudio** bottom panel (play / pause / stop / frame scrubber) to preview without running the game. *(The former `editor_playing` inspector toggle has been replaced by this panel.)*
 * `play(start_frame: float = -1.0)`: Starts playback. If `start_frame` is `-1.0`, it plays from the current frame or the start of the section.
 * `pause()`: Pauses playback while retaining the current frame.
