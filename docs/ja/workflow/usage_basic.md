@@ -58,6 +58,8 @@ Godot エディタの強力な機能を活かし、最短の手順でアニメ�
 | `SSAB Resource`           | Resource | 再生対象の `SSABResource` (`.ssab` ファイル)                     |
 | `Animation`                | String | 選択中のアニメーション名                                            |
 | `Autoplay`                 | bool   | ゲーム開始時に自動再生するかどうか                                  |
+| `Offset`                   | Vector2| 描画位置のオフセット。Transformを動かさずに見た目だけをずらす際に便利 |
+| `Flip H / Flip V`          | bool   | アニメーションの水平 / 垂直反転                                     |
 | `Frame`                    | float  | 現在のフレーム位置                                                  |
 | `Speed Scale`              | float  | 再生速度倍率 (既定: 1.0)                                            |
 | `Frame Rate`               | int    | FPS                                                                 |
@@ -66,5 +68,6 @@ Godot エディタの強力な機能を活かし、最短の手順でアニメ�
 | `Animation Section End`   | int    | 部分再生の終了フレーム                                              |
 | `Playback Direction`       | int    | 再生方向                                                            |
 | `Playback Style`           | int    | 再生スタイル (片道/往復 等)                                         |
-| `Skip Frames`              | bool   | 描画間隔がフレーム間隔を超えた際にフレームを飛ばすか                |
+| `Frame Skip Enabled`       | bool   | 描画間隔がフレーム間隔を超えた際にフレームを飛ばすか                |
 | `Sub Frame Enabled`        | bool   | サブフレーム補間を有効化するか                                      |
+| `Animation Process Mode`   | int    | `_physics_process` (Physics) か `_process` (Idle) かの同期設定      |

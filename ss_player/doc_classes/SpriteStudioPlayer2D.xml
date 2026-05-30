@@ -83,6 +83,18 @@
 		<member name="autoplay" type="bool" default="false">
 			If [code]true[/code], the selected animation starts playing automatically when the scene runs.
 		</member>
+		<member name="offset" type="Vector2" default="Vector2(0, 0)">
+			The drawing offset of the animation. Useful for visually centering an animation without altering the node's Transform.
+		</member>
+		<member name="flip_h" type="bool" default="false">
+			If [code]true[/code], the animation is flipped horizontally.
+		</member>
+		<member name="flip_v" type="bool" default="false">
+			If [code]true[/code], the animation is flipped vertically.
+		</member>
+		<member name="animation_process_mode" type="int" enum="SpriteStudioPlayer2D.AnimationProcessMode" default="1">
+			Determines whether to advance the animation in [code]_physics_process[/code] ([code]0[/code] / Physics) or [code]_process[/code] ([code]1[/code] / Idle). Use Physics if the parent node moves using the physics engine to avoid jitter.
+		</member>
 		<member name="frame" type="float">
 			Current playback frame (editor-only display). Can be keyframed from an [AnimationPlayer] to drive playback from a timeline.
 		</member>
@@ -141,4 +153,12 @@
 			</description>
 		</signal>
 	</signals>
+	<constants>
+		<constant name="ANIMATION_PROCESS_PHYSICS" value="0" enum="AnimationProcessMode">
+			Syncs animation to [code]_physics_process[/code] frame.
+		</constant>
+		<constant name="ANIMATION_PROCESS_IDLE" value="1" enum="AnimationProcessMode">
+			Syncs animation to [code]_process[/code] frame.
+		</constant>
+	</constants>
 </class>

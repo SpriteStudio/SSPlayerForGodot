@@ -13,13 +13,20 @@ using namespace godot;
 class SpriteStudioPlayer2D : public Node2D {
     GDCLASS( SpriteStudioPlayer2D, Node2D );
 
+public:
+    enum AnimationProcessMode {
+        ANIMATION_PROCESS_PHYSICS,
+        ANIMATION_PROCESS_IDLE,
+    };
+
+private:
+    void _notification( int p_notification );
     SpriteStudioPlayer2D();
     ~SpriteStudioPlayer2D();
     static void _bind_methods();
     bool _set( const StringName& p_name, const Variant& p_property );
     bool _get( const StringName& p_name, Variant& r_property ) const;
     void _get_property_list( List<PropertyInfo>* p_list ) const;
-    void _notification( int p_notification );
 
 public:
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
@@ -41,6 +48,17 @@ public:
     bool isPausing() const;
     void pause();
     void stop();
+
+    void set_flip_h( bool p_flip );
+    bool is_flipped_h() const;
+    void set_flip_v( bool p_flip );
+    bool is_flipped_v() const;
+    
+    void set_offset( const Vector2& p_offset );
+    Vector2 get_offset() const;
+
+    void set_animation_process_mode(int p_mode);
+    int get_animation_process_mode() const;
 
     void setSpeedScale( float p_speed );
     float getSpeedScale() const;
@@ -83,6 +101,12 @@ private:
 
     HashMap<String, Ref<Texture2D>> _cellmap_overrides;
     bool _autoplay = false;
+    bool _flip_h = false;
+    bool _flip_v = false;
+    Vector2 _offset;
+    AnimationProcessMode _process_mode = ANIMATION_PROCESS_IDLE;
+    
+    void _update_root_transform();
 
     // Adapter that turns SsInternalPlayer event callbacks into Node-level
     // emit_signal calls. Lifetime tied to the Node; lives in the cpp file.

@@ -25,6 +25,10 @@ func _ready() -> void:
 * `set_ssab_resource(res: SSABResource)` / `get_ssab_resource() -> SSABResource`
 * `set_animation(name: String)` / `get_animation() -> String`
 * `set_autoplay(autoplay: bool)` / `is_autoplay() -> bool`: シーン開始時に自動再生するかどうか。
+* `set_offset(offset: Vector2)` / `get_offset() -> Vector2`: Node2D の原点を動かさずに描画位置だけをずらします。
+* `set_flip_h(flip: bool)` / `is_flipped_h() -> bool`: 水平反転。
+* `set_flip_v(flip: bool)` / `is_flipped_v() -> bool`: 垂直反転。
+* `set_animation_process_mode(mode: int)` / `get_animation_process_mode() -> int`: `0` で Physics (`_physics_process`) 同期、`1` で Idle (`_process`) 同期。
 * **エディタ内プレビュー**: ノードを選択すると表示される **SpriteStudio** ボトムパネル（再生 / 一時停止 / 停止 / フレームスクラバ）でゲームを実行せずにプレビューできます。*(旧 `editor_playing` インスペクタトグルはこのパネルに置き換えられました。)*
 * `play(start_frame: float = -1.0)`: 再生を開始します。`-1.0` を指定した場合は、現在のフレームまたは区間の先頭から再生します。
 * `pause()`: 再生を一時停止します。
