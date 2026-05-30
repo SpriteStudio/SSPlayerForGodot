@@ -11,6 +11,7 @@
 #include <godot_cpp/classes/editor_file_system.hpp>
 #include <godot_cpp/classes/editor_interface.hpp>
 #include <godot_cpp/classes/editor_settings.hpp>
+#include <godot_cpp/classes/config_file.hpp>
 #include <godot_cpp/classes/project_settings.hpp>
 #include <godot_cpp/classes/resource.hpp>
 #include <godot_cpp/classes/resource_loader.hpp>
@@ -20,6 +21,7 @@ using namespace godot;
 #else
 #include "core/config/project_settings.h"
 #include "core/io/dir_access.h"
+#include "core/io/config_file.h"
 #include "core/io/resource.h"
 #include "editor/editor_interface.h"
 #include "editor/settings/editor_settings.h"
@@ -203,14 +205,91 @@ void SSImporter::_on_filesystem_changed(const String &p_dir) {
     }
 }
 
+#define SSPLAYER_SOURCES_CFG_PATH "res://.ssplayer_sources.cfg"
+
+String SSImporter::_make_relative_path(const String &p_abs_path) const {
+    String base_dir = ProjectSettings::get_singleton()->globalize_path("res://");
+    base_dir = base_dir.replace("\\", "/");
+    String target = p_abs_path.replace("\\", "/");
+
+    if (target.is_empty()) {
+        return target;
+    }
+
+    PackedStringArray base_parts = base_dir.split("/", false);
+    PackedStringArray target_parts = target.split("/", false);
+
+    int common_idx = 0;
+    while (common_idx < base_parts.size() && common_idx < target_parts.size()) {
+        if (base_parts[common_idx] == target_parts[common_idx]) {
+            common_idx++;
+        } else {
+            break;
+        }
+    }
+
+    if (common_idx == 0) {
+        return target;
+    }
+
+    String rel_path = "";
+    for (int i = common_idx; i < base_parts.size(); i++) {
+        rel_path += "../";
+    }
+    for (int i = common_idx; i < target_parts.size(); i++) {
+        rel_path += target_parts[i];
+        if (i < target_parts.size() - 1) {
+            rel_path += "/";
+        }
+    }
+
+    return rel_path;
+}
+
+String SSImporter::_make_absolute_path(const String &p_rel_path) const {
+    if (p_rel_path.is_empty()) {
+        return p_rel_path;
+    }
+    if (p_rel_path.is_absolute_path() || p_rel_path.contains(":/")) {
+        return p_rel_path;
+    }
+    String base_dir = ProjectSettings::get_singleton()->globalize_path("res://");
+    return base_dir.path_join(p_rel_path).simplify_path();
+}
+
 Dictionary SSImporter::_load_source_map() const {
-    Ref<EditorSettings> es = EditorInterface::get_singleton()->get_editor_settings();
-    return es->get_project_metadata("spritestudio", "ssab_sources", Dictionary());
+    Ref<ConfigFile> cfg;
+    cfg.instantiate();
+    Error err = cfg->load(SSPLAYER_SOURCES_CFG_PATH);
+    if (err != OK) {
+        return Dictionary();
+    }
+    if (!cfg->has_section("ssab_sources")) {
+        return Dictionary();
+    }
+    
+    Dictionary map;
+    PackedStringArray keys = cfg->get_section_keys("ssab_sources");
+    for (int i = 0; i < keys.size(); i++) {
+        String ssab_path = keys[i];
+        String sspj_rel_path = cfg->get_value("ssab_sources", ssab_path);
+        map[ssab_path] = sspj_rel_path;
+    }
+    return map;
 }
 
 void SSImporter::_save_source_map(const Dictionary &p_map) {
-    Ref<EditorSettings> es = EditorInterface::get_singleton()->get_editor_settings();
-    es->set_project_metadata("spritestudio", "ssab_sources", p_map);
+    Ref<ConfigFile> cfg;
+    cfg.instantiate();
+    
+    Array keys = p_map.keys();
+    for (int i = 0; i < keys.size(); i++) {
+        String ssab_path = keys[i];
+        String sspj_rel_path = p_map[ssab_path];
+        cfg->set_value("ssab_sources", ssab_path, sspj_rel_path);
+    }
+    
+    cfg->save(SSPLAYER_SOURCES_CFG_PATH);
 }
 
 void SSImporter::_record_ssabs_in_dir(Dictionary &p_map, const String &p_dst_dir, const String &p_sspj_path) {
@@ -228,7 +307,7 @@ void SSImporter::_record_ssabs_in_dir(Dictionary &p_map, const String &p_dst_dir
                 String output_path = p_dst_dir.path_join(fname);
                 // Re-insert to bump to most-recent in iteration order.
                 p_map.erase(output_path);
-                p_map[output_path] = p_sspj_path;
+                p_map[output_path] = _make_relative_path(p_sspj_path);
                 _refresh_cached_output(output_path);
                 _import_generated_files.push_back(output_path);
             }
@@ -271,7 +350,7 @@ void SSImporter::_evict_lru(Dictionary &p_map) {
 String SSImporter::lookup_sspj_for_ssab(const String &p_ssab_path) const {
     Dictionary map = _load_source_map();
     if (map.has(p_ssab_path)) {
-        return map[p_ssab_path];
+        return _make_absolute_path(map[p_ssab_path]);
     }
     return String();
 }
@@ -286,7 +365,7 @@ String SSImporter::lookup_output_dir_for_sspj(const String &p_sspj_path) const {
     // location for this sspj wins.
     for (int i = keys.size() - 1; i >= 0; i--) {
         String ssab_path = keys[i];
-        String sspj = map[ssab_path];
+        String sspj = _make_absolute_path(map[ssab_path]);
         if (sspj == p_sspj_path) {
             return ssab_path.get_base_dir();
         }
@@ -387,7 +466,7 @@ void SSImporter::record_ssab_source(const String &p_ssab_path, const String &p_s
     }
     Dictionary map = _load_source_map();
     map.erase(p_ssab_path);
-    map[p_ssab_path] = p_sspj_path;
+    map[p_ssab_path] = _make_relative_path(p_sspj_path);
     _evict_lru(map);
     _save_source_map(map);
 }

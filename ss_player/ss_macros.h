@@ -12,6 +12,7 @@
   #define EMPTY(x) ((x).is_empty())
   #define VARIANT_FLOAT Variant::FLOAT
   #define NOTIFY_PROPERTY_LIST_CHANGED() notify_property_list_changed()
+  #define SS_FILE_EXISTS(x) FileAccess::file_exists(x)
 #else
   #include "core/version.h"
   #include "core/string/string_name.h"
@@ -23,6 +24,7 @@
     #define EMPTY(x) ((x).is_empty())
     #define VARIANT_FLOAT Variant::FLOAT
     #define NOTIFY_PROPERTY_LIST_CHANGED() notify_property_list_changed()
+    #define SS_FILE_EXISTS(x) FileAccess::exists(x)
   #else
     #error not supported godot version.
   #endif

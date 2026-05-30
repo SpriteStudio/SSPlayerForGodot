@@ -7,16 +7,19 @@
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
 #include <godot_cpp/classes/control.hpp>
+#include <godot_cpp/classes/editor_file_dialog.hpp>
 #include <godot_cpp/classes/editor_interface.hpp>
 #include <godot_cpp/classes/os.hpp>
 #include <godot_cpp/classes/project_settings.hpp>
 #include <godot_cpp/classes/texture2d.hpp>
+#include <godot_cpp/classes/file_access.hpp>
 #include <godot_cpp/core/class_db.hpp>
 #include <godot_cpp/templates/hash_set.hpp>
 #include <godot_cpp/variant/utility_functions.hpp>
 using namespace godot;
 #else
 #include "core/config/project_settings.h"
+#include "core/io/file_access.h"
 #include "core/os/os.h"
 #include "core/templates/hash_set.h"
 #include "editor/editor_interface.h"
@@ -65,10 +68,14 @@ void SSFileSystemContextMenu::get_options(const Vector<String> &p_paths) {
         return;
     }
 
+    Control *base = EditorInterface::get_singleton()->get_base_control();
+    Ref<Texture2D> icon_open = base ? base->get_theme_icon(SNAME("Load"), SNAME("EditorIcons")) : Ref<Texture2D>();
+    Ref<Texture2D> icon_reconvert = base ? base->get_theme_icon(SNAME("Reload"), SNAME("EditorIcons")) : Ref<Texture2D>();
+
     if (!_is_unsupported_for_editor()) {
-        add_context_menu_item(tr("Open SSPJ"), Callable(this, "_on_open_in_editor"), Ref<Texture2D>());
+        add_context_menu_item(tr("Open SSPJ"), Callable(this, "_on_open_in_editor"), icon_open);
     }
-    add_context_menu_item(tr("Reconvert"), Callable(this, "_on_convert"), Ref<Texture2D>());
+    add_context_menu_item(tr("Reconvert"), Callable(this, "_on_convert"), icon_reconvert);
 }
 
 void SSFileSystemContextMenu::_on_open_in_editor(const PackedStringArray &p_paths) {
@@ -119,10 +126,9 @@ void SSFileSystemContextMenu::_on_convert(const PackedStringArray &p_paths) {
 
     // Dedupe by dst_dir. Each ssab implies one (dst_dir, sspj) reconvert job.
     HashSet<String> seen_dst_dirs;
-    PackedStringArray sspjs;
-    PackedStringArray dst_dirs;
-    String pending_ssab_for_dialog;
-    int pending_count = 0;
+    pending_valid_sspjs.clear();
+    pending_valid_dst_dirs.clear();
+    pending_missing_ssabs.clear();
 
     for (int i = 0; i < p_paths.size(); i++) {
         String path = p_paths[i];
@@ -130,28 +136,35 @@ void SSFileSystemContextMenu::_on_convert(const PackedStringArray &p_paths) {
             continue;
         }
         String sspj = importer->lookup_sspj_for_ssab(path);
-        if (sspj.is_empty()) {
-            pending_ssab_for_dialog = path;
-            pending_count++;
+        
+        bool found = false;
+        if (!sspj.is_empty()) {
+            if (SS_FILE_EXISTS(sspj)) {
+                found = true;
+            }
+        }
+        
+        if (!found) {
+            pending_missing_ssabs.push_back(path);
             continue;
         }
+
         String dst_dir = path.get_base_dir();
         if (seen_dst_dirs.has(dst_dir)) {
             continue;
         }
         seen_dst_dirs.insert(dst_dir);
-        sspjs.push_back(sspj);
-        dst_dirs.push_back(dst_dir);
+        pending_valid_sspjs.push_back(sspj);
+        pending_valid_dst_dirs.push_back(dst_dir);
     }
 
-    if (!sspjs.is_empty()) {
-        importer->queue_reconvert(sspjs, dst_dirs);
+    if (pending_missing_ssabs.size() > 0) {
+        _ask_user_for_sspj(pending_missing_ssabs[0], ACTION_CONVERT);
+        return;
     }
 
-    if (pending_count == 1 && sspjs.is_empty()) {
-        _ask_user_for_sspj(pending_ssab_for_dialog, ACTION_CONVERT);
-    } else if (pending_count > 0) {
-        WARN_PRINT(vformat("SSFileSystemContextMenu: %d file(s) without source record skipped. Right-click each individually to set their sspj.", pending_count));
+    if (!pending_valid_sspjs.is_empty()) {
+        importer->queue_reconvert(pending_valid_sspjs, pending_valid_dst_dirs);
     }
 }
 
@@ -211,9 +224,33 @@ void SSFileSystemContextMenu::_on_sspj_file_selected(const String &p_sspj_path) 
         case ACTION_OPEN_IN_EDITOR:
             _do_open_in_editor(global_sspj);
             break;
-        case ACTION_CONVERT:
-            _do_convert(ssab_path, global_sspj);
+        case ACTION_CONVERT: {
+            String selected_dir = global_sspj.get_base_dir();
+            String dst_dir = ssab_path.get_base_dir();
+            pending_valid_sspjs.push_back(global_sspj);
+            pending_valid_dst_dirs.push_back(dst_dir);
+            
+            // Smart re-link for the rest of missing ssabs
+            for (int i = 1; i < pending_missing_ssabs.size(); i++) {
+                String missing_ssab = pending_missing_ssabs[i];
+                String guessed_sspj = selected_dir.path_join(missing_ssab.get_file().get_basename() + ".sspj");
+                
+                if (SS_FILE_EXISTS(guessed_sspj)) {
+                    importer->record_ssab_source(missing_ssab, guessed_sspj);
+                    pending_valid_sspjs.push_back(guessed_sspj);
+                    pending_valid_dst_dirs.push_back(missing_ssab.get_base_dir());
+                } else {
+                    WARN_PRINT(vformat("SSFileSystemContextMenu: Could not auto-resolve missing source for %s. Skipping.", missing_ssab));
+                }
+            }
+            
+            importer->queue_reconvert(pending_valid_sspjs, pending_valid_dst_dirs);
+            
+            pending_valid_sspjs.clear();
+            pending_valid_dst_dirs.clear();
+            pending_missing_ssabs.clear();
             break;
+        }
         default:
             break;
     }
