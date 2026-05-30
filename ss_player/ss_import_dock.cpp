@@ -449,14 +449,20 @@ void SSImportControl::_show_recent_context_menu(const String &p_path) {
     pending_recent_path = p_path;
 
     recent_popup->clear();
+    
+    Ref<Texture2D> icon_open = get_theme_icon(SNAME("Load"), SNAME("EditorIcons"));
+    Ref<Texture2D> icon_reconvert = get_theme_icon(SNAME("Reload"), SNAME("EditorIcons"));
+    Ref<Texture2D> icon_reveal = get_theme_icon(SNAME("Filesystem"), SNAME("EditorIcons"));
+    Ref<Texture2D> icon_remove = get_theme_icon(SNAME("Remove"), SNAME("EditorIcons"));
+
     String os_name = OS::get_singleton()->get_name();
     if (os_name != "Linux") {
-        recent_popup->add_item(tr("Open SSPJ"), RECENT_MENU_OPEN_IN_EDITOR);
+        recent_popup->add_icon_item(icon_open, tr("Open SSPJ"), RECENT_MENU_OPEN_IN_EDITOR);
     }
-    recent_popup->add_item(tr("Reconvert"), RECENT_MENU_RECONVERT);
-    recent_popup->add_item(tr("Reveal"), RECENT_MENU_REVEAL);
+    recent_popup->add_icon_item(icon_reconvert, tr("Reconvert"), RECENT_MENU_RECONVERT);
+    recent_popup->add_icon_item(icon_reveal, tr("Reveal"), RECENT_MENU_REVEAL);
     recent_popup->add_separator();
-    recent_popup->add_item(tr("Remove from Recent"), RECENT_MENU_REMOVE);
+    recent_popup->add_icon_item(icon_remove, tr("Remove from Recent"), RECENT_MENU_REMOVE);
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
     Vector2i mouse = DisplayServer::get_singleton()->mouse_get_position();
