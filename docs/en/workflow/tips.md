@@ -23,3 +23,4 @@ There are two types of animation binaries imported into Godot:
 - **SSQB (Sequence Binary)**
   - This is a "sequence" of multiple animations (e.g., `Walk` -> `Run` -> `Jump`) linked together on the timeline within SpriteStudio.
   - Use this when you want to reproduce the exact continuous playback designed in SpriteStudio directly in Godot, without writing complex state transition logic in your GDScript.
+  - **Note (current status):** Loading into `SSQBResource` is supported, but **sequence playback is not available yet** (planned — subsumed into the runtime state machine in roadmap Phase 3, or a Player-side prototype). For now, chain animations yourself in GDScript via the `animation_finished` signal.
