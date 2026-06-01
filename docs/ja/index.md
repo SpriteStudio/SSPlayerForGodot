@@ -15,6 +15,7 @@
     - [ビルドガイド](setup/build.md)
 - **ワークフロー**
     - [基本的な使い方](workflow/usage_basic.md)
+    - [AnimationPlayer との連携](workflow/animation_player.md)
     - [アセットのインポートとエディタ連携](workflow/usage_asset_pipeline.md)（初回の `.sspj` インポートはこちら）
     - [スクリプト制御とイベント](workflow/usage_scripting.md)
 - **応用**
