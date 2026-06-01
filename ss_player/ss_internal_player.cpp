@@ -77,6 +77,106 @@ int ss_quantize_coverage_dim(float px, int min_dim, int max_dim) {
 }
 } // namespace
 
+// One pooled coverage render target of a fixed size class. Global scope so the
+// header's opaque forward declaration matches.
+struct SsMaskCoverageTarget {
+    RID viewport;
+    RID canvas;
+    Vector<RID> canvas_items;     // pooled, one per rendered writer
+    int canvas_items_in_use = 0;
+    int w = 0;
+    int h = 0;
+    bool fresh = false;           // first frame after (re)acquire: skip masking once
+};
+
+namespace {
+// Process-global pool of coverage targets shared by all players. A player
+// borrows a target of the size class it needs while masking and returns it when
+// it stops, so VRAM tracks peak concurrent masking rather than the number of
+// players that ever masked. Targets are freed when the last user (a player that
+// ever borrowed) is destroyed. Single-threaded (RenderingServer main thread).
+class SsMaskCoveragePool {
+public:
+    static SsMaskCoveragePool& get() {
+        static SsMaskCoveragePool inst;
+        return inst;
+    }
+
+    void add_user() { _users++; }
+    void remove_user(RenderingServer* rs) {
+        if (--_users <= 0) {
+            _users = 0;
+            free_all(rs);
+        }
+    }
+
+    SsMaskCoverageTarget* acquire(RenderingServer* rs, int w, int h) {
+        const uint64_t key = ((uint64_t)(uint32_t)w << 32) | (uint32_t)h;
+        Vector<SsMaskCoverageTarget*>* lst = _free.getptr(key);
+        if (lst && !lst->is_empty()) {
+            SsMaskCoverageTarget* t = (*lst)[lst->size() - 1];
+            lst->remove_at(lst->size() - 1);
+            t->fresh = true;
+            return t;
+        }
+        SsMaskCoverageTarget* t = memnew(SsMaskCoverageTarget);
+        t->w = w;
+        t->h = h;
+        t->fresh = true;
+        t->viewport = rs->viewport_create();
+        // UPDATE_ONCE: re-requested each frame the target is rendered. Maskable
+        // parts sample the previous frame's result (one-frame latency), which
+        // sidesteps inter-viewport render ordering.
+        rs->viewport_set_update_mode(t->viewport, RenderingServer::VIEWPORT_UPDATE_ONCE);
+        rs->viewport_set_clear_mode(t->viewport, RenderingServer::VIEWPORT_CLEAR_ALWAYS);
+        rs->viewport_set_transparent_background(t->viewport, true);
+        rs->viewport_set_disable_3d(t->viewport, true);
+        rs->viewport_set_active(t->viewport, true);
+        rs->viewport_set_size(t->viewport, w, h);
+        t->canvas = rs->canvas_create();
+        rs->viewport_attach_canvas(t->viewport, t->canvas);
+        _all.push_back(t);
+        return t;
+    }
+
+    void release(RenderingServer* rs, SsMaskCoverageTarget* t) {
+        if (!t) {
+            return;
+        }
+        for (int i = 0; i < t->canvas_items.size(); i++) {
+            if (t->canvas_items[i].is_valid()) {
+                rs->canvas_item_clear(t->canvas_items[i]);
+                rs->canvas_item_set_visible(t->canvas_items[i], false);
+            }
+        }
+        t->canvas_items_in_use = 0;
+        const uint64_t key = ((uint64_t)(uint32_t)t->w << 32) | (uint32_t)t->h;
+        _free[key].push_back(t);
+    }
+
+private:
+    void free_all(RenderingServer* rs) {
+        for (int i = 0; i < _all.size(); i++) {
+            SsMaskCoverageTarget* t = _all[i];
+            if (rs) {
+                for (int j = 0; j < t->canvas_items.size(); j++) {
+                    if (t->canvas_items[j].is_valid()) rs->free_rid(t->canvas_items[j]);
+                }
+                if (t->canvas.is_valid()) rs->free_rid(t->canvas);
+                if (t->viewport.is_valid()) rs->free_rid(t->viewport);
+            }
+            memdelete(t);
+        }
+        _all.clear();
+        _free.clear();
+    }
+
+    HashMap<uint64_t, Vector<SsMaskCoverageTarget*>> _free;
+    Vector<SsMaskCoverageTarget*> _all;
+    int _users = 0;
+};
+} // namespace
+
 SsInternalPlayer::SsInternalPlayer() {
     // Register once; the runtime stores the callback in a process-global slot.
     static bool log_callback_registered = false;
@@ -111,6 +211,12 @@ SsInternalPlayer::~SsInternalPlayer() {
     _clear_batch_canvas_items();
     _free_per_part_canvas_items();
     _free_mask_targets();
+    // Release this player's pool-user reference; the last user frees the pool's
+    // shared targets (while the RenderingServer is still alive).
+    if (_mask_pool_registered) {
+        SsMaskCoveragePool::get().remove_user(RenderingServer::get_singleton());
+        _mask_pool_registered = false;
+    }
 
     RenderingServer* rs = RenderingServer::get_singleton();
     for (int i = 0; i < _mesh_pool.size(); i++) {
@@ -616,60 +722,53 @@ bool SsInternalPlayer::_build_mask_writers(const DrawFrame& f) {
     return !_mask_writers.is_empty();
 }
 
-void SsInternalPlayer::_ensure_mask_targets() {
-    RenderingServer* rs = RenderingServer::get_singleton();
+void SsInternalPlayer::_acquire_mask_target(int w, int h) {
     if (_mask_write_shader.is_null()) {
         _mask_write_shader.instantiate();
         _mask_write_shader->set_code(String(SS_MASK_WRITE_SHADER));
     }
-    if (!_mask_viewport.is_valid()) {
-        _mask_viewport = rs->viewport_create();
-        // UPDATE_ONCE: the coverage viewport only renders when explicitly requested.
-        // maskable parts sample the previous frame's result (one-frame latency), which
-        // avoids depending on inter-viewport render ordering for a first cut.
-        rs->viewport_set_update_mode(_mask_viewport, RenderingServer::VIEWPORT_UPDATE_ONCE);
-        rs->viewport_set_clear_mode(_mask_viewport, RenderingServer::VIEWPORT_CLEAR_ALWAYS);
-        rs->viewport_set_transparent_background(_mask_viewport, true);
-        rs->viewport_set_disable_3d(_mask_viewport, true);
-        rs->viewport_set_active(_mask_viewport, true);
-        // Start minimal; _render_mask_coverage sizes the target each frame and
-        // only calls viewport_set_size when the quantized size actually changes.
-        rs->viewport_set_size(_mask_viewport, MASK_COVERAGE_MIN_DIM, MASK_COVERAGE_MIN_DIM);
-        _mask_viewport_w = MASK_COVERAGE_MIN_DIM;
-        _mask_viewport_h = MASK_COVERAGE_MIN_DIM;
+    if (!_mask_pool_registered) {
+        SsMaskCoveragePool::get().add_user();
+        _mask_pool_registered = true;
     }
-    if (!_mask_canvas.is_valid()) {
-        _mask_canvas = rs->canvas_create();
-        rs->viewport_attach_canvas(_mask_viewport, _mask_canvas);
+    if (_mask_target && _mask_target->w == w && _mask_target->h == h) {
+        return; // already holding the right size class
     }
+    RenderingServer* rs = RenderingServer::get_singleton();
+    if (_mask_target) {
+        SsMaskCoveragePool::get().release(rs, _mask_target);
+        _mask_target = nullptr;
+    }
+    _mask_target = SsMaskCoveragePool::get().acquire(rs, w, h);
+}
+
+void SsInternalPlayer::_release_mask_target() {
+    if (_mask_target) {
+        SsMaskCoveragePool::get().release(RenderingServer::get_singleton(), _mask_target);
+        _mask_target = nullptr;
+    }
+    _mask_coverage_valid = false;
 }
 
 void SsInternalPlayer::_free_mask_targets() {
-    RenderingServer* rs = RenderingServer::get_singleton();
-    for (int i = 0; i < _mask_canvas_items.size(); i++) {
-        if (_mask_canvas_items[i].is_valid()) rs->free_rid(_mask_canvas_items[i]);
-    }
-    _mask_canvas_items.clear();
-    _mask_canvas_items_in_use = 0;
+    // Return the borrowed target but keep this player registered as a pool user
+    // (registration is released only in the dtor). Called on resource teardown.
+    _release_mask_target();
     _mask_write_materials.clear();
     _mask_write_materials_in_use = 0;
-    if (_mask_canvas.is_valid()) {
-        rs->free_rid(_mask_canvas);
-        _mask_canvas = RID();
-    }
-    if (_mask_viewport.is_valid()) { rs->free_rid(_mask_viewport); _mask_viewport = RID(); }
     _mask_write_shader = Ref<Shader>();
     _mask_coverage_valid = false;
 }
 
 RID SsInternalPlayer::_acquire_mask_canvas_item() {
     RenderingServer* rs = RenderingServer::get_singleton();
-    if (_mask_canvas_items_in_use >= _mask_canvas_items.size()) {
+    SsMaskCoverageTarget* t = _mask_target;
+    if (t->canvas_items_in_use >= t->canvas_items.size()) {
         RID ci = rs->canvas_item_create();
-        rs->canvas_item_set_parent(ci, _mask_canvas);
-        _mask_canvas_items.push_back(ci);
+        rs->canvas_item_set_parent(ci, t->canvas);
+        t->canvas_items.push_back(ci);
     }
-    RID ci = _mask_canvas_items[_mask_canvas_items_in_use++];
+    RID ci = t->canvas_items[t->canvas_items_in_use++];
     rs->canvas_item_clear(ci);
     rs->canvas_item_set_visible(ci, true);
     return ci;
@@ -687,21 +786,24 @@ Ref<ShaderMaterial> SsInternalPlayer::_acquire_mask_write_material() {
 void SsInternalPlayer::_render_mask_coverage(const DrawFrame& f) {
     _mask_coverage_valid = false;
     if (_mask_writers.is_empty() || !f.frameData) return;
-    _ensure_mask_targets();
+    // Borrow a pooled target of the size class decided last frame (stable thanks
+    // to quantization), then re-request its one-shot render this frame.
+    _acquire_mask_target(_mask_next_w, _mask_next_h);
     RenderingServer* rs = f.rs;
-    rs->viewport_set_update_mode(_mask_viewport, RenderingServer::VIEWPORT_UPDATE_ONCE);
+    rs->viewport_set_update_mode(_mask_target->viewport, RenderingServer::VIEWPORT_UPDATE_ONCE);
 
     auto draw_batches = f.frameData->draw_batches();
     auto draw_order = f.frameData->draw_order();
     if (!draw_batches || !draw_order) return;
     const uint16_t* draw_order_data = draw_order->data();
 
-    // Recycle the coverage CI / material pools (hide all, cursors back to 0).
-    for (int i = 0; i < _mask_canvas_items.size(); i++) {
-        rs->canvas_item_clear(_mask_canvas_items[i]);
-        rs->canvas_item_set_visible(_mask_canvas_items[i], false);
+    // Recycle the target's CI pool + this player's material pool (hide all,
+    // cursors back to 0).
+    for (int i = 0; i < _mask_target->canvas_items.size(); i++) {
+        rs->canvas_item_clear(_mask_target->canvas_items[i]);
+        rs->canvas_item_set_visible(_mask_target->canvas_items[i], false);
     }
-    _mask_canvas_items_in_use = 0;
+    _mask_target->canvas_items_in_use = 0;
     _mask_write_materials_in_use = 0;
 
     bool have_bbox = false;
@@ -835,49 +937,11 @@ void SsInternalPlayer::_render_mask_coverage(const DrawFrame& f) {
     if (bsize.x < CMP_EPSILON) bsize.x = CMP_EPSILON;
     if (bsize.y < CMP_EPSILON) bsize.y = CMP_EPSILON;
 
-    // Choose the coverage resolution. Whatever it is, the bbox is mapped onto
-    // the full [0,vw]x[0,vh] texture via the canvas transform, and the UV
-    // transform below maps the same bbox to [0,1], so sampling is independent
-    // of the pixel dimensions chosen here.
-    int vw, vh;
-    switch (ss_mask_coverage_mode()) {
-        case MaskCoverageMode::Fixed:
-            // Viewport pinned at MAX_DIM². Constant clear/fill + VRAM.
-            vw = MASK_COVERAGE_MAX_DIM;
-            vh = MASK_COVERAGE_MAX_DIM;
-            break;
-        case MaskCoverageMode::Legacy: {
-            // Aspect-fit the bbox, longest side = MAX_DIM (pre-screen-linked).
-            const float longest = bsize.x > bsize.y ? bsize.x : bsize.y;
-            const float scale = (float)MASK_COVERAGE_MAX_DIM / longest;
-            vw = (int)std::ceil(bsize.x * scale);
-            vh = (int)std::ceil(bsize.y * scale);
-            if (vw < 1) vw = 1; else if (vw > MASK_COVERAGE_MAX_DIM) vw = MASK_COVERAGE_MAX_DIM;
-            if (vh < 1) vh = 1; else if (vh > MASK_COVERAGE_MAX_DIM) vh = MASK_COVERAGE_MAX_DIM;
-            break;
-        }
-        case MaskCoverageMode::Auto:
-        default:
-            // Screen-linked: one coverage texel per on-screen pixel of the
-            // bbox, quantized per axis to a power-of-two size class. A mask
-            // that is small on screen gets a small target (VRAM + clear/fill
-            // proportional to its footprint), and the quantized size only
-            // changes at class boundaries so the target is rarely reallocated.
-            vw = ss_quantize_coverage_dim(bsize.x * _coverage_screen_scale, MASK_COVERAGE_MIN_DIM, MASK_COVERAGE_MAX_DIM);
-            vh = ss_quantize_coverage_dim(bsize.y * _coverage_screen_scale, MASK_COVERAGE_MIN_DIM, MASK_COVERAGE_MAX_DIM);
-            break;
-    }
-
-    // Resize only when the size actually changed — viewport_set_size reallocates
-    // the render target, so skipping the no-op keeps a steady-size mask realloc-free.
-    if (vw != _mask_viewport_w || vh != _mask_viewport_h) {
-        rs->viewport_set_size(_mask_viewport, vw, vh);
-        _mask_viewport_w = vw;
-        _mask_viewport_h = vh;
-        if (OS::get_singleton() && OS::get_singleton()->has_environment("SS_MASK_COVERAGE_DEBUG")) {
-            WARN_PRINT(vformat("SS_MASK_COVERAGE_SIZE vw=%d vh=%d bbox=%.1fx%.1f screen_scale=%.3f", vw, vh, (double)bsize.x, (double)bsize.y, (double)_coverage_screen_scale));
-        }
-    }
+    // The borrowed target's actual pixel size. The bbox is mapped onto the full
+    // [0,vw]x[0,vh] texture via the canvas transform, and the UV transform below
+    // maps the same bbox to [0,1], so sampling is independent of these dims.
+    const int vw = _mask_target->w;
+    const int vh = _mask_target->h;
 
     // canvas_transform: player-local -> coverage viewport pixels (bbox -> full texture).
     const Vector2 s((float)vw / bsize.x, (float)vh / bsize.y);
@@ -885,7 +949,7 @@ void SsInternalPlayer::_render_mask_coverage(const DrawFrame& f) {
     ct.columns[0] = Vector2(s.x, 0);
     ct.columns[1] = Vector2(0, s.y);
     ct.columns[2] = Vector2(-bmin.x * s.x, -bmin.y * s.y);
-    rs->viewport_set_canvas_transform(_mask_viewport, _mask_canvas, ct);
+    rs->viewport_set_canvas_transform(_mask_target->viewport, _mask_target->canvas, ct);
 
     // player-local -> coverage UV [0,1], handed to maskable shaders (P3).
     Transform2D uv;
@@ -895,7 +959,7 @@ void SsInternalPlayer::_render_mask_coverage(const DrawFrame& f) {
     _mask_local_to_uv = uv;
 
     // Frame mask state consumed by the maskable emit path (P3).
-    _mask_coverage_tex = rs->viewport_get_texture(_mask_viewport);
+    _mask_coverage_tex = rs->viewport_get_texture(_mask_target->viewport);
     _mask_max_mask_slot = -1.0f;
     _mask_min_clip_slot = -1.0f;
     _mask_meta_array.clear();
@@ -912,7 +976,43 @@ void SsInternalPlayer::_render_mask_coverage(const DrawFrame& f) {
             _mask_max_mask_slot = (float)w.draw_rank;
         }
     }
-    _mask_coverage_valid = true;
+
+    // Decide the size class to borrow next frame from this frame's footprint.
+    switch (ss_mask_coverage_mode()) {
+        case MaskCoverageMode::Fixed:
+            _mask_next_w = MASK_COVERAGE_MAX_DIM;
+            _mask_next_h = MASK_COVERAGE_MAX_DIM;
+            break;
+        case MaskCoverageMode::Legacy: {
+            // Aspect-fit the bbox, longest side = MAX_DIM, then snap to a class.
+            const float longest = bsize.x > bsize.y ? bsize.x : bsize.y;
+            const float scale = (float)MASK_COVERAGE_MAX_DIM / longest;
+            _mask_next_w = ss_quantize_coverage_dim(bsize.x * scale, MASK_COVERAGE_MIN_DIM, MASK_COVERAGE_MAX_DIM);
+            _mask_next_h = ss_quantize_coverage_dim(bsize.y * scale, MASK_COVERAGE_MIN_DIM, MASK_COVERAGE_MAX_DIM);
+            break;
+        }
+        case MaskCoverageMode::Auto:
+        default:
+            // Screen-linked: ~one coverage texel per on-screen pixel of the bbox.
+            _mask_next_w = ss_quantize_coverage_dim(bsize.x * _coverage_screen_scale, MASK_COVERAGE_MIN_DIM, MASK_COVERAGE_MAX_DIM);
+            _mask_next_h = ss_quantize_coverage_dim(bsize.y * _coverage_screen_scale, MASK_COVERAGE_MIN_DIM, MASK_COVERAGE_MAX_DIM);
+            break;
+    }
+    if (OS::get_singleton() && OS::get_singleton()->has_environment("SS_MASK_COVERAGE_DEBUG")) {
+        WARN_PRINT(vformat("SS_MASK_COVERAGE_SIZE cur=%dx%d next=%dx%d bbox=%.1fx%.1f screen_scale=%.3f",
+                           vw, vh, _mask_next_w, _mask_next_h, (double)bsize.x, (double)bsize.y, (double)_coverage_screen_scale));
+    }
+
+    // A freshly (re)acquired target still holds the previous tenant's coverage
+    // (or nothing). With one-frame-latency sampling, using it this frame would
+    // show that stale content, so skip masking for one frame — our coverage,
+    // rendered this frame, is what next frame samples.
+    if (_mask_target->fresh) {
+        _mask_target->fresh = false;
+        _mask_coverage_valid = false;
+    } else {
+        _mask_coverage_valid = true;
+    }
 }
 
 bool SsInternalPlayer::_part_in_mask_scope(uint16_t rank) const {
@@ -1041,6 +1141,9 @@ void SsInternalPlayer::_drawAnimation(float frame_no, float delta_seconds, bool 
     // masked by it in P3), so only render coverage when not parent-driven.
     if (_build_mask_writers(f) && !_parent_driven) {
         _render_mask_coverage(f);
+    } else {
+        // Not masking this frame — return any borrowed coverage target to the pool.
+        _release_mask_target();
     }
 
     const uint16_t* draw_order_data = draw_order->data();
