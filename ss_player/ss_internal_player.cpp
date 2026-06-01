@@ -1813,20 +1813,16 @@ bool SsInternalPlayer::_build_shape_geometry(const DrawFrame& f, int p_idx,
         x_ptr[i*4 + 3] = 0.0f;
     }
 
-    if (part_shape_count == 4) {
-        const int idx[6] = { 0,1,2, 1,3,2 };
-        out.indices.resize(6);
-        int32_t* i_ptr = (int32_t*)out.indices.ptrw();
-        for (int i = 0; i < 6; i++) i_ptr[i] = idx[i];
-    } else {
-        const int tri_count = part_shape_count - 2;
-        out.indices.resize(tri_count * 3);
-        int32_t* i_ptr = (int32_t*)out.indices.ptrw();
-        for (int i = 0; i < tri_count; i++) {
-            i_ptr[i*3 + 0] = 0;
-            i_ptr[i*3 + 1] = i + 1;
-            i_ptr[i*3 + 2] = i + 2;
-        }
+    // All shapes use a center-first TRIANGLE_FAN ([center, perimeter...,
+    // closing]), so a deformed / per-corner-coloured shape interpolates from
+    // its center instead of across a diagonal seam.
+    const int tri_count = part_shape_count - 2;
+    out.indices.resize(tri_count * 3);
+    int32_t* i_ptr = (int32_t*)out.indices.ptrw();
+    for (int i = 0; i < tri_count; i++) {
+        i_ptr[i*3 + 0] = 0;
+        i_ptr[i*3 + 1] = i + 1;
+        i_ptr[i*3 + 2] = i + 2;
     }
     return true;
 }
