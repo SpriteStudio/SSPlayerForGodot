@@ -66,13 +66,14 @@ With just the following steps, your changes will instantly reflect in the game (
 While this powerful cross-editor integration (`Open SSPJ` and `Reconvert`) is incredibly convenient, it has some limitations due to how it works. Please keep these in mind, especially when working in a team.
 
 > [!WARNING]
-> **1. Must be imported via SS Import Dock**
-> This feature works because the SS Import Dock records the "absolute local path to the original `.sspj` file" during import. Therefore, simply copying a `.ssab` file manually into `res://` using your file explorer will not enable this feature.
->
-> **2. Does not work on a different PC after `git clone`**
-> Because it relies on a local absolute path, if you clone the project to another PC via Git, the paths will no longer match, and these buttons will not function.
->
-> **3. SpriteStudio installation is required**
+> **SpriteStudio installation is required**
 > Clicking the "Open SSPJ" button will launch SpriteStudio. Therefore, [OPTPiX SpriteStudio 7](https://www.webtech.co.jp/spritestudio/) must be installed on the PC you are using.
 
-Due to these limitations, if you need to update or share `.ssab` files within a team development environment or CI/CD pipeline, bulk conversion using the CLI tool is more appropriate. For details, please refer to [CLI Conversion and Automation](import.md).
+> [!TIP]
+> **File Path Sharing and Smart Re-link for Team Development**
+> 
+> When you import using the SS Import Dock, the integration information (the file path to the `.sspj`) is saved as a **relative path** inside the `.ssplayer_sources.cfg` file located at the root of your Godot project.
+> 
+> By tracking `.ssplayer_sources.cfg` in a version control system like Git, team members can `git clone` the project and immediately use the `Open SSPJ` and `Reconvert` buttons, as the paths remain valid across different PCs.
+> 
+> Furthermore, if the `.sspj` file is moved and the link breaks, it is easy to fix. Right-click the broken `.ssab` in the FileSystem dock and select "Reconvert". You will be prompted to locate the new `.sspj` location. By re-linking just one file, all other related files in the same directory will be **automatically and smartly re-linked**, minimizing manual repair efforts.

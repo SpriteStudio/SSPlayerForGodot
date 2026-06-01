@@ -52,6 +52,9 @@ private:
   EditorFileDialog *file_dialog = nullptr;
   PendingAction pending_action = ACTION_NONE;
   String pending_ssab_path;
+  PackedStringArray pending_missing_ssabs;
+  PackedStringArray pending_valid_sspjs;
+  PackedStringArray pending_valid_dst_dirs;
 
   bool _is_unsupported_for_editor() const;
   void _ensure_file_dialog();

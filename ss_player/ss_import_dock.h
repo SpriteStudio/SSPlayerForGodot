@@ -92,8 +92,6 @@ private:
   PopupMenu *recent_popup = nullptr;
   String pending_recent_path;
 
-  const String SETTING_KEY = "spritestudio/output_directory";
-  const String RECENT_FILES_KEY = "spritestudio/recent_sspj_files";
   const String DEFAULT_PATH = "res://ssab_generated";
   static const int RECENT_FILES_CAP = 20;
 

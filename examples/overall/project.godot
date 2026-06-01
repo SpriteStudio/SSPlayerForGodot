@@ -19,6 +19,4 @@ run/main_scene="uid://dnijei7f6aclq"
 config/features=PackedStringArray("4.6", "GL Compatibility")
 config/icon="res://icon.svg"
 
-[spritestudio]
 
-output_directory="res://ssab_generated"

@@ -142,6 +142,61 @@ bool SpriteStudioPlayer2D::isPausing() const { return _internal->isPausing(); }
 void SpriteStudioPlayer2D::pause() { _internal->pause(); }
 void SpriteStudioPlayer2D::stop() { _internal->stop(); }
 
+void SpriteStudioPlayer2D::set_flip_h(bool p_flip) {
+    _flip_h = p_flip;
+    _update_root_transform();
+}
+
+bool SpriteStudioPlayer2D::is_flipped_h() const { return _flip_h; }
+
+void SpriteStudioPlayer2D::set_flip_v(bool p_flip) {
+    _flip_v = p_flip;
+    _update_root_transform();
+}
+
+bool SpriteStudioPlayer2D::is_flipped_v() const { return _flip_v; }
+
+void SpriteStudioPlayer2D::set_offset(const Vector2& p_offset) {
+    _offset = p_offset;
+    _update_root_transform();
+}
+
+Vector2 SpriteStudioPlayer2D::get_offset() const { return _offset; }
+
+void SpriteStudioPlayer2D::_update_root_transform() {
+    Transform2D xform;
+    xform.columns[0].x = _flip_h ? -1.0 : 1.0;
+    xform.columns[1].y = _flip_v ? -1.0 : 1.0;
+    xform.columns[2] = _offset;
+    _internal->setRootTransform(xform);
+}
+
+void SpriteStudioPlayer2D::set_animation_process_mode(int p_mode) {
+    AnimationProcessMode mode = (AnimationProcessMode)p_mode;
+    if (_process_mode == mode) return;
+    
+    bool active = is_inside_tree();
+    if (active) {
+        if (_process_mode == ANIMATION_PROCESS_IDLE) {
+            set_process_internal(false);
+        } else {
+            set_physics_process_internal(false);
+        }
+    }
+    
+    _process_mode = mode;
+    
+    if (active) {
+        if (_process_mode == ANIMATION_PROCESS_IDLE) {
+            set_process_internal(true);
+        } else {
+            set_physics_process_internal(true);
+        }
+    }
+}
+
+int SpriteStudioPlayer2D::get_animation_process_mode() const { return (int)_process_mode; }
+
 void SpriteStudioPlayer2D::setSpeedScale(float p_speed) { _internal->setSpeed(p_speed); }
 float SpriteStudioPlayer2D::getSpeedScale() const { return _internal->getSpeed(); }
 
@@ -221,6 +276,20 @@ void SpriteStudioPlayer2D::_bind_methods() {
     ClassDB::bind_method( D_METHOD( "set_cellmap_texture", "cellmap_name", "texture" ), &SpriteStudioPlayer2D::set_cellmap_texture );
     ClassDB::bind_method( D_METHOD( "get_cellmap_texture", "cellmap_name" ), &SpriteStudioPlayer2D::get_cellmap_texture );
 
+    ClassDB::bind_method( D_METHOD( "set_offset", "offset" ), &SpriteStudioPlayer2D::set_offset );
+    ClassDB::bind_method( D_METHOD( "get_offset" ), &SpriteStudioPlayer2D::get_offset );
+
+    BIND_CONSTANT( ANIMATION_PROCESS_PHYSICS );
+    BIND_CONSTANT( ANIMATION_PROCESS_IDLE );
+    
+    ClassDB::bind_method( D_METHOD( "set_animation_process_mode", "mode" ), &SpriteStudioPlayer2D::set_animation_process_mode );
+    ClassDB::bind_method( D_METHOD( "get_animation_process_mode" ), &SpriteStudioPlayer2D::get_animation_process_mode );
+
+    ClassDB::bind_method( D_METHOD( "set_flip_h", "flip_h" ), &SpriteStudioPlayer2D::set_flip_h );
+    ClassDB::bind_method( D_METHOD( "is_flipped_h" ), &SpriteStudioPlayer2D::is_flipped_h );
+    ClassDB::bind_method( D_METHOD( "set_flip_v", "flip_v" ), &SpriteStudioPlayer2D::set_flip_v );
+    ClassDB::bind_method( D_METHOD( "is_flipped_v" ), &SpriteStudioPlayer2D::is_flipped_v );
+
     ADD_SIGNAL(
         MethodInfo(
             "user_data",
@@ -241,12 +310,7 @@ void SpriteStudioPlayer2D::_bind_methods() {
     ADD_SIGNAL(MethodInfo("animation_looped", PropertyInfo(Variant::STRING, "anim_name")));
 
     ADD_PROPERTY(
-        PropertyInfo(
-            Variant::OBJECT,
-            "ssab",
-            PropertyHint::PROPERTY_HINT_RESOURCE_TYPE,
-            "SSABResource"
-        ),
+        PropertyInfo(Variant::OBJECT, "ssab", PROPERTY_HINT_RESOURCE_TYPE, "SSABResource"),
         "set_ssab_resource",
         "get_ssab_resource"
     );
@@ -259,6 +323,9 @@ bool SpriteStudioPlayer2D::_set(const StringName& p_name, const Variant& p_prope
         return true;
     } else if (name == "autoplay") {
         setAutoplay(p_property);
+        return true;
+    } else if (name == "animation_process_mode") {
+        set_animation_process_mode((int)p_property);
         return true;
     } else if (name == "frame") {
         setFrame(p_property);
@@ -280,6 +347,15 @@ bool SpriteStudioPlayer2D::_set(const StringName& p_name, const Variant& p_prope
         return true;
     } else if (name == "playback_style") {
         setPlaybackDirection(getPlaybackDirection(), (int)p_property);
+        return true;
+    } else if (name == "offset") {
+        set_offset(p_property);
+        return true;
+    } else if (name == "flip_h") {
+        set_flip_h(p_property);
+        return true;
+    } else if (name == "flip_v") {
+        set_flip_v(p_property);
         return true;
     } else if (name == "frame_rate") {
         setFrameRate(p_property);
@@ -309,6 +385,9 @@ bool SpriteStudioPlayer2D::_get(const StringName& p_name, Variant& r_property) c
     } else if (name == "autoplay") {
         r_property = isAutoplay();
         return true;
+    } else if (name == "animation_process_mode") {
+        r_property = get_animation_process_mode();
+        return true;
     } else if (name == "frame") {
         r_property = getFrame();
         return true;
@@ -329,6 +408,15 @@ bool SpriteStudioPlayer2D::_get(const StringName& p_name, Variant& r_property) c
         return true;
     } else if (name == "playback_style") {
         r_property = getPlaybackStyle();
+        return true;
+    } else if (name == "offset") {
+        r_property = get_offset();
+        return true;
+    } else if (name == "flip_h") {
+        r_property = is_flipped_h();
+        return true;
+    } else if (name == "flip_v") {
+        r_property = is_flipped_v();
         return true;
     } else if (name == "frame_rate") {
         r_property = getFrameRate();
@@ -361,28 +449,32 @@ void SpriteStudioPlayer2D::_get_property_list(List<PropertyInfo>* p_list) const 
         Vector<String> anim_names = res->get_animation_names();
 #endif
         p_list->push_back(PropertyInfo(Variant::STRING, "animation", PROPERTY_HINT_ENUM, String(",").join(anim_names)));
-        p_list->push_back(PropertyInfo(Variant::BOOL, "autoplay"));
-
-        int total = getTotalFrames();
-        int max_frame = total > 0 ? total - 1 : 0;
-        p_list->push_back(PropertyInfo(Variant::FLOAT, "frame", PROPERTY_HINT_RANGE, "0," + String::num(max_frame) + ",0.01", PROPERTY_USAGE_EDITOR));
+    } else {
+        p_list->push_back(PropertyInfo(Variant::STRING, "animation", PROPERTY_HINT_ENUM, ""));
     }
 
-    p_list->push_back(PropertyInfo(Variant::FLOAT, "speed_scale", PROPERTY_HINT_RANGE, "0,4,0.01,or_greater"));
+    int total = getTotalFrames();
+    int max_frame = total > 0 ? total - 1 : 0;
+    p_list->push_back(PropertyInfo(Variant::BOOL, "autoplay"));
+    p_list->push_back(PropertyInfo(Variant::FLOAT, "frame", PROPERTY_HINT_RANGE, "0," + String::num(max_frame) + ",0.01", PROPERTY_USAGE_EDITOR));
+
     p_list->push_back(PropertyInfo(Variant::INT, "loop_count", PROPERTY_HINT_RANGE, "-1,9999,1,or_greater"));
+    p_list->push_back(PropertyInfo(Variant::FLOAT, "speed_scale", PROPERTY_HINT_RANGE, "0,4,0.01,or_greater"));
 
-    if (has_res) {
-        int total = getTotalFrames();
-        int max_frame = total > 0 ? total - 1 : 0;
-        String section_range = "0," + String::num(max_frame) + ",1";
-        p_list->push_back(PropertyInfo(Variant::NIL, "Section", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_GROUP));
-        p_list->push_back(PropertyInfo(Variant::INT, "animation_section_start", PROPERTY_HINT_RANGE, section_range));
-        p_list->push_back(PropertyInfo(Variant::INT, "animation_section_end", PROPERTY_HINT_RANGE, section_range));
-    }
-
-    p_list->push_back(PropertyInfo(Variant::NIL, "Advanced", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_GROUP));
+    p_list->push_back(PropertyInfo(Variant::NIL, "Playback Options", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_GROUP));
     p_list->push_back(PropertyInfo(Variant::BOOL, "frame_skip_enabled"));
     p_list->push_back(PropertyInfo(Variant::BOOL, "sub_frame_enabled"));
+    p_list->push_back(PropertyInfo(Variant::INT, "animation_process_mode", PROPERTY_HINT_ENUM, "Physics,Idle"));
+
+    String section_range = "0," + String::num(max_frame) + ",1";
+    p_list->push_back(PropertyInfo(Variant::NIL, "Section", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_GROUP));
+    p_list->push_back(PropertyInfo(Variant::INT, "animation_section_start", PROPERTY_HINT_RANGE, section_range));
+    p_list->push_back(PropertyInfo(Variant::INT, "animation_section_end", PROPERTY_HINT_RANGE, section_range));
+
+    p_list->push_back(PropertyInfo(Variant::NIL, "Offset", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_GROUP));
+    p_list->push_back(PropertyInfo(Variant::VECTOR2, "offset"));
+    p_list->push_back(PropertyInfo(Variant::BOOL, "flip_h"));
+    p_list->push_back(PropertyInfo(Variant::BOOL, "flip_v"));
 
     if (has_res) {
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
@@ -429,13 +521,24 @@ void SpriteStudioPlayer2D::_notification(int p_notification) {
             // here so editor reloads (which destroy / reattach the canvas)
             // don't leave the InternalPlayer floating.
             _internal->setParentCanvasItem(get_canvas_item());
-            set_process_internal(true);
+            if (_process_mode == ANIMATION_PROCESS_IDLE) {
+                set_process_internal(true);
+            } else {
+                set_physics_process_internal(true);
+            }
             break;
         case NOTIFICATION_EXIT_TREE:
             _internal->setParentCanvasItem(RID());
             break;
         case NOTIFICATION_INTERNAL_PROCESS:
-            _internal->update(get_process_delta_time());
+            if (_process_mode == ANIMATION_PROCESS_IDLE) {
+                _internal->update(get_process_delta_time());
+            }
+            break;
+        case NOTIFICATION_INTERNAL_PHYSICS_PROCESS:
+            if (_process_mode == ANIMATION_PROCESS_PHYSICS) {
+                _internal->update(get_physics_process_delta_time());
+            }
             break;
         case NOTIFICATION_DRAW:
             // The InternalPlayer handles the actual RenderingServer calls for

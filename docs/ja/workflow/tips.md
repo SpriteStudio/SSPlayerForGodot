@@ -23,3 +23,4 @@ Godot へインポートされたアニメーションバイナリには、2つ�
 - **SSQB (Sequence Binary)**
   - 複数のアニメーション（例: `歩き` → `走り` → `ジャンプ`）を SpriteStudio 側で「シーケンス」としてタイムライン上に連結したものです。
   - プログラム（GDScript）側で複雑な状態遷移を書かずとも、デザイナーが SpriteStudio 上で設定した通りの連続再生を Godot 上でそのまま再現したい場合に使用します。
+  - **注意 (現状)**: `SSQBResource` への読み込みには対応していますが、**シーケンス再生は現時点では未提供**です（今後対応予定 — ロードマップ Phase 3 の state machine への内包、または Player 側 prototype）。当面の連続再生は `animation_finished` シグナルで GDScript 側から次アニメに切り替えて実現してください。

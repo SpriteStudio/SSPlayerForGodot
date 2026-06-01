@@ -11,6 +11,8 @@
 #include <godot_cpp/classes/editor_settings.hpp>
 #include <godot_cpp/classes/input_event_mouse_button.hpp>
 #include <godot_cpp/classes/os.hpp>
+#include <godot_cpp/classes/config_file.hpp>
+#include <godot_cpp/classes/control.hpp>
 #include <godot_cpp/classes/window.hpp>
 #include <godot_cpp/variant/utility_functions.hpp>
 using namespace godot;
@@ -18,6 +20,7 @@ using namespace godot;
 #include "core/input/input_event.h"
 #include "core/io/dir_access.h"
 #include "core/os/os.h"
+#include "core/io/config_file.h"
 #include "editor/editor_interface.h"
 #include "editor/settings/editor_settings.h"
 #include "scene/gui/dialogs.h"
@@ -219,6 +222,8 @@ void SSImportControl::start_intercepting() {
         Callable target = conn.callable;
 #endif
 
+        // Note: Disconnecting other plugins' drag-and-drop handlers is a brittle hack to work around Godot's
+        // single-handler limitation for OS drag-and-drop. This might conflict if other plugins do the same.
         if (target.get_object() == this) continue;
 
         original_drop_handler = target;
@@ -226,6 +231,7 @@ void SSImportControl::start_intercepting() {
 
         break;
     }
+
 
     if (!window->is_connected("files_dropped", Callable(this, "_on_window_files_dropped"))) {
         window->connect("files_dropped", Callable(this, "_on_window_files_dropped"));
@@ -446,14 +452,20 @@ void SSImportControl::_show_recent_context_menu(const String &p_path) {
     pending_recent_path = p_path;
 
     recent_popup->clear();
+    
+    Ref<Texture2D> icon_open = get_theme_icon(SNAME("Load"), SNAME("EditorIcons"));
+    Ref<Texture2D> icon_reconvert = get_theme_icon(SNAME("Reload"), SNAME("EditorIcons"));
+    Ref<Texture2D> icon_reveal = get_theme_icon(SNAME("Filesystem"), SNAME("EditorIcons"));
+    Ref<Texture2D> icon_remove = get_theme_icon(SNAME("Remove"), SNAME("EditorIcons"));
+
     String os_name = OS::get_singleton()->get_name();
     if (os_name != "Linux") {
-        recent_popup->add_item(tr("Open SSPJ"), RECENT_MENU_OPEN_IN_EDITOR);
+        recent_popup->add_icon_item(icon_open, tr("Open SSPJ"), RECENT_MENU_OPEN_IN_EDITOR);
     }
-    recent_popup->add_item(tr("Reconvert"), RECENT_MENU_RECONVERT);
-    recent_popup->add_item(tr("Reveal"), RECENT_MENU_REVEAL);
+    recent_popup->add_icon_item(icon_reconvert, tr("Reconvert"), RECENT_MENU_RECONVERT);
+    recent_popup->add_icon_item(icon_reveal, tr("Reveal"), RECENT_MENU_REVEAL);
     recent_popup->add_separator();
-    recent_popup->add_item(tr("Remove from Recent"), RECENT_MENU_REMOVE);
+    recent_popup->add_icon_item(icon_remove, tr("Remove from Recent"), RECENT_MENU_REMOVE);
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
     Vector2i mouse = DisplayServer::get_singleton()->mouse_get_position();
@@ -576,13 +588,16 @@ void SSImportControl::_add_to_recent_files(const String &p_path) {
 }
 
 void SSImportControl::_load_settings() {
-    ProjectSettings *ps = ProjectSettings::get_singleton();
+    Ref<ConfigFile> cfg;
+    cfg.instantiate();
+    cfg->load(SSPLAYER_SOURCES_CFG_PATH);
+    
     String path = DEFAULT_PATH;
-
-    if (ps->has_setting(SETTING_KEY)) {
-        path = ps->get_setting(SETTING_KEY);
+    if (cfg->has_section_key("general", "output_directory")) {
+        path = cfg->get_value("general", "output_directory");
     } else {
-        ps->set_setting(SETTING_KEY, DEFAULT_PATH);
+        cfg->set_value("general", "output_directory", path);
+        cfg->save(SSPLAYER_SOURCES_CFG_PATH);
     }
 
     path_line_edit->set_text(path);
@@ -592,9 +607,11 @@ void SSImportControl::_load_settings() {
 }
 
 void SSImportControl::_save_settings() {
-    ProjectSettings *ps = ProjectSettings::get_singleton();
-    ps->set_setting(SETTING_KEY, path_line_edit->get_text());
-    ps->save();
+    Ref<ConfigFile> cfg;
+    cfg.instantiate();
+    cfg->load(SSPLAYER_SOURCES_CFG_PATH);
+    cfg->set_value("general", "output_directory", path_line_edit->get_text());
+    cfg->save(SSPLAYER_SOURCES_CFG_PATH);
 }
 
 void SSImportControl::_ensure_output_dir_exists() {

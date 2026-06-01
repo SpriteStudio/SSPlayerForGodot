@@ -58,6 +58,8 @@ Once the node is selected, you can adjust various settings from Godot's Inspecto
 | `SSAB Resource`            | Resource | The target `SSABResource` (`.ssab` file) to play                    |
 | `Animation`                | String   | The name of the currently selected animation                        |
 | `Autoplay`                 | bool     | Whether to play automatically when the game starts                  |
+| `Offset`                   | Vector2  | Drawing offset. Useful to shift visuals without changing the Node Transform |
+| `Flip H / Flip V`          | bool     | Horizontal / Vertical flip of the animation                         |
 | `Frame`                    | float    | The current frame position                                          |
 | `Speed Scale`              | float    | Playback speed multiplier (Default: 1.0)                            |
 | `Frame Rate`               | int      | FPS                                                                 |
@@ -66,5 +68,6 @@ Once the node is selected, you can adjust various settings from Godot's Inspecto
 | `Animation Section End`    | int      | End frame for partial playback                                      |
 | `Playback Direction`       | int      | Playback direction                                                  |
 | `Playback Style`           | int      | Playback style (e.g., One-way, Ping-pong)                           |
-| `Skip Frames`              | bool     | Whether to skip frames when the draw interval exceeds the frame interval |
+| `Frame Skip Enabled`       | bool     | Whether to skip frames when the draw interval exceeds the frame interval |
 | `Sub Frame Enabled`        | bool     | Whether to enable sub-frame interpolation                           |
+| `Animation Process Mode`   | int      | Whether to sync with `_physics_process` (Physics) or `_process` (Idle) |

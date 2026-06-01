@@ -81,6 +81,8 @@ private:
 
   Dictionary _load_source_map() const;
   void _save_source_map(const Dictionary &p_map);
+  String _make_relative_path(const String &p_abs_path) const;
+  String _make_absolute_path(const String &p_rel_path) const;
   void _record_ssabs_in_dir(Dictionary &p_map, const String &p_dst_dir, const String &p_sspj_path);
   void _evict_lru(Dictionary &p_map);
   // Refreshes the in-memory cached resource (SSABResource / SSQBResource) so

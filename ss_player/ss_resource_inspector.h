@@ -40,7 +40,7 @@ public:
 
   void _on_open_pressed(const String &p_resource_path);
   void _on_reconvert_pressed(const String &p_resource_path);
-  void _on_reveal_pressed(const String &p_resource_path);
+  void _on_generate_animation_library_pressed(const String &p_resource_path);
 
 private:
   SSImporter *importer = nullptr;
