@@ -2042,6 +2042,7 @@ void SsInternalPlayer::_emit_shape_batch(const DrawFrame& f, RID ci,
     // the GPU framebuffer blend is selected via _apply_partcolor_material.
     const auto ssab_blend = (ss::format::BlendType)batch->blend_type();
     bool batch_material_applied = false;
+    const bool masking_active = _mask_coverage_valid;
 
     for (uint16_t k = 0; k < count; k++) {
         int p_idx = (int)draw_order_data[batch->start_rank() + k];
@@ -2057,14 +2058,38 @@ void SsInternalPlayer::_emit_shape_batch(const DrawFrame& f, RID ci,
         // returns white (Godot's default) for any UV. The PartColor formula
         // therefore composites against an implicit white "shape pixel".
 
+        // CBP masking: a maskable shape must run the per-part mask test, which
+        // needs per-part uniforms (rank / polarity) — so force the per-part path
+        // for it. See _emit_normal_batch for the flag semantics.
+        const uint16_t rank = (uint16_t)(batch->start_rank() + k);
+        bool vis_inside = false;
+        bool mask_target = false;
+        if (masking_active) {
+            auto pm = f.binary ? f.binary->parts() : nullptr;
+            if (pm && p_idx >= 0 && p_idx < (int)pm->size()) {
+                const auto* pdv = pm->Get(p_idx);
+                if (pdv) {
+                    vis_inside = pdv->visible_inside_mask();
+                    mask_target = pdv->mask_influence() || pdv->mask_write();
+                }
+            }
+        }
+        const bool masked = masking_active && mask_target && (_part_in_mask_scope(rank) || vis_inside);
+
         PartShaderInfo psi = _resolve_part_shader_info(f, part);
-        if (psi.is_per_part) {
+        if (psi.is_per_part || masked) {
             RID part_ci = _acquire_per_part_canvas_item();
             Ref<ShaderMaterial> mat = _acquire_per_part_material(psi.id_hash, ssab_blend);
             // Shape parts have no bound cellmap texture; pass a zero
             // cell_rect (degenerates ss-circle / ss-spot to discard, which
             // is the safest fallback when the variant is misapplied to a Shape).
             _apply_per_part_uniforms(mat, psi.params, psi.map0, psi.map1, Vector4(0, 0, 0, 0));
+            if (masked) {
+                _apply_mask_uniforms(mat, rank, vis_inside);
+            } else {
+                // Reuse of a pooled material — make sure masking is off.
+                mat->set_shader_parameter("ss_mask_enabled", false);
+            }
             f.rs->canvas_item_set_material(part_ci, mat->get_rid());
             _emit_partcolor_mesh(f.rs, part_ci, _shape_buf.indices, _shape_buf.verts,
                                  _shape_buf.colors, _shape_buf.uvs, _shape_buf.custom0,
