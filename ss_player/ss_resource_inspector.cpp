@@ -18,6 +18,10 @@
 #include <godot_cpp/classes/resource.hpp>
 #include <godot_cpp/core/class_db.hpp>
 #include <godot_cpp/variant/utility_functions.hpp>
+#include <godot_cpp/classes/animation.hpp>
+#include <godot_cpp/classes/animation_library.hpp>
+#include <godot_cpp/classes/resource_saver.hpp>
+#include <godot_cpp/classes/editor_file_system.hpp>
 using namespace godot;
 #else
 #include "core/config/project_settings.h"
@@ -26,12 +30,24 @@ using namespace godot;
 #include "editor/editor_interface.h"
 #include "scene/gui/box_container.h"
 #include "scene/gui/button.h"
+#include "scene/resources/animation.h"
+#include "scene/resources/animation_library.h"
+#include "core/io/resource_saver.h"
+#if VERSION_MAJOR >= 4
+    #if VERSION_MINOR >= 5
+    #include "editor/file_system/editor_file_system.h"
+    #else
+    #include "editor/editor_file_system.h"
+    #endif
+#else
+    #include "editor/editor_file_system.h"
+#endif
 #endif
 
 void SSResourceInspectorPlugin::_bind_methods() {
     ClassDB::bind_method(D_METHOD("_on_open_pressed", "path"), &SSResourceInspectorPlugin::_on_open_pressed);
     ClassDB::bind_method(D_METHOD("_on_reconvert_pressed", "path"), &SSResourceInspectorPlugin::_on_reconvert_pressed);
-    ClassDB::bind_method(D_METHOD("_on_reveal_pressed", "path"), &SSResourceInspectorPlugin::_on_reveal_pressed);
+    ClassDB::bind_method(D_METHOD("_on_generate_animation_library_pressed", "path"), &SSResourceInspectorPlugin::_on_generate_animation_library_pressed);
 }
 
 SSResourceInspectorPlugin::SSResourceInspectorPlugin() {
@@ -101,12 +117,12 @@ void SSResourceInspectorPlugin::_add_action_buttons(const String &p_path) {
     reconvert_btn->connect("pressed", callable_mp(this, &SSResourceInspectorPlugin::_on_reconvert_pressed).bind(p_path));
     hbox->add_child(reconvert_btn);
 
-    Button *reveal_btn = memnew(Button);
-    reveal_btn->set_text(tr("Reveal"));
-    if (base) reveal_btn->set_button_icon(base->get_theme_icon(SNAME("Filesystem"), SNAME("EditorIcons")));
-    reveal_btn->set_tooltip_text(tr("Show this file in the OS file manager."));
-    reveal_btn->connect("pressed", callable_mp(this, &SSResourceInspectorPlugin::_on_reveal_pressed).bind(p_path));
-    hbox->add_child(reveal_btn);
+    Button *anim_btn = memnew(Button);
+    anim_btn->set_text(tr("Gen AnimLib"));
+    if (base) anim_btn->set_button_icon(base->get_theme_icon(SNAME("AnimationLibrary"), SNAME("EditorIcons")));
+    anim_btn->set_tooltip_text(tr("Generate an AnimationLibrary resource from this SSAB for use with AnimationPlayer."));
+    anim_btn->connect("pressed", callable_mp(this, &SSResourceInspectorPlugin::_on_generate_animation_library_pressed).bind(p_path));
+    hbox->add_child(anim_btn);
 
     add_custom_control(hbox);
 }
@@ -129,11 +145,72 @@ void SSResourceInspectorPlugin::_on_reconvert_pressed(const String &p_resource_p
     context_menu->_on_convert(paths);
 }
 
-void SSResourceInspectorPlugin::_on_reveal_pressed(const String &p_resource_path) {
-    String global = ProjectSettings::get_singleton()->globalize_path(p_resource_path);
-    Error err = OS::get_singleton()->shell_show_in_file_manager(global, false);
-    if (err != OK) {
-        ERR_PRINT(vformat("SSResourceInspectorPlugin: failed to reveal %s. error=%d", global, (int)err));
+void SSResourceInspectorPlugin::_on_generate_animation_library_pressed(const String &p_resource_path) {
+    Ref<SSABResource> ssab;
+    ssab.instantiate();
+    if (ssab->load_from_file(p_resource_path) != OK) {
+        ERR_PRINT("Failed to load SSAB for AnimationLibrary generation: " + p_resource_path);
+        return;
+    }
+
+    Ref<AnimationLibrary> library;
+    library.instantiate();
+
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+    PackedStringArray anim_names = ssab->get_animation_names();
+#else
+    Vector<String> anim_names = ssab->get_animation_names();
+#endif
+
+    for (int i = 0; i < anim_names.size(); i++) {
+        String anim_name = anim_names[i];
+        ss::format::AnimationData *data = ssab->find_animation(anim_name);
+        if (!data) continue;
+
+        float fps = (float)data->fps();
+        if (fps <= 0.0f) fps = 60.0f;
+        int total_frames = data->total_frame();
+        float length = (float)total_frames / fps;
+
+        Ref<Animation> anim;
+        anim.instantiate();
+        anim->set_length(length);
+        anim->set_step(1.0f / fps);
+
+        // Track 0: animation
+        int track_anim = anim->add_track(Animation::TYPE_VALUE);
+        anim->track_set_path(track_anim, NodePath(".:animation"));
+        anim->track_insert_key(track_anim, 0.0, anim_name);
+        anim->value_track_set_update_mode(track_anim, Animation::UPDATE_DISCRETE);
+
+        // Track 1: frame
+        int track_frame = anim->add_track(Animation::TYPE_VALUE);
+        anim->track_set_path(track_frame, NodePath(".:frame"));
+        anim->track_insert_key(track_frame, 0.0, 0.0f);
+        anim->track_insert_key(track_frame, length, (float)total_frames);
+        
+        anim->value_track_set_update_mode(track_frame, Animation::UPDATE_CONTINUOUS);
+        anim->track_set_interpolation_type(track_frame, Animation::INTERPOLATION_LINEAR);
+
+        library->add_animation(anim_name, anim);
+    }
+
+    String out_path = p_resource_path.get_basename() + "_anims.res";
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+    Error err = ResourceSaver::get_singleton()->save(library, out_path);
+#else
+    Error err = ResourceSaver::save(library, out_path);
+#endif
+
+    if (err == OK) {
+        EditorInterface::get_singleton()->get_resource_filesystem()->scan();
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+        UtilityFunctions::print("Generated AnimationLibrary: " + out_path);
+#else
+        print_line("Generated AnimationLibrary: " + out_path);
+#endif
+    } else {
+        ERR_PRINT("Failed to save AnimationLibrary to " + out_path);
     }
 }
 

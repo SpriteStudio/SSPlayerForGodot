@@ -15,6 +15,7 @@ Animation playback uses `libssruntime` provided by [SpriteStudio7-SDK](https://g
     - [Build Guide](setup/build.md)
 - **Workflow**
     - [Basic Usage](workflow/usage_basic.md)
+    - [Integration with AnimationPlayer](workflow/animation_player.md)
     - [Asset Import and Editor Integration](workflow/usage_asset_pipeline.md) (start here for the initial `.sspj` import)
     - [Scripting and Events](workflow/usage_scripting.md)
 - **Advanced Topics**
