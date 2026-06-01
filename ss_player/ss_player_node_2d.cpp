@@ -171,6 +171,18 @@ void SpriteStudioPlayer2D::_update_root_transform() {
     _internal->setRootTransform(xform);
 }
 
+void SpriteStudioPlayer2D::_push_coverage_screen_scale() {
+    // local-unit -> viewport-pixel scale = node global transform composed with
+    // the viewport/camera transform. The mask coverage pass sizes its target to
+    // the mask's on-screen footprint using this, so off-screen-small players use
+    // small coverage textures. One frame of staleness on a zoom only nudges the
+    // chosen size class, so reading it here (before update) is fine.
+    const Vector2 sc = get_global_transform_with_canvas().get_scale();
+    const float sx = sc.x < 0.0f ? -sc.x : sc.x;
+    const float sy = sc.y < 0.0f ? -sc.y : sc.y;
+    _internal->setCoverageScreenScale(sx > sy ? sx : sy);
+}
+
 void SpriteStudioPlayer2D::set_animation_process_mode(int p_mode) {
     AnimationProcessMode mode = (AnimationProcessMode)p_mode;
     if (_process_mode == mode) return;
@@ -532,11 +544,13 @@ void SpriteStudioPlayer2D::_notification(int p_notification) {
             break;
         case NOTIFICATION_INTERNAL_PROCESS:
             if (_process_mode == ANIMATION_PROCESS_IDLE) {
+                _push_coverage_screen_scale();
                 _internal->update(get_process_delta_time());
             }
             break;
         case NOTIFICATION_INTERNAL_PHYSICS_PROCESS:
             if (_process_mode == ANIMATION_PROCESS_PHYSICS) {
+                _push_coverage_screen_scale();
                 _internal->update(get_physics_process_delta_time());
             }
             break;

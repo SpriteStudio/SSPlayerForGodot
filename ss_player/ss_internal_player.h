@@ -165,6 +165,13 @@ public:
     void setRootTransform(const Transform2D& p_xf);
     void setRootVisible(bool p_visible);
 
+    // Effective local-unit -> on-screen-pixel scale of the owning Node2D
+    // (global transform composed with the viewport/camera transform). The
+    // mask coverage pass uses it to size the coverage target to the mask's
+    // actual on-screen footprint instead of a fixed maximum. Set by the Node2D
+    // wrapper each frame before update(); 1.0 until then.
+    void setCoverageScreenScale(float p_scale) { _coverage_screen_scale = (p_scale > 0.0f) ? p_scale : 1.0f; }
+
     void setCellMapOverrideTexture(uint32_t cellmap_name_hash, const Ref<Texture2D>& texture);
     Ref<Texture2D> getCellMapTexture(uint32_t cellmap_name_hash) const;
 
@@ -480,9 +487,18 @@ private:
     // coverage pass and read by maskable shaders. Identity until masking runs.
     Transform2D _mask_local_to_uv;
     bool _mask_coverage_valid = false;         // true if this frame drew coverage
-    // Longest coverage-bitmap dimension in pixels; the other side scales with
-    // the writer bounding box aspect ratio.
+    // Coverage-bitmap dimension bounds in pixels. The per-axis size is the
+    // mask's on-screen footprint, quantized up to a power-of-two size class in
+    // [MIN, MAX]; quantizing keeps the viewport size stable frame-to-frame so
+    // the render target is not reallocated as the mask animates.
     static constexpr int MASK_COVERAGE_MAX_DIM = 1024;
+    static constexpr int MASK_COVERAGE_MIN_DIM = 64;
+    // Local-unit -> screen-pixel scale fed by the Node2D wrapper (see setter).
+    float _coverage_screen_scale = 1.0f;
+    // Last applied coverage viewport size; avoids redundant viewport_set_size
+    // (and its render-target realloc) when the quantized size is unchanged.
+    int _mask_viewport_w = 0;
+    int _mask_viewport_h = 0;
 
     void _ensure_mask_targets();
     void _free_mask_targets();

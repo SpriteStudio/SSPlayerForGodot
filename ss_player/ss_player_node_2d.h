@@ -107,6 +107,7 @@ private:
     AnimationProcessMode _process_mode = ANIMATION_PROCESS_IDLE;
     
     void _update_root_transform();
+    void _push_coverage_screen_scale();
 
     // Adapter that turns SsInternalPlayer event callbacks into Node-level
     // emit_signal calls. Lifetime tied to the Node; lives in the cpp file.
