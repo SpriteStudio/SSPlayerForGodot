@@ -8,12 +8,10 @@
 #include <cmath>
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
-#include <godot_cpp/classes/os.hpp>
 #include <godot_cpp/classes/resource_loader.hpp>
 #include <godot_cpp/variant/utility_functions.hpp>
 #else
 #include "core/io/resource_loader.h"
-#include "core/os/os.h"
 #include "servers/rendering/rendering_server.h"
 #endif
 
@@ -38,29 +36,6 @@ static std::once_flag s_shader_catalog_init_flag;
 // HashMap keys stay scalar — Godot's default Hash<uint64_t> just works.
 inline uint64_t make_partcolor_cache_key(uint32_t shader_id_hash, ss::format::BlendType blend_type) {
     return ((uint64_t)shader_id_hash << 32) | (uint32_t)(int)blend_type;
-}
-
-// Mask coverage sizing strategy. Selected via the SS_MASK_COVERAGE_MODE env
-// var (read once; changing it needs an app restart, not a rebuild):
-//   unset / "auto" : size the coverage to the mask's on-screen footprint,
-//                    quantized to a power-of-two size class (default). Small
-//                    masks use small targets -> big VRAM + clear/fill savings;
-//                    quantizing keeps the size stable so no per-frame realloc.
-//   "legacy"       : per-frame aspect-fit sizing (longest side = MAX_DIM),
-//                    the pre-screen-linked behaviour. Kept for A/B comparison.
-//   "fixed"        : viewport pinned at MAX_DIM² (allocated once).
-enum class MaskCoverageMode { Auto, Legacy, Fixed };
-MaskCoverageMode ss_mask_coverage_mode() {
-    static MaskCoverageMode mode = []() {
-        OS *os = OS::get_singleton();
-        if (os && os->has_environment("SS_MASK_COVERAGE_MODE")) {
-            const String v = os->get_environment("SS_MASK_COVERAGE_MODE").to_lower();
-            if (v == "fixed") return MaskCoverageMode::Fixed;
-            if (v == "legacy" || v == "variable") return MaskCoverageMode::Legacy;
-        }
-        return MaskCoverageMode::Auto;
-    }();
-    return mode;
 }
 
 // Round a desired pixel extent up to a power-of-two size class in
@@ -978,30 +953,9 @@ void SsInternalPlayer::_render_mask_coverage(const DrawFrame& f) {
     }
 
     // Decide the size class to borrow next frame from this frame's footprint.
-    switch (ss_mask_coverage_mode()) {
-        case MaskCoverageMode::Fixed:
-            _mask_next_w = MASK_COVERAGE_MAX_DIM;
-            _mask_next_h = MASK_COVERAGE_MAX_DIM;
-            break;
-        case MaskCoverageMode::Legacy: {
-            // Aspect-fit the bbox, longest side = MAX_DIM, then snap to a class.
-            const float longest = bsize.x > bsize.y ? bsize.x : bsize.y;
-            const float scale = (float)MASK_COVERAGE_MAX_DIM / longest;
-            _mask_next_w = ss_quantize_coverage_dim(bsize.x * scale, MASK_COVERAGE_MIN_DIM, MASK_COVERAGE_MAX_DIM);
-            _mask_next_h = ss_quantize_coverage_dim(bsize.y * scale, MASK_COVERAGE_MIN_DIM, MASK_COVERAGE_MAX_DIM);
-            break;
-        }
-        case MaskCoverageMode::Auto:
-        default:
-            // Screen-linked: ~one coverage texel per on-screen pixel of the bbox.
-            _mask_next_w = ss_quantize_coverage_dim(bsize.x * _coverage_screen_scale, MASK_COVERAGE_MIN_DIM, MASK_COVERAGE_MAX_DIM);
-            _mask_next_h = ss_quantize_coverage_dim(bsize.y * _coverage_screen_scale, MASK_COVERAGE_MIN_DIM, MASK_COVERAGE_MAX_DIM);
-            break;
-    }
-    if (OS::get_singleton() && OS::get_singleton()->has_environment("SS_MASK_COVERAGE_DEBUG")) {
-        WARN_PRINT(vformat("SS_MASK_COVERAGE_SIZE cur=%dx%d next=%dx%d bbox=%.1fx%.1f screen_scale=%.3f",
-                           vw, vh, _mask_next_w, _mask_next_h, (double)bsize.x, (double)bsize.y, (double)_coverage_screen_scale));
-    }
+    // Screen-linked: ~one coverage texel per on-screen pixel of the bbox.
+    _mask_next_w = ss_quantize_coverage_dim(bsize.x * _coverage_screen_scale, MASK_COVERAGE_MIN_DIM, MASK_COVERAGE_MAX_DIM);
+    _mask_next_h = ss_quantize_coverage_dim(bsize.y * _coverage_screen_scale, MASK_COVERAGE_MIN_DIM, MASK_COVERAGE_MAX_DIM);
 
     // A freshly (re)acquired target still holds the previous tenant's coverage
     // (or nothing). With one-frame-latency sampling, using it this frame would
