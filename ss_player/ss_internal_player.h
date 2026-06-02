@@ -54,6 +54,11 @@ struct PartAttributeInstance;
 }
 }
 
+// One pooled mask-coverage render target (viewport + canvas + canvas-item pool)
+// of a fixed size class, shared across players via a process-global pool. Full
+// definition lives in the .cpp; players only hold an opaque handle.
+struct SsMaskCoverageTarget;
+
 // Receiver for animation events that need to bubble up to engine-level
 // signals (GDScript signals, Unity events, etc.). The host (Node2D wrapper,
 // editor preview, etc.) implements this. SsInternalPlayer never assumes a
@@ -164,6 +169,13 @@ public:
     // parent SsInternalPlayer when this player is an Instance child.
     void setRootTransform(const Transform2D& p_xf);
     void setRootVisible(bool p_visible);
+
+    // Effective local-unit -> on-screen-pixel scale of the owning Node2D
+    // (global transform composed with the viewport/camera transform). The
+    // mask coverage pass uses it to size the coverage target to the mask's
+    // actual on-screen footprint instead of a fixed maximum. Set by the Node2D
+    // wrapper each frame before update(); 1.0 until then.
+    void setCoverageScreenScale(float p_scale) { _coverage_screen_scale = (p_scale > 0.0f) ? p_scale : 1.0f; }
 
     void setCellMapOverrideTexture(uint32_t cellmap_name_hash, const Ref<Texture2D>& texture);
     Ref<Texture2D> getCellMapTexture(uint32_t cellmap_name_hash) const;
@@ -462,29 +474,43 @@ private:
     bool _build_mask_writers(const DrawFrame& f);
 
     // ---- CBP coverage bitmap (offscreen RGBA8 = 32 mask bits) --------------
-    // A private RenderingServer viewport + canvas owned by this player. The
-    // mask writers' geometry is rendered here (additive bit OR, cutout) by
-    // `_render_mask_coverage`; maskable shaders sample the result (P3). Created
-    // lazily by `_ensure_mask_targets` the first time masking runs; freed in
-    // the dtor / `_free_mask_targets`. The viewport renders with UPDATE_ALWAYS
-    // (one-frame latency, sidesteps inter-viewport ordering for a first cut).
-    RID _mask_viewport;
-    RID _mask_canvas;
-    Vector<RID> _mask_canvas_items;            // pooled, one per rendered writer
-    int _mask_canvas_items_in_use = 0;
+    // The coverage render target (viewport + canvas + canvas-item pool) is a
+    // size-classed resource borrowed from a process-global pool while this
+    // player is actively masking, and returned when it stops. The mask writers'
+    // geometry is rendered into it by `_render_mask_coverage`; maskable shaders
+    // sample the result (P3). Acquired by `_acquire_mask_target`, returned by
+    // `_release_mask_target` / `_free_mask_targets`. The viewport renders with
+    // UPDATE_ONCE (one-frame latency, sidesteps inter-viewport ordering).
+    SsMaskCoverageTarget* _mask_target = nullptr; // borrowed; null when idle
+    bool _mask_pool_registered = false;        // this player counts as a pool user
     Ref<Shader> _mask_write_shader;            // loaded from SS_MASK_WRITE
-    Vector<Ref<ShaderMaterial>> _mask_write_materials; // pooled, parallel
+    Vector<Ref<ShaderMaterial>> _mask_write_materials; // per-instance, pooled
     int _mask_write_materials_in_use = 0;
     // Maps this player's local space (the space batch geometry lives in, world
     // matrices already applied) -> coverage UV [0,1]. Set per frame by the
     // coverage pass and read by maskable shaders. Identity until masking runs.
     Transform2D _mask_local_to_uv;
     bool _mask_coverage_valid = false;         // true if this frame drew coverage
-    // Longest coverage-bitmap dimension in pixels; the other side scales with
-    // the writer bounding box aspect ratio.
+    // Coverage-bitmap dimension bounds in pixels. The per-axis size is the
+    // mask's on-screen footprint, quantized up to a power-of-two size class in
+    // [MIN, MAX]; quantizing keeps the viewport size stable frame-to-frame so
+    // the render target is not reallocated as the mask animates.
     static constexpr int MASK_COVERAGE_MAX_DIM = 1024;
+    static constexpr int MASK_COVERAGE_MIN_DIM = 64;
+    // Local-unit -> screen-pixel scale fed by the Node2D wrapper (see setter).
+    float _coverage_screen_scale = 1.0f;
+    // Size class to borrow next frame, decided from this frame's footprint. The
+    // target is picked one frame ahead so the writer geometry can be rendered in
+    // one pass; quantization keeps it stable, so the lag only shows (as a touch
+    // of resolution) on the rare frame a mask crosses a class boundary.
+    int _mask_next_w = MASK_COVERAGE_MIN_DIM;
+    int _mask_next_h = MASK_COVERAGE_MIN_DIM;
 
-    void _ensure_mask_targets();
+    // Borrow a pooled coverage target of the given size class (swapping if the
+    // current one differs), registering this player as a pool user on first use.
+    void _acquire_mask_target(int w, int h);
+    // Return the borrowed target to the pool (kept registered as a user).
+    void _release_mask_target();
     void _free_mask_targets();
     RID _acquire_mask_canvas_item();
     Ref<ShaderMaterial> _acquire_mask_write_material();
