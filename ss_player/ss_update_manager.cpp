@@ -44,7 +44,7 @@ void SsUpdateManager::unregister_player(SpriteStudioPlayer2D* player) {
 bool SsUpdateManager::is_player_registered(uint64_t instance_id) {
     std::shared_lock<std::shared_mutex> lock(_mutex);
     for (auto p : _players) {
-        if (p->get_instance_id() == instance_id) {
+        if (static_cast<uint64_t>(p->get_instance_id()) == instance_id) {
             return true;
         }
     }
@@ -80,7 +80,7 @@ void SsUpdateManager::update_all(float delta_seconds, bool physics) {
     for (auto player : active_players) {
         player->_push_coverage_screen_scale();
         if (player->_get_internal_player()->prepare_frame(delta_seconds)) {
-            pending_players.push_back({ player, player->get_instance_id() });
+            pending_players.push_back({ player, static_cast<uint64_t>(player->get_instance_id()) });
         }
     }
     
