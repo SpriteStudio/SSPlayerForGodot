@@ -17,18 +17,8 @@ public:
         return instance;
     }
 
-    void register_player(SpriteStudioPlayer2D* player) {
-        std::lock_guard<std::mutex> lock(_mutex);
-        _players.push_back(player);
-    }
-
-    void unregister_player(SpriteStudioPlayer2D* player) {
-        std::lock_guard<std::mutex> lock(_mutex);
-        auto it = std::find(_players.begin(), _players.end(), player);
-        if (it != _players.end()) {
-            _players.erase(it);
-        }
-    }
+    void register_player(SpriteStudioPlayer2D* player);
+    void unregister_player(SpriteStudioPlayer2D* player);
 
     void update_all(float delta_seconds, bool physics);
 };

@@ -21,6 +21,19 @@ static void _get_frame_data_task(void* p_userdata, uint32_t p_index) {
     }
 }
 
+void SsUpdateManager::register_player(SpriteStudioPlayer2D* player) {
+    std::lock_guard<std::mutex> lock(_mutex);
+    _players.push_back(player);
+}
+
+void SsUpdateManager::unregister_player(SpriteStudioPlayer2D* player) {
+    std::lock_guard<std::mutex> lock(_mutex);
+    auto it = std::find(_players.begin(), _players.end(), player);
+    if (it != _players.end()) {
+        _players.erase(it);
+    }
+}
+
 void SsUpdateManager::update_all(float delta_seconds, bool physics) {
     Engine* engine = Engine::get_singleton();
     uint64_t current_frame = physics ? engine->get_physics_frames() : engine->get_process_frames();
@@ -60,7 +73,7 @@ void SsUpdateManager::update_all(float delta_seconds, bool physics) {
     // Pass B: Parallel get_frame_data
     if (n >= 32) {
         WorkerThreadPool* pool = WorkerThreadPool::get_singleton();
-        int64_t group_id = pool->add_native_group_task(&_get_frame_data_task, pending_players.data(), n, -1, true, "SsGetFrameData");
+        int64_t group_id = pool->add_native_group_task(&_get_frame_data_task, pending_players.data(), n, -1, false, "SsGetFrameData");
         pool->wait_for_group_task_completion(group_id);
     } else {
         // Sequential fallback
