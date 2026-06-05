@@ -13,10 +13,7 @@ private:
     SsUpdateManager() {}
 
 public:
-    static SsUpdateManager& get() {
-        static SsUpdateManager instance;
-        return instance;
-    }
+    static SsUpdateManager& get();
 
     void register_player(SpriteStudioPlayer2D* player);
     void unregister_player(SpriteStudioPlayer2D* player);

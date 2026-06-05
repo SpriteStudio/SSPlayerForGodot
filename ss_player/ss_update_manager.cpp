@@ -26,6 +26,11 @@ static void _get_frame_data_task(void* p_userdata, uint32_t p_index) {
     }
 }
 
+SsUpdateManager& SsUpdateManager::get() {
+    static SsUpdateManager instance;
+    return instance;
+}
+
 void SsUpdateManager::register_player(SpriteStudioPlayer2D* player) {
     std::unique_lock<std::shared_mutex> lock(_mutex);
     if (std::find(_players.begin(), _players.end(), player) == _players.end()) {
