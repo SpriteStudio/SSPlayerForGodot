@@ -19,6 +19,7 @@ public:
 
     void register_player(SpriteStudioPlayer2D* player);
     void unregister_player(SpriteStudioPlayer2D* player);
+    bool is_player_registered(SpriteStudioPlayer2D* player);
 
     void update_all(float delta_seconds, bool physics);
 };

@@ -16,7 +16,7 @@ using namespace godot;
 static void _get_frame_data_task(void* p_userdata, uint32_t p_index) {
     auto** players = static_cast<SpriteStudioPlayer2D**>(p_userdata);
     SpriteStudioPlayer2D* player = players[p_index];
-    if (player && player->_get_internal_player()) {
+    if (SsUpdateManager::get().is_player_registered(player) && player && player->_get_internal_player()) {
         player->_get_internal_player()->get_frame_data_sync();
     }
 }
@@ -32,6 +32,11 @@ void SsUpdateManager::unregister_player(SpriteStudioPlayer2D* player) {
     if (it != _players.end()) {
         _players.erase(it);
     }
+}
+
+bool SsUpdateManager::is_player_registered(SpriteStudioPlayer2D* player) {
+    std::lock_guard<std::mutex> lock(_mutex);
+    return std::find(_players.begin(), _players.end(), player) != _players.end();
 }
 
 void SsUpdateManager::update_all(float delta_seconds, bool physics) {
@@ -78,12 +83,16 @@ void SsUpdateManager::update_all(float delta_seconds, bool physics) {
     } else {
         // Sequential fallback
         for (auto player : pending_players) {
-            player->_get_internal_player()->get_frame_data_sync();
+            if (is_player_registered(player)) {
+                player->_get_internal_player()->get_frame_data_sync();
+            }
         }
     }
     
     // Pass C: Consume
     for (auto player : pending_players) {
-        player->_get_internal_player()->consume_frame(delta_seconds);
+        if (is_player_registered(player)) {
+            player->_get_internal_player()->consume_frame(delta_seconds);
+        }
     }
 }
