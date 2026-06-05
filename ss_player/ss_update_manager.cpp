@@ -62,7 +62,9 @@ void SsUpdateManager::update_all(float delta_seconds, bool physics) {
         pool->wait_for_group_task_completion(group_id);
     } else {
         // Sequential fallback
-        pending_players[0]->_get_internal_player()->get_frame_data_sync();
+        for (auto player : pending_players) {
+            player->_get_internal_player()->get_frame_data_sync();
+        }
     }
     
     // Pass C: Consume
