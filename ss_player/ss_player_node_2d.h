@@ -119,4 +119,6 @@ private:
     friend class SsUpdateManager;
 public:
     SsInternalPlayer* _get_internal_player() { return _internal; }
+    uint64_t _last_updated_process_frame = 0;
+    uint64_t _last_updated_physics_frame = 0;
 };

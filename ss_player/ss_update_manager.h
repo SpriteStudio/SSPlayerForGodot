@@ -9,9 +9,6 @@ private:
     std::vector<SpriteStudioPlayer2D*> _players;
     std::mutex _mutex;
 
-    uint64_t _last_process_frame = 0;
-    uint64_t _last_physics_frame = 0;
-
     SsUpdateManager() {}
 
 public:
