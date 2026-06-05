@@ -1,4 +1,5 @@
 #include "ss_player_node_2d.h"
+#include "ss_update_manager.h"
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
 #include <godot_cpp/classes/engine.hpp>
@@ -40,9 +41,11 @@ SpriteStudioPlayer2D::SpriteStudioPlayer2D() {
     _internal->setEventSink(_sink);
     _internal->setSkipFrames(true);
     _internal->setSubFrameEnabled(false);
+    SsUpdateManager::get().register_player(this);
 }
 
 SpriteStudioPlayer2D::~SpriteStudioPlayer2D() {
+    SsUpdateManager::get().unregister_player(this);
     if (_internal) {
         _internal->setEventSink(nullptr);
         memdelete(_internal);
@@ -544,14 +547,12 @@ void SpriteStudioPlayer2D::_notification(int p_notification) {
             break;
         case NOTIFICATION_INTERNAL_PROCESS:
             if (_process_mode == ANIMATION_PROCESS_IDLE) {
-                _push_coverage_screen_scale();
-                _internal->update(get_process_delta_time());
+                SsUpdateManager::get().update_all(get_process_delta_time(), false);
             }
             break;
         case NOTIFICATION_INTERNAL_PHYSICS_PROCESS:
             if (_process_mode == ANIMATION_PROCESS_PHYSICS) {
-                _push_coverage_screen_scale();
-                _internal->update(get_physics_process_delta_time());
+                SsUpdateManager::get().update_all(get_physics_process_delta_time(), true);
             }
             break;
         case NOTIFICATION_DRAW:

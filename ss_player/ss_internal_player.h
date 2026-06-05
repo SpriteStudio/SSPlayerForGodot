@@ -162,7 +162,28 @@ public:
 
     // Per-tick update (in seconds; the host typically passes
     // `process_delta_time`). No-op when paused or in instance-child mode.
+    // In Godot, the central SsUpdateManager handles the 3-pass parallel update.
+    // The individual update method is kept for manual/direct use.
     void update(float delta_seconds);
+
+    // Pass A: Advance frame and trigger events. Returns true if the player should
+    // be included in Pass B/C (i.e., not skipped).
+    bool prepare_frame(float delta_seconds);
+
+    // Pass B: Obtain frame data. Can be called in parallel.
+    void get_frame_data_sync();
+
+    // Pass C: Consume frame data and draw.
+    void consume_frame(float delta_seconds);
+
+    // Context for Pass B/C
+    struct UpdateContext {
+        float draw_frame;
+        bool parent_looped;
+        unsigned char* out_data;
+        uintptr_t out_len;
+    } _update_ctx;
+
 
     // Transform / visibility on the root canvas item. The Node2D wrapper
     // never calls these — the Node's own transform handles that. Used by

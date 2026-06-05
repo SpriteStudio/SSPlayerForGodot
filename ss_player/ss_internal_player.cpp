@@ -556,11 +556,17 @@ bool SsInternalPlayer::_needs_continuous_update() const {
 }
 
 void SsInternalPlayer::update(float delta_seconds) {
+    if (!prepare_frame(delta_seconds)) return;
+    get_frame_data_sync();
+    consume_frame(delta_seconds);
+}
+
+bool SsInternalPlayer::prepare_frame(float delta_seconds) {
     // Parent-driven players are stepped by the parent's
     // `_update_instance_children`; they must not run their own controller
     // tick (would race the parent's deterministic seek).
-    if (_parent_driven) return;
-    if (!ss_runtime_is_playing(runtime_ctx)) return;
+    if (_parent_driven) return false;
+    if (!ss_runtime_is_playing(runtime_ctx)) return false;
 
     auto d = delta_seconds * 1000.0f;
     float frame_no = ss_runtime_update(runtime_ctx, d);
@@ -574,7 +580,7 @@ void SsInternalPlayer::update(float delta_seconds) {
     }
 
     float draw_frame = _sub_frame_enabled ? frame_no : floorf(frame_no);
-    if (previous_frame_no == draw_frame && !_needs_continuous_update()) return;
+    if (previous_frame_no == draw_frame && !_needs_continuous_update()) return false;
 
     if (_currentAnimationData && _currentAnimationData->events() != nullptr) {
         int event_count = ss_runtime_get_passed_event_count(runtime_ctx);
@@ -653,7 +659,130 @@ void SsInternalPlayer::update(float delta_seconds) {
         }
     }
 
-    _seek_and_redraw(frame_no, delta_seconds, was_looped);
+    _update_ctx.draw_frame = draw_frame;
+    _update_ctx.parent_looped = was_looped;
+    _update_ctx.out_data = nullptr;
+    _update_ctx.out_len = 0;
+    return true;
+}
+
+void SsInternalPlayer::get_frame_data_sync() {
+    ss_runtime_get_frame_data(runtime_ctx, _update_ctx.draw_frame, &_update_ctx.out_data, &_update_ctx.out_len);
+}
+
+void SsInternalPlayer::consume_frame(float delta_seconds) {
+    previous_frame_no = _update_ctx.draw_frame;
+    _update_instance_children(_update_ctx.draw_frame, delta_seconds, _update_ctx.parent_looped);
+    
+    unsigned char* data = _update_ctx.out_data;
+    uintptr_t len = _update_ctx.out_len;
+    
+    if (!data) return;
+
+    _mesh_pool_in_use = 0;
+    _reset_per_part_pools();
+
+    DrawFrame f = {};
+    f.rs = RenderingServer::get_singleton();
+    f.frameData = ss::runtime::GetFrameData(data);
+    f.binary = _ssabRes->get_ss_anime_binary();
+    f.frame_no = _update_ctx.draw_frame;
+    f.delta_seconds = delta_seconds;
+    f.parent_looped = _update_ctx.parent_looped;
+
+    ss_runtime_get_world_matrices(runtime_ctx, &f.world_matrices, &f.world_matrices_len);
+    ss_runtime_get_local_uvs(runtime_ctx, &f.local_uvs, &f.local_uvs_len);
+    ss_runtime_get_cell_meta(runtime_ctx, &f.cell_meta, &f.cell_meta_len);
+    ss_runtime_get_local_vertices(runtime_ctx, &f.local_vertices, &f.local_vertices_len);
+    ss_runtime_get_shape_vertices(runtime_ctx, &f.shape_vertices, &f.shape_vertices_len);
+    ss_runtime_get_shape_vertex_box_coords(runtime_ctx, &f.shape_box_coords, &f.shape_box_coords_len);
+    ss_runtime_get_shape_vertex_counts(runtime_ctx, &f.shape_vertex_counts, &f.shape_vertex_counts_len);
+    ss_runtime_get_mesh_vertices_x(runtime_ctx, &f.mesh_vertices_x, &f.mesh_vertices_x_len);
+    ss_runtime_get_mesh_vertices_y(runtime_ctx, &f.mesh_vertices_y, &f.mesh_vertices_y_len);
+    ss_runtime_get_mesh_vertex_offsets(runtime_ctx, &f.mesh_vertex_offsets, &f.mesh_vertex_offsets_len);
+    ss_runtime_get_mesh_uvs(runtime_ctx, &f.mesh_uvs, &f.mesh_uvs_len);
+    ss_runtime_get_mesh_indices(runtime_ctx, &f.mesh_indices, &f.mesh_indices_len);
+    ss_runtime_get_mesh_index_offsets(runtime_ctx, &f.mesh_index_offsets, &f.mesh_index_offsets_len);
+
+    auto parts = f.frameData->parts();
+    auto draw_order = f.frameData->draw_order();
+    auto draw_batches = f.frameData->draw_batches();
+
+    {
+        const int total = f.binary->parts() ? (int)f.binary->parts()->size() : 0;
+        if ((int)_parts_by_idx.size() != total) _parts_by_idx.resize(total);
+        if (total > 0) {
+            memset(_parts_by_idx.ptr(), 0, total * sizeof(void*));
+        }
+        for (uint32_t i = 0; i < parts->size(); i++) {
+            auto p = parts->Get(i);
+            int idx = p->part_index();
+            if (idx >= 0 && idx < total) _parts_by_idx[idx] = p;
+        }
+    }
+
+    if (_build_mask_writers(f) && !_parent_driven) {
+        _render_mask_coverage(f);
+    } else {
+        _release_mask_target();
+    }
+
+    const uint16_t* draw_order_data = draw_order->data();
+    const uint32_t batch_count = draw_batches->size();
+
+    for (int i = (int)batch_count; i < _batch_canvas_items_in_use; i++) {
+        f.rs->canvas_item_clear(_batch_canvas_items[i]);
+        f.rs->canvas_item_set_visible(_batch_canvas_items[i], false);
+    }
+
+    for (const EffectSlotState& slot : _effect_slots) {
+        for (const RID& e_ci : slot.emitter_cis) {
+            f.rs->canvas_item_set_visible(e_ci, false);
+        }
+    }
+
+    _draw_seq = 0;
+    for (uint32_t bi = 0; bi < batch_count; bi++) {
+        const auto* batch = draw_batches->Get(bi);
+        RID ci = _ensure_batch_ci((int)bi);
+
+        f.rs->canvas_item_clear(ci);
+        f.rs->canvas_item_set_visible(ci, true);
+        f.rs->canvas_item_set_transform(ci, Transform2D());
+        f.rs->canvas_item_set_material(ci, RID());
+        f.rs->canvas_item_set_modulate(ci, Color(1, 1, 1, 1));
+
+        f.rs->canvas_item_set_draw_index(ci, _draw_seq++);
+
+        const auto kind = batch->kind();
+        if (_mask_coverage_valid && batch->count() > 0
+            && _is_pure_mask_part((int)draw_order_data[batch->start_rank()])) {
+            continue;
+        }
+        if (kind == ss::runtime::DrawBatchKind_Normal) {
+            _emit_normal_batch(f, ci, batch, draw_order_data);
+        } else if (kind == ss::runtime::DrawBatchKind_Shape) {
+            _emit_shape_batch(f, ci, batch, draw_order_data);
+        } else if (kind == ss::runtime::DrawBatchKind_Instance) {
+            int p_idx = (int)draw_order_data[batch->start_rank()];
+            const auto* part = (p_idx >= 0 && p_idx < (int)_parts_by_idx.size()) ? _parts_by_idx[p_idx] : nullptr;
+            if (!part) continue;
+            const float* drawing_m = f.get_world_matrix(p_idx);
+            if (!drawing_m) continue;
+            _emit_instance_slot(f, ci, p_idx, drawing_m, batch->start_rank());
+        } else if (kind == ss::runtime::DrawBatchKind_Effect) {
+            int p_idx = (int)draw_order_data[batch->start_rank()];
+            const auto* part = (p_idx >= 0 && p_idx < (int)_parts_by_idx.size()) ? _parts_by_idx[p_idx] : nullptr;
+            if (!part) continue;
+            const float* drawing_m = f.get_world_matrix(p_idx);
+            if (!drawing_m) continue;
+            _emit_effect_slot(f, ci, p_idx, drawing_m);
+        } else if (kind == ss::runtime::DrawBatchKind_Mesh) {
+            _emit_mesh_batch(f, ci, batch, draw_order_data);
+        }
+    }
+
+    _batch_canvas_items_in_use = (int)batch_count;
 }
 
 bool SsInternalPlayer::_build_mask_writers(const DrawFrame& f) {
@@ -1409,9 +1538,10 @@ void SsInternalPlayer::_redraw_child_if_frame_changed(SsInternalPlayer* child, f
 
 void SsInternalPlayer::_seek_and_redraw(float frame_no, float delta_seconds, bool parent_looped) {
     const float draw_frame = _sub_frame_enabled ? frame_no : floorf(frame_no);
-    previous_frame_no = draw_frame;
-    _update_instance_children(draw_frame, delta_seconds, parent_looped);
-    _drawAnimation(draw_frame, delta_seconds, parent_looped);
+    _update_ctx.draw_frame = draw_frame;
+    _update_ctx.parent_looped = parent_looped;
+    get_frame_data_sync();
+    consume_frame(delta_seconds);
 }
 
 void SsInternalPlayer::_emit_instance_slot(const DrawFrame& f, RID ci, int p_idx, const float* slot_matrix, uint16_t rank) {

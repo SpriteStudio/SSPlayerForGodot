@@ -115,4 +115,8 @@ private:
     _SignalSink* _sink = nullptr;
 
     void _on_ssab_changed();
+
+    friend class SsUpdateManager;
+public:
+    SsInternalPlayer* _get_internal_player() { return _internal; }
 };
