@@ -26,7 +26,7 @@
 #endif
 
 void SSProgressDialog::_bind_methods() {
-    // ClassDB::bind_method(D_METHOD("_on_cancel_pressed"), &SSProgressDialog::_on_cancel_pressed);
+    ClassDB::bind_method(D_METHOD("_on_cancel_pressed"), &SSProgressDialog::_on_cancel_pressed);
 }
 
 SSProgressDialog::SSProgressDialog() {
@@ -66,20 +66,22 @@ SSProgressDialog::SSProgressDialog() {
     progress_bar = memnew(ProgressBar);
     vbox->add_child(progress_bar);
 
-    // cancel_button = memnew(Button);
-    // cancel_button->set_text("Cancel");
-    // vbox->add_child(cancel_button);
-    // cancel_button->connect("pressed", Callable(this, "_on_cancel_pressed"));
+    cancel_button = memnew(Button);
+    cancel_button->set_text("Cancel");
+    vbox->add_child(cancel_button);
+    cancel_button->connect("pressed", Callable(this, "_on_cancel_pressed"));
 
     set_size(Size2(300, 130));
 }
 
 
 void SSProgressDialog::show_progress(const String &title, int total_steps) {
-    // canceled = false;
-    // cancel_button->set_disabled(false);
+    canceled = false;
+    cancel_button->set_disabled(false);
     set_title(title);
-    progress_bar->set_max(total_steps);
+    // total_steps <= 0 means "unknown total" (e.g. directory scan): keep the bar
+    // empty and rely on the status label for live counts.
+    progress_bar->set_max(total_steps > 0 ? total_steps : 1);
     progress_bar->set_value(0);
 
     popup_centered();
@@ -90,15 +92,15 @@ void SSProgressDialog::step(const String &message, int step_value) {
     progress_bar->set_value(step_value);
 }
 
-// void SSProgressDialog::_on_cancel_pressed() {
-//     canceled = true;
-//     status_label->set_text("Canceling...");
-//     cancel_button->set_disabled(true); // 二重押し防止
-// }
+void SSProgressDialog::_on_cancel_pressed() {
+    canceled = true;
+    status_label->set_text("Canceling...");
+    cancel_button->set_disabled(true); // 二重押し防止
+}
 
-// bool SSProgressDialog::is_canceled() const {
-//     return canceled;
-// }
+bool SSProgressDialog::is_canceled() const {
+    return canceled;
+}
 
 void SSProgressDialog::finish() {
     hide();

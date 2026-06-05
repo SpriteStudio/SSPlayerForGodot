@@ -50,6 +50,7 @@ void SSImportControl::_bind_methods() {
     ClassDB::bind_method(D_METHOD("_on_recent_gui_input", "event", "path"), &SSImportControl::_on_recent_gui_input);
     ClassDB::bind_method(D_METHOD("_on_recent_menu_id_pressed", "id"), &SSImportControl::_on_recent_menu_id_pressed);
     ClassDB::bind_method(D_METHOD("_on_clear_recent_pressed"), &SSImportControl::_on_clear_recent_pressed);
+    ClassDB::bind_method(D_METHOD("_on_importer_files_resolved", "paths"), &SSImportControl::_on_importer_files_resolved);
 }
 
 
@@ -121,7 +122,7 @@ SSImportControl::SSImportControl() {
         add_child(drop_panel);
 
         instruction_label = memnew(Label);
-        instruction_label->set_text(tr("Drop SSPJ here\n(drag from your file manager)"));
+        instruction_label->set_text(tr("Drop SSPJ or a folder here\n(drag from your file manager)"));
         instruction_label->set_horizontal_alignment(HORIZONTAL_ALIGNMENT_CENTER);
         instruction_label->set_vertical_alignment(VERTICAL_ALIGNMENT_CENTER);
         instruction_label->set_anchors_preset(Control::PRESET_FULL_RECT);
@@ -193,6 +194,9 @@ void SSImportControl::_notification(int p_what) {
         } break;
         case NOTIFICATION_ENTER_TREE: {
             start_intercepting();
+            if (importer && !importer->is_connected("import_files_resolved", Callable(this, "_on_importer_files_resolved"))) {
+                importer->connect("import_files_resolved", Callable(this, "_on_importer_files_resolved"));
+            }
         } break;
         case NOTIFICATION_EXIT_TREE: {
             stop_intercepting();
@@ -278,24 +282,29 @@ void SSImportControl::_on_window_files_dropped(const Vector<String> &p_files) {
             return;
         }
 
-        // validate sspj file
+        // Split the drop into directories (recursively scanned for .sspj) and
+        // loose .sspj files.
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
         PackedStringArray sspj_files;
+        PackedStringArray dirs;
 #else
         Vector<String> sspj_files;
+        Vector<String> dirs;
 #endif
         for (int i = 0; i < p_files.size(); i++) {
             String file_path = p_files[i];
-            String ext = file_path.get_extension();
-            if (ext == "sspj") {
+            if (DirAccess::dir_exists_absolute(file_path)) {
+                dirs.push_back(file_path);
+            } else if (file_path.get_extension() == "sspj") {
                 sspj_files.push_back(file_path);
             }
         }
-        if (sspj_files.is_empty()) {
-            ERR_PRINT("SSImportControl: No .sspj files found.");
+
+        if (dirs.is_empty() && sspj_files.is_empty()) {
+            ERR_PRINT("SSImportControl: No .sspj files or folders found.");
             AcceptDialog *dialog = memnew(AcceptDialog);
             dialog->set_title(tr("Import Error"));
-            dialog->set_text(tr("No .sspj files found.\nPlease drop SpriteStudio project (.sspj) files."));
+            dialog->set_text(tr("No .sspj files or folders found.\nPlease drop SpriteStudio project (.sspj) files or a folder containing them."));
             EditorInterface::get_singleton()->get_base_control()->add_child(dialog);
             dialog->connect("confirmed", Callable(dialog, "queue_free"));
             dialog->connect("canceled", Callable(dialog, "queue_free"));
@@ -303,7 +312,12 @@ void SSImportControl::_on_window_files_dropped(const Vector<String> &p_files) {
             return;
         }
 
-        _start_import(sspj_files);
+        if (!dirs.is_empty()) {
+            // A folder was dropped: scan it (and any loose .sspj) and import all.
+            importer->queue_scan_and_import(dirs, sspj_files, path_line_edit->get_text());
+        } else {
+            _start_import(sspj_files);
+        }
     } else {
         _perform_default_drop_logic(p_files);
     }
@@ -585,6 +599,12 @@ void SSImportControl::_add_to_recent_files(const String &p_path) {
     es->set_project_metadata("spritestudio", "recent_files", recent_files);
 
     _update_recent_files_ui();
+}
+
+void SSImportControl::_on_importer_files_resolved(const PackedStringArray &p_paths) {
+    for (int i = 0; i < p_paths.size(); i++) {
+        _add_to_recent_files(p_paths[i]);
+    }
 }
 
 void SSImportControl::_load_settings() {

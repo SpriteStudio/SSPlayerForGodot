@@ -27,21 +27,21 @@ private:
     Label *status_label = nullptr;
     ProgressBar *progress_bar = nullptr;
 
-    // Button *cancel_button = nullptr;
-    // bool canceled = false;
+    Button *cancel_button = nullptr;
+    bool canceled = false;
 
 protected:
     static void _bind_methods();
 
-    // void _on_cancel_pressed();
+    void _on_cancel_pressed();
 
     public:
     SSProgressDialog();
 
     void show_progress(const String &title, int total_steps);
-    void step(const String &message, int step_value);    
+    void step(const String &message, int step_value);
     void finish();
 
-    // bool is_canceled() const;
+    bool is_canceled() const;
 };
 #endif // #ifdef TOOLS_ENABLED
