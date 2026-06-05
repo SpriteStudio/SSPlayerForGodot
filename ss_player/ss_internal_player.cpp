@@ -1488,19 +1488,7 @@ void SsInternalPlayer::_emit_effect_slot(const DrawFrame& f, RID ci, int p_idx, 
     f.rs->canvas_item_set_modulate(ci, Color(1, 1, 1, part_alpha));
 
     const uint32_t cmd_count = plan->commands()->size();
-    while ((uint32_t)slot.emitter_cis.size() < cmd_count) {
-        RID e_ci = f.rs->canvas_item_create();
-        slot.emitter_cis.push_back(e_ci);
-    }
-    for (uint32_t e = 0; e < cmd_count; e++) {
-        f.rs->canvas_item_set_parent(slot.emitter_cis[e], ci);
-        f.rs->canvas_item_set_draw_index(slot.emitter_cis[e], (int)e);
-    }
-    for (int e = (int)cmd_count; e < slot.emitter_cis.size(); e++) {
-        f.rs->canvas_item_clear(slot.emitter_cis[e]);
-        f.rs->canvas_item_set_visible(slot.emitter_cis[e], false);
-        f.rs->canvas_item_set_parent(slot.emitter_cis[e], RID());
-    }
+
 
     // PackedVector2Array stores Vector2 = (real_t, real_t). The plan emits
     // flat float pairs (vert_stride == 2), so cast the storage as float* —
@@ -1513,48 +1501,94 @@ void SsInternalPlayer::_emit_effect_slot(const DrawFrame& f, RID ci, int p_idx, 
     const float* C = plan->colors()->data();
     const int32_t* I = plan->indices()->data();
 
-    for (uint32_t e_idx = 0; e_idx < cmd_count; e_idx++) {
-        const auto* cmd = plan->commands()->Get(e_idx);
-        RID e_ci = slot.emitter_cis[e_idx];
-        f.rs->canvas_item_clear(e_ci);
+    uint32_t drawn_cis = 0;
 
+    for (uint32_t e_idx = 0; e_idx < cmd_count; ) {
+        const auto* cmd = plan->commands()->Get(e_idx);
         if (!cmd || cmd->quad_count() == 0) {
-            f.rs->canvas_item_set_visible(e_ci, false);
+            e_idx++;
             continue;
         }
 
         const uint32_t cellmap_hash = cmd->cellmap_hash();
         if (cellmap_hash == 0 || !_textures.has(cellmap_hash)) {
-            f.rs->canvas_item_set_visible(e_ci, false);
+            e_idx++;
             continue;
         }
         Ref<Texture2D> tex = _textures[cellmap_hash];
         if (tex.is_null()) {
-            f.rs->canvas_item_set_visible(e_ci, false);
+            e_idx++;
             continue;
         }
 
+        uint32_t merge_qc = cmd->quad_count();
+        uint32_t merge_end = e_idx + 1;
+        while (merge_end < cmd_count) {
+            const auto* next_cmd = plan->commands()->Get(merge_end);
+            if (next_cmd && next_cmd->quad_count() > 0 &&
+                next_cmd->cellmap_hash() == cellmap_hash &&
+                next_cmd->blend() == cmd->blend()) {
+                merge_qc += next_cmd->quad_count();
+                merge_end++;
+            } else {
+                break;
+            }
+        }
+
+        while ((uint32_t)slot.emitter_cis.size() <= drawn_cis) {
+            RID e_ci = f.rs->canvas_item_create();
+            f.rs->canvas_item_set_parent(e_ci, ci);
+            slot.emitter_cis.push_back(e_ci);
+        }
+
+        RID e_ci = slot.emitter_cis[drawn_cis];
+        f.rs->canvas_item_set_parent(e_ci, ci);
+        f.rs->canvas_item_clear(e_ci);
+        f.rs->canvas_item_set_draw_index(e_ci, (int)drawn_cis);
         f.rs->canvas_item_set_visible(e_ci, true);
+
         const ss::format::BlendType blend = (cmd->blend() == 1) ? ss::format::BlendType_Add : ss::format::BlendType_Mix;
         _apply_blend_material(f.rs, e_ci, blend);
 
-        const uint32_t qc = cmd->quad_count();
-        const uint32_t off = cmd->particle_offset();
-        _effect_verts.resize(qc * 4);
-        _effect_uvs.resize(qc * 4);
-        _effect_colors.resize(qc * 4);
-        _effect_indices.resize(qc * 6);
+        _effect_verts.resize(merge_qc * 4);
+        _effect_uvs.resize(merge_qc * 4);
+        _effect_colors.resize(merge_qc * 4);
+        _effect_indices.resize(merge_qc * 6);
         SsVec2Array&  p_verts   = _effect_verts;
         SsVec2Array&  p_uvs     = _effect_uvs;
         SsColorArray& p_colors  = _effect_colors;
         SsIntArray&   p_indices = _effect_indices;
 
-        memcpy(p_verts.ptrw(),   V + off * 8,  qc * 8  * sizeof(float));
-        memcpy(p_uvs.ptrw(),     U + off * 8,  qc * 8  * sizeof(float));
-        memcpy(p_colors.ptrw(),  C + off * 16, qc * 16 * sizeof(float));
-        memcpy(p_indices.ptrw(), I + off * 6,  qc * 6  * sizeof(int32_t));
+        uint32_t dest_qc = 0;
+        for (uint32_t m = e_idx; m < merge_end; m++) {
+            const auto* m_cmd = plan->commands()->Get(m);
+            uint32_t qc = m_cmd->quad_count();
+            uint32_t off = m_cmd->particle_offset();
+            
+            memcpy(p_verts.ptrw() + dest_qc * 4,   V + off * 8,  qc * 8  * sizeof(float));
+            memcpy(p_uvs.ptrw() + dest_qc * 4,     U + off * 8,  qc * 8  * sizeof(float));
+            memcpy(p_colors.ptrw() + dest_qc * 4,  C + off * 16, qc * 16 * sizeof(float));
+            
+            int32_t* dst_idx = p_indices.ptrw() + dest_qc * 6;
+            const int32_t* src_idx = I + off * 6;
+            int32_t v_offset = dest_qc * 4;
+            for (uint32_t i = 0; i < qc * 6; i++) {
+                dst_idx[i] = src_idx[i] + v_offset;
+            }
+
+            dest_qc += qc;
+        }
 
         f.rs->canvas_item_add_triangle_array(e_ci, p_indices, p_verts, p_colors, p_uvs, {}, {}, tex->get_rid());
+        
+        drawn_cis++;
+        e_idx = merge_end;
+    }
+
+    for (int e = (int)drawn_cis; e < slot.emitter_cis.size(); e++) {
+        f.rs->canvas_item_clear(slot.emitter_cis[e]);
+        f.rs->canvas_item_set_visible(slot.emitter_cis[e], false);
+        f.rs->canvas_item_set_parent(slot.emitter_cis[e], RID());
     }
 }
 
