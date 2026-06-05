@@ -13,30 +13,42 @@
 using namespace godot;
 #endif
 
+struct PendingPlayer {
+    SpriteStudioPlayer2D* ptr;
+    uint64_t id;
+};
+
 static void _get_frame_data_task(void* p_userdata, uint32_t p_index) {
-    auto** players = static_cast<SpriteStudioPlayer2D**>(p_userdata);
-    SpriteStudioPlayer2D* player = players[p_index];
-    if (SsUpdateManager::get().is_player_registered(player) && player && player->_get_internal_player()) {
-        player->_get_internal_player()->get_frame_data_sync();
+    auto* pending = static_cast<PendingPlayer*>(p_userdata);
+    PendingPlayer& player = pending[p_index];
+    if (SsUpdateManager::get().is_player_registered(player.id) && player.ptr && player.ptr->_get_internal_player()) {
+        player.ptr->_get_internal_player()->get_frame_data_sync();
     }
 }
 
 void SsUpdateManager::register_player(SpriteStudioPlayer2D* player) {
-    std::lock_guard<std::mutex> lock(_mutex);
-    _players.push_back(player);
+    std::unique_lock<std::shared_mutex> lock(_mutex);
+    if (std::find(_players.begin(), _players.end(), player) == _players.end()) {
+        _players.push_back(player);
+    }
 }
 
 void SsUpdateManager::unregister_player(SpriteStudioPlayer2D* player) {
-    std::lock_guard<std::mutex> lock(_mutex);
+    std::unique_lock<std::shared_mutex> lock(_mutex);
     auto it = std::find(_players.begin(), _players.end(), player);
     if (it != _players.end()) {
         _players.erase(it);
     }
 }
 
-bool SsUpdateManager::is_player_registered(SpriteStudioPlayer2D* player) {
-    std::lock_guard<std::mutex> lock(_mutex);
-    return std::find(_players.begin(), _players.end(), player) != _players.end();
+bool SsUpdateManager::is_player_registered(uint64_t instance_id) {
+    std::shared_lock<std::shared_mutex> lock(_mutex);
+    for (auto p : _players) {
+        if (p->get_instance_id() == instance_id) {
+            return true;
+        }
+    }
+    return false;
 }
 
 void SsUpdateManager::update_all(float delta_seconds, bool physics) {
@@ -46,7 +58,7 @@ void SsUpdateManager::update_all(float delta_seconds, bool physics) {
     std::vector<SpriteStudioPlayer2D*> active_players;
     
     {
-        std::lock_guard<std::mutex> lock(_mutex);
+        std::shared_lock<std::shared_mutex> lock(_mutex);
         for (auto player : _players) {
             if (!player->can_process()) continue;
             if (player->get_animation_process_mode() != (physics ? SpriteStudioPlayer2D::ANIMATION_PROCESS_PHYSICS : SpriteStudioPlayer2D::ANIMATION_PROCESS_IDLE)) continue;
@@ -61,14 +73,14 @@ void SsUpdateManager::update_all(float delta_seconds, bool physics) {
     
     if (active_players.empty()) return;
     
-    std::vector<SpriteStudioPlayer2D*> pending_players;
+    std::vector<PendingPlayer> pending_players;
     pending_players.reserve(active_players.size());
     
     // Pass A: Prepare
     for (auto player : active_players) {
         player->_push_coverage_screen_scale();
         if (player->_get_internal_player()->prepare_frame(delta_seconds)) {
-            pending_players.push_back(player);
+            pending_players.push_back({ player, player->get_instance_id() });
         }
     }
     
@@ -76,23 +88,23 @@ void SsUpdateManager::update_all(float delta_seconds, bool physics) {
     if (n == 0) return;
     
     // Pass B: Parallel get_frame_data
-    if (n >= 32) {
+    if (n >= 8) {
         WorkerThreadPool* pool = WorkerThreadPool::get_singleton();
         int64_t group_id = pool->add_native_group_task(&_get_frame_data_task, pending_players.data(), n, -1, false, "SsGetFrameData");
         pool->wait_for_group_task_completion(group_id);
     } else {
         // Sequential fallback
-        for (auto player : pending_players) {
-            if (is_player_registered(player)) {
-                player->_get_internal_player()->get_frame_data_sync();
+        for (auto& pending : pending_players) {
+            if (is_player_registered(pending.id)) {
+                pending.ptr->_get_internal_player()->get_frame_data_sync();
             }
         }
     }
     
     // Pass C: Consume
-    for (auto player : pending_players) {
-        if (is_player_registered(player)) {
-            player->_get_internal_player()->consume_frame(delta_seconds);
+    for (auto& pending : pending_players) {
+        if (is_player_registered(pending.id)) {
+            pending.ptr->_get_internal_player()->consume_frame(delta_seconds);
         }
     }
 }
