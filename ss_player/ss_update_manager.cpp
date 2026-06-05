@@ -9,7 +9,9 @@
 #include "core/object/worker_thread_pool.h"
 #endif
 
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
 using namespace godot;
+#endif
 
 static void _get_frame_data_task(void* p_userdata, uint32_t p_index) {
     auto** players = static_cast<SpriteStudioPlayer2D**>(p_userdata);
