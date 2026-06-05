@@ -108,6 +108,9 @@ private:
   void _remove_from_recent_files(const String &p_path);
   void _update_recent_files_ui();
   void _add_to_recent_files(const String &p_path);
+  // Adds .sspj resolved by a directory scan to the Recent list (the dock has no
+  // list at drop time; the importer emits them once the scan completes).
+  void _on_importer_files_resolved(const PackedStringArray &p_paths);
   void _reconvert_sspj(const String &p_sspj_path);
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
   void _start_import(const PackedStringArray &p_sspj_files);

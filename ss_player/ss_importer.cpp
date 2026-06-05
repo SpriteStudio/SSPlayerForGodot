@@ -7,11 +7,14 @@
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
 #include <godot_cpp/classes/accept_dialog.hpp>
+#include <godot_cpp/classes/button.hpp>
+#include <godot_cpp/classes/confirmation_dialog.hpp>
 #include <godot_cpp/classes/dir_access.hpp>
 #include <godot_cpp/classes/editor_file_system.hpp>
 #include <godot_cpp/classes/editor_interface.hpp>
 #include <godot_cpp/classes/editor_settings.hpp>
 #include <godot_cpp/classes/config_file.hpp>
+#include <godot_cpp/classes/os.hpp>
 #include <godot_cpp/classes/project_settings.hpp>
 #include <godot_cpp/classes/resource.hpp>
 #include <godot_cpp/classes/resource_loader.hpp>
@@ -23,8 +26,10 @@ using namespace godot;
 #include "core/io/dir_access.h"
 #include "core/io/config_file.h"
 #include "core/io/resource.h"
+#include "core/os/os.h"
 #include "editor/editor_interface.h"
 #include "editor/settings/editor_settings.h"
+#include "scene/gui/button.h"
 #include "scene/gui/dialogs.h"
 #if VERSION_MAJOR >= 4
     #if VERSION_MINOR >= 5
@@ -40,7 +45,11 @@ using namespace godot;
 void SSImporter::_bind_methods() {
     ADD_SIGNAL(MethodInfo("import_started"));
     ADD_SIGNAL(MethodInfo("import_finished"));
+    ADD_SIGNAL(MethodInfo("import_files_resolved", PropertyInfo(Variant::PACKED_STRING_ARRAY, "sspj_paths")));
     ClassDB::bind_method(D_METHOD("_on_filesystem_changed", "dir"), &SSImporter::_on_filesystem_changed);
+    ClassDB::bind_method(D_METHOD("_on_budget_use_found"), &SSImporter::_on_budget_use_found);
+    ClassDB::bind_method(D_METHOD("_on_budget_action", "action"), &SSImporter::_on_budget_action);
+    ClassDB::bind_method(D_METHOD("_abort_scan_and_idle"), &SSImporter::_abort_scan_and_idle);
 }
 
 SSImporter::SSImporter() {
@@ -49,54 +58,228 @@ SSImporter::SSImporter() {
 SSImporter::~SSImporter() {
 }
 
+int SSImporter::_concurrency() const {
+    int n = OS::get_singleton()->get_processor_count();
+    if (n > 8) {
+        n = 8;
+    }
+    if (n < 1) {
+        n = 1;
+    }
+    return n;
+}
+
 void SSImporter::_notification(int p_what) {
-    switch (p_what) {
-        case NOTIFICATION_PROCESS: {
-            if (!_is_importing) {
-                break;
+    if (p_what != NOTIFICATION_PROCESS) {
+        return;
+    }
+
+    if (_is_scanning) {
+        Context *ctx = (Context *)_scan_context;
+
+        if (!_scan_canceling && _import_dialog && _import_dialog->is_canceled()) {
+            _scan_canceling = true;
+            ss_converter_abort(ctx);
+        }
+
+        if (_import_dialog) {
+            int visited = (int)ss_converter_scan_visited(ctx);
+            int found = (int)ss_converter_scan_found(ctx) + _plan_src.size();
+            _import_dialog->step(vformat("Scanning... found %d / visited %d", found, visited), 0);
+        }
+
+        if (ss_converter_is_finished(ctx)) {
+            if (_scan_canceling) {
+                _abort_scan_and_idle();
+                return;
             }
-
-            bool wait_for_finish = false;
-
-            for (size_t i = 0; i < _import_contexts.size(); ++i) {
-                void *ctx = _import_contexts[i];
-                bool ret = ss_converter_is_finished((Context *)ctx);
-                if (!ret) {
-                    wait_for_finish = true;
-                } else {
-                    _import_finished_contexts.set(i, true);
+            if (ss_converter_scan_budget_exceeded(ctx)) {
+                set_process(false);
+                if (_import_dialog) {
+                    _import_dialog->set_visible(false);
                 }
+                _show_budget_dialog();
+                return;
             }
+            _scan_collect_current_results();
+            _scan_finish_or_advance();
+        }
+        return;
+    }
 
-            int finished_num = 0;
-            for (size_t i = 0; i < _import_finished_contexts.size(); ++i) {
-                if (_import_finished_contexts[i]) {
-                    finished_num++;
-                }
+    if (_is_converting) {
+        if (!_convert_canceling && _import_dialog && _import_dialog->is_canceled()) {
+            _convert_canceling = true;
+            for (int i = 0; i < _active_ctx.size(); i++) {
+                ss_converter_abort((Context *)_active_ctx[i]);
             }
+        }
 
-            if (finished_num != _import_prev_num) {
-                String running_file = "";
-                for (size_t i = 0; i < _import_finished_contexts.size(); ++i) {
-                    if (!_import_finished_contexts[i]) {
-                        running_file = _import_src_files[i].get_file();
-                        break;
-                    }
-                }
-                if (!running_file.is_empty()) {
-                    _import_dialog->step(vformat("%s %d/%d (%s)", _session_title, finished_num, _import_finished_contexts.size(), running_file), finished_num);
-                } else {
-                    _import_dialog->step(vformat("%s %d/%d", _session_title, finished_num, _import_finished_contexts.size()), finished_num);
-                }
-                _import_prev_num = finished_num;
-            }
+        _convert_poll();
+        if (!_convert_canceling) {
+            _convert_pump();
+        }
 
-            if (!wait_for_finish) {
-                _finalize_import();
+        if (_import_dialog && _convert_done != _convert_prev_done) {
+            String running = _active_src.is_empty() ? String() : _active_src[0].get_file();
+            if (_convert_canceling) {
+                _import_dialog->step(vformat("Canceling... %d/%d", _convert_done, _convert_total), _convert_done);
+            } else if (!running.is_empty()) {
+                _import_dialog->step(vformat("%s %d/%d (%s)", _session_title, _convert_done, _convert_total, running), _convert_done);
+            } else {
+                _import_dialog->step(vformat("%s %d/%d", _session_title, _convert_done, _convert_total), _convert_done);
             }
-        } break;
+            _convert_prev_done = _convert_done;
+        }
+
+        bool done = _active_ctx.is_empty() && (_convert_canceling || _pending_index >= _convert_total);
+        if (done) {
+            _finalize_convert();
+        }
+        return;
     }
 }
+
+// --------------------------------------------------------------------------
+// Scan phase
+// --------------------------------------------------------------------------
+
+void SSImporter::_scan_start_current() {
+    const String &dir = _scan_dirs[_scan_dir_index];
+    CharString dir_utf8 = dir.utf8();
+    ss_converter_scan_dir((Context *)_scan_context, dir_utf8.get_data(), SCAN_MAX_DEPTH, (uintptr_t)_scan_cur_max_entries, _scan_cur_max_millis);
+}
+
+void SSImporter::_scan_collect_current_results() {
+    Context *ctx = (Context *)_scan_context;
+    uintptr_t count = ss_converter_scan_result_count(ctx);
+    for (uintptr_t i = 0; i < count; i++) {
+        const char *p = ss_converter_scan_result_at(ctx, i);
+        if (!p) {
+            continue;
+        }
+        String sspj = String::utf8(p);
+        _plan_src.push_back(sspj);
+        _plan_dst.push_back(_output_dir.path_join(sspj.get_file().get_basename()));
+    }
+}
+
+void SSImporter::_scan_finish_or_advance() {
+    _scan_dir_index++;
+    if (_scan_dir_index < _scan_dirs.size()) {
+        _scan_cur_max_entries = SCAN_MAX_ENTRIES;
+        _scan_cur_max_millis = SCAN_MAX_MILLIS;
+        _scan_start_current();
+        return;
+    }
+    _end_scan_and_convert();
+}
+
+void SSImporter::_end_scan_and_convert() {
+    // Loose .sspj keep the legacy layout: <output>/<stem>/
+    for (int i = 0; i < _scan_loose_sspj.size(); i++) {
+        const String &src = _scan_loose_sspj[i];
+        _plan_src.push_back(src);
+        _plan_dst.push_back(_output_dir.path_join(src.get_file().get_basename()));
+    }
+
+    if (_scan_context) {
+        ss_converter_destroy((Context *)_scan_context);
+        _scan_context = nullptr;
+    }
+    _is_scanning = false;
+    if (_import_dialog) {
+        _import_dialog->finish();
+        _import_dialog = nullptr;
+    }
+
+    if (_plan_src.is_empty()) {
+        AcceptDialog *dialog = memnew(AcceptDialog);
+        dialog->set_title(tr("Import"));
+        dialog->set_text(tr("No .sspj files were found in the dropped folder(s)."));
+        EditorInterface::get_singleton()->get_base_control()->add_child(dialog);
+        dialog->connect("confirmed", Callable(dialog, "queue_free"));
+        dialog->connect("canceled", Callable(dialog, "queue_free"));
+        dialog->popup_centered();
+        _idle_reset();
+        return;
+    }
+
+    // Let the dock reflect the discovered .sspj in its Recent list.
+    PackedStringArray resolved;
+    for (int i = 0; i < _plan_src.size(); i++) {
+        resolved.push_back(_plan_src[i]);
+    }
+    emit_signal("import_files_resolved", resolved);
+
+    _begin_convert("Importing SSPJ:");
+}
+
+void SSImporter::_abort_scan_and_idle() {
+    _free_budget_dialog();
+    if (_scan_context) {
+        ss_converter_destroy((Context *)_scan_context);
+        _scan_context = nullptr;
+    }
+    if (_import_dialog) {
+        _import_dialog->finish();
+        _import_dialog = nullptr;
+    }
+    _idle_reset();
+}
+
+void SSImporter::_show_budget_dialog() {
+    Context *ctx = (Context *)_scan_context;
+    int found = _plan_src.size() + (int)ss_converter_scan_found(ctx);
+
+    ConfirmationDialog *dlg = memnew(ConfirmationDialog);
+    dlg->set_title(tr("Scan stopped"));
+    dlg->set_text(vformat(tr("The folder is very large, so scanning stopped early.\nFound %d .sspj file(s) so far.\n\nImport what was found, keep scanning, or stop?"), found));
+    dlg->get_ok_button()->set_text(tr("Import found"));
+    dlg->get_cancel_button()->set_text(tr("Stop"));
+    dlg->add_button(tr("Keep scanning"), true, "rescan");
+
+    EditorInterface::get_singleton()->get_base_control()->add_child(dlg);
+    dlg->connect("confirmed", Callable(this, "_on_budget_use_found"));
+    dlg->connect("custom_action", Callable(this, "_on_budget_action"));
+    dlg->connect("canceled", Callable(this, "_abort_scan_and_idle"));
+    dlg->popup_centered();
+
+    _budget_dialog = dlg;
+}
+
+void SSImporter::_free_budget_dialog() {
+    if (_budget_dialog) {
+        _budget_dialog->queue_free();
+        _budget_dialog = nullptr;
+    }
+}
+
+void SSImporter::_on_budget_use_found() {
+    _free_budget_dialog();
+    _scan_collect_current_results();
+    _end_scan_and_convert();
+}
+
+void SSImporter::_on_budget_action(const StringName &p_action) {
+    _free_budget_dialog();
+    if (p_action != StringName("rescan")) {
+        return;
+    }
+    // Keep scanning the same directory from scratch without budget limits; the
+    // Cancel button on the progress dialog remains the safety valve.
+    _scan_cur_max_entries = (uint64_t)1 << 60;
+    _scan_cur_max_millis = 0;
+    if (_import_dialog) {
+        _import_dialog->show_progress("Scanning SSPJ:", 0);
+    }
+    set_process(true);
+    _scan_start_current();
+}
+
+// --------------------------------------------------------------------------
+// Convert phase (bounded-concurrency scheduler)
+// --------------------------------------------------------------------------
 
 void *SSImporter::_process_file(const String &source_sspj_path, const String &dst_dir_path) {
     auto ctx = ss_converter_create();
@@ -111,37 +294,108 @@ void *SSImporter::_process_file(const String &source_sspj_path, const String &ds
     return ctx;
 }
 
-void SSImporter::_finalize_import() {
-    _import_dialog->finish();
+void SSImporter::_begin_convert(const String &p_dialog_title) {
+    _session_title = p_dialog_title;
+    _convert_total = _plan_src.size();
+    _convert_done = 0;
+    _convert_prev_done = -1;
+    _pending_index = 0;
+    _convert_canceling = false;
+    _active_ctx.clear();
+    _active_src.clear();
+    _active_dst.clear();
+    _failed_files.clear();
+    _failed_reasons.clear();
+    _import_generated_files.clear();
+    _convert_source_map = _load_source_map();
 
-    Dictionary source_map = _load_source_map();
-    bool any_success = false;
+    // Make sure every destination directory exists. A missing dir means new
+    // folders appear in res:// and the editor filesystem needs a full rescan.
+    Ref<DirAccess> da = DirAccess::open("res://");
+    if (da.is_valid()) {
+        for (int i = 0; i < _plan_dst.size(); i++) {
+            if (!da->dir_exists(_plan_dst[i])) {
+                _needs_full_scan = true;
+                da->make_dir_recursive(_plan_dst[i]);
+            }
+        }
+    }
 
-    Vector<String> failed_files;
-    Vector<String> failed_reasons;
+    _is_converting = true;
 
-    for (size_t i = 0; i < _import_contexts.size(); ++i) {
-        void *ctx = _import_contexts[i];
-        CConverterError result = ss_converter_get_result((Context *)ctx);
+    _import_dialog = memnew(SSProgressDialog);
+    EditorInterface::get_singleton()->get_base_control()->add_child(_import_dialog);
+    _import_dialog->show_progress(p_dialog_title, _convert_total);
+    _import_dialog->step(vformat("%s 0/%d", p_dialog_title, _convert_total), 0);
+
+    set_process(true);
+    _convert_pump();
+}
+
+void SSImporter::_convert_pump() {
+    if (_convert_canceling) {
+        return;
+    }
+    int cap = _concurrency();
+    while (_active_ctx.size() < cap && _pending_index < _convert_total) {
+        String src = _plan_src[_pending_index];
+        String dst = _plan_dst[_pending_index];
+        _pending_index++;
+
+        String global_src = ProjectSettings::get_singleton()->globalize_path(src);
+        String global_dst = ProjectSettings::get_singleton()->globalize_path(dst);
+        void *ctx = _process_file(global_src, global_dst);
+        print_line("SSImporter: convert sspj file: " + src + ", to ssab files: " + dst);
+
+        _active_ctx.push_back(ctx);
+        _active_src.push_back(global_src);
+        _active_dst.push_back(dst);
+    }
+}
+
+void SSImporter::_convert_poll() {
+    for (int i = _active_ctx.size() - 1; i >= 0; i--) {
+        Context *ctx = (Context *)_active_ctx[i];
+        if (!ss_converter_is_finished(ctx)) {
+            continue;
+        }
+
+        CConverterError result = ss_converter_get_result(ctx);
         if (result == CConverterError::Success) {
-            _record_ssabs_in_dir(source_map, _import_dst_dirs[i], _import_src_files[i]);
-            any_success = true;
+            _record_ssabs_in_dir(_convert_source_map, _active_dst[i], _active_src[i]);
+        } else if (result == CConverterError::ErrorAborted) {
+            // Canceled mid-file; not a failure, nothing to record.
         } else {
             const char *err_msg = nullptr;
             uintptr_t err_len = 0;
-            ss_converter_get_error((Context *)ctx, &err_msg, &err_len);
+            ss_converter_get_error(ctx, &err_msg, &err_len);
             String err_str = err_msg ? String::utf8(err_msg) : String("Unknown error");
-            ERR_PRINT(vformat("SSImporter: convert failed for %s (error %d): %s", _import_src_files[i], (int)result, err_str));
-            failed_files.push_back(_import_src_files[i].get_file());
-            failed_reasons.push_back(err_str);
+            ERR_PRINT(vformat("SSImporter: convert failed for %s (error %d): %s", _active_src[i], (int)result, err_str));
+            _failed_files.push_back(_active_src[i].get_file());
+            _failed_reasons.push_back(err_str);
         }
-        ss_converter_destroy((Context *)ctx);
+
+        ss_converter_destroy(ctx);
+        _active_ctx.remove_at(i);
+        _active_src.remove_at(i);
+        _active_dst.remove_at(i);
+        _convert_done++;
+    }
+}
+
+void SSImporter::_finalize_convert() {
+    if (_import_dialog) {
+        _import_dialog->finish();
+        _import_dialog = nullptr;
     }
 
-    if (!failed_files.is_empty()) {
+    bool any_success = !_import_generated_files.is_empty();
+    String target_dir = (any_success && !_output_dir.is_empty()) ? _output_dir : String();
+
+    if (!_failed_files.is_empty()) {
         String msg = tr("Some files failed to import.\n\n");
-        for (int i = 0; i < failed_files.size(); ++i) {
-            msg += vformat("- %s: %s\n", failed_files[i], failed_reasons[i]);
+        for (int i = 0; i < _failed_files.size(); ++i) {
+            msg += vformat("- %s: %s\n", _failed_files[i], _failed_reasons[i]);
         }
         msg += tr("\nPlease check the Output tab for details.");
 
@@ -155,13 +409,9 @@ void SSImporter::_finalize_import() {
     }
 
     if (any_success) {
-        _evict_lru(source_map);
-        _save_source_map(source_map);
+        _evict_lru(_convert_source_map);
+        _save_source_map(_convert_source_map);
     }
-
-    _import_contexts.clear();
-    _import_finished_contexts.clear();
-    _import_src_files.clear();
 
 #if defined(SPRITESTUDIO_GODOT_EXTENSION) || (VERSION_MAJOR >= 4 && VERSION_MINOR >= 6)
     auto *efs = EditorInterface::get_singleton()->get_resource_filesystem();
@@ -181,19 +431,43 @@ void SSImporter::_finalize_import() {
 #endif
     }
 
-    if (any_success && !_import_dst_dirs.is_empty()) {
-        String target_dir = _import_dst_dirs[_import_dst_dirs.size() - 1].get_base_dir();
+    if (!target_dir.is_empty()) {
         if (!efs->is_connected("filesystem_changed", Callable(this, "_on_filesystem_changed"))) {
             efs->connect("filesystem_changed", Callable(this, "_on_filesystem_changed").bind(target_dir), Object::CONNECT_ONE_SHOT);
         }
     }
 
-    _import_dst_dirs.clear();
+    _idle_reset();
+}
+
+void SSImporter::_idle_reset() {
+    set_process(false);
+
+    _is_scanning = false;
+    _scan_canceling = false;
+    _is_converting = false;
+    _convert_canceling = false;
+
+    _scan_dirs.clear();
+    _scan_loose_sspj.clear();
+    _scan_dir_index = 0;
+    _scan_cur_max_entries = SCAN_MAX_ENTRIES;
+    _scan_cur_max_millis = SCAN_MAX_MILLIS;
+
+    _plan_src.clear();
+    _plan_dst.clear();
+    _active_ctx.clear();
+    _active_src.clear();
+    _active_dst.clear();
+    _pending_index = 0;
+    _convert_total = 0;
+    _convert_done = 0;
+    _convert_prev_done = -1;
+    _failed_files.clear();
+    _failed_reasons.clear();
     _import_generated_files.clear();
     _needs_full_scan = false;
     _import_dialog = nullptr;
-    _is_importing = false;
-    set_process(false);
 
     emit_signal("import_finished");
 }
@@ -204,6 +478,112 @@ void SSImporter::_on_filesystem_changed(const String &p_dir) {
         fs_dock->call_deferred("navigate_to_path", p_dir);
     }
 }
+
+// --------------------------------------------------------------------------
+// Public entry points
+// --------------------------------------------------------------------------
+
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+void SSImporter::queue_import(const PackedStringArray &p_sspj_files, const String &p_output_dir) {
+#else
+void SSImporter::queue_import(const Vector<String> &p_sspj_files, const String &p_output_dir) {
+#endif
+    if (is_importing()) {
+        WARN_PRINT("SSImporter: Already importing. Please wait.");
+        return;
+    }
+    if (p_sspj_files.is_empty()) {
+        return;
+    }
+
+    _output_dir = p_output_dir;
+    _plan_src.clear();
+    _plan_dst.clear();
+    for (int i = 0; i < p_sspj_files.size(); i++) {
+        String src = p_sspj_files[i];
+        _plan_src.push_back(src);
+        _plan_dst.push_back(p_output_dir.path_join(src.get_file().get_basename()));
+    }
+
+    emit_signal("import_started");
+    _begin_convert("Importing SSPJ:");
+}
+
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+void SSImporter::queue_scan_and_import(const PackedStringArray &p_dirs, const PackedStringArray &p_loose_sspj, const String &p_output_dir) {
+#else
+void SSImporter::queue_scan_and_import(const Vector<String> &p_dirs, const Vector<String> &p_loose_sspj, const String &p_output_dir) {
+#endif
+    if (is_importing()) {
+        WARN_PRINT("SSImporter: Already importing. Please wait.");
+        return;
+    }
+    if (p_dirs.is_empty() && p_loose_sspj.is_empty()) {
+        return;
+    }
+
+    _output_dir = p_output_dir;
+    _plan_src.clear();
+    _plan_dst.clear();
+
+    _scan_loose_sspj.clear();
+    for (int i = 0; i < p_loose_sspj.size(); i++) {
+        _scan_loose_sspj.push_back(p_loose_sspj[i]);
+    }
+
+    _scan_dirs.clear();
+    for (int i = 0; i < p_dirs.size(); i++) {
+        _scan_dirs.push_back(p_dirs[i]);
+    }
+    _scan_dir_index = 0;
+    _scan_cur_max_entries = SCAN_MAX_ENTRIES;
+    _scan_cur_max_millis = SCAN_MAX_MILLIS;
+
+    emit_signal("import_started");
+
+    if (_scan_dirs.is_empty()) {
+        // Nothing to scan: just convert the loose files.
+        _end_scan_and_convert();
+        return;
+    }
+
+    _scan_context = ss_converter_create();
+    _is_scanning = true;
+    _scan_canceling = false;
+
+    _import_dialog = memnew(SSProgressDialog);
+    EditorInterface::get_singleton()->get_base_control()->add_child(_import_dialog);
+    _import_dialog->show_progress("Scanning SSPJ:", 0);
+    _import_dialog->step("Scanning...", 0);
+
+    set_process(true);
+    _scan_start_current();
+}
+
+void SSImporter::queue_reconvert(const PackedStringArray &p_sspj_files, const PackedStringArray &p_dst_dirs) {
+    if (is_importing()) {
+        WARN_PRINT("SSImporter: Already importing. Please wait.");
+        return;
+    }
+    if (p_sspj_files.is_empty() || p_sspj_files.size() != p_dst_dirs.size()) {
+        return;
+    }
+
+    _output_dir = String();
+    _plan_src.clear();
+    _plan_dst.clear();
+    for (int i = 0; i < p_sspj_files.size(); i++) {
+        _plan_src.push_back(p_sspj_files[i]);
+        _plan_dst.push_back(p_dst_dirs[i]);
+    }
+
+    emit_signal("import_started");
+    _begin_convert("Reconverting SSPJ:");
+}
+
+// --------------------------------------------------------------------------
+// Source map + helpers (unchanged)
+// --------------------------------------------------------------------------
 
 String SSImporter::_make_relative_path(const String &p_abs_path) const {
     String base_dir = ProjectSettings::get_singleton()->globalize_path("res://");
@@ -265,7 +645,7 @@ Dictionary SSImporter::_load_source_map() const {
     if (!cfg->has_section("ssab_sources")) {
         return Dictionary();
     }
-    
+
     Dictionary map;
     PackedStringArray keys = cfg->get_section_keys("ssab_sources");
     for (int i = 0; i < keys.size(); i++) {
@@ -279,14 +659,14 @@ Dictionary SSImporter::_load_source_map() const {
 void SSImporter::_save_source_map(const Dictionary &p_map) {
     Ref<ConfigFile> cfg;
     cfg.instantiate();
-    
+
     Array keys = p_map.keys();
     for (int i = 0; i < keys.size(); i++) {
         String ssab_path = keys[i];
         String sspj_rel_path = p_map[ssab_path];
         cfg->set_value("ssab_sources", ssab_path, sspj_rel_path);
     }
-    
+
     cfg->save(SSPLAYER_SOURCES_CFG_PATH);
 }
 
@@ -369,93 +749,6 @@ String SSImporter::lookup_output_dir_for_sspj(const String &p_sspj_path) const {
         }
     }
     return String();
-}
-
-void SSImporter::_enqueue_one(const String &p_sspj_path, const String &p_dst_dir) {
-    {
-        Ref<DirAccess> da = DirAccess::open("res://");
-        if (da.is_valid() && !da->dir_exists(p_dst_dir)) {
-            _needs_full_scan = true;
-        }
-    }
-    String global_dst_dir = ProjectSettings::get_singleton()->globalize_path(p_dst_dir);
-    String global_src_file_path = ProjectSettings::get_singleton()->globalize_path(p_sspj_path);
-    void *ctx = _process_file(global_src_file_path, global_dst_dir);
-    print_line("SSImporter: convert sspj file: " + p_sspj_path + ", to ssab files: " + p_dst_dir);
-    _import_contexts.push_back(ctx);
-    _import_dst_dirs.push_back(p_dst_dir);
-    _import_src_files.push_back(global_src_file_path);
-}
-
-void SSImporter::_start_session(const String &p_dialog_title) {
-    _session_title = p_dialog_title;
-    _import_dialog = memnew(SSProgressDialog);
-    EditorInterface::get_singleton()->get_base_control()->add_child(_import_dialog);
-    _import_dialog->show_progress(p_dialog_title, _import_contexts.size());
-
-    _import_finished_contexts.resize(_import_contexts.size());
-    _import_prev_num = 0;
-    _is_importing = true;
-    String first_file = _import_src_files.is_empty() ? "" : _import_src_files[0].get_file();
-    if (!first_file.is_empty()) {
-        _import_dialog->step(vformat("%s %d/%d (%s)", _session_title, 0, _import_finished_contexts.size(), first_file), 0);
-    } else {
-        _import_dialog->step(vformat("%s %d/%d", _session_title, 0, _import_finished_contexts.size()), 0);
-    }
-
-    set_process(true);
-
-    emit_signal("import_started");
-}
-
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
-void SSImporter::queue_import(const PackedStringArray &p_sspj_files, const String &p_output_dir) {
-#else
-void SSImporter::queue_import(const Vector<String> &p_sspj_files, const String &p_output_dir) {
-#endif
-    if (_is_importing) {
-        WARN_PRINT("SSImporter: Already importing. Please wait.");
-        return;
-    }
-    if (p_sspj_files.is_empty()) {
-        return;
-    }
-
-    Ref<DirAccess> da = DirAccess::open("res://");
-    if (!da->dir_exists(p_output_dir)) {
-        da->make_dir_recursive(p_output_dir);
-    }
-
-    for (int i = 0; i < p_sspj_files.size(); i++) {
-        String src_file_path = p_sspj_files[i];
-        String src_stem = src_file_path.get_file().get_basename();
-        String dst_dir = p_output_dir.path_join(src_stem);
-        _enqueue_one(src_file_path, dst_dir);
-    }
-
-    _start_session("Importing SSPJ:");
-}
-
-void SSImporter::queue_reconvert(const PackedStringArray &p_sspj_files, const PackedStringArray &p_dst_dirs) {
-    if (_is_importing) {
-        WARN_PRINT("SSImporter: Already importing. Please wait.");
-        return;
-    }
-    if (p_sspj_files.is_empty() || p_sspj_files.size() != p_dst_dirs.size()) {
-        return;
-    }
-
-    Ref<DirAccess> da = DirAccess::open("res://");
-    for (int i = 0; i < p_dst_dirs.size(); i++) {
-        if (!da->dir_exists(p_dst_dirs[i])) {
-            da->make_dir_recursive(p_dst_dirs[i]);
-        }
-    }
-
-    for (int i = 0; i < p_sspj_files.size(); i++) {
-        _enqueue_one(p_sspj_files[i], p_dst_dirs[i]);
-    }
-    _start_session("Reconverting SSPJ:");
 }
 
 void SSImporter::record_ssab_source(const String &p_ssab_path, const String &p_sspj_path) {
