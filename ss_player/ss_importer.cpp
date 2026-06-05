@@ -50,6 +50,8 @@ void SSImporter::_bind_methods() {
     ClassDB::bind_method(D_METHOD("_on_budget_use_found"), &SSImporter::_on_budget_use_found);
     ClassDB::bind_method(D_METHOD("_on_budget_action", "action"), &SSImporter::_on_budget_action);
     ClassDB::bind_method(D_METHOD("_abort_scan_and_idle"), &SSImporter::_abort_scan_and_idle);
+    ClassDB::bind_method(D_METHOD("_on_collision_overwrite"), &SSImporter::_on_collision_overwrite);
+    ClassDB::bind_method(D_METHOD("_on_collision_cancel"), &SSImporter::_on_collision_cancel);
 }
 
 SSImporter::SSImporter() {
@@ -212,7 +214,7 @@ void SSImporter::_end_scan_and_convert() {
     }
     emit_signal("import_files_resolved", resolved);
 
-    _begin_convert("Importing SSPJ:");
+    _begin_convert_checked("Importing SSPJ:");
 }
 
 void SSImporter::_abort_scan_and_idle() {
@@ -292,6 +294,76 @@ void *SSImporter::_process_file(const String &source_sspj_path, const String &ds
     });
 
     return ctx;
+}
+
+void SSImporter::_begin_convert_checked(const String &p_dialog_title) {
+    Dictionary map = _load_source_map();
+    Vector<int> collisions = _find_collisions(map);
+    if (collisions.is_empty()) {
+        _begin_convert(p_dialog_title);
+        return;
+    }
+    _pending_convert_title = p_dialog_title;
+    _awaiting_collision = true;
+    _show_collision_dialog(collisions);
+}
+
+Vector<int> SSImporter::_find_collisions(const Dictionary &p_map) const {
+    Vector<int> out;
+    Array keys = p_map.keys();
+    for (int i = 0; i < _plan_dst.size(); i++) {
+        const String &dst = _plan_dst[i];
+        String src_abs = ProjectSettings::get_singleton()->globalize_path(_plan_src[i]).simplify_path();
+        for (int k = 0; k < keys.size(); k++) {
+            String ssab = keys[k];
+            if (ssab.get_base_dir() != dst) {
+                continue;
+            }
+            String owner_abs = _make_absolute_path(p_map[ssab]).simplify_path();
+            if (owner_abs != src_abs) {
+                out.push_back(i);
+                break;
+            }
+        }
+    }
+    return out;
+}
+
+void SSImporter::_show_collision_dialog(const Vector<int> &p_collisions) {
+    String msg = tr("Some outputs already belong to a different SpriteStudio project and would be overwritten:\n\n");
+    for (int j = 0; j < p_collisions.size(); j++) {
+        msg += vformat("- %s\n", _plan_dst[p_collisions[j]]);
+    }
+    msg += tr("\nOverwrite them anyway?");
+
+    ConfirmationDialog *dlg = memnew(ConfirmationDialog);
+    dlg->set_title(tr("Output name collision"));
+    dlg->set_text(msg);
+    dlg->get_ok_button()->set_text(tr("Overwrite"));
+    dlg->get_cancel_button()->set_text(tr("Cancel"));
+    EditorInterface::get_singleton()->get_base_control()->add_child(dlg);
+    dlg->connect("confirmed", Callable(this, "_on_collision_overwrite"));
+    dlg->connect("canceled", Callable(this, "_on_collision_cancel"));
+    dlg->popup_centered();
+
+    _collision_dialog = dlg;
+}
+
+void SSImporter::_on_collision_overwrite() {
+    if (_collision_dialog) {
+        _collision_dialog->queue_free();
+        _collision_dialog = nullptr;
+    }
+    _awaiting_collision = false;
+    _begin_convert(_pending_convert_title);
+}
+
+void SSImporter::_on_collision_cancel() {
+    if (_collision_dialog) {
+        _collision_dialog->queue_free();
+        _collision_dialog = nullptr;
+    }
+    _idle_reset();
 }
 
 void SSImporter::_begin_convert(const String &p_dialog_title) {
@@ -443,6 +515,13 @@ void SSImporter::_finalize_convert() {
 void SSImporter::_idle_reset() {
     set_process(false);
 
+    if (_collision_dialog) {
+        _collision_dialog->queue_free();
+        _collision_dialog = nullptr;
+    }
+    _awaiting_collision = false;
+    _pending_convert_title = String();
+
     _is_scanning = false;
     _scan_canceling = false;
     _is_converting = false;
@@ -506,7 +585,7 @@ void SSImporter::queue_import(const Vector<String> &p_sspj_files, const String &
     }
 
     emit_signal("import_started");
-    _begin_convert("Importing SSPJ:");
+    _begin_convert_checked("Importing SSPJ:");
 }
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION

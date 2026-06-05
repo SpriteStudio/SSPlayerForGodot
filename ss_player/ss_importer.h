@@ -34,8 +34,9 @@ public:
 
   void _notification(int p_what);
 
-  // True while a directory scan OR a conversion batch is in progress.
-  bool is_importing() const { return _is_scanning || _is_converting; }
+  // True while a directory scan OR a conversion batch is in progress (including
+  // while a pre-convert collision prompt is open).
+  bool is_importing() const { return _is_scanning || _is_converting || _awaiting_collision; }
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
   void queue_import(const PackedStringArray &p_sspj_files, const String &p_output_dir);
@@ -80,6 +81,9 @@ private:
   // ---- shared across scan + convert ----
   SSProgressDialog *_import_dialog = nullptr;
   Node *_budget_dialog = nullptr;
+  Node *_collision_dialog = nullptr;
+  bool _awaiting_collision = false;
+  String _pending_convert_title;
   String _session_title;
   String _output_dir;          // res:// output root
   Vector<String> _plan_src;    // absolute .sspj paths to convert
@@ -124,6 +128,11 @@ private:
   int _concurrency() const;
 
   // convert helpers
+  void _begin_convert_checked(const String &p_dialog_title);
+  Vector<int> _find_collisions(const Dictionary &p_map) const;
+  void _show_collision_dialog(const Vector<int> &p_collisions);
+  void _on_collision_overwrite();
+  void _on_collision_cancel();
   void _begin_convert(const String &p_dialog_title);
   void _convert_pump();
   void _convert_poll();
