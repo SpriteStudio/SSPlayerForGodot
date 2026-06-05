@@ -28,7 +28,6 @@ void SsUpdateManager::update_all(float delta_seconds, bool physics) {
     std::vector<SpriteStudioPlayer2D*> active_players;
     
     {
-        std::lock_guard<std::mutex> lock(_mutex);
         for (auto player : _players) {
             if (!player->can_process()) continue;
             if (player->get_animation_process_mode() != (physics ? SpriteStudioPlayer2D::ANIMATION_PROCESS_PHYSICS : SpriteStudioPlayer2D::ANIMATION_PROCESS_IDLE)) continue;
@@ -58,9 +57,9 @@ void SsUpdateManager::update_all(float delta_seconds, bool physics) {
     if (n == 0) return;
     
     // Pass B: Parallel get_frame_data
-    if (n >= 8) {
+    if (n >= 32) {
         WorkerThreadPool* pool = WorkerThreadPool::get_singleton();
-        int64_t group_id = pool->add_native_group_task(&_get_frame_data_task, pending_players.data(), n, -1, false, "SsGetFrameData");
+        int64_t group_id = pool->add_native_group_task(&_get_frame_data_task, pending_players.data(), n, -1, true, "SsGetFrameData");
         pool->wait_for_group_task_completion(group_id);
     } else {
         // Sequential fallback
