@@ -28,6 +28,7 @@ void SsUpdateManager::update_all(float delta_seconds, bool physics) {
     std::vector<SpriteStudioPlayer2D*> active_players;
     
     {
+        std::lock_guard<std::mutex> lock(_mutex);
         for (auto player : _players) {
             if (!player->can_process()) continue;
             if (player->get_animation_process_mode() != (physics ? SpriteStudioPlayer2D::ANIMATION_PROCESS_PHYSICS : SpriteStudioPlayer2D::ANIMATION_PROCESS_IDLE)) continue;
