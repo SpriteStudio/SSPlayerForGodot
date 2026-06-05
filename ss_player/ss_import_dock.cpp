@@ -217,6 +217,10 @@ void SSImportControl::start_intercepting() {
     window->get_signal_connection_list("files_dropped", &connections);
 #endif
 
+    // Godot delivers OS file drops to every files_dropped handler and gives us
+    // no way to "consume" the event, so to claim SSPJ drops we temporarily take
+    // over ALL existing handlers and re-dispatch non-SSPJ drops back to them.
+    original_drop_handlers.clear();
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
     for (int i = 0; i < connections.size(); i++) {
         Dictionary conn = connections[i];
@@ -225,17 +229,11 @@ void SSImportControl::start_intercepting() {
     for (const Connection &conn : connections) {
         Callable target = conn.callable;
 #endif
-
-        // Note: Disconnecting other plugins' drag-and-drop handlers is a brittle hack to work around Godot's
-        // single-handler limitation for OS drag-and-drop. This might conflict if other plugins do the same.
         if (target.get_object() == this) continue;
 
-        original_drop_handler = target;
-        window->disconnect("files_dropped", original_drop_handler);
-
-        break;
+        original_drop_handlers.push_back(target);
+        window->disconnect("files_dropped", target);
     }
-
 
     if (!window->is_connected("files_dropped", Callable(this, "_on_window_files_dropped"))) {
         window->connect("files_dropped", Callable(this, "_on_window_files_dropped"));
@@ -254,11 +252,13 @@ void SSImportControl::stop_intercepting() {
         window->disconnect("files_dropped", Callable(this, "_on_window_files_dropped"));
     }
 
-    if (original_drop_handler.is_valid()) {
-        if (!window->is_connected("files_dropped", original_drop_handler)) {
-            window->connect("files_dropped", original_drop_handler);
+    for (int i = 0; i < original_drop_handlers.size(); i++) {
+        const Callable &handler = original_drop_handlers[i];
+        if (handler.is_valid() && !window->is_connected("files_dropped", handler)) {
+            window->connect("files_dropped", handler);
         }
     }
+    original_drop_handlers.clear();
 
     is_intercepting = false;
 }
@@ -348,18 +348,24 @@ void SSImportControl::_perform_default_drop_logic(const PackedStringArray &p_fil
 void SSImportControl::_perform_default_drop_logic(const Vector<String> &p_files) {
 #endif
     Window *window = get_window();
-    if (!window || !original_drop_handler.is_valid()) return;
+    if (!window || original_drop_handlers.is_empty()) return;
 
     is_reemitting = true;
 
-    if (!window->is_connected("files_dropped", original_drop_handler)) {
-        window->connect("files_dropped", original_drop_handler);
+    for (int i = 0; i < original_drop_handlers.size(); i++) {
+        const Callable &handler = original_drop_handlers[i];
+        if (handler.is_valid() && !window->is_connected("files_dropped", handler)) {
+            window->connect("files_dropped", handler);
+        }
     }
 
     window->emit_signal("files_dropped", p_files);
 
-    if (window->is_connected("files_dropped", original_drop_handler)) {
-        window->disconnect("files_dropped", original_drop_handler);
+    for (int i = 0; i < original_drop_handlers.size(); i++) {
+        const Callable &handler = original_drop_handlers[i];
+        if (handler.is_valid() && window->is_connected("files_dropped", handler)) {
+            window->disconnect("files_dropped", handler);
+        }
     }
 
     is_reemitting = false;

@@ -18,6 +18,8 @@
 #include <godot_cpp/classes/scroll_container.hpp>
 #include <godot_cpp/classes/style_box_flat.hpp>
 #include <godot_cpp/classes/v_box_container.hpp>
+#include <godot_cpp/templates/vector.hpp>
+#include <godot_cpp/variant/callable.hpp>
 using namespace godot;
 #else
 #include "core/config/project_settings.h"
@@ -32,6 +34,8 @@ using namespace godot;
 #include "scene/gui/popup_menu.h"
 #include "scene/gui/scroll_container.h"
 #include "scene/resources/style_box_flat.h"
+#include "core/templates/vector.h"
+#include "core/variant/callable.h"
 #endif
 
 class SSImporter;
@@ -63,7 +67,9 @@ private:
 
   SSImporter *importer = nullptr;
 
-  Callable original_drop_handler;
+  // All files_dropped handlers we temporarily took over (e.g. other plugins'),
+  // preserved so non-SSPJ drops can be re-dispatched to every one of them.
+  Vector<Callable> original_drop_handlers;
   bool is_intercepting = false;
   bool is_reemitting = false;
 
