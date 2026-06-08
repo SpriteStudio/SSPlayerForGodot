@@ -18,7 +18,6 @@
 #include <godot_cpp/classes/scroll_container.hpp>
 #include <godot_cpp/classes/style_box_flat.hpp>
 #include <godot_cpp/classes/v_box_container.hpp>
-#include <godot_cpp/classes/v_separator.hpp>
 #include <godot_cpp/templates/vector.hpp>
 #include <godot_cpp/variant/callable.hpp>
 using namespace godot;
@@ -34,7 +33,6 @@ using namespace godot;
 #include "scene/gui/panel.h"
 #include "scene/gui/popup_menu.h"
 #include "scene/gui/scroll_container.h"
-#include "scene/gui/separator.h"
 #include "scene/resources/style_box_flat.h"
 #include "core/templates/vector.h"
 #include "core/variant/callable.h"
