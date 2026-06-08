@@ -13,6 +13,7 @@
 #include <godot_cpp/classes/os.hpp>
 #include <godot_cpp/classes/config_file.hpp>
 #include <godot_cpp/classes/control.hpp>
+#include <godot_cpp/classes/text_server.hpp>
 #include <godot_cpp/classes/window.hpp>
 #include <godot_cpp/variant/utility_functions.hpp>
 using namespace godot;
@@ -25,6 +26,9 @@ using namespace godot;
 #include "editor/settings/editor_settings.h"
 #include "scene/gui/dialogs.h"
 #include "scene/main/window.h"
+#if VERSION_MAJOR >= 4
+#include "servers/text/text_server.h"
+#endif
 #if VERSION_MAJOR >= 4
     #if VERSION_MINOR >= 5
     #include "editor/file_system/editor_file_system.h"
@@ -166,29 +170,55 @@ SSImportControl::SSImportControl() {
 
     // 6. Footer: plugin + converter version (moved to bottom)
     {
-        HBoxContainer *hbox = memnew(HBoxContainer);
-        add_child(hbox);
+        VBoxContainer *vbox = memnew(VBoxContainer);
+        add_child(vbox);
+
+        HBoxContainer *hbox_plugin = memnew(HBoxContainer);
+        vbox->add_child(hbox_plugin);
 
         Label *plugin_label = memnew(Label);
         plugin_label->set_text(tr("plugin:"));
-        hbox->add_child(plugin_label);
+        hbox_plugin->add_child(plugin_label);
 
         SSClickableLabel *plugin_version = memnew(SSClickableLabel);
         plugin_version->set_text(String(SSPLAYER_VERSION_FULL));
-        hbox->add_child(plugin_version);
+        plugin_version->set_tooltip_text(String(SSPLAYER_VERSION_FULL));
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+        plugin_version->set_text_overrun_behavior(TextServer::OVERRUN_TRIM_ELLIPSIS);
+#else
+#if VERSION_MAJOR >= 4
+        plugin_version->set_text_overrun_behavior(TextServer::OVERRUN_TRIM_ELLIPSIS);
+#else
+        plugin_version->set_clip_text(true);
+#endif
+#endif
+        plugin_version->set_h_size_flags(Control::SIZE_EXPAND_FILL);
+        hbox_plugin->add_child(plugin_version);
 
-        hbox->add_child(memnew(VSeparator));
+        HBoxContainer *hbox_converter = memnew(HBoxContainer);
+        vbox->add_child(hbox_converter);
 
         Label *label = memnew(Label);
         label->set_text(tr("converter:"));
-        hbox->add_child(label);
+        hbox_converter->add_child(label);
 
         SSClickableLabel *clickable_label = memnew(SSClickableLabel);
         const char *v = ss_converter_version();
         clickable_label->set_text(String(v));
+        clickable_label->set_tooltip_text(String(v));
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+        clickable_label->set_text_overrun_behavior(TextServer::OVERRUN_TRIM_ELLIPSIS);
+#else
+#if VERSION_MAJOR >= 4
+        clickable_label->set_text_overrun_behavior(TextServer::OVERRUN_TRIM_ELLIPSIS);
+#else
+        clickable_label->set_clip_text(true);
+#endif
+#endif
+        clickable_label->set_h_size_flags(Control::SIZE_EXPAND_FILL);
         ss_converter_version_free((char *)v);
         v = nullptr;
-        hbox->add_child(clickable_label);
+        hbox_converter->add_child(clickable_label);
     }
 
     _load_settings();
