@@ -85,6 +85,10 @@ sources_list = Glob("ss_player/*.cpp")
 # FlatBuffers sources
 sources_list.extend(sources.get_fb_sources("ss_player"))
 
+# Version header: stamp VERSION.txt + git hash into ss_player/gen/ss_version.gen.h
+# (gitignored). Shared with the custom module build via ss_player/sources.py.
+sources.generate_version_header()
+
 # --- Compilation Flags & Includes ---
 env.Append(CPPDEFINES = "SPRITESTUDIO_GODOT_EXTENSION")
 env.Append(CPPPATH=sources.get_include_paths("ss_player"))
