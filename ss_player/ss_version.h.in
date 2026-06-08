@@ -1,0 +1,17 @@
+// Template for ss_player/gen/ss_version.gen.h
+//
+// The @PLACEHOLDER@ tokens below are substituted at build time by
+// generate_version_header() in ss_player/sources.py, which runs from both the
+// GDExtension build (SConstruct) and the custom module build (SCsub).
+//
+//   @SSPLAYER_VERSION@       <- ss_player/VERSION.txt (single source of truth)
+//   @SSPLAYER_GIT_HASH@      <- short git commit hash, or "unknown" without git
+//   @SSPLAYER_VERSION_FULL@  <- "<version>+<hash>", or just "<version>" without git
+//
+// Do not edit the generated header (ss_player/gen/ss_version.gen.h); it is a
+// gitignored build artifact. Edit this template or VERSION.txt instead.
+#pragma once
+
+#define SSPLAYER_VERSION      "@SSPLAYER_VERSION@"
+#define SSPLAYER_GIT_HASH     "@SSPLAYER_GIT_HASH@"
+#define SSPLAYER_VERSION_FULL "@SSPLAYER_VERSION_FULL@"

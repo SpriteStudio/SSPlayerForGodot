@@ -39,6 +39,10 @@ using namespace godot;
 #include "ss_importer.h"
 #include "ssconverter.h"
 
+// Plugin version, stamped at build time from VERSION.txt + git hash.
+// Generated into ss_player/gen/ by generate_version_header() (ss_player/sources.py).
+#include "gen/ss_version.gen.h"
+
 void SSImportControl::_bind_methods() {
     ClassDB::bind_method(D_METHOD("_on_window_files_dropped", "files"), &SSImportControl::_on_window_files_dropped);
     ClassDB::bind_method(D_METHOD("_on_line_edit_submitted", "text"), &SSImportControl::_on_line_edit_submitted);
@@ -160,10 +164,20 @@ SSImportControl::SSImportControl() {
     recent_popup->connect("id_pressed", Callable(this, "_on_recent_menu_id_pressed"));
     add_child(recent_popup);
 
-    // 6. Footer: converter version (moved to bottom)
+    // 6. Footer: plugin + converter version (moved to bottom)
     {
         HBoxContainer *hbox = memnew(HBoxContainer);
         add_child(hbox);
+
+        Label *plugin_label = memnew(Label);
+        plugin_label->set_text(tr("plugin:"));
+        hbox->add_child(plugin_label);
+
+        SSClickableLabel *plugin_version = memnew(SSClickableLabel);
+        plugin_version->set_text(String(SSPLAYER_VERSION_FULL));
+        hbox->add_child(plugin_version);
+
+        hbox->add_child(memnew(VSeparator));
 
         Label *label = memnew(Label);
         label->set_text(tr("converter:"));

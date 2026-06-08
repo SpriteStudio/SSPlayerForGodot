@@ -12,6 +12,10 @@ Import("env_modules")
 
 env_ss = env_modules.Clone()
 
+# Version header: stamp VERSION.txt + git hash into ss_player/gen/ss_version.gen.h
+# (gitignored). Shared with the GDExtension build via ss_player/sources.py.
+sources.generate_version_header()
+
 # --- Compilation Flags ---
 if env_ss.get("platform") in ["macos", "linux", "ios", "android"]:
     env_ss.Append(CCFLAGS=["-fvisibility=hidden"])
