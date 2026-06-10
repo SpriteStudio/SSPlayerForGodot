@@ -1532,7 +1532,7 @@ struct StringValueEntry FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyOffset(verifier, VT_VALUE) &&
+           VerifyOffsetRequired(verifier, VT_VALUE) &&
            verifier.VerifyString(value()) &&
            verifier.EndTable();
   }
@@ -1552,6 +1552,7 @@ struct StringValueEntryBuilder {
   ::flatbuffers::Offset<StringValueEntry> Finish() {
     const auto end = fbb_.EndTable(start_);
     auto o = ::flatbuffers::Offset<StringValueEntry>(end);
+    fbb_.Required(o, StringValueEntry::VT_VALUE);
     return o;
   }
 };
@@ -1584,7 +1585,7 @@ struct Vec2ValueEntry FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyOffset(verifier, VT_VALUE) &&
+           VerifyOffsetRequired(verifier, VT_VALUE) &&
            verifier.VerifyTable(value()) &&
            verifier.EndTable();
   }
@@ -1604,6 +1605,7 @@ struct Vec2ValueEntryBuilder {
   ::flatbuffers::Offset<Vec2ValueEntry> Finish() {
     const auto end = fbb_.EndTable(start_);
     auto o = ::flatbuffers::Offset<Vec2ValueEntry>(end);
+    fbb_.Required(o, Vec2ValueEntry::VT_VALUE);
     return o;
   }
 };
@@ -1627,7 +1629,7 @@ struct RectValueEntry FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyOffset(verifier, VT_VALUE) &&
+           VerifyOffsetRequired(verifier, VT_VALUE) &&
            verifier.VerifyTable(value()) &&
            verifier.EndTable();
   }
@@ -1647,6 +1649,7 @@ struct RectValueEntryBuilder {
   ::flatbuffers::Offset<RectValueEntry> Finish() {
     const auto end = fbb_.EndTable(start_);
     auto o = ::flatbuffers::Offset<RectValueEntry>(end);
+    fbb_.Required(o, RectValueEntry::VT_VALUE);
     return o;
   }
 };
@@ -1681,7 +1684,7 @@ struct EventUserData FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<uint16_t>(verifier, VT_PART_INDEX, 2) &&
-           VerifyOffset(verifier, VT_VALUE) &&
+           VerifyOffsetRequired(verifier, VT_VALUE) &&
            verifier.VerifyTable(value()) &&
            verifier.EndTable();
   }
@@ -1704,6 +1707,7 @@ struct EventUserDataBuilder {
   ::flatbuffers::Offset<EventUserData> Finish() {
     const auto end = fbb_.EndTable(start_);
     auto o = ::flatbuffers::Offset<EventUserData>(end);
+    fbb_.Required(o, EventUserData::VT_VALUE);
     return o;
   }
 };
@@ -1740,7 +1744,7 @@ struct EventSignal FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<uint16_t>(verifier, VT_PART_INDEX, 2) &&
-           VerifyOffset(verifier, VT_VALUE) &&
+           VerifyOffsetRequired(verifier, VT_VALUE) &&
            verifier.VerifyTable(value()) &&
            verifier.EndTable();
   }
@@ -1763,6 +1767,7 @@ struct EventSignalBuilder {
   ::flatbuffers::Offset<EventSignal> Finish() {
     const auto end = fbb_.EndTable(start_);
     auto o = ::flatbuffers::Offset<EventSignal>(end);
+    fbb_.Required(o, EventSignal::VT_VALUE);
     return o;
   }
 };
@@ -1799,7 +1804,7 @@ struct EventAudio FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<uint16_t>(verifier, VT_PART_INDEX, 2) &&
-           VerifyOffset(verifier, VT_VALUE) &&
+           VerifyOffsetRequired(verifier, VT_VALUE) &&
            verifier.VerifyTable(value()) &&
            verifier.EndTable();
   }
@@ -1822,6 +1827,7 @@ struct EventAudioBuilder {
   ::flatbuffers::Offset<EventAudio> Finish() {
     const auto end = fbb_.EndTable(start_);
     auto o = ::flatbuffers::Offset<EventAudio>(end);
+    fbb_.Required(o, EventAudio::VT_VALUE);
     return o;
   }
 };
@@ -1858,7 +1864,7 @@ struct EventInstance FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<uint16_t>(verifier, VT_PART_INDEX, 2) &&
-           VerifyOffset(verifier, VT_VALUE) &&
+           VerifyOffsetRequired(verifier, VT_VALUE) &&
            verifier.VerifyTable(value()) &&
            verifier.EndTable();
   }
@@ -1881,6 +1887,7 @@ struct EventInstanceBuilder {
   ::flatbuffers::Offset<EventInstance> Finish() {
     const auto end = fbb_.EndTable(start_);
     auto o = ::flatbuffers::Offset<EventInstance>(end);
+    fbb_.Required(o, EventInstance::VT_VALUE);
     return o;
   }
 };
@@ -1917,7 +1924,7 @@ struct EventEffect FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<uint16_t>(verifier, VT_PART_INDEX, 2) &&
-           VerifyOffset(verifier, VT_VALUE) &&
+           VerifyOffsetRequired(verifier, VT_VALUE) &&
            verifier.VerifyTable(value()) &&
            verifier.EndTable();
   }
@@ -1940,6 +1947,7 @@ struct EventEffectBuilder {
   ::flatbuffers::Offset<EventEffect> Finish() {
     const auto end = fbb_.EndTable(start_);
     auto o = ::flatbuffers::Offset<EventEffect>(end);
+    fbb_.Required(o, EventEffect::VT_VALUE);
     return o;
   }
 };
@@ -2131,11 +2139,11 @@ struct Cell FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<uint32_t>(verifier, VT_NAME_HASH, 4) &&
-           VerifyOffset(verifier, VT_NAME) &&
+           VerifyOffsetRequired(verifier, VT_NAME) &&
            verifier.VerifyString(name()) &&
-           VerifyOffset(verifier, VT_RECTANGLE) &&
+           VerifyOffsetRequired(verifier, VT_RECTANGLE) &&
            verifier.VerifyTable(rectangle()) &&
-           VerifyOffset(verifier, VT_PIVOT) &&
+           VerifyOffsetRequired(verifier, VT_PIVOT) &&
            verifier.VerifyTable(pivot()) &&
            VerifyField<uint8_t>(verifier, VT_ROTATED, 1) &&
            VerifyOffset(verifier, VT_TABLE_COORD_X) &&
@@ -2183,6 +2191,9 @@ struct CellBuilder {
   ::flatbuffers::Offset<Cell> Finish() {
     const auto end = fbb_.EndTable(start_);
     auto o = ::flatbuffers::Offset<Cell>(end);
+    fbb_.Required(o, Cell::VT_NAME);
+    fbb_.Required(o, Cell::VT_RECTANGLE);
+    fbb_.Required(o, Cell::VT_PIVOT);
     return o;
   }
 };
@@ -2281,12 +2292,12 @@ struct CellMap FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<uint32_t>(verifier, VT_NAME_HASH, 4) &&
-           VerifyOffset(verifier, VT_NAME) &&
+           VerifyOffsetRequired(verifier, VT_NAME) &&
            verifier.VerifyString(name()) &&
-           VerifyOffset(verifier, VT_IMAGE_PATH) &&
+           VerifyOffsetRequired(verifier, VT_IMAGE_PATH) &&
            verifier.VerifyString(image_path()) &&
            VerifyField<uint32_t>(verifier, VT_IMAGE_PATH_HASH, 4) &&
-           VerifyOffset(verifier, VT_SIZE_ORIGINAL) &&
+           VerifyOffsetRequired(verifier, VT_SIZE_ORIGINAL) &&
            verifier.VerifyTable(size_original()) &&
            VerifyField<uint8_t>(verifier, VT_WRAP_MODE, 1) &&
            VerifyField<uint8_t>(verifier, VT_FILTER_MODE, 1) &&
@@ -2332,6 +2343,9 @@ struct CellMapBuilder {
   ::flatbuffers::Offset<CellMap> Finish() {
     const auto end = fbb_.EndTable(start_);
     auto o = ::flatbuffers::Offset<CellMap>(end);
+    fbb_.Required(o, CellMap::VT_NAME);
+    fbb_.Required(o, CellMap::VT_IMAGE_PATH);
+    fbb_.Required(o, CellMap::VT_SIZE_ORIGINAL);
     return o;
   }
 };
@@ -2398,7 +2412,7 @@ struct EffectParticlePointGravity FLATBUFFERS_FINAL_CLASS : private ::flatbuffer
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyOffset(verifier, VT_POSITION) &&
+           VerifyOffsetRequired(verifier, VT_POSITION) &&
            verifier.VerifyTable(position()) &&
            VerifyField<float>(verifier, VT_POWER, 4) &&
            verifier.EndTable();
@@ -2422,6 +2436,7 @@ struct EffectParticlePointGravityBuilder {
   ::flatbuffers::Offset<EffectParticlePointGravity> Finish() {
     const auto end = fbb_.EndTable(start_);
     auto o = ::flatbuffers::Offset<EffectParticlePointGravity>(end);
+    fbb_.Required(o, EffectParticlePointGravity::VT_POSITION);
     return o;
   }
 };
@@ -2453,7 +2468,7 @@ struct RectAndVec2ValueTable FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Ta
     return VerifyTableStart(verifier) &&
            VerifyOffset(verifier, VT_SIZE) &&
            verifier.VerifyTable(size()) &&
-           VerifyOffset(verifier, VT_SCALE_FACTOR_VALUE) &&
+           VerifyOffsetRequired(verifier, VT_SCALE_FACTOR_VALUE) &&
            verifier.VerifyTable(scale_factor_value()) &&
            verifier.EndTable();
   }
@@ -2476,6 +2491,7 @@ struct RectAndVec2ValueTableBuilder {
   ::flatbuffers::Offset<RectAndVec2ValueTable> Finish() {
     const auto end = fbb_.EndTable(start_);
     auto o = ::flatbuffers::Offset<RectAndVec2ValueTable>(end);
+    fbb_.Required(o, RectAndVec2ValueTable::VT_SCALE_FACTOR_VALUE);
     return o;
   }
 };
@@ -2661,9 +2677,9 @@ struct EffectParticleElementRotation FLATBUFFERS_FINAL_CLASS : private ::flatbuf
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyOffset(verifier, VT_ROTATION_VALUE) &&
+           VerifyOffsetRequired(verifier, VT_ROTATION_VALUE) &&
            verifier.VerifyTable(rotation_value()) &&
-           VerifyOffset(verifier, VT_ROTATION_ADD_VALUE) &&
+           VerifyOffsetRequired(verifier, VT_ROTATION_ADD_VALUE) &&
            verifier.VerifyTable(rotation_add_value()) &&
            verifier.EndTable();
   }
@@ -2686,6 +2702,8 @@ struct EffectParticleElementRotationBuilder {
   ::flatbuffers::Offset<EffectParticleElementRotation> Finish() {
     const auto end = fbb_.EndTable(start_);
     auto o = ::flatbuffers::Offset<EffectParticleElementRotation>(end);
+    fbb_.Required(o, EffectParticleElementRotation::VT_ROTATION_VALUE);
+    fbb_.Required(o, EffectParticleElementRotation::VT_ROTATION_ADD_VALUE);
     return o;
   }
 };
@@ -3113,14 +3131,14 @@ struct Effect FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<uint32_t>(verifier, VT_NAME_HASH, 4) &&
-           VerifyOffset(verifier, VT_NAME) &&
+           VerifyOffsetRequired(verifier, VT_NAME) &&
            verifier.VerifyString(name()) &&
            VerifyField<int16_t>(verifier, VT_FPS, 2) &&
            VerifyField<uint8_t>(verifier, VT_IS_LOCK_RAND_SEED, 1) &&
            VerifyField<int16_t>(verifier, VT_LOCK_RAND_SEED, 2) &&
-           VerifyOffset(verifier, VT_LAYOUT_SCALE) &&
+           VerifyOffsetRequired(verifier, VT_LAYOUT_SCALE) &&
            verifier.VerifyTable(layout_scale()) &&
-           VerifyOffset(verifier, VT_EFFECT_NODE) &&
+           VerifyOffsetRequired(verifier, VT_EFFECT_NODE) &&
            verifier.VerifyVector(effect_node()) &&
            verifier.VerifyVectorOfTables(effect_node()) &&
            verifier.EndTable();
@@ -3159,6 +3177,9 @@ struct EffectBuilder {
   ::flatbuffers::Offset<Effect> Finish() {
     const auto end = fbb_.EndTable(start_);
     auto o = ::flatbuffers::Offset<Effect>(end);
+    fbb_.Required(o, Effect::VT_NAME);
+    fbb_.Required(o, Effect::VT_LAYOUT_SCALE);
+    fbb_.Required(o, Effect::VT_EFFECT_NODE);
     return o;
   }
 };
@@ -4483,7 +4504,7 @@ struct PartAttributeShader FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Tabl
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyOffset(verifier, VT_ID) &&
+           VerifyOffsetRequired(verifier, VT_ID) &&
            verifier.VerifyString(id()) &&
            VerifyField<uint32_t>(verifier, VT_ID_HASH, 4) &&
            VerifyField<float>(verifier, VT_PARAM0, 4) &&
@@ -4555,6 +4576,7 @@ struct PartAttributeShaderBuilder {
   ::flatbuffers::Offset<PartAttributeShader> Finish() {
     const auto end = fbb_.EndTable(start_);
     auto o = ::flatbuffers::Offset<PartAttributeShader>(end);
+    fbb_.Required(o, PartAttributeShader::VT_ID);
     return o;
   }
 };
@@ -4760,11 +4782,11 @@ struct SignalCommandParam FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyOffset(verifier, VT_PARAM_ID) &&
+           VerifyOffsetRequired(verifier, VT_PARAM_ID) &&
            verifier.VerifyString(param_id()) &&
            VerifyField<uint8_t>(verifier, VT_TYPE, 1) &&
            VerifyField<uint8_t>(verifier, VT_VALUE_TYPE, 1) &&
-           VerifyOffset(verifier, VT_VALUE) &&
+           VerifyOffsetRequired(verifier, VT_VALUE) &&
            VerifySignalCommandParamValue(verifier, value(), value_type()) &&
            verifier.EndTable();
   }
@@ -4793,6 +4815,8 @@ struct SignalCommandParamBuilder {
   ::flatbuffers::Offset<SignalCommandParam> Finish() {
     const auto end = fbb_.EndTable(start_);
     auto o = ::flatbuffers::Offset<SignalCommandParam>(end);
+    fbb_.Required(o, SignalCommandParam::VT_PARAM_ID);
+    fbb_.Required(o, SignalCommandParam::VT_VALUE);
     return o;
   }
 };
@@ -4846,9 +4870,9 @@ struct PartAttributeSignal FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Tabl
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<uint8_t>(verifier, VT_ACTIVE, 1) &&
-           VerifyOffset(verifier, VT_COMMAND_ID) &&
+           VerifyOffsetRequired(verifier, VT_COMMAND_ID) &&
            verifier.VerifyString(command_id()) &&
-           VerifyOffset(verifier, VT_PARAMS) &&
+           VerifyOffsetRequired(verifier, VT_PARAMS) &&
            verifier.VerifyVector(params()) &&
            verifier.VerifyVectorOfTables(params()) &&
            verifier.EndTable();
@@ -4875,6 +4899,8 @@ struct PartAttributeSignalBuilder {
   ::flatbuffers::Offset<PartAttributeSignal> Finish() {
     const auto end = fbb_.EndTable(start_);
     auto o = ::flatbuffers::Offset<PartAttributeSignal>(end);
+    fbb_.Required(o, PartAttributeSignal::VT_COMMAND_ID);
+    fbb_.Required(o, PartAttributeSignal::VT_PARAMS);
     return o;
   }
 };
@@ -4930,7 +4956,7 @@ struct PartAttributeAudio FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table
     return VerifyTableStart(verifier) &&
            VerifyField<uint32_t>(verifier, VT_SOUND_LIST_NAME_HASH, 4) &&
            VerifyField<uint32_t>(verifier, VT_SOUND_NAME_HASH, 4) &&
-           VerifyOffset(verifier, VT_SOUND_NAME) &&
+           VerifyOffsetRequired(verifier, VT_SOUND_NAME) &&
            verifier.VerifyString(sound_name()) &&
            VerifyField<int32_t>(verifier, VT_LOOP_NUM, 4) &&
            verifier.EndTable();
@@ -4960,6 +4986,7 @@ struct PartAttributeAudioBuilder {
   ::flatbuffers::Offset<PartAttributeAudio> Finish() {
     const auto end = fbb_.EndTable(start_);
     auto o = ::flatbuffers::Offset<PartAttributeAudio>(end);
+    fbb_.Required(o, PartAttributeAudio::VT_SOUND_NAME);
     return o;
   }
 };
@@ -5828,10 +5855,10 @@ struct PartTypeInstance FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyOffset(verifier, VT_REF_ANIME_PACK) &&
+           VerifyOffsetRequired(verifier, VT_REF_ANIME_PACK) &&
            verifier.VerifyString(ref_anime_pack()) &&
            VerifyField<uint32_t>(verifier, VT_REF_ANIME_PACK_HASH, 4) &&
-           VerifyOffset(verifier, VT_REF_ANIME_NAME) &&
+           VerifyOffsetRequired(verifier, VT_REF_ANIME_NAME) &&
            verifier.VerifyString(ref_anime_name()) &&
            VerifyField<uint32_t>(verifier, VT_REF_ANIME_NAME_HASH, 4) &&
            verifier.EndTable();
@@ -5861,6 +5888,8 @@ struct PartTypeInstanceBuilder {
   ::flatbuffers::Offset<PartTypeInstance> Finish() {
     const auto end = fbb_.EndTable(start_);
     auto o = ::flatbuffers::Offset<PartTypeInstance>(end);
+    fbb_.Required(o, PartTypeInstance::VT_REF_ANIME_PACK);
+    fbb_.Required(o, PartTypeInstance::VT_REF_ANIME_NAME);
     return o;
   }
 };
@@ -6043,7 +6072,7 @@ struct PartData FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyOffset(verifier, VT_NAME) &&
+           VerifyOffsetRequired(verifier, VT_NAME) &&
            verifier.VerifyString(name()) &&
            VerifyField<int16_t>(verifier, VT_PARENT_INDEX, 2) &&
            VerifyField<uint8_t>(verifier, VT_BOUNDS_TYPE, 1) &&
@@ -6109,6 +6138,7 @@ struct PartDataBuilder {
   ::flatbuffers::Offset<PartData> Finish() {
     const auto end = fbb_.EndTable(start_);
     auto o = ::flatbuffers::Offset<PartData>(end);
+    fbb_.Required(o, PartData::VT_NAME);
     return o;
   }
 };
@@ -6200,7 +6230,7 @@ struct Label FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<uint32_t>(verifier, VT_NAME_HASH, 4) &&
-           VerifyOffset(verifier, VT_NAME) &&
+           VerifyOffsetRequired(verifier, VT_NAME) &&
            verifier.VerifyString(name()) &&
            VerifyField<int32_t>(verifier, VT_TIME, 4) &&
            verifier.EndTable();
@@ -6227,6 +6257,7 @@ struct LabelBuilder {
   ::flatbuffers::Offset<Label> Finish() {
     const auto end = fbb_.EndTable(start_);
     auto o = ::flatbuffers::Offset<Label>(end);
+    fbb_.Required(o, Label::VT_NAME);
     return o;
   }
 };
@@ -6278,7 +6309,7 @@ struct PartAnimationDataCellValue FLATBUFFERS_FINAL_CLASS : private ::flatbuffer
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<uint16_t>(verifier, VT_INDEX, 2) &&
-           VerifyOffset(verifier, VT_VALUE) &&
+           VerifyOffsetRequired(verifier, VT_VALUE) &&
            verifier.VerifyTable(value()) &&
            verifier.EndTable();
   }
@@ -6301,6 +6332,7 @@ struct PartAnimationDataCellValueBuilder {
   ::flatbuffers::Offset<PartAnimationDataCellValue> Finish() {
     const auto end = fbb_.EndTable(start_);
     auto o = ::flatbuffers::Offset<PartAnimationDataCellValue>(end);
+    fbb_.Required(o, PartAnimationDataCellValue::VT_VALUE);
     return o;
   }
 };
@@ -6654,7 +6686,7 @@ struct PartAnimationDataPartColor FLATBUFFERS_FINAL_CLASS : private ::flatbuffer
     return VerifyTableStart(verifier) &&
            VerifyField<uint16_t>(verifier, VT_INDEX, 2) &&
            VerifyField<uint8_t>(verifier, VT_INTERPOLATION, 1) &&
-           VerifyOffset(verifier, VT_VALUE) &&
+           VerifyOffsetRequired(verifier, VT_VALUE) &&
            verifier.VerifyTable(value()) &&
            VerifyOffset(verifier, VT_CURVE) &&
            verifier.VerifyTable(curve()) &&
@@ -6689,6 +6721,7 @@ struct PartAnimationDataPartColorBuilder {
   ::flatbuffers::Offset<PartAnimationDataPartColor> Finish() {
     const auto end = fbb_.EndTable(start_);
     auto o = ::flatbuffers::Offset<PartAnimationDataPartColor>(end);
+    fbb_.Required(o, PartAnimationDataPartColor::VT_VALUE);
     return o;
   }
 };
@@ -6744,7 +6777,7 @@ struct PartAnimationDataShader FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::
     return VerifyTableStart(verifier) &&
            VerifyField<uint16_t>(verifier, VT_INDEX, 2) &&
            VerifyField<uint8_t>(verifier, VT_INTERPOLATION, 1) &&
-           VerifyOffset(verifier, VT_VALUE) &&
+           VerifyOffsetRequired(verifier, VT_VALUE) &&
            verifier.VerifyTable(value()) &&
            VerifyOffset(verifier, VT_CURVE) &&
            verifier.VerifyTable(curve()) &&
@@ -6779,6 +6812,7 @@ struct PartAnimationDataShaderBuilder {
   ::flatbuffers::Offset<PartAnimationDataShader> Finish() {
     const auto end = fbb_.EndTable(start_);
     auto o = ::flatbuffers::Offset<PartAnimationDataShader>(end);
+    fbb_.Required(o, PartAnimationDataShader::VT_VALUE);
     return o;
   }
 };
@@ -6834,7 +6868,7 @@ struct PartAnimationDataVertex FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::
     return VerifyTableStart(verifier) &&
            VerifyField<uint16_t>(verifier, VT_INDEX, 2) &&
            VerifyField<uint8_t>(verifier, VT_INTERPOLATION, 1) &&
-           VerifyOffset(verifier, VT_VALUE) &&
+           VerifyOffsetRequired(verifier, VT_VALUE) &&
            verifier.VerifyTable(value()) &&
            VerifyOffset(verifier, VT_CURVE) &&
            verifier.VerifyTable(curve()) &&
@@ -6869,6 +6903,7 @@ struct PartAnimationDataVertexBuilder {
   ::flatbuffers::Offset<PartAnimationDataVertex> Finish() {
     const auto end = fbb_.EndTable(start_);
     auto o = ::flatbuffers::Offset<PartAnimationDataVertex>(end);
+    fbb_.Required(o, PartAnimationDataVertex::VT_VALUE);
     return o;
   }
 };
@@ -6911,7 +6946,7 @@ struct PartAnimationDataInstance FLATBUFFERS_FINAL_CLASS : private ::flatbuffers
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<uint16_t>(verifier, VT_INDEX, 2) &&
-           VerifyOffset(verifier, VT_VALUE) &&
+           VerifyOffsetRequired(verifier, VT_VALUE) &&
            verifier.VerifyTable(value()) &&
            verifier.EndTable();
   }
@@ -6934,6 +6969,7 @@ struct PartAnimationDataInstanceBuilder {
   ::flatbuffers::Offset<PartAnimationDataInstance> Finish() {
     const auto end = fbb_.EndTable(start_);
     auto o = ::flatbuffers::Offset<PartAnimationDataInstance>(end);
+    fbb_.Required(o, PartAnimationDataInstance::VT_VALUE);
     return o;
   }
 };
@@ -6970,7 +7006,7 @@ struct PartAnimationDataEffect FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<uint16_t>(verifier, VT_INDEX, 2) &&
-           VerifyOffset(verifier, VT_VALUE) &&
+           VerifyOffsetRequired(verifier, VT_VALUE) &&
            verifier.VerifyTable(value()) &&
            verifier.EndTable();
   }
@@ -6993,6 +7029,7 @@ struct PartAnimationDataEffectBuilder {
   ::flatbuffers::Offset<PartAnimationDataEffect> Finish() {
     const auto end = fbb_.EndTable(start_);
     auto o = ::flatbuffers::Offset<PartAnimationDataEffect>(end);
+    fbb_.Required(o, PartAnimationDataEffect::VT_VALUE);
     return o;
   }
 };
@@ -7042,7 +7079,7 @@ struct PartAnimationDataVec2 FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Ta
     return VerifyTableStart(verifier) &&
            VerifyField<uint16_t>(verifier, VT_INDEX, 2) &&
            VerifyField<uint8_t>(verifier, VT_INTERPOLATION, 1) &&
-           VerifyOffset(verifier, VT_VALUE) &&
+           VerifyOffsetRequired(verifier, VT_VALUE) &&
            verifier.VerifyTable(value()) &&
            VerifyOffset(verifier, VT_CURVE) &&
            verifier.VerifyTable(curve()) &&
@@ -7077,6 +7114,7 @@ struct PartAnimationDataVec2Builder {
   ::flatbuffers::Offset<PartAnimationDataVec2> Finish() {
     const auto end = fbb_.EndTable(start_);
     auto o = ::flatbuffers::Offset<PartAnimationDataVec2>(end);
+    fbb_.Required(o, PartAnimationDataVec2::VT_VALUE);
     return o;
   }
 };
@@ -7132,7 +7170,7 @@ struct PartAnimationDataDeform FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::
     return VerifyTableStart(verifier) &&
            VerifyField<uint16_t>(verifier, VT_INDEX, 2) &&
            VerifyField<uint8_t>(verifier, VT_INTERPOLATION, 1) &&
-           VerifyOffset(verifier, VT_VALUE) &&
+           VerifyOffsetRequired(verifier, VT_VALUE) &&
            verifier.VerifyTable(value()) &&
            VerifyOffset(verifier, VT_CURVE) &&
            verifier.VerifyTable(curve()) &&
@@ -7167,6 +7205,7 @@ struct PartAnimationDataDeformBuilder {
   ::flatbuffers::Offset<PartAnimationDataDeform> Finish() {
     const auto end = fbb_.EndTable(start_);
     auto o = ::flatbuffers::Offset<PartAnimationDataDeform>(end);
+    fbb_.Required(o, PartAnimationDataDeform::VT_VALUE);
     return o;
   }
 };
@@ -7853,10 +7892,10 @@ struct AnimationData FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyOffsetRequired(verifier, VT_NAME) &&
            verifier.VerifyString(name()) &&
            VerifyField<uint32_t>(verifier, VT_NAME_HASH, 4) &&
-           VerifyOffset(verifier, VT_PARTS_INITIAL_ATTRIBUTES) &&
+           VerifyOffsetRequired(verifier, VT_PARTS_INITIAL_ATTRIBUTES) &&
            verifier.VerifyVector(parts_initial_attributes()) &&
            verifier.VerifyVectorOfTables(parts_initial_attributes()) &&
-           VerifyOffset(verifier, VT_PARTS_ANIMATION_DATA) &&
+           VerifyOffsetRequired(verifier, VT_PARTS_ANIMATION_DATA) &&
            verifier.VerifyVector(parts_animation_data()) &&
            verifier.VerifyVectorOfTables(parts_animation_data()) &&
            VerifyOffset(verifier, VT_EVENTS) &&
@@ -7872,7 +7911,7 @@ struct AnimationData FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyField<int16_t>(verifier, VT_END_FRAME, 2) &&
            VerifyField<int16_t>(verifier, VT_TOTAL_FRAME, 2) &&
            VerifyField<int16_t>(verifier, VT_FPS, 2) &&
-           VerifyOffset(verifier, VT_CANVAS) &&
+           VerifyOffsetRequired(verifier, VT_CANVAS) &&
            verifier.VerifyTable(canvas()) &&
            verifier.EndTable();
   }
@@ -7926,6 +7965,9 @@ struct AnimationDataBuilder {
     const auto end = fbb_.EndTable(start_);
     auto o = ::flatbuffers::Offset<AnimationData>(end);
     fbb_.Required(o, AnimationData::VT_NAME);
+    fbb_.Required(o, AnimationData::VT_PARTS_INITIAL_ATTRIBUTES);
+    fbb_.Required(o, AnimationData::VT_PARTS_ANIMATION_DATA);
+    fbb_.Required(o, AnimationData::VT_CANVAS);
     return o;
   }
 };
@@ -8296,13 +8338,13 @@ struct SsAnimeBinary FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<uint32_t>(verifier, VT_VERSION, 4) &&
-           VerifyOffset(verifier, VT_NAME) &&
+           VerifyOffsetRequired(verifier, VT_NAME) &&
            verifier.VerifyString(name()) &&
            VerifyField<uint32_t>(verifier, VT_NAME_HASH, 4) &&
-           VerifyOffset(verifier, VT_PARTS) &&
+           VerifyOffsetRequired(verifier, VT_PARTS) &&
            verifier.VerifyVector(parts()) &&
            verifier.VerifyVectorOfTables(parts()) &&
-           VerifyOffset(verifier, VT_ANIMATIONS) &&
+           VerifyOffsetRequired(verifier, VT_ANIMATIONS) &&
            verifier.VerifyVector(animations()) &&
            verifier.VerifyVectorOfTables(animations()) &&
            VerifyOffset(verifier, VT_CELLMAPS) &&
@@ -8377,6 +8419,9 @@ struct SsAnimeBinaryBuilder {
   ::flatbuffers::Offset<SsAnimeBinary> Finish() {
     const auto end = fbb_.EndTable(start_);
     auto o = ::flatbuffers::Offset<SsAnimeBinary>(end);
+    fbb_.Required(o, SsAnimeBinary::VT_NAME);
+    fbb_.Required(o, SsAnimeBinary::VT_PARTS);
+    fbb_.Required(o, SsAnimeBinary::VT_ANIMATIONS);
     return o;
   }
 };

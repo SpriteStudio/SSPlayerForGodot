@@ -85,10 +85,10 @@ struct SequenceItem FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyOffset(verifier, VT_REF_ANIME_PACK) &&
+           VerifyOffsetRequired(verifier, VT_REF_ANIME_PACK) &&
            verifier.VerifyString(ref_anime_pack()) &&
            VerifyField<uint32_t>(verifier, VT_REF_ANIME_PACK_HASH, 4) &&
-           VerifyOffset(verifier, VT_REF_ANIME_NAME) &&
+           VerifyOffsetRequired(verifier, VT_REF_ANIME_NAME) &&
            verifier.VerifyString(ref_anime_name()) &&
            VerifyField<uint32_t>(verifier, VT_REF_ANIME_NAME_HASH, 4) &&
            VerifyField<int32_t>(verifier, VT_REPEAT_COUNT, 4) &&
@@ -122,6 +122,8 @@ struct SequenceItemBuilder {
   ::flatbuffers::Offset<SequenceItem> Finish() {
     const auto end = fbb_.EndTable(start_);
     auto o = ::flatbuffers::Offset<SequenceItem>(end);
+    fbb_.Required(o, SequenceItem::VT_REF_ANIME_PACK);
+    fbb_.Required(o, SequenceItem::VT_REF_ANIME_NAME);
     return o;
   }
 };
@@ -292,7 +294,7 @@ struct SsSequenceBinary FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<uint32_t>(verifier, VT_VERSION, 4) &&
-           VerifyOffset(verifier, VT_SEQUENCE_LIST) &&
+           VerifyOffsetRequired(verifier, VT_SEQUENCE_LIST) &&
            verifier.VerifyVector(sequence_list()) &&
            verifier.VerifyVectorOfTables(sequence_list()) &&
            verifier.EndTable();
@@ -316,6 +318,7 @@ struct SsSequenceBinaryBuilder {
   ::flatbuffers::Offset<SsSequenceBinary> Finish() {
     const auto end = fbb_.EndTable(start_);
     auto o = ::flatbuffers::Offset<SsSequenceBinary>(end);
+    fbb_.Required(o, SsSequenceBinary::VT_SEQUENCE_LIST);
     return o;
   }
 };
