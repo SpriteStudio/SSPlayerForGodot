@@ -139,9 +139,14 @@ fi
 
 # Licenses
 cp ${SDK_DIR}/LICENSE.md ${RUNTIME_DIR}/
-cp ${SDK_DIR}/libs/ssruntime/DEPENDENCIES.md ${RUNTIME_DIR}/ssruntime-THIRD-PARTY-LICENSES.md
+if [[ -f "${SDK_DIR}/target/licenses/THIRD-PARTY-LICENSES.ssruntime.md" ]]; then
+    cp ${SDK_DIR}/target/licenses/THIRD-PARTY-LICENSES.ssruntime.md ${RUNTIME_DIR}/
+fi
+
 if [[ "$PLATFORM" == "macos" || "$PLATFORM" == "windows" || "$PLATFORM" == "linux" ]]; then
-    cp ${SDK_DIR}/libs/ssconverter/DEPENDENCIES.md ${RUNTIME_DIR}/ssconverter-THIRD-PARTY-LICENSES.md
+    if [[ -f "${SDK_DIR}/target/licenses/THIRD-PARTY-LICENSES.ssconverter.md" ]]; then
+        cp ${SDK_DIR}/target/licenses/THIRD-PARTY-LICENSES.ssconverter.md ${RUNTIME_DIR}/
+    fi
 fi
 
 # Libs Destination

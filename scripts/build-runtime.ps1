@@ -93,12 +93,13 @@ $RUNTIME_OUTPUT = "$rootDirectory/ss_player/runtime"
 if (Test-Path "$SDK_DIR/LICENSE.md") {
     Copy-Item "$SDK_DIR/LICENSE.md" "$RUNTIME_OUTPUT/" -Force
 }
-if (Test-Path "$SDK_DIR/libs/ssruntime/DEPENDENCIES.md") {
-    Copy-Item "$SDK_DIR/libs/ssruntime/DEPENDENCIES.md" "$RUNTIME_OUTPUT/ssruntime-THIRD-PARTY-LICENSES.md" -Force
+if (Test-Path "$SDK_DIR/target/licenses/THIRD-PARTY-LICENSES.ssruntime.md") {
+    Copy-Item "$SDK_DIR/target/licenses/THIRD-PARTY-LICENSES.ssruntime.md" "$RUNTIME_OUTPUT/" -Force
 }
+
 if ($PLATFORM -eq "macos" -or $PLATFORM -eq "windows" -or $PLATFORM -eq "linux") {
-    if (Test-Path "$SDK_DIR/libs/ssconverter/DEPENDENCIES.md") {
-        Copy-Item "$SDK_DIR/libs/ssconverter/DEPENDENCIES.md" "$RUNTIME_OUTPUT/ssconverter-THIRD-PARTY-LICENSES.md" -Force
+    if (Test-Path "$SDK_DIR/target/licenses/THIRD-PARTY-LICENSES.ssconverter.md") {
+        Copy-Item "$SDK_DIR/target/licenses/THIRD-PARTY-LICENSES.ssconverter.md" "$RUNTIME_OUTPUT/" -Force
     }
 }
 
