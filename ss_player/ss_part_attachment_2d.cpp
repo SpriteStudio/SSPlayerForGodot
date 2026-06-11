@@ -6,8 +6,8 @@ void SpriteStudioPartAttachment2D::_bind_methods() {
     ClassDB::bind_method(D_METHOD("set_part_name", "part_name"), &SpriteStudioPartAttachment2D::set_part_name);
     ClassDB::bind_method(D_METHOD("get_part_name"), &SpriteStudioPartAttachment2D::get_part_name);
 
-    ClassDB::bind_method(D_METHOD("set_player_path", "path"), &SpriteStudioPartAttachment2D::set_player_path);
-    ClassDB::bind_method(D_METHOD("get_player_path"), &SpriteStudioPartAttachment2D::get_player_path);
+    ClassDB::bind_method(D_METHOD("set_follow_path", "path"), &SpriteStudioPartAttachment2D::set_follow_path);
+    ClassDB::bind_method(D_METHOD("get_follow_path"), &SpriteStudioPartAttachment2D::get_follow_path);
 
     ClassDB::bind_method(D_METHOD("set_remote_path", "path"), &SpriteStudioPartAttachment2D::set_remote_path);
     ClassDB::bind_method(D_METHOD("get_remote_path"), &SpriteStudioPartAttachment2D::get_remote_path);
@@ -26,7 +26,7 @@ void SpriteStudioPartAttachment2D::_bind_methods() {
     ClassDB::bind_method(D_METHOD("get_on_part_hidden"), &SpriteStudioPartAttachment2D::get_on_part_hidden);
 
     ADD_PROPERTY(PropertyInfo(Variant::STRING, "part_name"), "set_part_name", "get_part_name");
-    ADD_PROPERTY(PropertyInfo(Variant::NODE_PATH, "player_path", PROPERTY_HINT_NODE_PATH_VALID_TYPES, "SpriteStudioPlayer2D"), "set_player_path", "get_player_path");
+    ADD_PROPERTY(PropertyInfo(Variant::NODE_PATH, "follow_path", PROPERTY_HINT_NODE_PATH_VALID_TYPES, "SpriteStudioPlayer2D"), "set_follow_path", "get_follow_path");
     ADD_PROPERTY(PropertyInfo(Variant::NODE_PATH, "remote_path", PROPERTY_HINT_NODE_PATH_VALID_TYPES, "Node2D"), "set_remote_path", "get_remote_path");
     ADD_PROPERTY(PropertyInfo(Variant::BOOL, "use_global_coordinates"), "set_use_global_coordinates", "get_use_global_coordinates");
 
@@ -43,8 +43,8 @@ void SpriteStudioPartAttachment2D::_bind_methods() {
 }
 
 SpriteStudioPlayer2D* SpriteStudioPartAttachment2D::_resolve_player() const {
-    if (!_player_path.is_empty()) {
-        Node* n = get_node_or_null(_player_path);
+    if (!_follow_path.is_empty()) {
+        Node* n = get_node_or_null(_follow_path);
         return Object::cast_to<SpriteStudioPlayer2D>(n);
     }
     // No explicit path: walk up to the nearest ancestor player.
@@ -75,7 +75,7 @@ void SpriteStudioPartAttachment2D::_connect_player() {
 }
 
 void SpriteStudioPartAttachment2D::_disconnect_player() {
-    // Resolve via the current member state — callers update _player_path only
+    // Resolve via the current member state — callers update _follow_path only
     // after disconnecting, so this finds the player we actually connected to.
     // A freed player auto-disconnects, so a null result here is safe to ignore.
     SpriteStudioPlayer2D* player = _resolve_player();
@@ -148,13 +148,13 @@ void SpriteStudioPartAttachment2D::set_part_name(const String& p_name) {
 }
 String SpriteStudioPartAttachment2D::get_part_name() const { return _part_name; }
 
-void SpriteStudioPartAttachment2D::set_player_path(const NodePath& p_path) {
+void SpriteStudioPartAttachment2D::set_follow_path(const NodePath& p_path) {
     if (is_inside_tree()) _disconnect_player();
-    _player_path = p_path;
+    _follow_path = p_path;
     if (is_inside_tree()) _connect_player();
     update_configuration_warnings();
 }
-NodePath SpriteStudioPartAttachment2D::get_player_path() const { return _player_path; }
+NodePath SpriteStudioPartAttachment2D::get_follow_path() const { return _follow_path; }
 
 void SpriteStudioPartAttachment2D::set_remote_path(const NodePath& p_path) {
     _remote_path = p_path;
@@ -196,7 +196,7 @@ void SpriteStudioPartAttachment2D::_notification(int p_what) {
             _connect_player();
             break;
         case NOTIFICATION_READY:
-            // Retry once the whole tree exists, for a player_path that points
+            // Retry once the whole tree exists, for a follow_path that points
             // to a node outside this subtree (not yet present at ENTER_TREE).
             // Idempotent: _connect_player guards on is_connected.
             _connect_player();
@@ -215,7 +215,7 @@ PackedStringArray SpriteStudioPartAttachment2D::get_configuration_warnings() con
     PackedStringArray warnings = Node2D::get_configuration_warnings();
 #endif
     if (_resolve_player() == nullptr) {
-        warnings.push_back(tr("No SpriteStudioPlayer2D found. Set \"player_path\" or place this node under a SpriteStudioPlayer2D."));
+        warnings.push_back(tr("No SpriteStudioPlayer2D found. Set \"follow_path\" or place this node under a SpriteStudioPlayer2D."));
     } else if (_part_name.is_empty()) {
         warnings.push_back(tr("Set \"part_name\" to the SpriteStudio part this node should follow."));
     }

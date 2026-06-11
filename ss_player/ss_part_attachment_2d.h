@@ -14,7 +14,7 @@ class SpriteStudioPlayer2D;
 
 // A user-owned node that mirrors a single SpriteStudio part's pose each frame.
 // Modeled on Godot's RemoteTransform2D (remote_path / use_global_coordinates /
-// update_position|rotation|scale) plus a part_name + player_path. The player
+// update_position|rotation|scale) plus a part_name + follow_path. The player
 // never creates, owns, or frees this node: the user authors it in the scene
 // tree and owns its (and its children's) lifecycle. The attachment only reads
 // the part pose the player already computes and drives a transform — either its
@@ -35,7 +35,7 @@ public:
 
 private:
     String _part_name;
-    NodePath _player_path;  // empty -> nearest ancestor SpriteStudioPlayer2D
+    NodePath _follow_path;  // empty -> nearest ancestor SpriteStudioPlayer2D
     NodePath _remote_path;  // empty -> drive self
     bool _use_global_coordinates = true;
     bool _update_position = true;
@@ -63,8 +63,8 @@ public:
     void set_part_name(const String& p_name);
     String get_part_name() const;
 
-    void set_player_path(const NodePath& p_path);
-    NodePath get_player_path() const;
+    void set_follow_path(const NodePath& p_path);
+    NodePath get_follow_path() const;
 
     void set_remote_path(const NodePath& p_path);
     NodePath get_remote_path() const;
