@@ -118,6 +118,36 @@ Ref<Texture2D> SpriteStudioPlayer2D::get_cellmap_texture(const String &cellmap_n
     return Ref<Texture2D>();
 }
 
+int SpriteStudioPlayer2D::get_part_index(const String& part_name) const {
+    return _internal->resolve_part_index(part_name);
+}
+
+Transform2D SpriteStudioPlayer2D::get_part_transform(const String& part_name) const {
+    Transform2D xf;
+    int idx = _internal->resolve_part_index(part_name);
+    if (idx >= 0) {
+        _internal->try_get_part_local_transform(idx, xf);
+    }
+    return xf;
+}
+
+bool SpriteStudioPlayer2D::is_part_hidden(const String& part_name) const {
+    int idx = _internal->resolve_part_index(part_name);
+    if (idx < 0) return false;
+    bool hidden = false;
+    _internal->try_get_part_hidden(idx, hidden);
+    return hidden;
+}
+
+PackedStringArray SpriteStudioPlayer2D::get_part_names() const {
+    PackedStringArray names;
+    int count = _internal->get_part_count();
+    for (int i = 0; i < count; i++) {
+        names.push_back(_internal->get_part_name(i));
+    }
+    return names;
+}
+
 void SpriteStudioPlayer2D::setAnimation(const String& strName) {
     _internal->setAnimation(strName);
     NOTIFY_PROPERTY_LIST_CHANGED();
@@ -302,6 +332,11 @@ void SpriteStudioPlayer2D::_bind_methods() {
     ClassDB::bind_method( D_METHOD( "set_flip_v", "flip_v" ), &SpriteStudioPlayer2D::set_flip_v );
     ClassDB::bind_method( D_METHOD( "is_flipped_v" ), &SpriteStudioPlayer2D::is_flipped_v );
 
+    ClassDB::bind_method( D_METHOD( "get_part_index", "part_name" ), &SpriteStudioPlayer2D::get_part_index );
+    ClassDB::bind_method( D_METHOD( "get_part_transform", "part_name" ), &SpriteStudioPlayer2D::get_part_transform );
+    ClassDB::bind_method( D_METHOD( "is_part_hidden", "part_name" ), &SpriteStudioPlayer2D::is_part_hidden );
+    ClassDB::bind_method( D_METHOD( "get_part_names" ), &SpriteStudioPlayer2D::get_part_names );
+
     ADD_SIGNAL(
         MethodInfo(
             "user_data",
@@ -320,6 +355,11 @@ void SpriteStudioPlayer2D::_bind_methods() {
     ADD_SIGNAL(MethodInfo("animation_started", PropertyInfo(Variant::STRING, "anim_name")));
     ADD_SIGNAL(MethodInfo("animation_finished", PropertyInfo(Variant::STRING, "anim_name")));
     ADD_SIGNAL(MethodInfo("animation_looped", PropertyInfo(Variant::STRING, "anim_name")));
+
+    // Emitted at the end of each processed tick, after the frame's world
+    // matrices are final. SpriteStudioPartAttachment2D connects to this to
+    // mirror a part's pose in the same frame it is rendered.
+    ADD_SIGNAL(MethodInfo("frame_updated", PropertyInfo(Variant::FLOAT, "frame_no")));
 
     ADD_PROPERTY(
         PropertyInfo(Variant::OBJECT, "ssab", PROPERTY_HINT_RESOURCE_TYPE, "SSABResource"),
@@ -546,12 +586,16 @@ void SpriteStudioPlayer2D::_notification(int p_notification) {
             if (_process_mode == ANIMATION_PROCESS_IDLE) {
                 _push_coverage_screen_scale();
                 _internal->update(get_process_delta_time());
+                // Post-update: world matrices are final this tick, so part
+                // attachments can mirror their parts in the same frame.
+                emit_signal(SNAME("frame_updated"), _internal->getFrame());
             }
             break;
         case NOTIFICATION_INTERNAL_PHYSICS_PROCESS:
             if (_process_mode == ANIMATION_PROCESS_PHYSICS) {
                 _push_coverage_screen_scale();
                 _internal->update(get_physics_process_delta_time());
+                emit_signal(SNAME("frame_updated"), _internal->getFrame());
             }
             break;
         case NOTIFICATION_DRAW:

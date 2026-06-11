@@ -184,6 +184,25 @@ public:
     // (mirrors the previous Resource::changed signal handler).
     void onSSABReloaded();
 
+    // ---- Part query API (for follow / attachment nodes) -------------------
+    // Read-only access to the current frame's part poses. The player never
+    // owns or drives external nodes; these just expose what it already
+    // computes so a SpriteStudioPartAttachment2D can mirror a part.
+    //
+    // Resolve a part name to its index in the current binary; -1 if unknown.
+    int resolve_part_index(const String& p_name) const;
+    // Player-local Transform2D of the part for the current frame (the same
+    // matrix the part draws with, via matrix_to_transform2d of its world
+    // matrix). False if the index is out of range or no frame data exists.
+    bool try_get_part_local_transform(int p_part_index, Transform2D& r_xf) const;
+    // Per-part hide flag for the current frame. False (with r_hidden=false)
+    // when the index is out of range.
+    bool try_get_part_hidden(int p_part_index, bool& r_hidden) const;
+    // Number of parts in the current binary, and the name of part i ("" if out
+    // of range). Used to populate the editor part-name dropdown.
+    int get_part_count() const;
+    String get_part_name(int p_part_index) const;
+
 private:
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
     using SsVec2Array = PackedVector2Array;
@@ -281,6 +300,16 @@ private:
     Vector<RID> _batch_canvas_items;
     int _batch_canvas_items_in_use = 0;
     LocalVector<const ss::runtime::PartState*> _parts_by_idx;
+    // Part name -> index map + ordered names, rebuilt from the binary's
+    // PartData by `_rebuild_part_index_map` on setSSABResource. Backs the part
+    // query API (follow / attachment nodes). Indices match the part_index
+    // space the world matrices and `_parts_by_idx` use.
+    HashMap<String, int> _part_name_to_index;
+    LocalVector<String> _part_names;
+    // Per-part hide flag for the current frame, indexed by part_index. Rebuilt
+    // each _drawAnimation; 0 (visible) for parts absent from the frame.
+    LocalVector<uint8_t> _part_hidden;
+    void _rebuild_part_index_map();
     String _strAnimationSelected;
     uint32_t _animationSelectedHash = 0;
     const ss::format::AnimationData* _currentAnimationData = nullptr;
