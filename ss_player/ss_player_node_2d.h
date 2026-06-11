@@ -93,6 +93,17 @@ public:
     void set_cellmap_texture(const String &cellmap_name, const Ref<Texture2D> &texture);
     Ref<Texture2D> get_cellmap_texture(const String &cellmap_name) const;
 
+    // ---- Part query API (consumed by SpriteStudioPartAttachment2D) --------
+    // Resolve a part name to its index in the current binary; -1 if unknown.
+    int get_part_index(const String& part_name) const;
+    // Player-local Transform2D of the named part for the current frame. Returns
+    // the identity when the part is unknown (use get_part_index to disambiguate).
+    Transform2D get_part_transform(const String& part_name) const;
+    // True if the named part is hidden on the current frame. False when unknown.
+    bool is_part_hidden(const String& part_name) const;
+    // All part names in the current binary (for the attachment's dropdown).
+    PackedStringArray get_part_names() const;
+
 private:
     // Engine-agnostic playback / render core. The Node2D wrapper feeds it the
     // host canvas item and per-tick delta, and forwards its events back to

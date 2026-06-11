@@ -33,6 +33,7 @@ static void editor_init_callback() {
 
 #include "ssab_resource.h"
 #include "ss_player_node_2d.h"
+#include "ss_part_attachment_2d.h"
 #include "ssqb_resource.h"
 
 static SSABResourceFormatLoader *ssab_loader = nullptr;
@@ -78,6 +79,7 @@ void register_ss_player_types() {
 #endif
 
   GDREGISTER_CLASS(SpriteStudioPlayer2D);
+  GDREGISTER_CLASS(SpriteStudioPartAttachment2D);
 }
 
 void unregister_ss_player_types() {

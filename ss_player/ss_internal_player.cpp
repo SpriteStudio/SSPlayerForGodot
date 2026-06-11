@@ -275,6 +275,67 @@ void SsInternalPlayer::setSSABResource(const Ref<SSABResource>& ssabRes) {
     _load_external_ssabs();
 
     _fetchAnimation();
+
+    // Build the part name -> index map for the query API. Done after the
+    // resource is validated; parts() is animation-independent (it lives on the
+    // binary), so one rebuild per resource covers every animation.
+    _rebuild_part_index_map();
+}
+
+void SsInternalPlayer::_rebuild_part_index_map() {
+    _part_name_to_index.clear();
+    _part_names.clear();
+    if (_ssabRes.is_null()) return;
+    const ss::format::SsAnimeBinary* binary = _ssabRes->get_ss_anime_binary();
+    if (!binary || !binary->parts()) return;
+    auto parts = binary->parts();
+    const uint32_t n = parts->size();
+    _part_names.resize(n);
+    for (uint32_t i = 0; i < n; i++) {
+        const auto* pd = parts->Get(i);
+        String nm = (pd && pd->name()) ? String::utf8(pd->name()->c_str()) : String();
+        _part_names[i] = nm;
+        // First occurrence wins; duplicate part names are not expected within a
+        // single binary, but guard against clobbering a lower index just in case.
+        if (!nm.is_empty() && !_part_name_to_index.has(nm)) {
+            _part_name_to_index[nm] = (int)i;
+        }
+    }
+}
+
+int SsInternalPlayer::resolve_part_index(const String& p_name) const {
+    const int* idx = _part_name_to_index.getptr(p_name);
+    return idx ? *idx : -1;
+}
+
+bool SsInternalPlayer::try_get_part_local_transform(int p_part_index, Transform2D& r_xf) const {
+    if (p_part_index < 0 || runtime_ctx == nullptr) return false;
+    const float* wm = nullptr;
+    uintptr_t len = 0;
+    ss_runtime_get_world_matrices(runtime_ctx, &wm, &len);
+    if (!wm) return false;
+    constexpr int FLOATS_PER_MATRIX = 16;
+    if ((uintptr_t)p_part_index * FLOATS_PER_MATRIX + FLOATS_PER_MATRIX > len) return false;
+    const float* m = wm + (p_part_index * FLOATS_PER_MATRIX);
+    // Same column-major layout the draw path consumes (see matrix_to_transform2d).
+    r_xf = Transform2D(m[0], m[1], m[4], m[5], m[12], m[13]);
+    return true;
+}
+
+bool SsInternalPlayer::try_get_part_hidden(int p_part_index, bool& r_hidden) const {
+    r_hidden = false;
+    if (p_part_index < 0 || (uint32_t)p_part_index >= _part_hidden.size()) return false;
+    r_hidden = _part_hidden[p_part_index] != 0;
+    return true;
+}
+
+int SsInternalPlayer::get_part_count() const {
+    return (int)_part_names.size();
+}
+
+String SsInternalPlayer::get_part_name(int p_part_index) const {
+    if (p_part_index < 0 || (uint32_t)p_part_index >= _part_names.size()) return String();
+    return _part_names[p_part_index];
 }
 
 void SsInternalPlayer::onSSABReloaded() {
@@ -1080,13 +1141,20 @@ void SsInternalPlayer::_drawAnimation(float frame_no, float delta_seconds, bool 
     {
         const int total = f.binary->parts() ? (int)f.binary->parts()->size() : 0;
         if ((int)_parts_by_idx.size() != total) _parts_by_idx.resize(total);
+        if ((int)_part_hidden.size() != total) _part_hidden.resize(total);
         if (total > 0) {
             memset(_parts_by_idx.ptr(), 0, total * sizeof(void*));
+            // Default to visible; parts absent from this frame's PartState list
+            // (not active) read as not-hidden via the query API.
+            memset(_part_hidden.ptr(), 0, total * sizeof(uint8_t));
         }
         for (uint32_t i = 0; i < parts->size(); i++) {
             auto p = parts->Get(i);
             int idx = p->part_index();
-            if (idx >= 0 && idx < total) _parts_by_idx[idx] = p;
+            if (idx >= 0 && idx < total) {
+                _parts_by_idx[idx] = p;
+                _part_hidden[idx] = p->hide() ? 1 : 0;
+            }
         }
     }
 
