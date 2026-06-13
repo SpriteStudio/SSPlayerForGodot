@@ -63,6 +63,24 @@ func _on_animation_finished(anim_name: String):
 > ![シグナル接続画面の画像](../../assets/signal_connection.png)
 > *(※ここに Godot エディタ右側の「ノード」タブでシグナルを接続している様子の画像が入ります)*
 
+### 実装例: ユーザーデータを使ったイベント発火
+SpriteStudio 上で設定したユーザーデータ（足音の再生、攻撃判定の発生など）を受け取り、ゲーム側で処理を行う実装例です。
+
+```gdscript
+func _ready():
+    # ユーザーデータシグナルの接続
+    ss_player.user_data.connect(_on_user_data)
+
+func _on_user_data(payload):
+    # 例: ユーザーデータとして設定された文字列(String)を判定して処理
+    if payload.string_value == "play_footstep":
+        $AudioStreamPlayer.play()
+    elif payload.string_value == "attack_hit":
+        # 整数値(Int)を使ってダメージ量などを渡す例
+        var damage = payload.int_value
+        spawn_hitbox(damage)
+```
+
 ---
 
 ## 動的テクスチャ差し替え (アバターの着せ替え)

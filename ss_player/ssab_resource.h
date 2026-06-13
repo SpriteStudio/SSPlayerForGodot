@@ -65,14 +65,14 @@ public:
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
   static void _bind_methods() {};
 
-  PackedStringArray _get_recognized_extensions() const;
+  PackedStringArray _get_recognized_extensions() const override;
 
-  bool _handles_type(const StringName &type) const;
+  bool _handles_type(const StringName &type) const override;
 
-  String _get_resource_type(const String &path) const;
+  String _get_resource_type(const String &path) const override;
 
   Variant _load(const String &path, const String &original_path,
-                bool use_sub_threads, int32_t cache_mode) const;
+                bool use_sub_threads, int32_t cache_mode) const override;
 #else
   Ref<Resource> load(const String &path, const String &original_path,
                      Error *error, bool use_sub_threads, float *progress,
@@ -96,9 +96,9 @@ public:
   Error _save(const Ref<Resource> &resource, const String &path,
               uint32_t flags) override;
 
-  bool _recognize(const Ref<Resource> &resource) const;
+  bool _recognize(const Ref<Resource> &resource) const override;
 
-  PackedStringArray _get_recognized_extensions(const Ref<Resource> &resource) const;
+  PackedStringArray _get_recognized_extensions(const Ref<Resource> &resource) const override;
 #else
   Error save(const Ref<Resource> &resource, const String &path,
              uint32_t flags) override;

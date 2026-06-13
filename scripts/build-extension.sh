@@ -133,6 +133,7 @@ OTHER_PROJECTS=("overall_gdextension" "Ringo")
 
 # Ensure MAIN_PROJECT has the .gdextension and icons
 /bin/cp misc/spritestudio.gdextension "./examples/${MAIN_PROJECT}/addons/spritestudio/"
+/bin/cp LICENSE.txt "./examples/${MAIN_PROJECT}/addons/spritestudio/"
 /bin/mkdir -p "./examples/${MAIN_PROJECT}/addons/spritestudio/icons"
 /bin/cp ss_player/icons/icon_*.svg "./examples/${MAIN_PROJECT}/addons/spritestudio/icons/"
 
