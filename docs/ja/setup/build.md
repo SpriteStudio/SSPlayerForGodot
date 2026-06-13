@@ -1,6 +1,6 @@
 # ビルド / 開発
 
-GDExtension またはカスタムモジュール組み込み Godot Engine を自分でビルドしたい場合、および SS7-SDK と並行してプラグインを開発したい場合は、以下の手順に従ってください。
+GDExtension またはカスタムモジュール組み込み Godot Engine を自分でビルドしたい場合、および SpriteStudio7-SDK と並行してプラグインを開発したい場合は、以下の手順に従ってください。
 
 ## 概要
 
@@ -24,7 +24,7 @@ git clone https://github.com/godotengine/godot-cpp.git -b master
 `godot-cpp` ディレクトリは GDExtension をビルドする場合に必要です。
 
 > [!NOTE]
-> SDK のリリース成果物を使う一般的なビルドでは、サブモジュール `ss_player/SpriteStudio7-SDK/` の取得は不要です（`--recursive` を付けずにクローンして構いません）。SS7-SDK 自体を手元で開発・ビルドする場合のみ、後述の [SS7-SDK 開発者向け](#ss7-sdk-開発者向け) に従って `git submodule update --init --recursive` でサブモジュールを初期化してください。
+> SDK のリリース成果物を使う一般的なビルドでは、サブモジュール `ss_player/SpriteStudio7-SDK/` の取得は不要です（`--recursive` を付けずにクローンして構いません）。SpriteStudio7-SDK 自体を手元で開発・ビルドする場合のみ、後述の [SpriteStudio7-SDK 開発者向け](#ss7-sdk-開発者向け) に従って `git submodule update --init --recursive` でサブモジュールを初期化してください。
 
 ## ビルド環境のセットアップ
 
@@ -58,7 +58,7 @@ Homebrew で配布されている `molten-vk` はホストアーキ向けのバ�
 
 > `libssconverter` (`.sspj` → `.ssab` 変換ライブラリ) はデスクトップ向けにのみ同梱されます。iOS / Android / Web 向けの `libssruntime` パッケージには含まれません。
 
-`libssruntime` を SS7-SDK ソースから自前でビルドしたい場合は [SS7-SDK 開発者向け](#ss7-sdk-開発者向け) を参照してください。
+`libssruntime` を SpriteStudio7-SDK ソースから自前でビルドしたい場合は [SpriteStudio7-SDK 開発者向け](#ss7-sdk-開発者向け) を参照してください。
 
 ## 2-A. GDExtension のビルド
 
@@ -127,9 +127,9 @@ $env:PYTHONUTF8=1
 
 > Linux 向けのカスタムモジュール用一括ビルドスクリプトは未整備です。`./scripts/build.sh platform=linux target=...` を `editor` / `template_debug` / `template_release` で個別に呼び出してください。
 
-## SS7-SDK 開発者向け
+## SpriteStudio7-SDK 開発者向け
 
-> 以降のセクションは **SS7-SDK 自体を手元で開発・カスタマイズしながら Godot 側もビルドしたい場合のみ** 必要です。SS7-SDK のリリース成果物を使う一般的な Godot ビルダーは読み飛ばして構いません。
+> 以降のセクションは **SpriteStudio7-SDK 自体を手元で開発・カスタマイズしながら Godot 側もビルドしたい場合のみ** 必要です。SpriteStudio7-SDK のリリース成果物を使う一般的な Godot ビルダーは読み飛ばして構いません。
 
 ### 追加で必要なもの
 
@@ -139,7 +139,7 @@ FlatBuffers のヘッダを再生成する場合は別途 `flatc` (FlatBuffers �
 
 ### libssruntime を自前でビルドする
 
-SS7-SDK サブモジュール (`ss_player/SpriteStudio7-SDK/`) が初期化済みであることが前提です。未初期化の場合は以下で取得してください。
+SpriteStudio7-SDK サブモジュール (`ss_player/SpriteStudio7-SDK/`) が初期化済みであることが前提です。未初期化の場合は以下で取得してください。
 
 ```bash
 git submodule update --init --recursive
@@ -168,7 +168,7 @@ git submodule update --init --recursive
 
 ### FlatBuffers ヘッダの再生成
 
-SS7-SDK の `.fbs` を変更した場合は、以下で `ss_player/format/` 配下のヘッダを再生成します (`flatc` が必要)。
+SpriteStudio7-SDK の `.fbs` を変更した場合は、以下で `ss_player/format/` 配下のヘッダを再生成します (`flatc` が必要)。
 
 **macOS / Linux**
 
@@ -182,7 +182,7 @@ SS7-SDK の `.fbs` を変更した場合は、以下で `ss_player/format/` 配�
 .\scripts\generate-runtime-code.ps1
 ```
 
-### SS7-SDK 内部ドキュメント
+### SpriteStudio7-SDK 内部ドキュメント
 
 サブモジュール初期化済みであれば、ランタイムの内部仕様や移植時の注意点は以下を参照できます。
 

@@ -12,7 +12,7 @@ v1.x から本バージョンへ移行する場合は、以下の大きな変更
 - **リソースの割り当て**:
   - 以前は `res_player.res_project = load("...sspj")` や `set_anime_pack("...ssae")` のように複数ファイルを設定していましたが、本バージョンでは `.ssab` が `.ssae` (アニメパック) 単位で生成されます。
   - そのため、利用する（再生したい）アニメーションが含まれている `.ssab` を `set_ssab_resource(load("...ssab"))` のようにセットしてください。
-- **ループ再生の設定**: 以前の `set_loop(bool)` は廃止され、ループ回数を指定する `set_loop_count(int)` に変更されました（`-1` で無限ループ、`0` で1回再生（ループなし））。
+- **ループ再生の設定**: 以前の `set_loop(bool)` は廃止され、ループ回数を指定する `set_loop_count(int)` に変更されました（`-1` で無限ループ、`1` で1回再生（ループなし）、`0` は再生しません）。
 - **メソッドの変更と廃止**:
   - `set_player_resource()` → `set_ssab_resource()`
   - `get_fps()` → `get_frame_rate()`

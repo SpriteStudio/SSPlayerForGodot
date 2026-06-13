@@ -12,7 +12,7 @@ When migrating from v1.x to the current version, please note the following major
 - **Resource Assignment**:
   - Previously, you had to assign multiple files via `res_player.res_project = load("...sspj")` and `set_anime_pack("...ssae")`. In the current version, a `.ssab` file is generated per `.ssae` (Anime Pack).
   - Therefore, you simply need to set the `.ssab` containing the animation you want to play using `set_ssab_resource(load("...ssab"))`.
-- **Loop Playback**: The previous `set_loop(bool)` method has been replaced with `set_loop_count(int)` (`-1` for infinite loop, `0` for play once / no loop).
+- **Loop Playback**: The previous `set_loop(bool)` method has been replaced with `set_loop_count(int)` (`-1` for infinite loop, `1` for play once / no loop, `0` for no playback).
 - **Method Renames and Removals**:
   - `set_player_resource()` → `set_ssab_resource()`
   - `get_fps()` → `get_frame_rate()`
