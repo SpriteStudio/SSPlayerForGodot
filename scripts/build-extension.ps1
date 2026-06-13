@@ -91,6 +91,7 @@ $OTHER_PROJECTS = @("overall_gdextension", "Ringo")
 
 # Ensure MAIN_PROJECT has the .gdextension and icons
 Copy-Item "misc\spritestudio.gdextension" "examples\$MAIN_PROJECT\addons\spritestudio\spritestudio.gdextension" -Force
+Copy-Item "LICENSE.txt" "examples\$MAIN_PROJECT\addons\spritestudio\LICENSE.txt" -Force
 mkdir "examples\$MAIN_PROJECT\addons\spritestudio\icons" -Force | Out-Null
 Copy-Item "ss_player\icons\icon_*.svg" "examples\$MAIN_PROJECT\addons\spritestudio\icons\" -Force
 

@@ -177,6 +177,7 @@ jobs:
 
           mkdir -p addons/spritestudio/bin
           cp ../misc/spritestudio.gdextension addons/spritestudio/
+          cp ../LICENSE.txt addons/spritestudio/
 
           mv extension-${{ env.GODOT_VERSION_4 }}-android-${{ steps.commit.outputs.short }}/android addons/spritestudio/bin/
           mv extension-${{ env.GODOT_VERSION_4 }}-ios-${{ steps.commit.outputs.short }}/ios addons/spritestudio/bin/

@@ -71,3 +71,11 @@ Once the node is selected, you can adjust various settings from Godot's Inspecto
 | `Frame Skip Enabled`       | bool     | Whether to skip frames when the draw interval exceeds the frame interval |
 | `Sub Frame Enabled`        | bool     | Whether to enable sub-frame interpolation                           |
 | `Animation Process Mode`   | int      | Whether to sync with `_physics_process` (Physics) or `_process` (Idle) |
+
+---
+
+## Support for Mask Parts
+
+This plugin fully supports SpriteStudio's "Mask" feature.
+No special setup is required; if your `.ssab` file contains mask parts, clipping processes are automatically applied in Godot.
+Since the rendering is fully resolved internally via batch processing and Godot's rendering pipeline, there is no need for users to manually assign specific materials or configure `clip_children` on CanvasItems. You can use it simply by placing it in the scene.

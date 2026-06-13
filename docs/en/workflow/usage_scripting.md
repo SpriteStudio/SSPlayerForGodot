@@ -63,6 +63,24 @@ func _on_animation_finished(anim_name: String):
 > ![Signal connection screen](../../assets/signal_connection.png)
 > *(※ Image showing signals connected in the "Node" tab of the Godot editor will be placed here)*
 
+### Example: Triggering Events using User Data
+This is an example of receiving user data configured in SpriteStudio (such as playing footsteps or generating attack hitboxes) and processing it in the game.
+
+```gdscript
+func _ready():
+    # Connect the user data signal
+    ss_player.user_data.connect(_on_user_data)
+
+func _on_user_data(payload):
+    # Example: Check the string set as user data and process accordingly
+    if payload.string_value == "play_footstep":
+        $AudioStreamPlayer.play()
+    elif payload.string_value == "attack_hit":
+        # Example of passing the damage amount using an integer value (Int)
+        var damage = payload.int_value
+        spawn_hitbox(damage)
+```
+
 ---
 
 ## Dynamic Texture Replacement (Avatar Customization)

@@ -71,3 +71,11 @@ Godot エディタの強力な機能を活かし、最短の手順でアニメ�
 | `Frame Skip Enabled`       | bool   | 描画間隔がフレーム間隔を超えた際にフレームを飛ばすか                |
 | `Sub Frame Enabled`        | bool   | サブフレーム補間を有効化するか                                      |
 | `Animation Process Mode`   | int    | `_physics_process` (Physics) か `_process` (Idle) かの同期設定      |
+
+---
+
+## マスクパーツへの対応
+
+本プラグインは SpriteStudio の「マスク機能（Mask）」にも完全対応しています。
+特別な設定は必要なく、`.ssab` ファイルにマスクパーツが含まれていれば、Godot 上でも自動的にクリッピング処理が行われます。
+描画は内部のバッチ処理と Godot の描画パイプラインで自動的に完結するため、ユーザー側で特定のマテリアルを割り当てたり、CanvasItem の `clip_children` を手動設定する必要はありません。そのままシーンに配置してお使いいただけます。
