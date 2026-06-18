@@ -14,7 +14,7 @@ GDExtension またはカスタムモジュール組み込み Godot Engine を自
 本リポジトリを取得し、ビルド対象に応じて Godot Engine / godot-cpp を取得します。
 
 ```bash
-git clone https://github.com/cri-middleware/SSPlayerForGodot.git
+git clone https://github.com/SpriteStudio/SSPlayerForGodot.git
 cd SSPlayerForGodot
 git clone https://github.com/godotengine/godot.git -b 4.6
 git clone https://github.com/godotengine/godot-cpp.git -b master

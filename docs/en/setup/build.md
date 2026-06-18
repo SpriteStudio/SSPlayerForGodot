@@ -14,7 +14,7 @@ The flow for producing Godot binaries from this repository is as follows:
 Clone this repository, and clone Godot Engine / godot-cpp depending on your build target.
 
 ```bash
-git clone https://github.com/cri-middleware/SSPlayerForGodot.git
+git clone https://github.com/SpriteStudio/SSPlayerForGodot.git
 cd SSPlayerForGodot
 git clone https://github.com/godotengine/godot.git -b 4.6
 git clone https://github.com/godotengine/godot-cpp.git -b master

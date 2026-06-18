@@ -1,7 +1,7 @@
 # SpriteStudioPlayer for Godot
 
 This `develop` branch is a work-in-progress version.  
-The stable version can be obtained from the [main branch](https://github.com/cri-middleware/SSPlayerForGodot/tree/main) or from [Releases](https://github.com/cri-middleware/SSPlayerForGodot/releases).  
+The stable version can be obtained from the [main branch](https://github.com/SpriteStudio/SSPlayerForGodot/tree/main) or from [Releases](https://github.com/SpriteStudio/SSPlayerForGodot/releases).  
 No warranty or support is provided for this branch, and we cannot respond to feature requests or bug reports.  
 Interfaces may change without notice.  
 
