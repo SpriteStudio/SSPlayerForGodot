@@ -6,7 +6,7 @@ No warranty or support is provided for this branch, and we cannot respond to fea
 Interfaces may change without notice.  
 
 A plugin for playing back animations created with [OPTPiX SpriteStudio](https://www.webtech.co.jp/spritestudio/) inside [Godot Engine](https://godotengine.org/).
-Animation playback uses `libssruntime` provided by [SpriteStudio7-SDK](https://github.com/SpriteStudio/SpriteStudio7-SDK).
+Animation playback uses `libssruntime` provided by [SpriteStudio-SDK](https://github.com/cri-middleware/SpriteStudio-SDK).
 
 ## Table of Contents
 
@@ -92,7 +92,7 @@ Sample projects based on SDK test projects are available under the `examples/` f
 
 ## Related Repositories
 
-- [SpriteStudio7-SDK](https://github.com/SpriteStudio/SpriteStudio7-SDK) — The SDK itself, providing `libssruntime` / `libssconverter`
+- [SpriteStudio-SDK](https://github.com/cri-middleware/SpriteStudio-SDK) — The SDK itself, providing `libssruntime` / `libssconverter`
 
 ## Migration
 

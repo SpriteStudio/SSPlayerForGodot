@@ -10,13 +10,13 @@ $FLATC_CMD = "flatc"
 
 mkdir -Force "./format" > $null
 
-foreach ($f in Get-ChildItem ./SpriteStudio7-SDK/libs/ssruntime/fbs/*.fbs) {
+foreach ($f in Get-ChildItem ./SpriteStudio-SDK/libs/ssruntime/fbs/*.fbs) {
     $name = $f.BaseName
     & $FLATC_CMD -c $f
     mv "${name}_generated.h" "./format/$name.h" -Force
 }
 
-foreach ($f in Get-ChildItem ./SpriteStudio7-SDK/libs/ssab/fbs/*.fbs) {
+foreach ($f in Get-ChildItem ./SpriteStudio-SDK/libs/ssab/fbs/*.fbs) {
     $name = $f.BaseName
     & $FLATC_CMD -c $f
     mv "${name}_generated.h" "./format/$name.h" -Force

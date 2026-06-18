@@ -1,5 +1,5 @@
 # Base directories
-$SDK_DIR = Resolve-Path (Join-Path $PSScriptRoot "../ss_player/SpriteStudio7-SDK")
+$SDK_DIR = Resolve-Path (Join-Path $PSScriptRoot "../ss_player/SpriteStudio-SDK")
 $SDK_TESTS_DIR = Join-Path $SDK_DIR "tests"
 $SDK_CLI_DIR = Join-Path $SDK_DIR "cli"
 $EXAMPLES_DIR = $PSScriptRoot

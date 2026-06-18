@@ -1,6 +1,6 @@
 # SpriteStudioPlayer for Godot — Player Roadmap
 
-This is the **Godot Player** roadmap for SSPlayerForGodot. It tracks the Godot-specific implementation tasks for capabilities exposed by the **Rust runtime/converter** (`SpriteStudio7-SDK/ROADMAP.md`).
+This is the **Godot Player** roadmap for SSPlayerForGodot. It tracks the Godot-specific implementation tasks for capabilities exposed by the **Rust runtime/converter** (`SpriteStudio-SDK/ROADMAP.md`).
 
 Most items selectively bring worthwhile capabilities from the legacy SS6 players into this SS7-based Godot player — reimagined for SS7 and Godot's architecture, not ported verbatim.
 
@@ -15,7 +15,7 @@ SSPlayerForGodot leverages Godot's `CanvasItem` API and `Node2D` paradigms. Feat
 ## Status legend
 
 - ☐ **Ready** — Player-only, no SDK dependency; can start now
-- ⛔ **Blocked on SDK** — needs an `SpriteStudio7-SDK/ROADMAP.md` phase first
+- ⛔ **Blocked on SDK** — needs an `SpriteStudio-SDK/ROADMAP.md` phase first
 - 🕒 **Deferred ("あとで")** — intentionally postponed; detailed here so it can be picked up later
 
 ---
@@ -41,7 +41,7 @@ SSPlayerForGodot leverages Godot's `CanvasItem` API and `Node2D` paradigms. Feat
 
 ## ⛔ Tier 2 — Per-part runtime overrides (color / cell / visibility) (SDK Phase 2)
 
-- **Blocked on**: `SpriteStudio7-SDK/ROADMAP.md` Phase 2 **Override Layer API**.
+- **Blocked on**: `SpriteStudio-SDK/ROADMAP.md` Phase 2 **Override Layer API**.
 - **Goal**: Override color, cell reference, and visibility of specific parts programmatically.
 - **Steps (after SDK FFI exists)**:
   1. Wrap the new FFI in `SsInternalPlayer` (using `resolve_part_index`).

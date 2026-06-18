@@ -16,7 +16,7 @@ if (Test-Path $currentVersionFile) {
     }
 }
 
-$url = "https://github.com/SpriteStudio/SpriteStudio7-SDK/releases/download/$targetVersion/spritestudio7-sdk-static-libs.zip"
+$url = "https://github.com/cri-middleware/SpriteStudio-SDK/releases/download/$targetVersion/spritestudio-sdk-static-libs.zip"
 $zipFile = "$targetDir/sdk.zip"
 
 Write-Host "Target SDK Version: $targetVersion"

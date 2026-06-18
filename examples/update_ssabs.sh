@@ -4,7 +4,7 @@ set -e
 # Base directories
 # Script location is assumed to be in the 'examples' directory
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
-SDK_DIR="${SCRIPT_DIR}/../ss_player/SpriteStudio7-SDK"
+SDK_DIR="${SCRIPT_DIR}/../ss_player/SpriteStudio-SDK"
 SDK_TESTS_DIR="${SDK_DIR}/tests"
 SDK_CLI_DIR="${SDK_DIR}/cli"
 EXAMPLES_DIR="${SCRIPT_DIR}"

@@ -62,7 +62,7 @@ Sample projects based on SDK test projects are available under the [examples fol
 
 ## Related Repositories
 
-- [SpriteStudio7-SDK](https://github.com/SpriteStudio/SpriteStudio7-SDK) — The SDK itself, providing `libssruntime` / `libssconverter`
+- [SpriteStudio-SDK](https://github.com/cri-middleware/SpriteStudio-SDK) — The SDK itself, providing `libssruntime` / `libssconverter`
 
 ## License
 
