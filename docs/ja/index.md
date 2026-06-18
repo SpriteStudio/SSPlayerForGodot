@@ -1,12 +1,12 @@
 # SpriteStudioPlayer for Godot
 
 本developブランチは現在開発中のバージョンです。  
-安定版は [mainブランチ](https://github.com/SpriteStudio/SSPlayerForGodot/tree/main) または、[Releases](https://github.com/SpriteStudio/SSPlayerForGodot/releases)から取得してください。  
+安定版は [mainブランチ](https://github.com/cri-middleware/SSPlayerForGodot/tree/main) または、[Releases](https://github.com/cri-middleware/SSPlayerForGodot/releases)から取得してください。  
 本developブランチに関してはいかなる保証もサポートも提供しません。リクエストやバグ報告への返信もできません。  
 インターフェースは予告なく変更される可能性があります。
 
 [OPTPiX SpriteStudio](https://www.webtech.co.jp/spritestudio/) で作成したアニメーションを [Godot Engine](https://godotengine.org/) 上で再生するためのプラグインです。
-再生処理は [SpriteStudio7-SDK](https://github.com/SpriteStudio/SpriteStudio7-SDK) が提供する `libssruntime` を介して行います。
+再生処理は [SpriteStudio-SDK](https://github.com/cri-middleware/SpriteStudio-SDK) が提供する `libssruntime` を介して行います。
 
 ## 目次
 
@@ -92,7 +92,7 @@ Windows / macOS でのビルドおよび実行を確認しています。
 
 ## 関連リポジトリ
 
-- [SpriteStudio7-SDK](https://github.com/SpriteStudio/SpriteStudio7-SDK) — `libssruntime` / `libssconverter` を提供する SDK 本体
+- [SpriteStudio-SDK](https://github.com/cri-middleware/SpriteStudio-SDK) — `libssruntime` / `libssconverter` を提供する SDK 本体
 
 ## マイグレーション
 

@@ -5,16 +5,16 @@ For the intuitive import method using the Godot editor's "SS Import Dock", pleas
 This document explains how to perform conversion from the command line without launching the Godot editor.
 This is highly useful when you want to integrate the conversion process into your CI/CD (Continuous Integration/Continuous Deployment) pipeline, build systems, or when you need to batch convert a large number of assets.
 
-## Using SpriteStudio7-SDK's `ssconverter-cli`
+## Using SpriteStudio-SDK's `ssconverter-cli`
 
 The conversion from a SpriteStudio project (`.sspj`) to Godot animation binaries (`.ssab` / `.ssqb`) is handled by a standalone command-line tool called `ssconverter-cli`, which is included in the SDK (the built-in editor importer also calls this tool under the hood).
 
 > [!NOTE]
-> The `ssconverter-cli` binary is **only distributed with the SpriteStudio7-SDK releases**. It is **not** bundled with the SSPlayerForGodot GDExtension package (`addons/spritestudio/`), so download it separately from the SDK side when you need the CLI.
+> The `ssconverter-cli` binary is **only distributed with the SpriteStudio-SDK releases**. It is **not** bundled with the SSPlayerForGodot GDExtension package (`addons/spritestudio/`), so download it separately from the SDK side when you need the CLI.
 
 ### 1. Obtaining the Tool
 
-Download the `ssconverter-cli` binary for your platform (Windows / macOS / Linux) from the [SpriteStudio7-SDK Releases](https://github.com/SpriteStudio/SpriteStudio7-SDK/releases).
+Download the `ssconverter-cli` binary for your platform (Windows / macOS / Linux) from the [SpriteStudio-SDK Releases](https://github.com/cri-middleware/SpriteStudio-SDK/releases).
 
 ### 2. Running from the Command Line
 
@@ -41,4 +41,4 @@ By copying these generated files into any directory under your Godot project's `
 ## Advanced Options
 
 `ssconverter-cli` provides various options to control the conversion behavior.
-For a detailed list of options and specifications, please refer to [cli/README.md](https://github.com/SpriteStudio/SpriteStudio7-SDK/blob/main/cli/README.md) in the SDK repository.
+For a detailed list of options and specifications, please refer to [cli/README.md](https://github.com/cri-middleware/SpriteStudio-SDK/blob/main/cli/README.md) in the SDK repository.

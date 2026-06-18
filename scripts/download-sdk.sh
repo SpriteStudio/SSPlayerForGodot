@@ -18,7 +18,7 @@ if [ -f "$CURRENT_VERSION_FILE" ]; then
     fi
 fi
 
-URL="https://github.com/SpriteStudio/SpriteStudio7-SDK/releases/download/${TARGET_VERSION}/spritestudio7-sdk-static-libs.zip"
+URL="https://github.com/cri-middleware/SpriteStudio-SDK/releases/download/${TARGET_VERSION}/spritestudio-sdk-static-libs.zip"
 ZIP_FILE="${TARGET_DIR}/sdk.zip"
 
 echo "Target SDK Version: ${TARGET_VERSION}"

@@ -7,11 +7,11 @@
 *   Before editing, read enough surrounding context to understand callers and invariants; if the read tool truncated the file, read the remaining ranges before making non-trivial changes.
 *   Follow existing code style in touched files (naming, type usage, control flow, error handling).
 *   **Dependency Constraint:** Never mention or include `godot` or `godot-cpp` source code in responses or suggestions; they are external dependencies.
-*   **SDK Alignment:** When modifying core playback logic, refer to `ss_player/SpriteStudio7-SDK/AGENTS.md` for Rust runtime constraints.
+*   **SDK Alignment:** When modifying core playback logic, refer to `ss_player/SpriteStudio-SDK/AGENTS.md` for Rust runtime constraints.
 
 ## Architecture in one paragraph
 
-A Godot Engine integration for SpriteStudio 7, providing a C++ `SsPlayerNode2D` that can be built as a **GDExtension** or a **custom module**. It uses `libssruntime` (Rust) from SpriteStudio7-SDK via FFI to play `.ssab` (FlatBuffers) binaries. Projects are converted from `.sspj` (XML) to `.ssab` at import-time using `libssconverter`. The C++ side handles Godot node lifecycle, resource management, and batch rendering.
+A Godot Engine integration for SpriteStudio 7, providing a C++ `SsPlayerNode2D` that can be built as a **GDExtension** or a **custom module**. It uses `libssruntime` (Rust) from SpriteStudio-SDK via FFI to play `.ssab` (FlatBuffers) binaries. Projects are converted from `.sspj` (XML) to `.ssab` at import-time using `libssconverter`. The C++ side handles Godot node lifecycle, resource management, and batch rendering.
 
 ## Key components
 
@@ -19,7 +19,7 @@ A Godot Engine integration for SpriteStudio 7, providing a C++ `SsPlayerNode2D` 
 |---|---|---|
 | `ss_player/` | C++ source: Node bindings, editor import dock, and FFI wrappers. | — |
 | `ss_player/runtime/` | Binary artifacts (`libssruntime`, `libssconverter`) and FFI headers. | — |
-| `ss_player/SpriteStudio7-SDK/` | Submodule for core Rust runtime/converter. | [SDK AGENTS](./ss_player/SpriteStudio7-SDK/AGENTS.md) |
+| `ss_player/SpriteStudio-SDK/` | Submodule for core Rust runtime/converter. | [SDK AGENTS](./ss_player/SpriteStudio-SDK/AGENTS.md) |
 | `ss_player/format/` | FlatBuffers-generated headers for C++. | — |
 | `scripts/` | SCons build wrappers and release packaging. | [docs/en/setup/build.md](./docs/en/setup/build.md) |
 
@@ -45,4 +45,4 @@ A Godot Engine integration for SpriteStudio 7, providing a C++ `SsPlayerNode2D` 
 *   SCons is the primary build tool.
 *   C++ code follows Godot's style (CamelCase classes, snake_case methods/vars).
 *   Documentation is maintained in both English (`.md`) and Japanese (`.ja.md`).
-*   Submodule `ss_player/SpriteStudio7-SDK` should be kept in sync with the project requirements.
+*   Submodule `ss_player/SpriteStudio-SDK` should be kept in sync with the project requirements.

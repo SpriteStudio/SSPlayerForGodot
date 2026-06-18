@@ -63,7 +63,7 @@ fi
 
 echo "Building for $PLATFORM ($ARCH) in $BUILD_MODE mode (iOS Sim: $IOS_SIMULATOR, Host Build: $IS_HOST_BUILD)..."
 
-SDK_DIR=${ROOTDIR}/ss_player/SpriteStudio7-SDK
+SDK_DIR=${ROOTDIR}/ss_player/SpriteStudio-SDK
 pushd ${SDK_DIR} > /dev/null
 
 CARGO_FLAGS=""

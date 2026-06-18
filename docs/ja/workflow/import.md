@@ -5,16 +5,16 @@ Godot エディタの「SS Import Dock」を使った直感的なインポート
 このドキュメントでは、Godot エディタを起動せずにコマンドラインから変換を行う方法を解説します。
 これは CI/CD (継続的インテグレーション) やビルドパイプラインに変換処理を組み込みたい場合、あるいは大量のアセットを一括変換したい場合に非常に便利です。
 
-## SpriteStudio7-SDK の `ssconverter-cli` を使う
+## SpriteStudio-SDK の `ssconverter-cli` を使う
 
 SpriteStudio プロジェクト (`.sspj`) から Godot 用のアニメーションバイナリ (`.ssab` / `.ssqb`) への変換は、SDK に同梱されている `ssconverter-cli` という独立したコマンドラインツールを使用して行われます（エディタ内蔵のインポータも裏ではこれを呼び出しています）。
 
 > [!NOTE]
-> `ssconverter-cli` バイナリは **SpriteStudio7-SDK のリリース成果物にのみ同梱** されています。SSPlayerForGodot の GDExtension パッケージ（`addons/spritestudio/`）には含まれないため、CLI を利用する場合は SDK 側から別途取得してください。
+> `ssconverter-cli` バイナリは **SpriteStudio-SDK のリリース成果物にのみ同梱** されています。SSPlayerForGodot の GDExtension パッケージ（`addons/spritestudio/`）には含まれないため、CLI を利用する場合は SDK 側から別途取得してください。
 
 ### 1. ツールの取得
 
-[SpriteStudio7-SDK の Releases](https://github.com/SpriteStudio/SpriteStudio7-SDK/releases) から該当プラットフォーム (Windows / macOS / Linux) 向けの `ssconverter-cli` バイナリをダウンロードします。
+[SpriteStudio-SDK の Releases](https://github.com/cri-middleware/SpriteStudio-SDK/releases) から該当プラットフォーム (Windows / macOS / Linux) 向けの `ssconverter-cli` バイナリをダウンロードします。
 
 ### 2. コマンドラインからの実行
 
@@ -41,4 +41,4 @@ SpriteStudio プロジェクト (`.sspj`) から Godot 用のアニメーショ�
 ## 高度なオプション
 
 `ssconverter-cli` には、変換時の挙動を制御するためのオプションが用意されています。
-詳細なオプション一覧や仕様については、SDK リポジトリの [cli/README.ja.md](https://github.com/SpriteStudio/SpriteStudio7-SDK/blob/main/cli/README.ja.md) を参照してください。
+詳細なオプション一覧や仕様については、SDK リポジトリの [cli/README.ja.md](https://github.com/cri-middleware/SpriteStudio-SDK/blob/main/cli/README.ja.md) を参照してください。

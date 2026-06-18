@@ -2,7 +2,7 @@
 
 # SpriteStudioPlayer for Godot
 
-> **Note:** This `develop` branch is a work-in-progress version. The stable version can be obtained from the [main branch](https://github.com/SpriteStudio/SSPlayerForGodot/tree/main) or from [Releases](https://github.com/SpriteStudio/SSPlayerForGodot/releases). The APIs and workflows in this branch may change without notice, and no warranty or support is provided (we cannot respond to feature requests or bug reports).
+> **Note:** This `develop` branch is a work-in-progress version. The stable version can be obtained from the [main branch](https://github.com/cri-middleware/SSPlayerForGodot/tree/main) or from [Releases](https://github.com/cri-middleware/SSPlayerForGodot/releases). The APIs and workflows in this branch may change without notice, and no warranty or support is provided (we cannot respond to feature requests or bug reports).
 
 A high-performance plugin for playing back animations created with [OPTPiX SpriteStudio 7](https://www.webtech.co.jp/spritestudio/) inside [Godot Engine](https://godotengine.org/).
 This plugin allows you to easily implement and play back raster-based 2D animations within your Godot projects.
@@ -31,7 +31,7 @@ We provide two Quick Starts: one for quickly checking the operation using a samp
 ### 1. Check Operation with Sample
 
 1. **Get Godot Engine**: Download a 4.6-series editor from the [official site](https://godotengine.org/download/).
-2. **Download GDExtension**: Get the latest package from [Releases](https://github.com/SpriteStudio/SSPlayerForGodot/releases) and extract it.
+2. **Download GDExtension**: Get the latest package from [Releases](https://github.com/cri-middleware/SSPlayerForGodot/releases) and extract it.
 3. **Prepare Sample**: Copy the extracted `addons` folder into the [examples/Ringo](./examples/Ringo) folder of this repository.
 4. **Check**: Open the [examples/Ringo](./examples/Ringo) project in Godot Engine and open `Ringo.tscn` to immediately see the animation working.
 
@@ -62,7 +62,7 @@ Sample projects based on SDK test projects are available under the [examples fol
 
 ## Related Repositories
 
-- [SpriteStudio7-SDK](https://github.com/SpriteStudio/SpriteStudio7-SDK) — The SDK itself, providing `libssruntime` / `libssconverter`
+- [SpriteStudio-SDK](https://github.com/cri-middleware/SpriteStudio-SDK) — The SDK itself, providing `libssruntime` / `libssconverter`
 
 ## License
 

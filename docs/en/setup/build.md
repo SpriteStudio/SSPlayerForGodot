@@ -1,12 +1,12 @@
 # Building / Developing
 
-If you want to build the GDExtension or a custom-module Godot Engine yourself, or to develop the plugin in parallel with SpriteStudio7-SDK, follow these steps.
+If you want to build the GDExtension or a custom-module Godot Engine yourself, or to develop the plugin in parallel with SpriteStudio-SDK, follow these steps.
 
 ## Overview
 
 The flow for producing Godot binaries from this repository is as follows:
 
-1. **Prepare `libssruntime`** — Obtain the SpriteStudio7-SDK release artifacts and place them under `ss_player/runtime/`.
+1. **Prepare `libssruntime`** — Obtain the SpriteStudio-SDK release artifacts and place them under `ss_player/runtime/`.
 2. Depending on how you want to consume the plugin, run **2-A. Build the GDExtension** or **2-B. Build the Custom-Module Godot Engine** to link the runtime above and produce Godot binaries.
 
 ## Get the Source
@@ -14,7 +14,7 @@ The flow for producing Godot binaries from this repository is as follows:
 Clone this repository, and clone Godot Engine / godot-cpp depending on your build target.
 
 ```bash
-git clone https://github.com/SpriteStudio/SSPlayerForGodot.git
+git clone https://github.com/cri-middleware/SSPlayerForGodot.git
 cd SSPlayerForGodot
 git clone https://github.com/godotengine/godot.git -b 4.6
 git clone https://github.com/godotengine/godot-cpp.git -b master
@@ -24,7 +24,7 @@ The `godot` directory is required when building a custom-module Godot Engine.
 The `godot-cpp` directory is required when building the GDExtension.
 
 > [!NOTE]
-> For typical builds that consume SDK release artifacts, the `ss_player/SpriteStudio7-SDK/` submodule does **not** need to be initialized (a non-recursive clone is fine). Only when developing/building SpriteStudio7-SDK itself, follow [For SpriteStudio7-SDK Developers](#for-ss7-sdk-developers) below and initialize the submodule with `git submodule update --init --recursive`.
+> For typical builds that consume SDK release artifacts, the `ss_player/SpriteStudio-SDK/` submodule does **not** need to be initialized (a non-recursive clone is fine). Only when developing/building SpriteStudio-SDK itself, follow [For SpriteStudio-SDK Developers](#for-spritestudio-sdk-developers) below and initialize the submodule with `git submodule update --init --recursive`.
 
 ## Build Environment Setup
 
@@ -58,7 +58,7 @@ Fetches and extracts the SDK package version pinned in `ss_player/SDK_VERSION.tx
 
 > `libssconverter` (the `.sspj` → `.ssab` converter library) is bundled only for desktop platforms. The iOS / Android / Web `libssruntime` packages do not include it.
 
-To build `libssruntime` from the SpriteStudio7-SDK source yourself, see [For SpriteStudio7-SDK Developers](#for-ss7-sdk-developers).
+To build `libssruntime` from the SpriteStudio-SDK source yourself, see [For SpriteStudio-SDK Developers](#for-spritestudio-sdk-developers).
 
 ## 2-A. Build the GDExtension
 
@@ -127,19 +127,19 @@ These scripts do **not** fetch or build `libssruntime`, so [1. Prepare libssrunt
 
 > No batch release script is provided for the Linux custom module. Invoke `./scripts/build.sh platform=linux target=...` directly for each of `editor` / `template_debug` / `template_release`.
 
-## For SpriteStudio7-SDK Developers
+## For SpriteStudio-SDK Developers
 
-> The sections below are required **only when developing/customizing SpriteStudio7-SDK itself in parallel with the Godot side**. General Godot builders using the SpriteStudio7-SDK release artifacts can skip them.
+> The sections below are required **only when developing/customizing SpriteStudio-SDK itself in parallel with the Godot side**. General Godot builders using the SpriteStudio-SDK release artifacts can skip them.
 
 ### Additional Requirements
 
-For setting up the environment to build `libssruntime` yourself (Rust toolchain, etc.), refer to the [SpriteStudio7-SDK README](https://github.com/SpriteStudio/SpriteStudio7-SDK?tab=readme-ov-file#for-sdk-developers).
+For setting up the environment to build `libssruntime` yourself (Rust toolchain, etc.), refer to the [SpriteStudio-SDK README](https://github.com/cri-middleware/SpriteStudio-SDK?tab=readme-ov-file#for-sdk-developers).
 
 If you also need to regenerate FlatBuffers headers, install `flatc` (the FlatBuffers compiler).
 
 ### Building libssruntime from source
 
-Requires the SpriteStudio7-SDK submodule (`ss_player/SpriteStudio7-SDK/`) to be initialized. If it is not initialized yet, run:
+Requires the SpriteStudio-SDK submodule (`ss_player/SpriteStudio-SDK/`) to be initialized. If it is not initialized yet, run:
 
 ```bash
 git submodule update --init --recursive
@@ -168,7 +168,7 @@ Then run the script below to build the Rust runtime/converter; the artifacts are
 
 ### Regenerating FlatBuffers headers
 
-When `.fbs` files in SpriteStudio7-SDK have changed, regenerate the headers under `ss_player/format/` (requires `flatc`).
+When `.fbs` files in SpriteStudio-SDK have changed, regenerate the headers under `ss_player/format/` (requires `flatc`).
 
 **macOS / Linux**
 
@@ -182,8 +182,8 @@ When `.fbs` files in SpriteStudio7-SDK have changed, regenerate the headers unde
 .\scripts\generate-runtime-code.ps1
 ```
 
-### SpriteStudio7-SDK internal documentation
+### SpriteStudio-SDK internal documentation
 
 Once the submodule is initialized, internal runtime specifications and porting notes are available at:
 
-- `ss_player/SpriteStudio7-SDK/libs/ssruntime/docs/README.ja.md`
+- `ss_player/SpriteStudio-SDK/libs/ssruntime/docs/README.ja.md`

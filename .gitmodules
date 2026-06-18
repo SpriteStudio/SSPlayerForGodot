@@ -1,6 +1,6 @@
-[submodule "ss_player/SpriteStudio7-SDK"]
-	path = ss_player/SpriteStudio7-SDK
-	url = https://github.com/SpriteStudio/SpriteStudio7-SDK.git
+[submodule "ss_player/SpriteStudio-SDK"]
+	path = ss_player/SpriteStudio-SDK
+	url = https://github.com/cri-middleware/SpriteStudio-SDK.git
 [submodule "ss_player/flatbuffers"]
 	path = ss_player/flatbuffers
 	url = https://github.com/google/flatbuffers.git
