@@ -54,6 +54,7 @@ For the data-flow diagram, key features, supported versions, and more, see the *
 Sample projects based on SDK test projects are available under the [examples folder](./examples/).
 
 - [Ringo](./examples/Ringo) — Test for Ringo
+- [Scripting](./examples/Scripting) — GDScript example for controlling animations and signals
 - [allAttributeV7](./examples/allAttributeV7) — Functional test for all attributes
 - [allPartsV7](./examples/allPartsV7) — Functional test for all part types
 - [overall](./examples/overall) — Comprehensive functional test
