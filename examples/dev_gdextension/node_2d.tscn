@@ -1,0 +1,14 @@
+[gd_scene format=3 uid="uid://41tstw2esic"]
+
+[ext_resource type="SSABResource" uid="uid://d20ahia4clv8b" path="res://ssab_generated/spr_00_00/00_spr_03_action_01_level3.ssab" id="1_wtcfe"]
+
+[node name="Node2D" type="Node2D" unique_id=1628321986]
+
+[node name="00_spr_03_action_01_level3" type="SpriteStudioPlayer2D" parent="." unique_id=1977491030]
+ssab = ExtResource("1_wtcfe")
+animation = "00_action_01_left"
+autoplay = true
+animation_section_end = 373
+cellmaps/spr_00_00_1 = null
+cellmaps/spr_00_00_0 = null
+position = Vector2(495, 347)

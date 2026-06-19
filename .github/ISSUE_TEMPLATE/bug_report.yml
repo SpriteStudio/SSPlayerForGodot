@@ -1,0 +1,81 @@
+name: Bug Report / バグ報告
+description: Create a report to help us improve SSPlayerForGodot. / 不具合の報告
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting a bug! / 不具合の報告ありがとうございます！
+        Please provide as much information as possible to help us investigate. / 調査をスムーズに行うため、可能な限り詳細な情報を提供してください。
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description / 不具合の内容
+      description: A clear and concise description of what the bug is. / どのような不具合が発生しているか、簡潔に説明してください。
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce / 再現手順
+      description: Steps to reproduce the behavior. / 不具合を再現させるための手順を詳しく書いてください。
+      placeholder: |
+        1. Open '...'
+        2. Run '...'
+        3. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected_behavior
+    attributes:
+      label: Expected Behavior / 期待される動作
+      description: A clear and concise description of what you expected to happen. / 本来どのような動作を期待していたか説明してください。
+    validations:
+      required: true
+
+  - type: input
+    id: godot_version
+    attributes:
+      label: Godot Version / Godotのバージョン
+      description: What version of Godot are you using? / ご利用のGodotのバージョンを記載してください。
+      placeholder: e.g. 4.6.0-stable
+    validations:
+      required: true
+
+  - type: input
+    id: plugin_version
+    attributes:
+      label: Plugin Version / プラグインのバージョン
+      description: What version of this plugin are you using? (e.g., v1.0.0 or commit hash). / 利用している本プラグインのバージョンタグ（v1.0.0等）、またはコミットハッシュ。
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: Operating System / OS
+      description: What OS are you developing on? / 開発を行っているOS。
+      placeholder: e.g. Windows 11 / macOS 14 / Ubuntu 22.04
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional_context
+    attributes:
+      label: Additional Context & Error Logs / 補足情報・エラーログ
+      description: Add any other context or paste relevant error messages from the Godot output console here. / その他、不具合に関する補足情報や、Godotのコンソールに出力されたエラーメッセージを記載してください。
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        **🚨 WARNING / 警告 🚨**
+        **DO NOT** attach proprietary `.sspj` project files or sensitive data to this public issue. 
+        If you need to share reproduction data, please submit it privately via the [Help Center](https://www.webtech.co.jp/help/ja/spritestudio7/inquiries/ssplayer_tool/).
+        
+        **絶対に** 機密情報や非公開の `.sspj` プロジェクトデータをここに添付しないでください。
+        再現データの提供が必要な場合は、[公式ヘルプセンター](https://www.webtech.co.jp/help/ja/spritestudio7/inquiries/ssplayer_tool/)から非公開で送信してください。

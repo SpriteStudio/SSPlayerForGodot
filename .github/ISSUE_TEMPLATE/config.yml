@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 SpriteStudio Community / コミュニティ (使い方や質問)
+    url: https://spritestudio.jp/community/
+    about: Please ask general questions about how to use the SDK here. / SDKの使い方などの一般的なご質問はこちらのコミュニティをご利用ください。
+  - name: 🔒 Private Inquiries & Data Submission / 非公開でのご相談・データ送付
+    url: https://www.webtech.co.jp/help/ja/spritestudio7/inquiries/ssplayer_tool/
+    about: Use this for private inquiries or when sending sensitive reproduction data. / 非公開での相談や、再現データの送付が必要な場合は公式ヘルプセンターをご利用ください。
