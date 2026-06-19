@@ -100,6 +100,6 @@ For instructions on migrating from versions prior to v1.x, please refer to the [
 
 ## License
 
-See [LICENSE.txt](../../LICENSE.txt).
+See [LICENSE.md](../../LICENSE.md).
 
 

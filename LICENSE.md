@@ -1,3 +1,5 @@
+SPDX-License-Identifier: BSD-3-Clause
+
 Copyright (c) CRI Middleware Co., Ltd.
 All rights reserved.
 
