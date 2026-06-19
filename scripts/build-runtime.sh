@@ -102,13 +102,7 @@ else
             ;;
         android)
             ./scripts/release-android.sh $BUILD_MODE
-            case "$ARCH" in
-                arm64|arm64-v8a) RUST_TARGET="aarch64-linux-android" ;;
-                arm32|armv7|armeabi-v7a) RUST_TARGET="armv7-linux-androideabi" ;;
-                x86_64) RUST_TARGET="x86_64-linux-android" ;;
-                x86_32|x86) RUST_TARGET="i686-linux-android" ;;
-            esac
-            SRC_DIR="target/$RUST_TARGET/$BUILD_MODE"
+            SRC_DIR="target/*-linux-android*/$BUILD_MODE"
             ;;
         linux)
             ./scripts/release-linux.sh $BUILD_MODE
@@ -153,32 +147,56 @@ if [[ "$PLATFORM" == "macos" || "$PLATFORM" == "windows" || "$PLATFORM" == "linu
 fi
 
 # Libs Destination
-if [[ "$PLATFORM" == "macos" || "$PLATFORM" == "ios" || "$PLATFORM" == "web" ]]; then
-    LIB_OUT_DIR=${RUNTIME_DIR}/libs/${PLATFORM}
+if [[ "$PLATFORM" == "android" ]]; then
+    typeset -A android_archs
+    android_archs=(
+        "arm64" "aarch64-linux-android"
+        "arm32" "armv7-linux-androideabi"
+        "x86_64" "x86_64-linux-android"
+        "x86" "i686-linux-android"
+    )
+    for a in ${(k)android_archs}; do
+        target=${android_archs[$a]}
+        arch_src_dir="target/$target/$BUILD_MODE"
+        LIB_OUT_DIR="${RUNTIME_DIR}/libs/${PLATFORM}/${a}"
+        
+        if [[ -f "${SDK_DIR}/${arch_src_dir}/libssruntime.a" ]]; then
+            mkdir -p "${LIB_OUT_DIR}"
+            cp "${SDK_DIR}/${arch_src_dir}/libssruntime.a" "${LIB_OUT_DIR}/libssruntime.a"
+        fi
+    done
 else
-    LIB_OUT_DIR=${RUNTIME_DIR}/libs/${PLATFORM}/${ARCH}
-fi
-mkdir -p ${LIB_OUT_DIR}
-
-# Copy function
-function copy_lib() {
-    local src_name=$1
-    local dest_name=$2
-    local full_src="${SDK_DIR}/${SRC_DIR}/${src_name}"
-    if [[ -f "${full_src}" ]]; then
-        cp "${full_src}" "${LIB_OUT_DIR}/${dest_name}"
-        return 0
+    if [[ "$PLATFORM" == "macos" || "$PLATFORM" == "ios" || "$PLATFORM" == "web" ]]; then
+        LIB_OUT_DIR=${RUNTIME_DIR}/libs/${PLATFORM}
+    else
+        LIB_OUT_DIR=${RUNTIME_DIR}/libs/${PLATFORM}/${ARCH}
     fi
-    return 1
-}
+    mkdir -p ${LIB_OUT_DIR}
 
-if [[ "$PLATFORM" == "windows" ]]; then
-    copy_lib "ssruntime.lib" "ssruntime.lib" || copy_lib "libssruntime.a" "ssruntime.lib"
-    copy_lib "ssconverter.lib" "ssconverter.lib" || copy_lib "libssconverter.a" "ssconverter.lib"
-else
-    copy_lib "libssruntime.a" "libssruntime.a"
-    if [[ "$PLATFORM" == "macos" || "$PLATFORM" == "linux" ]]; then
-        copy_lib "libssconverter.a" "libssconverter.a"
+    # Copy function
+    function copy_lib() {
+        local src_name=$1
+        local dest_name=$2
+        local full_src="${SDK_DIR}/${SRC_DIR}/${src_name}"
+        if [[ -f "${full_src}" ]]; then
+            cp "${full_src}" "${LIB_OUT_DIR}/${dest_name}"
+            return 0
+        fi
+        return 1
+    }
+
+    if [[ "$PLATFORM" == "windows" ]]; then
+        copy_lib "ssruntime.lib" "ssruntime.lib" || copy_lib "libssruntime.a" "ssruntime.lib"
+        copy_lib "ssconverter.lib" "ssconverter.lib" || copy_lib "libssconverter.a" "ssconverter.lib"
+    elif [[ "$PLATFORM" == "ios" ]]; then
+        if [[ -d "${SDK_DIR}/target/xcframework/static/libssruntime.xcframework" ]]; then
+            cp -R "${SDK_DIR}/target/xcframework/static/libssruntime.xcframework" "${LIB_OUT_DIR}/"
+        fi
+    else
+        copy_lib "libssruntime.a" "libssruntime.a"
+        if [[ "$PLATFORM" == "macos" || "$PLATFORM" == "linux" ]]; then
+            copy_lib "libssconverter.a" "libssconverter.a"
+        fi
     fi
 fi
 

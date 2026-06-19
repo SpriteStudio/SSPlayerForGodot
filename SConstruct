@@ -112,6 +112,14 @@ if env['target'] == 'editor':
         env.Append(LINKFLAGS=["Userenv.lib", "Bcrypt.lib", "Ntdll.lib", "Ws2_32.lib"])
         env.Append(LINKFLAGS=["/FORCE:MULTIPLE", "/IGNORE:4006", "/WX:NO"])
 
+if platform == "ios":
+    if env.get("ios_simulator", False):
+        slice_dir = "ios-arm64_x86_64-simulator"
+    else:
+        slice_dir = "ios-arm64"
+    xcf_libpath = os.path.join(runtime_libpath, "libssruntime.xcframework", slice_dir)
+    env.Append(LIBPATH=[xcf_libpath])
+
 env.Append(LIBS=["ssruntime"])
 
 # Platform specific frameworks

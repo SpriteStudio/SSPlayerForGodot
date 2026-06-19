@@ -56,7 +56,12 @@ if env['target'] == 'editor':
 # missing source. Pass the static archive by full path instead. Other platforms
 # link it normally via -l from LIBPATH.
 if platform == "ios":
-    env.Append(LIBS=[File(os.path.join(runtime_libpath, "libssruntime.a"))])
+    if env.get("ios_simulator", False):
+        slice_dir = "ios-arm64_x86_64-simulator"
+    else:
+        slice_dir = "ios-arm64"
+    xcf_libpath = os.path.join(runtime_libpath, "libssruntime.xcframework", slice_dir)
+    env.Append(LIBS=[File(os.path.join(xcf_libpath, "libssruntime.a"))])
 else:
     env.Append(LIBS=["ssruntime"])
 

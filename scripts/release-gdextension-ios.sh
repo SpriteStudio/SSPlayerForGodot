@@ -15,32 +15,14 @@ targets=("template_release" "template_debug")
 # Build a simulator framework and a device framework per target, then combine
 # them into one XCFramework (device + simulator) referenced by the .gdextension.
 #
-# Per-variant handling:
-#   1. libssruntime: device and simulator need different slices and CI has no
-#      separate provisioning step, so (re)build/place the runtime here per
-#      variant via build-runtime.sh (ios_simulator selects the slice).
-#   2. ss_player/*.os are not namespaced by device/simulator (unlike godot-cpp's
-#      objects), so clear them before each variant build to avoid linking the
-#      wrong slice into the binary.
-# Order matters: build the simulator first. build-extension.sh renames the
-# simulator output to *.simulator.framework, freeing the plain *.framework name
-# for the device build; doing device first would let the simulator build clobber
-# it before the rename.
-build_variant() {
-    local target=$1 sim=$2 rtmode=$3
-    find ${ROOTDIR}/ss_player -name '*.os' -delete 2>/dev/null || true
-    scripts/build-runtime.sh platform=ios build=${rtmode} ios_simulator=${sim}
-    scripts/build-extension.sh platform=ios arch=universal compiledb=no strip=yes target=${target} ios_simulator=${sim}
-}
-
 for target in ${targets[@]}; do
-    if [[ "${target}" == "template_debug" ]]; then
-        rtmode="debug"
-    else
-        rtmode="release"
-    fi
-    build_variant ${target} yes ${rtmode}
-    build_variant ${target} no  ${rtmode}
+    # Build simulator first so it can be renamed to *.simulator.framework before the device build clobbers it
+    find ${ROOTDIR}/ss_player -name '*.os' -delete 2>/dev/null || true
+    scripts/build-extension.sh platform=ios arch=universal compiledb=no strip=yes target=${target} ios_simulator=yes
+
+    # Clear .os files again and build device
+    find ${ROOTDIR}/ss_player -name '*.os' -delete 2>/dev/null || true
+    scripts/build-extension.sh platform=ios arch=arm64 compiledb=no strip=yes target=${target} ios_simulator=no
 done
 
 # Combine device + simulator frameworks into XCFrameworks. xcodebuild requires
@@ -59,5 +41,21 @@ for target in ${targets[@]}; do
 done
 /bin/rm -rf tmp
 popd > /dev/null # ${BINDIR}
+
+# Sync the xcframework to the examples and remove the leftover .frameworks
+MAIN_PROJECT="dev_gdextension"
+OTHER_PROJECTS=("overall_gdextension" "Ringo")
+
+# Clean up leftover .frameworks and copy .xcframeworks to MAIN_PROJECT
+rm -rf examples/${MAIN_PROJECT}/addons/spritestudio/bin/ios/*.framework
+cp -R bin/ios/*.xcframework examples/${MAIN_PROJECT}/addons/spritestudio/bin/ios/
+
+# Sync from MAIN_PROJECT to OTHER_PROJECTS
+for project in "${OTHER_PROJECTS[@]}"; do
+    DEST_DIR="./examples/${project}/addons/spritestudio"
+    /bin/mkdir -p "${DEST_DIR}/bin/ios"
+    rm -rf "${DEST_DIR}/bin/ios/*.framework"
+    cp -R examples/${MAIN_PROJECT}/addons/spritestudio/bin/ios/*.xcframework "${DEST_DIR}/bin/ios/"
+done
 
 popd > /dev/null # ${ROOTDIR}
