@@ -38,35 +38,36 @@ body:
       required: true
 
   - type: input
-    id: target_engine
+    id: godot_version
     attributes:
-      label: Target Engine / 組み込み先のエンジン
-      description: Unity, Unreal Engine, Web/JS, Custom C++ Engine, etc. / Unity、Unreal Engine、Webブラウザ、独自のC++エンジンなど。
+      label: Godot Version / Godotのバージョン
+      description: What version of Godot are you using? / ご利用のGodotのバージョンを記載してください。
+      placeholder: e.g. 4.6.0-stable
     validations:
       required: true
 
   - type: input
-    id: sdk_version
+    id: plugin_version
     attributes:
-      label: SDK Version / SDK のバージョン
-      description: e.g. v7.0.0-alpha01 or commit hash. / バージョンタグ（v7.0.0-alpha01等）、またはコミットハッシュ。
+      label: Plugin Version / プラグインのバージョン
+      description: What version of this plugin are you using? (e.g., v1.0.0 or commit hash). / 利用している本プラグインのバージョンタグ（v1.0.0等）、またはコミットハッシュ。
     validations:
       required: true
 
   - type: input
     id: environment
     attributes:
-      label: OS / Compiler / Rust Version
-      description: OS version, Rust version, compiler info. / OS バージョン、Rust のバージョン、コンパイラの情報など。
-      placeholder: e.g. macOS Sonoma, Rust 1.77
+      label: Operating System / OS
+      description: What OS are you developing on? / 開発を行っているOS。
+      placeholder: e.g. Windows 11 / macOS 14 / Ubuntu 22.04
     validations:
       required: true
 
   - type: textarea
     id: additional_context
     attributes:
-      label: Additional Context & Minimal Code / 補足情報・最小再現コード
-      description: Add any other context or code snippets that reproduce the issue. / その他、不具合に関する補足情報や、不具合が発生する呼び出し部分のコードを記載してください。
+      label: Additional Context & Error Logs / 補足情報・エラーログ
+      description: Add any other context or paste relevant error messages from the Godot output console here. / その他、不具合に関する補足情報や、Godotのコンソールに出力されたエラーメッセージを記載してください。
 
   - type: markdown
     attributes:
