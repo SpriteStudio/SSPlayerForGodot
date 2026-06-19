@@ -43,15 +43,23 @@ If you find a bug, please use the provided Issue Templates. Include:
 - Python 3 and SCons
 
 ### Build the Plugin
-To compile the Godot Extension, use the provided build scripts:
+To compile the Godot Extension, you must first build the Rust runtime from the SDK, and then compile the C++ extension using the provided build scripts:
 
 **macOS / Linux:**
 ```bash
+# 1. Build the Rust runtime (Requires Rust installed)
+./scripts/build-runtime.sh
+
+# 2. Build the GDExtension
 ./scripts/build-extension.sh
 ```
 
 **Windows:**
 ```powershell
+# 1. Build the Rust runtime (Requires Rust installed)
+.\scripts\build-runtime.ps1
+
+# 2. Build the GDExtension
 .\scripts\build-extension.ps1
 ```
 
@@ -117,15 +125,23 @@ Godot Engineとのネイティブな統合と高いパフォーマンスを維�
 - Python 3 および SCons
 
 ### ビルド方法
-提供されているスクリプトを使用してGDExtensionをコンパイルします。
+提供されているスクリプトを使用して、まずSDKからRustランタイムをビルドし、次にGDExtensionをコンパイルします。
 
 **macOS / Linux:**
 ```bash
+# 1. Rustランタイムのビルド (Rust環境が必要です)
+./scripts/build-runtime.sh
+
+# 2. GDExtensionのビルド
 ./scripts/build-extension.sh
 ```
 
 **Windows:**
 ```powershell
+# 1. Rustランタイムのビルド (Rust環境が必要です)
+.\scripts\build-runtime.ps1
+
+# 2. GDExtensionのビルド
 .\scripts\build-extension.ps1
 ```
 
