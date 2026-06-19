@@ -11,7 +11,7 @@
 
 ## Architecture in one paragraph
 
-A Godot Engine integration for SpriteStudio 7, providing a C++ `SsPlayerNode2D` that can be built as a **GDExtension** or a **custom module**. It uses `libssruntime` (Rust) from SpriteStudio-SDK via FFI to play `.ssab` (FlatBuffers) binaries. Projects are converted from `.sspj` (XML) to `.ssab` at import-time using `libssconverter`. The C++ side handles Godot node lifecycle, resource management, and batch rendering.
+A Godot Engine integration for SpriteStudio 7, providing a C++ `SpriteStudioPlayer2D` node that can be built as a **GDExtension** or a **custom module**. It uses `libssruntime` (Rust) from SpriteStudio-SDK via FFI to play `.ssab` (FlatBuffers) binaries. Projects are converted from `.sspj` (XML) to `.ssab` at import-time using `libssconverter`. The C++ side handles Godot node lifecycle, resource management, and batch rendering.
 
 ## Key components
 
@@ -36,9 +36,11 @@ A Godot Engine integration for SpriteStudio 7, providing a C++ `SsPlayerNode2D` 
 |---|---|
 | Build GDExtension | `./scripts/build-extension.sh` (POSIX) / `.\scripts\build-extension.ps1` (Win) |
 | Build Custom Module | `./scripts/build.sh` (POSIX) / `.\scripts\build.ps1` (Win) |
-| Setup (Source SDK) | `./scripts/build-runtime.sh` (Recommended for developers using submodule) |
-| Setup (Prebuilt SDK) | `./scripts/download-sdk.sh` (For CI or release-only environments) |
+| Setup (Source SDK) | `./scripts/build-runtime.sh` (POSIX) / `.\scripts\build-runtime.ps1` (Win) |
+| Setup (Prebuilt SDK) | `./scripts/download-sdk.sh` (POSIX) / `.\scripts\download-sdk.ps1` (Win) |
 | Format C++ Code | `clang-format -i ss_player/*.{cpp,h}` (if available) |
+
+*Note: Setup (Source SDK) is recommended for developers using the submodule. Setup (Prebuilt SDK) is intended for CI or release-only environments.*
 
 ## Workspace conventions
 
