@@ -89,12 +89,15 @@ else
             SRC_DIR="target/universal-apple-darwin/$BUILD_MODE"
             ;;
         ios)
+            # The SDK now emits a single XCFramework (device + simulator slices).
+            # Godot links one variant at a time into its per-variant libSSGodot
+            # framework, so pick the matching static slice: device (arm64) or the
+            # universal simulator slice (arm64 + x86_64, already lipo'd by the SDK).
+            ./scripts/release-ios-xcframework.sh $BUILD_MODE
             if [[ "$IOS_SIMULATOR" == "yes" ]]; then
-                ./scripts/release-ios-sim.sh $BUILD_MODE
-                SRC_DIR="target/universal-apple-ios-sim/$BUILD_MODE"
+                SRC_DIR="target/xcframework/static/libssruntime.xcframework/ios-arm64_x86_64-simulator"
             else
-                ./scripts/release-ios.sh $BUILD_MODE
-                SRC_DIR="target/universal-apple-ios/$BUILD_MODE"
+                SRC_DIR="target/xcframework/static/libssruntime.xcframework/ios-arm64"
             fi
             ;;
         android)

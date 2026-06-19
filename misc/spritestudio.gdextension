@@ -9,8 +9,8 @@ macos.editor = "bin/macos/libSSGodot.macos.editor.framework"
 macos.debug = "bin/macos/libSSGodot.macos.template_debug.framework"
 macos.release = "bin/macos/libSSGodot.macos.template_release.framework"
 
-ios.debug = "bin/ios/libSSGodot.ios.template_debug.framework"
-ios.release = "bin/ios/libSSGodot.ios.template_release.framework"
+ios.debug = "bin/ios/libSSGodot.ios.template_debug.xcframework"
+ios.release = "bin/ios/libSSGodot.ios.template_release.xcframework"
 
 windows.editor.x86_64 = "bin/windows/libSSGodot.windows.editor.x86_64.dll"
 windows.debug.x86_64 = "bin/windows/libSSGodot.windows.template_debug.x86_64.dll"
