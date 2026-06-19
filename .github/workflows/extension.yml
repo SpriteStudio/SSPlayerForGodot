@@ -121,7 +121,8 @@ jobs:
         run: |
           ./scripts/release-gdextension-ios.sh
 
-          for f in ./bin/ios/*.framework
+          # iOS ships XCFrameworks (device + simulator); sign the frameworks inside each slice.
+          for f in ./bin/ios/*.xcframework/*/*.framework
           do
             codesign --force --verify --verbose --keychain ${{ env.KEYCHAIN_PATH }} --sign "${DEV_ID_APPLICATION}" $f --deep --options runtime --timestamp
           done

@@ -119,7 +119,14 @@ if platform == 'macos':
     env.Append(LINKFLAGS=["-framework", "CoreFoundation", "-framework", "CoreServices"])
 
 if platform == "ios":
-    ios_flags = ["-miphoneos-version-min=12.0"]
+    # godot-cpp's ios tool already selects the iphoneos/iphonesimulator SDK and
+    # archs from `ios_simulator`; match its deployment-target flag here. A
+    # hardcoded -miphoneos-version-min forces a device target and breaks the
+    # simulator build (object built for 'iOS' vs 'iOS-simulator' link mismatch).
+    if env["ios_simulator"]:
+        ios_flags = ["-mios-simulator-version-min=12.0"]
+    else:
+        ios_flags = ["-miphoneos-version-min=12.0"]
     env.Append(CCFLAGS=ios_flags)
     env.Append(LINKFLAGS=ios_flags)
 

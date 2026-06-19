@@ -72,8 +72,8 @@ if ($IS_HOST_BUILD) {
         if ($ARCH -eq "arm64") { $script = "./scripts/release-windows-arm64.ps1" }
         echo "Executing $script $BUILD_MODE..."
         & $script $BUILD_MODE
-    } elseif ($PLATFORM -eq "ios" -and $IOS_SIMULATOR -eq "yes") {
-        & sh ./scripts/release-ios-sim.sh $BUILD_MODE
+    } elseif ($PLATFORM -eq "ios") {
+        & sh ./scripts/release-ios-xcframework.sh $BUILD_MODE
     } elseif ($PLATFORM -eq "web") {
         & sh ./scripts/release-emscripten.sh $BUILD_MODE
     } else {
@@ -117,6 +117,14 @@ if ($PLATFORM -eq "windows") { $LIB_EXT = ".lib" }
 # Determine source directory
 if ($IS_HOST_BUILD) {
     $SRC_DIR = "$SDK_DIR/target/$BUILD_MODE"
+} elseif ($PLATFORM -eq "ios") {
+    # iOS: pick the matching static slice from the SDK XCFramework
+    # (release-ios-xcframework.sh already lipo'd the simulator archs).
+    if ($IOS_SIMULATOR -eq "yes") {
+        $SRC_DIR = "$SDK_DIR/target/xcframework/static/libssruntime.xcframework/ios-arm64_x86_64-simulator"
+    } else {
+        $SRC_DIR = "$SDK_DIR/target/xcframework/static/libssruntime.xcframework/ios-arm64"
+    }
 } else {
     # Architecture mapping for cross-compilation
     $TARGET_TRIPLE = ""
@@ -126,12 +134,6 @@ if ($IS_HOST_BUILD) {
         elseif ($ARCH -eq "x86_64") { $TARGET_TRIPLE = "x86_64-linux-android" }
     } elseif ($PLATFORM -eq "web") {
         $TARGET_TRIPLE = "wasm32-unknown-unknown"
-    } elseif ($PLATFORM -eq "ios") {
-        if ($IOS_SIMULATOR -eq "yes") {
-            $TARGET_TRIPLE = "universal-apple-ios-sim"
-        } else {
-            $TARGET_TRIPLE = "universal-apple-ios"
-        }
     } elseif ($PLATFORM -eq "macos" -and $ARCH -eq "universal") {
         $TARGET_TRIPLE = "universal-apple-darwin"
     } elseif ($PLATFORM -eq "windows" -and $ARCH -eq "x86_64") {

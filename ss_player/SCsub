@@ -50,7 +50,15 @@ if env['target'] == 'editor':
         env.Append(LINKFLAGS=["Userenv.lib", "Bcrypt.lib", "Ntdll.lib", "Ws2_32.lib"])
         env.Append(LINKFLAGS=["/FORCE:MULTIPLE", "/IGNORE:4006"])
 
-env.Append(LIBS=["ssruntime"])
+# On Apple embedded platforms (iOS) the engine is archived into a single static
+# library: platform/ios/SCsub feeds env["LIBS"] as *input files* to
+# combine_libs_apple_embedded, so a bare "-lssruntime" name is resolved as a
+# missing source. Pass the static archive by full path instead. Other platforms
+# link it normally via -l from LIBPATH.
+if platform == "ios":
+    env.Append(LIBS=[File(os.path.join(runtime_libpath, "libssruntime.a"))])
+else:
+    env.Append(LIBS=["ssruntime"])
 
 # --- Compilation Flags ---
 if not env_ss.msvc:
