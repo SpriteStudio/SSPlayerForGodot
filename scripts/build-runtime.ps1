@@ -125,13 +125,10 @@ if ($IS_HOST_BUILD) {
     } else {
         $SRC_DIR = "$SDK_DIR/target/xcframework/static/libssruntime.xcframework/ios-arm64"
     }
-} else {
     # Architecture mapping for cross-compilation
     $TARGET_TRIPLE = ""
     if ($PLATFORM -eq "android") {
-        if ($ARCH -eq "arm64" -or $ARCH -eq "arm64-v8a") { $TARGET_TRIPLE = "aarch64-linux-android" }
-        elseif ($ARCH -eq "arm32" -or $ARCH -eq "armeabi-v7a") { $TARGET_TRIPLE = "armv7-linux-androideabi" }
-        elseif ($ARCH -eq "x86_64") { $TARGET_TRIPLE = "x86_64-linux-android" }
+        $SRC_DIR = "$SDK_DIR/target/*-linux-android*/$BUILD_MODE"
     } elseif ($PLATFORM -eq "web") {
         $TARGET_TRIPLE = "wasm32-unknown-unknown"
     } elseif ($PLATFORM -eq "macos" -and $ARCH -eq "universal") {
@@ -140,34 +137,64 @@ if ($IS_HOST_BUILD) {
         $TARGET_TRIPLE = "x86_64-pc-windows-msvc"
     }
 
-    if ($TARGET_TRIPLE -ne "") {
-        $SRC_DIR = "$SDK_DIR/target/$TARGET_TRIPLE/$BUILD_MODE"
+    if ($PLATFORM -ne "android") {
+        if ($TARGET_TRIPLE -ne "") {
+            $SRC_DIR = "$SDK_DIR/target/$TARGET_TRIPLE/$BUILD_MODE"
+        } else {
+            $SRC_DIR = "$SDK_DIR/target/$BUILD_MODE"
+        }
+    }
+}
+
+echo "Copying libraries from $SRC_DIR..."
+
+if ($PLATFORM -eq "android") {
+    $android_archs = @{
+        "arm64" = "aarch64-linux-android"
+        "arm32" = "armv7-linux-androideabi"
+        "x86_64" = "x86_64-linux-android"
+        "x86" = "i686-linux-android"
+    }
+    
+    foreach ($a in $android_archs.Keys) {
+        $target = $android_archs[$a]
+        $arch_src_dir = "$SDK_DIR/target/$target/$BUILD_MODE"
+        $arch_lib_out = "$rootDirectory/ss_player/runtime/libs/$PLATFORM/$a"
+        
+        if (Test-Path "$arch_src_dir/libssruntime.a") {
+            New-Item -ItemType Directory -Path $arch_lib_out -Force | Out-Null
+            Copy-Item "$arch_src_dir/libssruntime.a" "$arch_lib_out/libssruntime.a" -Force
+        }
+    }
+} else {
+    if ($PLATFORM -eq "ios") {
+        $xcframework_src = "$SDK_DIR/target/xcframework/static/libssruntime.xcframework"
+        if (Test-Path $xcframework_src) {
+            Copy-Item -Recurse $xcframework_src "$LIB_OUTPUT/" -Force
+        }
     } else {
-        $SRC_DIR = "$SDK_DIR/target/$BUILD_MODE"
-    }
-}
+        echo "Copying libraries from $SRC_DIR to $LIB_OUTPUT..."
+        if (Test-Path "$SRC_DIR/libssruntime$LIB_EXT") {
+            Copy-Item "$SRC_DIR/libssruntime$LIB_EXT" "$LIB_OUTPUT/ssruntime$LIB_EXT" -Force
+        } elseif (Test-Path "$SRC_DIR/ssruntime$LIB_EXT") {
+            Copy-Item "$SRC_DIR/ssruntime$LIB_EXT" "$LIB_OUTPUT/ssruntime$LIB_EXT" -Force
+        }
 
-echo "Copying libraries from $SRC_DIR to $LIB_OUTPUT..."
+        if (Test-Path "$SRC_DIR/libssconverter$LIB_EXT") {
+            Copy-Item "$SRC_DIR/libssconverter$LIB_EXT" "$LIB_OUTPUT/ssconverter$LIB_EXT" -Force
+        } elseif (Test-Path "$SRC_DIR/ssconverter$LIB_EXT") {
+            Copy-Item "$SRC_DIR/ssconverter$LIB_EXT" "$LIB_OUTPUT/ssconverter$LIB_EXT" -Force
+        }
 
-if (Test-Path "$SRC_DIR/libssruntime$LIB_EXT") {
-    Copy-Item "$SRC_DIR/libssruntime$LIB_EXT" "$LIB_OUTPUT/ssruntime$LIB_EXT" -Force
-} elseif (Test-Path "$SRC_DIR/ssruntime$LIB_EXT") {
-    Copy-Item "$SRC_DIR/ssruntime$LIB_EXT" "$LIB_OUTPUT/ssruntime$LIB_EXT" -Force
-}
-
-if (Test-Path "$SRC_DIR/libssconverter$LIB_EXT") {
-    Copy-Item "$SRC_DIR/libssconverter$LIB_EXT" "$LIB_OUTPUT/ssconverter$LIB_EXT" -Force
-} elseif (Test-Path "$SRC_DIR/ssconverter$LIB_EXT") {
-    Copy-Item "$SRC_DIR/ssconverter$LIB_EXT" "$LIB_OUTPUT/ssconverter$LIB_EXT" -Force
-}
-
-# Copy for Godot Custom Module (with platform.target.arch naming)
-$targets = "editor", "template_release", "template_debug"
-foreach($target in $targets) {
-    if (Test-Path "$LIB_OUTPUT/ssruntime$LIB_EXT") {
-        Copy-Item "$LIB_OUTPUT/ssruntime$LIB_EXT" "$LIB_OUTPUT/ssruntime.$PLATFORM.$target.$ARCH$LIB_EXT" -Force
-    }
-    if (Test-Path "$LIB_OUTPUT/ssconverter$LIB_EXT") {
-        Copy-Item "$LIB_OUTPUT/ssconverter$LIB_EXT" "$LIB_OUTPUT/ssconverter.$PLATFORM.$target.$ARCH$LIB_EXT" -Force
+        # Copy for Godot Custom Module (with platform.target.arch naming)
+        $targets = "editor", "template_release", "template_debug"
+        foreach($target in $targets) {
+            if (Test-Path "$LIB_OUTPUT/ssruntime$LIB_EXT") {
+                Copy-Item "$LIB_OUTPUT/ssruntime$LIB_EXT" "$LIB_OUTPUT/ssruntime.$PLATFORM.$target.$ARCH$LIB_EXT" -Force
+            }
+            if (Test-Path "$LIB_OUTPUT/ssconverter$LIB_EXT") {
+                Copy-Item "$LIB_OUTPUT/ssconverter$LIB_EXT" "$LIB_OUTPUT/ssconverter.$PLATFORM.$target.$ARCH$LIB_EXT" -Force
+            }
+        }
     }
 }
