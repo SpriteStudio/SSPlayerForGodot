@@ -66,4 +66,4 @@ Sample projects based on SDK test projects are available under the [examples fol
 
 ## License
 
-See [LICENSE.txt](./LICENSE.txt).
+See [LICENSE.md](./LICENSE.md).

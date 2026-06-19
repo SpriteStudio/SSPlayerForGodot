@@ -66,4 +66,4 @@
 
 ## ライセンス
 
-[LICENSE.txt](./LICENSE.txt) を参照してください。
+[LICENSE.md](./LICENSE.md) を参照してください。
