@@ -1,5 +1,8 @@
 name: release gdextension
 on:
+  push:
+    tags:
+      - 'v*'
   workflow_dispatch:
     inputs:
       godot_version:
@@ -15,6 +18,7 @@ on:
         description: "Target Godot API version"
 
 env:
+  GODOT_VERSION: ${{ inputs.godot_version || '4.6' }}
   LANG: en_US.UTF-8
   LC_ALL: en_US.UTF-8
   PYTHONIOENCODING: utf8
@@ -105,14 +109,14 @@ jobs:
       - name: build Linux
         if: matrix.platform == 'linux'
         run: |
-          ./scripts/release-gdextension-linux.sh api_version=${{ inputs.godot_version }}
+          ./scripts/release-gdextension-linux.sh api_version=${{ env.GODOT_VERSION }}
 
       - name: build macOS
         if: matrix.platform == 'macos'
         env:
           DEV_ID_APPLICATION: ${{ secrets.DEV_ID_APPLICATION }}
         run: |
-          ./scripts/release-gdextension-macos.sh api_version=${{ inputs.godot_version }}
+          ./scripts/release-gdextension-macos.sh api_version=${{ env.GODOT_VERSION }}
 
           for f in ./bin/macos/*.framework
           do
@@ -124,7 +128,7 @@ jobs:
         env:
           DEV_ID_APPLICATION: ${{ secrets.DEV_ID_APPLICATION }}
         run: |
-          ./scripts/release-gdextension-ios.sh api_version=${{ inputs.godot_version }}
+          ./scripts/release-gdextension-ios.sh api_version=${{ env.GODOT_VERSION }}
 
           # iOS ships XCFrameworks (device + simulator); sign the frameworks inside each slice.
           for f in ./bin/ios/*.xcframework/*/*.framework
@@ -135,13 +139,13 @@ jobs:
       - name: build Android
         if: matrix.platform == 'android'
         run: |
-          ./scripts/release-gdextension-android.sh api_version=${{ inputs.godot_version }}
+          ./scripts/release-gdextension-android.sh api_version=${{ env.GODOT_VERSION }}
 
       - name: build Windows
         if: matrix.platform == 'windows'
         shell: pwsh
         run: |
-          ./scripts/release-gdextension-windows.ps1 api_version=${{ inputs.godot_version }}
+          ./scripts/release-gdextension-windows.ps1 api_version=${{ env.GODOT_VERSION }}
 
           Remove-Item -Recurse -Force ./bin/windows/*.exp
           Remove-Item -Recurse -Force ./bin/windows/*.lib
@@ -149,7 +153,7 @@ jobs:
       - name: build Web
         if: matrix.platform == 'web'
         run: |
-          ./scripts/release-gdextension-web.sh api_version=${{ inputs.godot_version }}
+          ./scripts/release-gdextension-web.sh api_version=${{ env.GODOT_VERSION }}
 
       - id: commit
         uses: pr-mpt/actions-commit-hash@v4
@@ -157,7 +161,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
-          name: extension-${{ inputs.godot_version }}-${{ matrix.platform }}-${{ steps.commit.outputs.short }}
+          name: extension-${{ env.GODOT_VERSION }}-${{ matrix.platform }}-${{ steps.commit.outputs.short }}
           path: bin/
           if-no-files-found: error
 
@@ -185,19 +189,31 @@ jobs:
           cp ../misc/spritestudio.gdextension addons/spritestudio/
           cp ../LICENSE.md addons/spritestudio/
 
-          mv extension-${{ inputs.godot_version }}-android-${{ steps.commit.outputs.short }}/android addons/spritestudio/bin/
-          mv extension-${{ inputs.godot_version }}-ios-${{ steps.commit.outputs.short }}/ios addons/spritestudio/bin/
-          mv extension-${{ inputs.godot_version }}-macos-${{ steps.commit.outputs.short }}/macos addons/spritestudio/bin/
-          mv extension-${{ inputs.godot_version }}-web-${{ steps.commit.outputs.short }}/web addons/spritestudio/bin/
-          mv extension-${{ inputs.godot_version }}-windows-${{ steps.commit.outputs.short }}/windows addons/spritestudio/bin/
-          mv extension-${{ inputs.godot_version }}-linux-${{ steps.commit.outputs.short }}/linux addons/spritestudio/bin/
+          mv extension-${{ env.GODOT_VERSION }}-android-${{ steps.commit.outputs.short }}/android addons/spritestudio/bin/
+          mv extension-${{ env.GODOT_VERSION }}-ios-${{ steps.commit.outputs.short }}/ios addons/spritestudio/bin/
+          mv extension-${{ env.GODOT_VERSION }}-macos-${{ steps.commit.outputs.short }}/macos addons/spritestudio/bin/
+          mv extension-${{ env.GODOT_VERSION }}-web-${{ steps.commit.outputs.short }}/web addons/spritestudio/bin/
+          mv extension-${{ env.GODOT_VERSION }}-windows-${{ steps.commit.outputs.short }}/windows addons/spritestudio/bin/
+          mv extension-${{ env.GODOT_VERSION }}-linux-${{ steps.commit.outputs.short }}/linux addons/spritestudio/bin/
 
           rm -rf ../output
           mkdir -p ../output
           mv addons ../output/
+          
+          # Create a ZIP file for GitHub Release
+          cd ../output
+          zip -r ssplayer-godot-extension-${{ env.GODOT_VERSION }}.zip addons/
 
       - name: Upload final release package
         uses: actions/upload-artifact@v7
         with:
-          name: ssplayer-godot-extension-${{ inputs.godot_version }}-${{ steps.commit.outputs.short }}
+          name: ssplayer-godot-extension-${{ env.GODOT_VERSION }}-${{ steps.commit.outputs.short }}
           path: output
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: output/ssplayer-godot-extension-${{ env.GODOT_VERSION }}.zip
+          draft: true
+          generate_release_notes: true
