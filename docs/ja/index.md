@@ -100,6 +100,6 @@ v1.x 以前のバージョンからの移行手順については、[マイグ�
 
 ## ライセンス
 
-[LICENSE.md](../../LICENSE.md) を参照してください。
+[LICENSE.md](https://github.com/cri-middleware/SSPlayerForGodot/blob/main/LICENSE.md) を参照してください。
 
 

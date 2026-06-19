@@ -57,7 +57,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           submodules: recursive
       - name: clone Godot Cpp repository
@@ -146,10 +146,10 @@ jobs:
           ./scripts/release-gdextension-web.sh
 
       - id: commit
-        uses: pr-mpt/actions-commit-hash@v3
+        uses: pr-mpt/actions-commit-hash@v4
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: extension-${{ env.GODOT_VERSION_4 }}-${{ matrix.platform }}-${{ steps.commit.outputs.short }}
           path: bin/
@@ -160,16 +160,16 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: artifacts
 
       - id: commit
-        uses: pr-mpt/actions-commit-hash@v3
+        uses: pr-mpt/actions-commit-hash@v4
 
       - name: Zip all artifacts
         run: |
@@ -191,7 +191,7 @@ jobs:
           mv addons ../output/
 
       - name: Upload final release package
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ssplayer-godot-extension-${{ env.GODOT_VERSION_4 }}-${{ steps.commit.outputs.short }}
           path: output

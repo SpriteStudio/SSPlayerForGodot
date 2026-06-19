@@ -1,4 +1,11 @@
 site_name: SpriteStudioPlayer for Godot
+site_description: "A Godot Engine integration for SpriteStudio 7"
+site_author: "CRI Middleware Co., Ltd."
+site_url: "https://cri-middleware.github.io/SSPlayerForGodot/"
+repo_name: "cri-middleware/SSPlayerForGodot"
+repo_url: "https://github.com/cri-middleware/SSPlayerForGodot"
+edit_uri: "edit/main/docs/"
+
 theme:
   name: material
   language: en
@@ -26,14 +33,15 @@ theme:
 plugins:
   - search
   - i18n:
-      default_language: en
+      docs_structure: folder
       languages:
-        en: 
+        - locale: en
           name: English
-          build_dir: en
-        ja: 
+          default: true
+          build: true
+        - locale: ja
           name: 日本語
-          build_dir: ja
+          build: true
 
 nav:
   - Home: index.md
@@ -51,3 +59,27 @@ nav:
       - SpriteStudioPlayer2D: api/player.md
       - Resource Classes: api/resource.md
   - Migration Guide: migration_from_v1.md
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+
+extra:
+  alternate:
+    - name: English
+      link: ./
+      lang: en
+    - name: 日本語
+      link: ./ja/
+      lang: ja

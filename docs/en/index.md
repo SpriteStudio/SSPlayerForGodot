@@ -100,6 +100,6 @@ For instructions on migrating from versions prior to v1.x, please refer to the [
 
 ## License
 
-See [LICENSE.md](../../LICENSE.md).
+See [LICENSE.md](https://github.com/cri-middleware/SSPlayerForGodot/blob/main/LICENSE.md).
 
 
