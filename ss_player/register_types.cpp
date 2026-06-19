@@ -35,6 +35,7 @@ static void editor_init_callback() {
 #include "ss_player_node_2d.h"
 #include "ss_part_attachment_2d.h"
 #include "ssqb_resource.h"
+#include "ss_translation.h"
 
 static SSABResourceFormatLoader *ssab_loader = nullptr;
 static SSABResourceFormatSaver *ssab_saver = nullptr;
@@ -127,6 +128,7 @@ void unregister_ss_player_types() {
 void initialize_ss_player_module(ModuleInitializationLevel level) {
   if (level == MODULE_INITIALIZATION_LEVEL_SCENE) {
     register_ss_player_types();
+    register_ss_translations();
   }
 
 #ifdef TOOLS_ENABLED
@@ -154,6 +156,7 @@ void initialize_ss_player_module(ModuleInitializationLevel level) {
 void uninitialize_ss_player_module(ModuleInitializationLevel level) {
   if (level == MODULE_INITIALIZATION_LEVEL_SCENE) {
     unregister_ss_player_types();
+    unregister_ss_translations();
   }
 }
 
