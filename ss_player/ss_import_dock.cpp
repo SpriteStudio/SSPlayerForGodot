@@ -177,7 +177,7 @@ SSImportControl::SSImportControl() {
         vbox->add_child(hbox_plugin);
 
         Label *plugin_label = memnew(Label);
-        plugin_label->set_text(tr("plugin:"));
+        plugin_label->set_text(tr("player:"));
         hbox_plugin->add_child(plugin_label);
 
         SSClickableLabel *plugin_version = memnew(SSClickableLabel);
@@ -204,8 +204,9 @@ SSImportControl::SSImportControl() {
 
         SSClickableLabel *clickable_label = memnew(SSClickableLabel);
         const char *v = ss_converter_version();
-        clickable_label->set_text(String(v));
-        clickable_label->set_tooltip_text(String(v));
+        String text = String(v);
+        clickable_label->set_text(text);
+        clickable_label->set_tooltip_text(text);
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
         clickable_label->set_text_overrun_behavior(TextServer::OVERRUN_TRIM_ELLIPSIS);
 #else
