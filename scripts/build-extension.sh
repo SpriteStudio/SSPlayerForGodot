@@ -26,12 +26,12 @@ declare -A scons_default_opts=(
     [platform]=${PLATFORM}
     [target]="editor"
     [compiledb]="yes"
+    [api_version]="4.6"
 )
 
 # macbuild default options
 declare -A build_default_opts=(
     [cpus]=${CPUS}
-    [version]="4.6"
     [strip]="no"
 )
 
@@ -47,8 +47,8 @@ func usage() {
     echo "  arch=<arch>         Target architecture (default: ${HOST_ARCH})"
     echo "  platform=<platform> Target platform (default: ${scons_default_opts[platform]})"
     echo "  cpus=<nums>         number of scons -j option"
-    echo "  target=<target>     build target (default: ${build_default_opts[target]})"
-    echo "  version=<version>   Godot version. $APP uses this version at can not getting Godot version from git branch or tag. (default: ${build_default_opts[version]})"
+    echo "  target=<target>     build target (default: ${scons_default_opts[target]})"
+    echo "  api_version=<ver>   Target Godot API version (default: ${scons_default_opts[api_version]})"
     echo "  strip=<yes|no>      Execute strip command to the app binary (default: ${build_default_opts[strip]})"
     echo "Godot scons options: "
     pushd $ROOTDIR/godot-cpp > /dev/null
@@ -77,10 +77,6 @@ for key value in ${(kv)opts}; do
 done
 echo ""
 
-# get Godot Version
-VERSION=${opts[version]}
-echo "Godot Version: ${VERSION}"
-
 # validate scons command options from macbuild.sh options
 for key value in ${(kv)opts}; do
     if [[ -v build_default_opts[$key] ]]; then
@@ -93,11 +89,6 @@ for key value in ${(kv)opts}; do
     fi
     scons_command_opts="$scons_command_opts $key=$value"
 done
-
-# Map version to api_version for SCons
-if [[ -n $VERSION ]]; then
-    scons_command_opts="$scons_command_opts api_version=$VERSION"
-fi
 
 scons_command_opts="$scons_command_opts -j $build_default_opts[cpus]"
 

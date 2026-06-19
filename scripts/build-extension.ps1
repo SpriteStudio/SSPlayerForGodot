@@ -17,13 +17,13 @@ $scons_default_opts = @{
     target = "editor"
     compiledb = "yes"
     use_static_cpp = "no"
+    api_version = "4.6"
 }
 
 # winbuild default options
 $winbuild_default_opts = @{
     cpus = $cpus
     ccache = "no"
-    version = "4.6"
 }
 
 $opts = @{}
@@ -35,11 +35,11 @@ function usage() {
     echo "Usage: $APP [options]"
     echo "$APP options:"
     echo "  arch=<arch>         Target architecture (default: ${HOST_ARCH})"
-    echo "  platform=<platform> Target platform (default: ${scons_default_opts[platform]})"
+    echo "  platform=<platform> Target platform (default: $($scons_default_opts.platform))"
     echo "  cpus=<nums>         number of scons -j option (default: $cpus)"
-    echo "  target=<target>     build target (default: ${winbuild_default_opts[target]})"
+    echo "  target=<target>     build target (default: $($scons_default_opts.target))"
+    echo "  api_version=<ver>   Target Godot API version (default: $($scons_default_opts.api_version))"
     # echo "  ccache=<yes|no>     Enable ccache (default: $($winbuild_default_opts.ccache))"
-    echo "  version=<version>   Godot version. $APP uses this version at can not getting Godot version from git branch or tag. (default: $($winbuild_default_opts.version))"
     echo "Godot scons options: "
     pushd $rootDirectory/godot-cpp
     scons --help
@@ -66,11 +66,6 @@ foreach ($key in $opts.Keys) {
         continue
     }
     $scons_command_opts += " $key=$($opts[$key])"
-}
-
-# Map version to api_version for SCons
-if ($opts.version) {
-    $scons_command_opts += " api_version=$($opts.version)"
 }
 
 $j = $opts["cpus"]

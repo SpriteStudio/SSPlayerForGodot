@@ -18,11 +18,11 @@ targets=("template_release" "template_debug")
 for target in ${targets[@]}; do
     # Build simulator first so it can be renamed to *.simulator.framework before the device build clobbers it
     find ${ROOTDIR}/ss_player -name '*.os' -delete 2>/dev/null || true
-    scripts/build-extension.sh platform=ios arch=universal compiledb=no strip=yes target=${target} ios_simulator=yes
+    scripts/build-extension.sh platform=ios arch=universal compiledb=no strip=yes target=${target} ios_simulator=yes "$@"
 
     # Clear .os files again and build device
     find ${ROOTDIR}/ss_player -name '*.os' -delete 2>/dev/null || true
-    scripts/build-extension.sh platform=ios arch=arm64 compiledb=no strip=yes target=${target} ios_simulator=no
+    scripts/build-extension.sh platform=ios arch=arm64 compiledb=no strip=yes target=${target} ios_simulator=no "$@"
 done
 
 # Combine device + simulator frameworks into XCFrameworks. xcodebuild requires

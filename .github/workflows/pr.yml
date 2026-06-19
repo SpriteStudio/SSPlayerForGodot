@@ -1,0 +1,88 @@
+name: PR Build
+
+on:
+  pull_request:
+    paths-ignore:
+      - '**/*.md'
+      - '.gitignore'
+      - 'LICENSE*'
+
+env:
+  LANG: en_US.UTF-8
+  LC_ALL: en_US.UTF-8
+  PYTHONIOENCODING: utf8
+
+concurrency:
+  group: ci-pr-${{ github.actor }}-${{ github.head_ref || github.run_number }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: 🐧 PR Build (${{ matrix.platform }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [linux, web]
+    
+    defaults:
+      run:
+        shell: zsh {0}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          submodules: recursive
+
+      - name: clone Godot Cpp repository
+        uses: GuillaumeFalourd/clone-github-repo-action@v2.3
+        with:
+          depth: 1
+          branch: master
+          owner: 'godotengine'
+          repository: 'godot-cpp'
+
+      - name: Setup Rust (Stable)
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup Rust Cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: "ss_player/SpriteStudio-SDK"
+
+      - name: Install Nightly Rust (Web only)
+        if: matrix.platform == 'web'
+        run: |
+          rustup target add wasm32-unknown-unknown
+          rustup toolchain install nightly
+          rustup target add wasm32-unknown-unknown --toolchain nightly
+          rustup component add rust-src --toolchain nightly
+
+      - name: Build Runtime (SDK)
+        run: ./scripts/build-runtime.sh platform=${{ matrix.platform }} build=debug
+
+      - name: Setup SCons Cache
+        uses: actions/cache@v3
+        with:
+          path: ~/.scons_cache
+          key: ${{ runner.os }}-${{ matrix.platform }}-scons-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.platform }}-scons-
+
+      - name: setup for gdextension
+        uses: ./.github/actions/setup-extension
+        with:
+          platform: ${{ matrix.platform }}
+          os: ubuntu-latest
+
+      - name: Build
+        env:
+          SCONS_CACHE: ~/.scons_cache
+        run: |
+          mkdir -p ~/.scons_cache
+          if [ "${{ matrix.platform }}" = "linux" ]; then
+            ./scripts/release-gdextension-linux.sh
+          elif [ "${{ matrix.platform }}" = "web" ]; then
+            ./scripts/release-gdextension-web.sh
+          fi
