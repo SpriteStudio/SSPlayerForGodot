@@ -15,4 +15,9 @@ for target in ${targets[@]}; do
     scripts/build.sh platform=android arch=x86_64 compiledb=no strip=yes target=${target}
 done
 
+# After building the shared libraries for all architectures, generate the APKs and source zip
+pushd godot/platform/android/java > /dev/null
+./gradlew generateGodotTemplates
+popd > /dev/null
+
 popd > /dev/null # ${ROOTDIR}

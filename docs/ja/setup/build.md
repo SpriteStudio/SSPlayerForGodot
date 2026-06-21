@@ -127,6 +127,92 @@ $env:PYTHONUTF8=1
 
 > Linux 向けのカスタムモジュール用一括ビルドスクリプトは未整備です。`./scripts/build.sh platform=linux target=...` を `editor` / `template_debug` / `template_release` で個別に呼び出してください。
 
+## カスタムモジュールのデバッグ方法
+
+カスタムモジュールとして組み込んだプラグインのC++コード（`ss_player` 以下）をデバッグしたい場合は、以下の手順で行います。
+
+1. **デバッグ用バイナリの確認**
+   `target=editor` あるいは `target=template_debug` を指定してビルドしたGodotバイナリには、デフォルトでデバッグシンボルが含まれています。
+   * **macOS:** `godot/Godot.app/Contents/MacOS/Godot`
+   * **Windows:** `godot/bin/godot.windows.editor.x86_64.exe` 等
+   * **Linux:** `godot/bin/godot.linuxbsd.editor.x86_64` 等
+
+2. **デバッガのアタッチと起動引数**
+   VSCode、Visual Studio、XcodeなどのIDEやコマンドラインのデバッガ（LLDB/GDB）から、上記のバイナリを起動プログラムとして指定します。
+   引数として対象プロジェクトへのパス（例: `--path examples/dev_module`）を渡すことで、エディタ画面を挟まずに直接プロジェクトを開いてデバッグを開始できます。
+
+**VSCode (`launch.json`) の設定例 (macOS / LLDB の場合):**
+
+```json
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug Godot Custom Module",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/godot/Godot.app/Contents/MacOS/Godot",
+            "args": [
+                "--path",
+                "${workspaceFolder}/examples/dev_module"
+            ],
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}
+```
+
+## エクスポート機能のテスト・デバッグ方法
+
+開発したカスタムモジュールやGDExtensionが、ビルド後のアプリで正常に動作するか（エクスポートが成功するか）を確認・デバッグするには、CLIを用いたヘッドレスエクスポートが便利です。
+
+以下の流れで、手元でテンプレートをビルド・インストールし、サンプルプロジェクトをエクスポートします。（以下はmacOSの例です）
+
+1. **ランタイムとテンプレートのビルド**
+   事前に `libssruntime` を用意し、対象プラットフォームのリリーススクリプトを実行します。
+   ```bash
+   # (必要に応じて) ランタイムをリリースビルドで用意
+   ./scripts/build-runtime.sh build=release platform=macos
+
+   # エクスポート用テンプレートのビルド
+   ./scripts/release-macos.sh
+   ```
+
+2. **テンプレートのインストール**
+   ビルドしたテンプレートを、Godotが認識するローカルの所定ディレクトリへインストールします。
+   **macOS / Linux:**
+   ```bash
+   ./scripts/install-template.sh macos
+   ```
+   **Windows (PowerShell):**
+   ```powershell
+   .\scripts\install-template.ps1 windows
+   ```
+
+3. **CLIからのエクスポート実行**
+   ビルドしたGodotエディタ（headlessモード）を使い、コマンドラインから直接エクスポート処理を呼び出します。
+   ```bash
+   # 例: dev_module プロジェクトを macOS 向けにエクスポート (.appとして直接出力)
+   ./godot/Godot.app/Contents/MacOS/Godot --path ./examples/dev_module/ --headless --export-debug "macOS" output.app
+   ```
+   > **Note:** エクスポートを実行するには、対象プロジェクト内の `export_presets.cfg` に指定したプラットフォーム名（上記の場合は `"macOS"`）のプリセットが存在し、必要な識別子（バンドルIDなど）が正しく設定されている必要があります。
+
+### Webプラットフォームのエクスポートと動作確認
+
+Web向けのエクスポートでは複数のファイル（`.html`, `.wasm`, `.pck`等）が出力されるため、専用のディレクトリを作成してエクスポートします。また、ブラウザのセキュリティ制限を回避するためローカルサーバーでの確認が必要です。
+
+```bash
+# 1. 出力用ディレクトリを作成し、Web向けにエクスポート
+mkdir -p build_web
+./godot/Godot.app/Contents/MacOS/Godot --path ./examples/dev_module/ --headless --export-debug "Web" ../../build_web/index.html
+
+# 2. ローカルHTTPサーバーを起動
+cd build_web
+python3 -m http.server 8000
+```
+サーバー起動後、ブラウザで `http://localhost:8000` にアクセスすると動作確認ができます。
+（本プラグインは Web においては `nothread` での動作となるため、特殊なCORSヘッダーなしの単純なHTTPサーバーで起動可能です）
+
 ## SpriteStudio-SDK 開発者向け
 
 > 以降のセクションは **SpriteStudio-SDK 自体を手元で開発・カスタマイズしながら Godot 側もビルドしたい場合のみ** 必要です。SpriteStudio-SDK のリリース成果物を使う一般的な Godot ビルダーは読み飛ばして構いません。
