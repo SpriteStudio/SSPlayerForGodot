@@ -213,6 +213,71 @@ python3 -m http.server 8000
 サーバー起動後、ブラウザで `http://localhost:8000` にアクセスすると動作確認ができます。
 （本プラグインは Web においては `nothread` での動作となるため、特殊なCORSヘッダーなしの単純なHTTPサーバーで起動可能です）
 
+### GDExtension のエクスポートと動作確認
+
+GDExtension（例: `dev_gdextension`）の場合、**エンジン本体の再ビルドやカスタムテンプレートのインストールは不要**です。Godot公式が配布している標準のGodotエディタとエクスポートテンプレートを使用して、そのままエクスポートが可能です。
+
+1. **GDExtension プラグインのリリースビルド**
+   事前に対象プラットフォーム向けのビルドスクリプトを実行し、プロジェクトの `addons/` ディレクトリにライブラリ（`.so`, `.xcframework`, `.dll` 等）を出力しておきます。
+   **macOS / Linux:**
+   ```bash
+   ./scripts/release-gdextension-macos.sh
+   ```
+   **Windows (PowerShell):**
+   ```powershell
+   .\scripts\release-gdextension-windows.ps1
+   ```
+
+2. **CLIからのエクスポート実行**
+   公式のGodotバイナリ（あるいは各自のGodotコマンド）を使って、プロジェクトをエクスポートします。
+   **macOS / Linux:**
+   ```bash
+   # ※ ここでの "godot" は、パスが通っている公式のGodotエディタ実行ファイル等を指します
+   godot --path ./examples/dev_gdextension/ --headless --export-debug "macOS" output.app
+   ```
+   **Windows (PowerShell):**
+   ```powershell
+   # ※ "godot.exe" は公式のGodot実行ファイル
+   godot.exe --path .\examples\dev_gdextension\ --headless --export-debug "Windows Desktop" output.exe
+   ```
+   > 実行時に `.so`, `.framework`, `.dll` などのプラグインファイルは Godot が自動的にエクスポート成果物の中に同梱してくれます。
+
+## GDExtension のデバッグ方法
+
+GDExtension の場合も、カスタムモジュールとほぼ同じ手順でC++コードをデバッグできます。違いは起動するプログラムが「公式のGodotエディタ」になる点のみです。
+
+1. **GDExtensionのデバッグビルド確認**
+   通常のビルドスクリプト（`build-extension.sh` 等）はデフォルトで `target=template_debug` となっており、出力されるライブラリ（`.dll` や `.dylib`）にはデバッグシンボルが含まれています。
+
+2. **デバッガのアタッチと起動引数**
+   VSCode や Visual Studio 等のデバッガから、**公式のGodotバイナリ** を起動プログラムとして指定し、引数でプロジェクトのパス（`--path examples/dev_gdextension`）を渡します。Godotが起動時にプラグインを動的ロードした時点でブレークポイントにヒットするようになります。
+
+**VSCode (`launch.json`) の設定例:**
+
+**macOS / Linux (LLDBの場合):**
+```json
+{
+    "name": "Debug GDExtension (macOS)",
+    "type": "lldb",
+    "request": "launch",
+    "program": "/Applications/Godot.app/Contents/MacOS/Godot", // 公式バイナリのパス
+    "args": [ "--path", "${workspaceFolder}/examples/dev_gdextension" ],
+    "cwd": "${workspaceFolder}"
+}
+```
+
+**Windows (Visual Studio デバッガの場合):**
+```json
+{
+    "name": "Debug GDExtension (Windows)",
+    "type": "cppvsdbg",
+    "request": "launch",
+    "program": "C:\\path\\to\\Godot_v4.x-stable_win64.exe", // 公式バイナリのパス
+    "args": [ "--path", "${workspaceFolder}\\examples\\dev_gdextension" ],
+    "cwd": "${workspaceFolder}"
+}
+```
+
 ## SpriteStudio-SDK 開発者向け
 
 > 以降のセクションは **SpriteStudio-SDK 自体を手元で開発・カスタマイズしながら Godot 側もビルドしたい場合のみ** 必要です。SpriteStudio-SDK のリリース成果物を使う一般的な Godot ビルダーは読み飛ばして構いません。
