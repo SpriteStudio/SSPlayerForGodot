@@ -127,6 +127,162 @@ These scripts do **not** fetch or build `libssruntime`, so [1. Prepare libssrunt
 
 > No batch release script is provided for the Linux custom module. Invoke `./scripts/build.sh platform=linux target=...` directly for each of `editor` / `template_debug` / `template_release`.
 
+## Debugging the Custom Module
+
+If you want to debug the C++ code (`ss_player/`) of the plugin embedded as a custom module, follow these steps:
+
+1. **Verify the Debug Binary**
+   Godot binaries built with `target=editor` or `target=template_debug` contain debug symbols by default.
+   * **macOS:** `godot/Godot.app/Contents/MacOS/Godot`
+   * **Windows:** `godot/bin/godot.windows.editor.x86_64.exe` etc.
+   * **Linux:** `godot/bin/godot.linuxbsd.editor.x86_64` etc.
+
+2. **Attach Debugger and Launch Arguments**
+   Specify the above binary as the launch program in your debugger (e.g., VSCode, Visual Studio, Xcode, LLDB/GDB).
+   By passing the path to the target project as an argument (e.g., `--path examples/dev_module`), you can open the project directly without the project manager screen and start debugging.
+
+**VSCode (`launch.json`) Example (macOS / LLDB):**
+
+```json
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug Godot Custom Module",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/godot/Godot.app/Contents/MacOS/Godot",
+            "args": [
+                "--path",
+                "${workspaceFolder}/examples/dev_module"
+            ],
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}
+```
+
+## Export Testing and Debugging
+
+To verify and debug whether the custom module or GDExtension works correctly in the exported application, using the headless export from the CLI is convenient.
+
+The following is the flow for building/installing templates and exporting a sample project. (The example below uses macOS)
+
+1. **Build the runtime and templates**
+   Prepare `libssruntime` beforehand, then run the release script for the target platform.
+   ```bash
+   # Prepare the runtime in release build (if necessary)
+   ./scripts/build-runtime.sh build=release platform=macos
+
+   # Build the export templates
+   ./scripts/release-macos.sh
+   ```
+
+2. **Install templates**
+   Install the built templates into the local directory recognized by Godot.
+   **macOS / Linux:**
+   ```bash
+   ./scripts/install-template.sh macos
+   ```
+   **Windows (PowerShell):**
+   ```powershell
+   .\scripts\install-template.ps1 windows
+   ```
+
+3. **Run export from CLI**
+   Use the built Godot editor (in headless mode) to invoke the export process directly from the command line.
+   **macOS / Linux:**
+   ```bash
+   # Example: Export the dev_module project for macOS (outputs directly as .app)
+   ./godot/Godot.app/Contents/MacOS/Godot --path ./examples/dev_module/ --headless --export-debug "macOS" output.app
+   ```
+   **Windows (PowerShell):**
+   ```powershell
+   .\godot\bin\godot.windows.editor.x86_64.exe --path .\examples\dev_module\ --headless --export-debug "Windows Desktop" output.exe
+   ```
+   > **Note:** To run the export, the target project's `export_presets.cfg` must contain the preset for the specified platform name (e.g., `"macOS"`), and required identifiers (such as Bundle ID) must be properly configured.
+
+### Web Platform Export and Testing
+
+Exporting for the Web produces multiple files (e.g., `.html`, `.wasm`, `.pck`), so create a dedicated directory for the export. Additionally, a local server is required to bypass browser security restrictions.
+
+```bash
+# 1. Create an output directory and export for Web
+mkdir -p build_web
+./godot/Godot.app/Contents/MacOS/Godot --path ./examples/dev_module/ --headless --export-debug "Web" ../../build_web/index.html
+
+# 2. Start a local HTTP server
+cd build_web
+python3 -m http.server 8000
+```
+After starting the server, access `http://localhost:8000` in your browser to verify it works.
+(Since this plugin operates with `nothread` on the Web, it can be launched with a simple HTTP server without requiring special CORS headers.)
+
+### GDExtension Export and Testing
+
+For GDExtensions (e.g., `dev_gdextension`), **rebuilding the engine itself or installing custom templates is unnecessary**. You can export as-is using the standard Godot editor and official export templates distributed by Godot.
+
+1. **Release build of the GDExtension plugin**
+   Run the build script for the target platform beforehand to output the libraries (e.g., `.so`, `.xcframework`, `.dll`) into the project's `addons/` directory.
+   **macOS / Linux:**
+   ```bash
+   ./scripts/release-gdextension-macos.sh
+   ```
+   **Windows (PowerShell):**
+   ```powershell
+   .\scripts\release-gdextension-windows.ps1
+   ```
+
+2. **Run export from CLI**
+   Export the project using the official Godot binary (or your own Godot command).
+   **macOS / Linux:**
+   ```bash
+   # * Here, "godot" refers to the official Godot editor executable in your path.
+   godot --path ./examples/dev_gdextension/ --headless --export-debug "macOS" output.app
+   ```
+   **Windows (PowerShell):**
+   ```powershell
+   # * "godot.exe" refers to the official Godot executable.
+   godot.exe --path .\examples\dev_gdextension\ --headless --export-debug "Windows Desktop" output.exe
+   ```
+   > During export, Godot will automatically bundle the plugin files (`.so`, `.framework`, `.dll`, etc.) into the exported artifacts.
+
+## Debugging the GDExtension
+
+You can debug the C++ code for GDExtensions using almost the same steps as a custom module. The only difference is that the launch program is the "official Godot editor".
+
+1. **Verify the GDExtension debug build**
+   The normal build scripts (like `build-extension.sh`) use `target=template_debug` by default, so the output libraries (`.dll`, `.dylib`) include debug symbols.
+
+2. **Attach Debugger and Launch Arguments**
+   Specify the **official Godot binary** as the launch program in your debugger (e.g., VSCode, Visual Studio), and pass the project path as an argument (`--path examples/dev_gdextension`). The breakpoint will be hit once Godot dynamically loads the plugin at startup.
+
+**VSCode (`launch.json`) Examples:**
+
+**macOS / Linux (LLDB):**
+```json
+{
+    "name": "Debug GDExtension (macOS)",
+    "type": "lldb",
+    "request": "launch",
+    "program": "/Applications/Godot.app/Contents/MacOS/Godot", // Path to official binary
+    "args": [ "--path", "${workspaceFolder}/examples/dev_gdextension" ],
+    "cwd": "${workspaceFolder}"
+}
+```
+
+**Windows (Visual Studio Debugger):**
+```json
+{
+    "name": "Debug GDExtension (Windows)",
+    "type": "cppvsdbg",
+    "request": "launch",
+    "program": "C:\\path\\to\\Godot_v4.x-stable_win64.exe", // Path to official binary
+    "args": [ "--path", "${workspaceFolder}\\examples\\dev_gdextension" ],
+    "cwd": "${workspaceFolder}"
+}
+```
+
 ## For SpriteStudio-SDK Developers
 
 > The sections below are required **only when developing/customizing SpriteStudio-SDK itself in parallel with the Godot side**. General Godot builders using the SpriteStudio-SDK release artifacts can skip them.
