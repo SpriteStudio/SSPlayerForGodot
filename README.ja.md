@@ -68,3 +68,5 @@
 ## ライセンス
 
 [LICENSE.md](./LICENSE.md) を参照してください。
+
+サードパーティライブラリ（FlatBuffers, SpriteStudio-SDK の依存クレートなど）のライセンスについては、[THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md) を参照してください。
