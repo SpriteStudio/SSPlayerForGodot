@@ -102,4 +102,6 @@ v1.x 以前のバージョンからの移行手順については、[マイグ�
 
 [LICENSE.md](https://github.com/cri-middleware/SSPlayerForGodot/blob/main/LICENSE.md) を参照してください。
 
+サードパーティライブラリ（FlatBuffers, SpriteStudio-SDK の依存クレートなど）のライセンスについては、[THIRD_PARTY_NOTICES.md](https://github.com/cri-middleware/SSPlayerForGodot/blob/main/THIRD_PARTY_NOTICES.md) を参照してください。
+
 

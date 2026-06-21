@@ -102,4 +102,6 @@ For instructions on migrating from versions prior to v1.x, please refer to the [
 
 See [LICENSE.md](https://github.com/cri-middleware/SSPlayerForGodot/blob/main/LICENSE.md).
 
+For third-party library licenses (such as FlatBuffers and SpriteStudio-SDK dependencies), see [THIRD_PARTY_NOTICES.md](https://github.com/cri-middleware/SSPlayerForGodot/blob/main/THIRD_PARTY_NOTICES.md).
+
 

@@ -68,3 +68,5 @@ Sample projects based on SDK test projects are available under the [examples fol
 ## License
 
 See [LICENSE.md](./LICENSE.md).
+
+For third-party library licenses (such as FlatBuffers and SpriteStudio-SDK dependencies), see [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md).
