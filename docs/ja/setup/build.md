@@ -213,6 +213,26 @@ python3 -m http.server 8000
 サーバー起動後、ブラウザで `http://localhost:8000` にアクセスすると動作確認ができます。
 （本プラグインは Web においては `nothread` での動作となるため、特殊なCORSヘッダーなしの単純なHTTPサーバーで起動可能です）
 
+### GDExtension のエクスポートと動作確認
+
+GDExtension（例: `dev_gdextension`）の場合、**エンジン本体の再ビルドやカスタムテンプレートのインストールは不要**です。Godot公式が配布している標準のGodotエディタとエクスポートテンプレートを使用して、そのままエクスポートが可能です。
+
+1. **GDExtension プラグインのリリースビルド**
+   事前に対象プラットフォーム向けのビルドスクリプトを実行し、プロジェクトの `addons/` ディレクトリにライブラリ（`.so`, `.xcframework` 等）を出力しておきます。
+   ```bash
+   # 例: macOS 向けに GDExtension をビルド
+   ./scripts/release-gdextension-macos.sh
+   ```
+
+2. **CLIからのエクスポート実行**
+   公式のGodotバイナリ（あるいは各自のGodotコマンド）を使って、プロジェクトをエクスポートします。
+   ```bash
+   # 例: dev_gdextension プロジェクトを macOS 向けにエクスポート (.appとして直接出力)
+   # ※ ここでの "godot" は、パスが通っている公式のGodotエディタ実行ファイル等を指します
+   godot --path ./examples/dev_gdextension/ --headless --export-debug "macOS" output.app
+   ```
+   > 実行時に `.so` や `.framework` などのプラグインファイルは Godot が自動的にエクスポート成果物の中に同梱してくれます。
+
 ## SpriteStudio-SDK 開発者向け
 
 > 以降のセクションは **SpriteStudio-SDK 自体を手元で開発・カスタマイズしながら Godot 側もビルドしたい場合のみ** 必要です。SpriteStudio-SDK のリリース成果物を使う一般的な Godot ビルダーは読み飛ばして構いません。
