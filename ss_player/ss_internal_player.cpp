@@ -1495,6 +1495,9 @@ void SsInternalPlayer::_emit_instance_slot(const DrawFrame& f, RID ci, int p_idx
     child->setRootTransform(slot_xf);
     child->setRootVisible(true);
 
+    const float part_alpha = _parts_by_idx[p_idx] ? _parts_by_idx[p_idx]->alpha() : 1.0f;
+    f.rs->canvas_item_set_modulate(ci, Color(1, 1, 1, part_alpha));
+
     bool vis_inside = false;
     bool mask_target = false;
     if (_mask_coverage_valid && f.binary && f.binary->parts()
