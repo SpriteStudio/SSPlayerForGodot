@@ -16,4 +16,15 @@ for target in ${targets[@]}; do
     scripts/build.sh platform=ios arch=universal compiledb=no strip=yes target=${target} ios_simulator=yes
 done
 
+# iOS requires .xcframework containing both device (arm64) and simulator (universal) binaries
+for target in ${targets[@]}; do
+    if [ -f "godot/bin/libgodot.ios.${target}.arm64.a" ] && [ -f "godot/bin/libgodot.ios.${target}.simulator.universal.a" ]; then
+        /bin/rm -rf "godot/bin/libgodot.ios.${target}.xcframework"
+        xcodebuild -create-xcframework \
+            -library "godot/bin/libgodot.ios.${target}.arm64.a" \
+            -library "godot/bin/libgodot.ios.${target}.simulator.universal.a" \
+            -output "godot/bin/libgodot.ios.${target}.xcframework"
+    fi
+done
+
 popd > /dev/null # ${ROOTDIR}
