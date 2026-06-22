@@ -63,6 +63,7 @@ func _ready() -> void:
 | `animation_looped` | `anim_name: String` | The animation loops back to the start |
 | `user_data` | `payload: Dictionary` | A "User Data" keyframe on the timeline is hit |
 | `signal_emitted` | `command: String, value: Dictionary` | A "Signal" keyframe on the timeline is hit |
+| `audio` | `payload: Dictionary` | An "Audio" keyframe on the timeline is hit |
 
 ### `user_data` payload fields
 
@@ -78,6 +79,18 @@ The User Data values configured in SpriteStudio are delivered as a `Dictionary`.
 ### `signal_emitted` value fields
 
 The parameters configured on the timeline "Signal" keyframe are delivered as a `Dictionary` keyed by parameter ID, with each value as `bool` / `int` / `float` / `String`, etc. The `command` argument receives the signal name (`command_id`).
+
+### `audio` payload fields
+
+The information configured on the timeline audio keyframe is delivered as a `Dictionary`. The player does not play sound itself, so bridge it to an `AudioStreamPlayer` (or similar) on the game side.
+
+| Key | Type | Meaning |
+| --- | --- | --- |
+| `part_index` | `int` | Index of the part that fired |
+| `sound_list_name_hash` | `int` | Hash of the sound list name |
+| `sound_name_hash` | `int` | Hash of the sound name |
+| `sound_name` | `String` | Sound name (present only when set) |
+| `loop_num` | `int` | Loop count |
 
 > [!NOTE]
 > For the exact types and the latest set of accepted values, also refer to the implementation files `ss_player/ss_player_node_2d.h` and `ss_player/ss_internal_player.cpp`.

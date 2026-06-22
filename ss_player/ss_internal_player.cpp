@@ -709,7 +709,20 @@ void SsInternalPlayer::update(float delta_seconds) {
             }
 
             if (auto audios = events_per_frame->audios()) {
-                // TODO: Audio integration
+                for (uint32_t j = 0; j < audios->size(); j++) {
+                    auto audio_event = audios->Get(j);
+                    if (!audio_event || !audio_event->value()) continue;
+                    auto val = audio_event->value();
+
+                    Dictionary payload;
+                    payload["part_index"] = audio_event->part_index();
+                    payload["sound_list_name_hash"] = (int64_t)val->sound_list_name_hash();
+                    payload["sound_name_hash"] = (int64_t)val->sound_name_hash();
+                    if (val->sound_name()) payload["sound_name"] = String::utf8(val->sound_name()->c_str());
+                    payload["loop_num"] = val->loop_num();
+
+                    if (_event_sink) _event_sink->onAudio(payload);
+                }
             }
         }
     }
@@ -1342,6 +1355,15 @@ void SsInternalPlayer::_setup_instance_children() {
         auto pt = p->part_type_as_PartTypeInstance();
         if (!pt) continue;
 
+        // Cyclic / runaway-nesting guard: instance children live one level
+        // deeper than this player. Refuse to descend past MAX_INSTANCE_DEPTH so
+        // a cyclic reference (A → B → A authoring mistake) can't recurse until
+        // the stack overflows on load.
+        if (_instance_depth + 1 >= MAX_INSTANCE_DEPTH) {
+            WARN_PRINT(vformat("[SS] instance part %d: nesting exceeded %d levels; skipping to guard against cyclic references", i, MAX_INSTANCE_DEPTH));
+            continue;
+        }
+
         String pack_name = pt->ref_anime_pack() ? String::utf8(pt->ref_anime_pack()->c_str()) : String();
         String anim_name = pt->ref_anime_name() ? String::utf8(pt->ref_anime_name()->c_str()) : String();
         uint32_t pack_name_hash = pt->ref_anime_pack_hash();
@@ -1356,6 +1378,7 @@ void SsInternalPlayer::_setup_instance_children() {
 
         SsInternalPlayer* child = memnew(SsInternalPlayer);
         child->setParentDriven(true);
+        child->setInstanceDepth(_instance_depth + 1);
         child->setSubFrameEnabled(_sub_frame_enabled);
         // Hand the child the SSAB that actually contains the referenced
         // animation — may be `_ssabRes` itself or an external sibling.
@@ -2585,10 +2608,10 @@ void SsInternalPlayer::_fetchAnimation() {
     }
 
     // Recursive setup — instance children also populate their own
-    // `_instance_children`, so any depth of nested Instance parts is
-    // supported. Cross-SSAB cycles (A → B → A authoring mistakes) are not
-    // detected; they recurse until stack overflow on load. Trust the
-    // converter / authoring tool to keep references acyclic.
+    // `_instance_children`, so nested Instance parts are supported. Cross-SSAB
+    // cycles (A → B → A authoring mistakes) are bounded by MAX_INSTANCE_DEPTH:
+    // `_setup_instance_children` stops spawning children past that depth (with
+    // a warning) instead of recursing until the stack overflows on load.
     _setup_instance_children();
     _setup_effect_slots();
 

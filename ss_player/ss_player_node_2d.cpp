@@ -28,6 +28,9 @@ public:
     void onSignal(const String& command, const Dictionary& value) override {
         _owner->emit_signal(SNAME("signal_emitted"), command, value);
     }
+    void onAudio(const Dictionary& payload) override {
+        _owner->emit_signal(SNAME("audio"), payload);
+    }
 
 private:
     SpriteStudioPlayer2D* _owner;
@@ -348,6 +351,12 @@ void SpriteStudioPlayer2D::_bind_methods() {
             "signal_emitted",
             PropertyInfo(Variant::STRING, "command"),
             PropertyInfo(Variant::DICTIONARY, "value")
+        )
+    );
+    ADD_SIGNAL(
+        MethodInfo(
+            "audio",
+            PropertyInfo(Variant::DICTIONARY, "payload")
         )
     );
 

@@ -63,6 +63,7 @@ func _ready() -> void:
 | `animation_looped` | `anim_name: String` | ループして先頭に戻った時 |
 | `user_data` | `payload: Dictionary` | タイムライン上の「ユーザーデータ」キーに到達した時 |
 | `signal_emitted` | `command: String, value: Dictionary` | タイムライン上の「シグナル」キーに到達した時 |
+| `audio` | `payload: Dictionary` | タイムライン上の「オーディオ」キーに到達した時 |
 
 ### `user_data` の `payload` フィールド
 
@@ -78,6 +79,18 @@ SpriteStudio 上でユーザーデータに設定した値が `Dictionary` と�
 ### `signal_emitted` の `value` フィールド
 
 タイムライン上の「シグナル」に設定したパラメータが `Dictionary` として渡されます。パラメータ ID をキーに、各値（`bool` / `int` / `float` / `String` 等）が格納されます。`command` 引数にはシグナル名（`command_id`）が入ります。
+
+### `audio` の `payload` フィールド
+
+タイムライン上のオーディオキーに設定された情報が `Dictionary` として渡されます。再生はプレーヤ側では行わないため、ゲーム側で `AudioStreamPlayer` 等に橋渡ししてください。
+
+| キー | 型 | 内容 |
+| --- | --- | --- |
+| `part_index` | `int` | 発火したパーツのインデックス |
+| `sound_list_name_hash` | `int` | サウンドリスト名のハッシュ |
+| `sound_name_hash` | `int` | サウンド名のハッシュ |
+| `sound_name` | `String` | サウンド名（設定時のみ） |
+| `loop_num` | `int` | ループ回数 |
 
 > [!NOTE]
 > 引数の正確な型・最新の取り得る値は実装 `ss_player/ss_player_node_2d.h` / `ss_player/ss_internal_player.cpp` を併せて参照してください。
