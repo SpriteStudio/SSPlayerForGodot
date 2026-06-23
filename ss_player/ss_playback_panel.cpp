@@ -145,6 +145,9 @@ void SSPlaybackPanel::_build_ui() {
     _frame_spin = memnew(SpinBox);
     _frame_spin->set_min(0.0);
     _frame_spin->set_step(0.01);
+    // Godot 4.3+ allows setting a custom step for the UI arrows while keeping a fine-grained underlying step.
+    // Using string "set" ensures compilation compatibility with older Godot 4.x GDExtension headers.
+    _frame_spin->set("custom_arrow_step", 1.0);
     _frame_spin->set_tooltip_text(tr("Current frame."));
     _frame_spin->connect("value_changed", callable_mp(this, &SSPlaybackPanel::_on_frame_spin_changed));
     scrubber->add_child(_frame_spin);
