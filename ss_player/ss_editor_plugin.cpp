@@ -84,9 +84,13 @@ void SSEditorPlugin::_install_playback_panel() {
     playback_panel = memnew(SSPlaybackPanel);
     playback_panel->set_name(String::utf8("SSPlayback"));
     playback_panel_button = add_control_to_bottom_panel(playback_panel, String::utf8("SpriteStudio"), Ref<Shortcut>());
-    // Contextual: only reveal the tab while a SpriteStudioPlayer2D is selected.
-    if (playback_panel_button) {
-        playback_panel_button->hide();
+    // Contextual: Godot 4.3+ bottom panels do not work well in floating windows if we hide the tab button.
+    // So we leave it visible and clear the player when nothing is selected.
+    // Additionally, add_control_to_bottom_panel disables floating by default for backwards compatibility.
+    // We can explicitly enable it by modifying the available_layouts property on the parent EditorDock.
+    if (playback_panel->get_parent()) {
+        // 2 (Horizontal) | 4 (Floating) = 6
+        playback_panel->get_parent()->set("available_layouts", 6);
     }
 }
 
@@ -124,16 +128,10 @@ void SSEditorPlugin::_make_visible(bool p_visible) {
 void SSEditorPlugin::make_visible(bool p_visible) {
 #endif
     if (p_visible) {
-        if (playback_panel_button) {
-            playback_panel_button->show();
-        }
         if (playback_panel) {
             make_bottom_panel_item_visible(playback_panel);
         }
     } else {
-        if (playback_panel_button) {
-            playback_panel_button->hide();
-        }
         if (playback_panel) {
             playback_panel->set_player(nullptr);
         }

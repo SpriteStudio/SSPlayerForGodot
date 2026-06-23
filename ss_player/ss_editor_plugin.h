@@ -34,10 +34,9 @@ class SSEditorPlugin : public EditorPlugin {
     Ref<SSResourceInspectorPlugin> inspector_plugin;
     SSCanvasDropOverlay *canvas_drop_overlay = nullptr;
 
-    // Bottom-panel transport UI (AnimationPlayer-style) shown only while a
-    // SpriteStudioPlayer2D is selected. `playback_panel_button` is the tab
-    // toggle returned by add_control_to_bottom_panel; we hide/show it to make
-    // the panel contextual.
+    // Bottom-panel transport UI (AnimationPlayer-style) shown when a
+    // SpriteStudioPlayer2D is selected. The dock is always visible
+    // to support Godot 4.3+ floating windows, but disabled when unselected.
     SSPlaybackPanel *playback_panel = nullptr;
     Button *playback_panel_button = nullptr;
 
