@@ -161,14 +161,6 @@ public:
     void setParentDriven(bool p_enabled);
     bool isParentDriven() const { return _parent_driven; }
 
-    // Nesting depth within an Instance-part chain (0 = the root player the host
-    // owns). `_setup_instance_children` sets each spawned child to parent depth
-    // + 1 and refuses to descend past `MAX_INSTANCE_DEPTH`, guarding against
-    // cyclic Instance references (A → B → A authoring mistakes) that would
-    // otherwise recurse until the stack overflows on load.
-    void setInstanceDepth(int p_depth) { _instance_depth = p_depth; }
-    int getInstanceDepth() const { return _instance_depth; }
-
     // Per-tick update (in seconds; the host typically passes
     // `process_delta_time`). No-op when paused or in instance-child mode.
     void update(float delta_seconds);
@@ -328,9 +320,6 @@ private:
     float _speed_rate = 1.0f;
     bool _sub_frame_enabled = false;
     bool _parent_driven = false;
-    int _instance_depth = 0;
-    // Hard cap on Instance-part nesting depth; see `setInstanceDepth`.
-    static constexpr int MAX_INSTANCE_DEPTH = 16;
 
     SsPlayerEventSink* _event_sink = nullptr;
 
