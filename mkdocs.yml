@@ -32,6 +32,7 @@ theme:
 
 plugins:
   - search
+  - callouts
   - i18n:
       docs_structure: folder
       languages:

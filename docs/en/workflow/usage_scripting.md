@@ -60,8 +60,7 @@ func _on_animation_finished(anim_name: String):
 ```
 
 > [!NOTE]
-> ![Signal connection screen](../../assets/signal_connection.png)
-> *(※ Image showing signals connected in the "Node" tab of the Godot editor will be placed here)*
+> ![Signal connection screen](../../assets/6-connect_signals_node_tab.png)
 
 ### Example: Triggering Events using User Data
 This is an example of receiving user data configured in SpriteStudio (such as playing footsteps or generating attack hitboxes) and processing it in the game.
@@ -99,5 +98,5 @@ func change_weapon():
 This feature allows you to build an efficient avatar system without needing to prepare multiple animation variations for each part.
 
 > [!TIP]
-> ![Before/After comparison of equipment change](../../assets/change_equipment.png)
-> *(※ Before/After image comparison of the character changing weapons will be placed here)*
+> ![Before equipment change](../../assets/7-cellmap_override_before.png)
+> ![After equipment change](../../assets/7-cellmap_override_after.png)

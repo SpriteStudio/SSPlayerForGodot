@@ -18,10 +18,11 @@ SpriteStudioPlayerForGodot は単にアニメーションを再生するだけ�
 生成された `.ssab` を 2D ビューポートへドラッグ＆ドロップして、あらかじめ `SpriteStudioPlayer2D` ノードを配置しておきましょう（詳細は [基本的な使い方](usage_basic.md) を参照）。
 
 > [!TIP]
+> 
 > <video autoplay loop muted playsinline width="100%">
->   <source src="../../assets/sspj_import.webm" type="video/webm">
+>   <source src="../../assets/1-sspj_import.webm" type="video/webm">
 > </video>
-> *(※上記に .sspj を SS Import ドックへドラッグ＆ドロップしてコンバートする様子の動画が入ります)*
+> <img src="../../assets/1-sspj_import.webp" width="100%" style="display: none;">
 
 ---
 
@@ -36,8 +37,7 @@ Godot で作業中に「もう少しアニメーションを微調整したい�
 この操作により、SpriteStudio が起動して元となる `.sspj` ファイルが開き、すぐに編集作業に入ることができます。
 
 > [!NOTE]
-> ![インスペクタからSSPJを開く画像](../../assets/open_sspj_from_inspector.png)
-> *(※ここにインスペクタ上の「Open SSPJ」ボタンがハイライトされた画像が入ります)*
+> ![インスペクタからSSPJを開く画像](../../assets/5-open_sspj_from_inspector.png)
 
 ---
 
@@ -54,10 +54,11 @@ SpriteStudio 側でアニメーションを修正して保存したら、Godot �
 > ノードを選択したままインスペクタから SpriteStudio を呼び出し、編集後すぐに Godot 上で再コンバートをかけることができます。**SpriteStudio と Godot をシームレスに行き来できるこの強力なアセットパイプライン**により、アニメーション調整におけるトライアンドエラーのコストが劇的に下がります。
 
 > [!TIP]
+> 
 > <video autoplay loop muted playsinline width="100%">
->   <source src="../../assets/fast_iteration_inspector.webm" type="video/webm">
+>   <source src="../../assets/2-fast_iteration_inspector.webm" type="video/webm">
 > </video>
-> *(※上記に「インスペクタから開く -> SpriteStudioで保存 -> インスペクタでReconvert -> プレビューが即座に変わる」という一連の高速ワークフロー動画が入ります)*
+> <img src="../../assets/2-fast_iteration_inspector.webp" width="100%" style="display: none;">
 
 ---
 

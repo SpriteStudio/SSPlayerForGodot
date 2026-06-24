@@ -15,10 +15,11 @@ Godot エディタの強力な機能を活かし、最短の手順でアニメ�
 これだけで自動的に `SpriteStudioPlayer2D` ノードがシーンに追加され、リソースの割り当ても完了します。
 
 > [!TIP]
+> 
 > <video autoplay loop muted playsinline width="100%">
->   <source src="../../assets/setup_drag_and_drop.webm" type="video/webm">
+>   <source src="../../assets/3-setup_drag_and_drop.webm" type="video/webm">
 > </video>
-> *(※上記に .ssab をドラッグ＆ドロップしてノードが自動生成される様子を示す動画が入ります)*
+> <img src="../../assets/3-setup_drag_and_drop.webp" width="100%" style="display: none;">
 
 ---
 
@@ -39,15 +40,23 @@ Godot エディタの強力な機能を活かし、最短の手順でアニメ�
 1. **`Animation` の選択**
    インスペクタの `Animation` プロパティのドロップダウンを開くと、`.ssab` に含まれるアニメーションのリストが表示されます。再生したいアニメーション名を選択してください。
 
+> [!TIP]
+> 
+> <video autoplay loop muted playsinline width="100%">
+>   <source src="../../assets/4-inspector_preview-1.webm" type="video/webm">
+> </video>
+> <img src="../../assets/4-inspector_preview-1.webp" width="100%" style="display: none;">
+
 2. **エディタ上でのプレビュー**
    ノードを選択すると **SpriteStudio** ボトムパネルが表示されます。先頭から再生 / 現在位置から再生 / 停止のトランスポートとフレームスクラバを使って、**ゲームを実行せずにエディタ上でアニメーションを再生**できます。ショートカットは AnimationPlayer エディタと同じく **D** 現在位置から再生 / **Shift+D** 先頭から / **S** 停止（パネルが表示中に有効）。
    `Frame` や `Speed`、`Loop` などのパラメータを変更するとリアルタイムにプレビューへ反映されるため、素早い調整が可能です。
 
 > [!TIP]
+> 
 > <video autoplay loop muted playsinline width="100%">
->   <source src="../../assets/inspector_preview.webm" type="video/webm">
+>   <source src="../../assets/4-inspector_preview-2.webm" type="video/webm">
 > </video>
-> *(※上記に SpriteStudio ボトムパネルでプレビューが動く様子を示す動画が入ります)*
+> <img src="../../assets/4-inspector_preview-2.webp" width="100%" style="display: none;">
 
 ---
 
