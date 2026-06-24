@@ -18,10 +18,10 @@ This triggers the conversion process, generating `.ssab` and `.ssqb` files in th
 Drag and drop the generated `.ssab` file into the 2D viewport to place a `SpriteStudioPlayer2D` node in advance (see [Basic Usage](usage_basic.md) for details).
 
 > [!TIP]
+> 
 > <video autoplay loop muted playsinline width="100%">
->   <source src="../../assets/sspj_import.webm" type="video/webm">
+>   <source src="../../assets/1-sspj_import.webm" type="video/webm">
 > </video>
-> *(※ Video showing the drag-and-drop import of an .sspj file into the SS Import dock will be placed here)*
 
 ---
 
@@ -36,8 +36,7 @@ When working in Godot and feeling the need to tweak an animation, you don't have
 This action automatically launches SpriteStudio and opens the underlying `.sspj` file, allowing you to start editing immediately.
 
 > [!NOTE]
-> ![Opening SSPJ from the Inspector](../../assets/open_sspj_from_inspector.png)
-> *(※ Image highlighting the "Open SSPJ" button in the Inspector will be placed here)*
+> ![Opening SSPJ from the Inspector](../../assets/5-open_sspj_from_inspector.png)
 
 ---
 
@@ -54,10 +53,10 @@ With just the following steps, your changes will instantly reflect in the game (
 > You can call SpriteStudio directly from the Inspector with the node selected, and immediately reconvert in Godot after editing. **This powerful asset pipeline that allows seamless transition between SpriteStudio and Godot** drastically lowers the cost of trial and error during animation adjustments.
 
 > [!TIP]
+> 
 > <video autoplay loop muted playsinline width="100%">
->   <source src="../../assets/fast_iteration_inspector.webm" type="video/webm">
+>   <source src="../../assets/2-fast_iteration_inspector.webm" type="video/webm">
 > </video>
-> *(※A video demonstrating the fast workflow: Open from Inspector -> Save in SpriteStudio -> Reconvert in Inspector -> Preview updates instantly)*
 
 ---
 

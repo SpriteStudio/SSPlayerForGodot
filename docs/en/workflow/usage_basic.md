@@ -15,10 +15,10 @@ Taking advantage of Godot's powerful editor, you can set up an animation with th
 This action automatically creates a `SpriteStudioPlayer2D` node and assigns the resource to it.
 
 > [!TIP]
+> 
 > <video autoplay loop muted playsinline width="100%">
->   <source src="../../assets/setup_drag_and_drop.webm" type="video/webm">
+>   <source src="../../assets/3-setup_drag_and_drop.webm" type="video/webm">
 > </video>
-> *(※ Short video showing node creation by dragging and dropping an .ssab file will be placed here)*
 
 ---
 
@@ -39,15 +39,21 @@ Once the node is selected, you can adjust various settings from Godot's Inspecto
 1. **Select an `Animation`**
    Open the dropdown for the `Animation` property in the Inspector. You will see a list of animations contained in the `.ssab`. Select the name of the animation you want to play.
 
+> [!TIP]
+> 
+> <video autoplay loop muted playsinline width="100%">
+>   <source src="../../assets/4-inspector_preview-1.webm" type="video/webm">
+> </video>
+
 2. **In-Editor Preview**
    With the node selected, the **SpriteStudio** bottom panel appears. Use its transport controls (play from start / play from current / stop and the frame scrubber) to **play the animation directly in the editor without running the game**. Keyboard shortcuts mirror the AnimationPlayer editor: **D** play from current, **Shift+D** play from start, **S** stop (active while the panel is visible).
    Changes to parameters like `Frame`, `Speed`, and `Loop Count` are reflected in the preview in real-time, enabling quick adjustments.
 
 > [!TIP]
+> 
 > <video autoplay loop muted playsinline width="100%">
->   <source src="../../assets/inspector_preview.webm" type="video/webm">
+>   <source src="../../assets/4-inspector_preview-2.webm" type="video/webm">
 > </video>
-> *(※ Video showing the animation preview via the SpriteStudio bottom panel will be placed here)*
 
 ---
 
