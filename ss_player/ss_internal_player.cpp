@@ -383,6 +383,11 @@ bool SsInternalPlayer::isPlaying() const {
 }
 
 void SsInternalPlayer::play(float p_start_frame) {
+    // play() always heads out (rewinds to a start frame); "resume" is pause()'s
+    // toggle, not play(). So a fresh play must clear each slot's "last started
+    // key" memory, otherwise a re-played animation would debounce an already-
+    // fired independent effect/instance as the same key and never re-fire it.
+    _reset_slots_playback_state();
     if (p_start_frame >= 0.0f) {
         ss_runtime_play_with_start_frame(runtime_ctx, p_start_frame);
     } else {
@@ -1429,6 +1434,19 @@ void SsInternalPlayer::_setup_effect_slots() {
             continue;
         }
         _effect_slots[i].effect_slot = effect_slot;
+    }
+}
+
+void SsInternalPlayer::_reset_slots_playback_state() {
+    for (uint32_t i = 0; i < _effect_slots.size(); i++) {
+        if (_effect_slots[i].effect_slot) ss_effect_slot_reset(_effect_slots[i].effect_slot);
+    }
+    for (uint32_t i = 0; i < _instance_children.size(); i++) {
+        InstanceChildState& st = _instance_children[i];
+        if (st.instance_slot) ss_instance_slot_reset(st.instance_slot);
+        // Recurse so a re-play also restarts independent effects/instances
+        // nested inside instance children (their slots live on the child).
+        if (st.player) st.player->_reset_slots_playback_state();
     }
 }
 
