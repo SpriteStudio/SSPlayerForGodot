@@ -17,7 +17,7 @@ Godot エディタの強力な機能を活かし、最短の手順でアニメ�
 > [!TIP]
 > 
 > <video autoplay loop muted playsinline width="100%">
->   <source src="../../assets/3-setup_drag_and_drop.webm" type="video/webm">
+>   <source src="../../../assets/3-setup_drag_and_drop.webm" type="video/webm">
 > </video>
 > <img src="../../assets/3-setup_drag_and_drop.webp" width="100%" style="display: none;">
 
@@ -43,7 +43,7 @@ Godot エディタの強力な機能を活かし、最短の手順でアニメ�
 > [!TIP]
 > 
 > <video autoplay loop muted playsinline width="100%">
->   <source src="../../assets/4-inspector_preview-1.webm" type="video/webm">
+>   <source src="../../../assets/4-inspector_preview-1.webm" type="video/webm">
 > </video>
 > <img src="../../assets/4-inspector_preview-1.webp" width="100%" style="display: none;">
 
@@ -54,7 +54,7 @@ Godot エディタの強力な機能を活かし、最短の手順でアニメ�
 > [!TIP]
 > 
 > <video autoplay loop muted playsinline width="100%">
->   <source src="../../assets/4-inspector_preview-2.webm" type="video/webm">
+>   <source src="../../../assets/4-inspector_preview-2.webm" type="video/webm">
 > </video>
 > <img src="../../assets/4-inspector_preview-2.webp" width="100%" style="display: none;">
 
