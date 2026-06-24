@@ -624,6 +624,14 @@ private:
     void _clear_instance_children();
     void _setup_effect_slots();
     void _clear_effect_slots();
+
+    // Reset every effect/instance slot's "last started key" memory (and recurse
+    // into instance children) so an explicit head-out re-fires independent
+    // effects/instances from scratch instead of debouncing the first key as the
+    // same one the slot last started. Called from `play()`. The reset itself
+    // lives in the runtime (`ss_effect_slot_reset` / `ss_instance_slot_reset`);
+    // the host only iterates the slots it owns.
+    void _reset_slots_playback_state();
     // Per-tick instance child driver. Runs in the sim phase (called from
     // `update`), before `_drawAnimation`. Per slot, queries
     // `ss_runtime_get_active_event_instance` (returns SS6 default semantics
