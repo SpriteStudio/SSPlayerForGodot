@@ -19,6 +19,7 @@ This action automatically creates a `SpriteStudioPlayer2D` node and assigns the 
 > <video autoplay loop muted playsinline width="100%">
 >   <source src="../../assets/3-setup_drag_and_drop.webm" type="video/webm">
 > </video>
+> *GitHub Preview: [3-setup_drag_and_drop.webm](../../assets/3-setup_drag_and_drop.webm)*
 
 ---
 
@@ -44,6 +45,7 @@ Once the node is selected, you can adjust various settings from Godot's Inspecto
 > <video autoplay loop muted playsinline width="100%">
 >   <source src="../../assets/4-inspector_preview-1.webm" type="video/webm">
 > </video>
+> *GitHub Preview: [4-inspector_preview-1.webm](../../assets/4-inspector_preview-1.webm)*
 
 2. **In-Editor Preview**
    With the node selected, the **SpriteStudio** bottom panel appears. Use its transport controls (play from start / play from current / stop and the frame scrubber) to **play the animation directly in the editor without running the game**. Keyboard shortcuts mirror the AnimationPlayer editor: **D** play from current, **Shift+D** play from start, **S** stop (active while the panel is visible).
@@ -54,6 +56,7 @@ Once the node is selected, you can adjust various settings from Godot's Inspecto
 > <video autoplay loop muted playsinline width="100%">
 >   <source src="../../assets/4-inspector_preview-2.webm" type="video/webm">
 > </video>
+> *GitHub Preview: [4-inspector_preview-2.webm](../../assets/4-inspector_preview-2.webm)*
 
 ---
 

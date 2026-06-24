@@ -20,8 +20,9 @@ SpriteStudioPlayerForGodot は単にアニメーションを再生するだけ�
 > [!TIP]
 > 
 > <video autoplay loop muted playsinline width="100%">
->   <source src="../../../assets/1-sspj_import.webm" type="video/webm">
+>   <source src="../../assets/1-sspj_import.webm" type="video/webm">
 > </video>
+> *GitHub Preview: [1-sspj_import.webm](../../assets/1-sspj_import.webm)*
 
 ---
 
@@ -55,8 +56,9 @@ SpriteStudio 側でアニメーションを修正して保存したら、Godot �
 > [!TIP]
 > 
 > <video autoplay loop muted playsinline width="100%">
->   <source src="../../../assets/2-fast_iteration_inspector.webm" type="video/webm">
+>   <source src="../../assets/2-fast_iteration_inspector.webm" type="video/webm">
 > </video>
+> *GitHub Preview: [2-fast_iteration_inspector.webm](../../assets/2-fast_iteration_inspector.webm)*
 
 ---
 

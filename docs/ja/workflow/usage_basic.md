@@ -17,8 +17,9 @@ Godot エディタの強力な機能を活かし、最短の手順でアニメ�
 > [!TIP]
 > 
 > <video autoplay loop muted playsinline width="100%">
->   <source src="../../../assets/3-setup_drag_and_drop.webm" type="video/webm">
+>   <source src="../../assets/3-setup_drag_and_drop.webm" type="video/webm">
 > </video>
+> *GitHub Preview: [3-setup_drag_and_drop.webm](../../assets/3-setup_drag_and_drop.webm)*
 
 ---
 
@@ -42,8 +43,9 @@ Godot エディタの強力な機能を活かし、最短の手順でアニメ�
 > [!TIP]
 > 
 > <video autoplay loop muted playsinline width="100%">
->   <source src="../../../assets/4-inspector_preview-1.webm" type="video/webm">
+>   <source src="../../assets/4-inspector_preview-1.webm" type="video/webm">
 > </video>
+> *GitHub Preview: [4-inspector_preview-1.webm](../../assets/4-inspector_preview-1.webm)*
 
 2. **エディタ上でのプレビュー**
    ノードを選択すると **SpriteStudio** ボトムパネルが表示されます。先頭から再生 / 現在位置から再生 / 停止のトランスポートとフレームスクラバを使って、**ゲームを実行せずにエディタ上でアニメーションを再生**できます。ショートカットは AnimationPlayer エディタと同じく **D** 現在位置から再生 / **Shift+D** 先頭から / **S** 停止（パネルが表示中に有効）。
@@ -52,8 +54,9 @@ Godot エディタの強力な機能を活かし、最短の手順でアニメ�
 > [!TIP]
 > 
 > <video autoplay loop muted playsinline width="100%">
->   <source src="../../../assets/4-inspector_preview-2.webm" type="video/webm">
+>   <source src="../../assets/4-inspector_preview-2.webm" type="video/webm">
 > </video>
+> *GitHub Preview: [4-inspector_preview-2.webm](../../assets/4-inspector_preview-2.webm)*
 
 ---
 

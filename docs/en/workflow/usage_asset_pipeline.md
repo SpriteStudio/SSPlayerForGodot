@@ -22,6 +22,7 @@ Drag and drop the generated `.ssab` file into the 2D viewport to place a `Sprite
 > <video autoplay loop muted playsinline width="100%">
 >   <source src="../../assets/1-sspj_import.webm" type="video/webm">
 > </video>
+> *GitHub Preview: [1-sspj_import.webm](../../assets/1-sspj_import.webm)*
 
 ---
 
@@ -57,6 +58,7 @@ With just the following steps, your changes will instantly reflect in the game (
 > <video autoplay loop muted playsinline width="100%">
 >   <source src="../../assets/2-fast_iteration_inspector.webm" type="video/webm">
 > </video>
+> *GitHub Preview: [2-fast_iteration_inspector.webm](../../assets/2-fast_iteration_inspector.webm)*
 
 ---
 
