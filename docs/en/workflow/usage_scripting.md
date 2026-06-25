@@ -86,17 +86,17 @@ func _on_user_data(payload):
 
 When you want to change character equipment in-game, you can dynamically replace the texture of specific parts (cell maps) from your code.
 
-### Example: Changing Weapons
+### Example: Changing Outfits
 
 ```gdscript
-func change_weapon():
-    # Apply a new texture to the cell map named "weapon_map"
-    var new_sword_texture = preload("res://assets/iron_sword.png")
-    ss_player.set_cellmap_texture("weapon_map", new_sword_texture)
+func change_costume():
+    # Apply a new texture to the cell map named "Clothes 1"
+    var new_costume_texture = preload("res://assets/sailor_uniform.png")
+    ss_player.set_cellmap_texture("Clothes 1", new_costume_texture)
 ```
 
 This feature allows you to build an efficient avatar system without needing to prepare multiple animation variations for each part.
 
 > [!TIP]
-> ![Before equipment change](../../assets/7-cellmap_override_before.png)
-> ![After equipment change](../../assets/7-cellmap_override_after.png)
+> ![Before outfit change](../../assets/7-cellmap_override_before.png)
+> ![After outfit change](../../assets/7-cellmap_override_after.png)
