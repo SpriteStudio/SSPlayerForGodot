@@ -31,8 +31,7 @@ Drag and drop the generated `.ssab` file into the 2D viewport to place a `Sprite
 When working in Godot and feeling the need to tweak an animation, you don't have to launch SpriteStudio separately and search for the project.
 
 1. Select the **`SpriteStudioPlayer2D` node** playing the animation in the Godot editor.
-2. Click to expand the **`SSAB Resource` property** in the Inspector.
-3. Click the **"Open SSPJ" button** located next to the resource preview.
+2. Click the **"Open SSPJ" button** shown at the top of the Inspector.
 
 This action automatically launches SpriteStudio and opens the underlying `.sspj` file, allowing you to start editing immediately.
 
@@ -46,7 +45,7 @@ This action automatically launches SpriteStudio and opens the underlying `.sspj`
 After modifying and saving the animation in SpriteStudio, return to the Godot editor.
 With just the following steps, your changes will instantly reflect in the game (and in the editor preview).
 
-1. As before, expand the **`SSAB Resource`** in the Inspector.
+1. As before, select the node to show the Inspector.
 2. Click the **"Reconvert" button** next to the "Open SSPJ" button.
 
 > [!IMPORTANT]

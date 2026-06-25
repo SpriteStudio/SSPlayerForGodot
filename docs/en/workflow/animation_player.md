@@ -24,7 +24,7 @@ To control SSPlayer with an `AnimationPlayer`, you must first convert all animat
 Here is how to apply the generated library to your scene.
 
 1. **Prepare the Node**
-   Place a `SpriteStudioPlayer2D` node in your scene and assign the target `.ssab` file to its `SSAB Resource` property.
+   Place a `SpriteStudioPlayer2D` node in your scene and assign the target `.ssab` file to its `Ssab` property.
 2. **Add an AnimationPlayer**
    Add an `AnimationPlayer` node to the scene.
 3. **Specify the Target (Important!)**

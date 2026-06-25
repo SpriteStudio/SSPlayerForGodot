@@ -24,7 +24,7 @@ SSPlayer を `AnimationPlayer` で制御するためには、まず対象の `.s
 生成されたライブラリを実際にシーンへ適用する手順です。
 
 1. **ノードの準備**
-   シーン上に `SpriteStudioPlayer2D` ノードを配置し、対象の `.ssab` を `SSAB Resource` にセットしておきます。
+   シーン上に `SpriteStudioPlayer2D` ノードを配置し、対象の `.ssab` を `Ssab` にセットしておきます。
 2. **AnimationPlayer の追加**
    シーン内に `AnimationPlayer` ノードを追加します。
 3. **ターゲットの指定（重要！）**

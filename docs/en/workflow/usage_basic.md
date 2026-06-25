@@ -29,7 +29,7 @@ If you want to place the node in a specific location within an existing node hie
 
 1. Add a `SpriteStudioPlayer2D` node to your scene tree using the "+" button in the Scene dock.
 2. Select the added node and open the Inspector.
-3. Drag and drop the `.ssab` file from the FileSystem dock into the **`SSAB Resource`** property box in the Inspector to attach it.
+3. Drag and drop the `.ssab` file from the FileSystem dock into the **`Ssab`** property box in the Inspector to attach it.
 
 ---
 
@@ -64,7 +64,7 @@ Once the node is selected, you can adjust various settings from Godot's Inspecto
 
 | Property                   | Type     | Description                                                         |
 | -------------------------- | -------- | ------------------------------------------------------------------- |
-| `SSAB Resource`            | Resource | The target `SSABResource` (`.ssab` file) to play                    |
+| `Ssab`            | Resource | The target `SSABResource` (`.ssab` file) to play                    |
 | `Animation`                | String   | The name of the currently selected animation                        |
 | `Autoplay`                 | bool     | Whether to play automatically when the game starts                  |
 | `Offset`                   | Vector2  | Drawing offset. Useful to shift visuals without changing the Node Transform |

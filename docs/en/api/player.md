@@ -99,7 +99,7 @@ The information configured on the timeline audio keyframe is delivered as a `Dic
 
 The `frame` property is animatable, so an `AnimationPlayer` can scrub a SpriteStudio animation in lockstep with its own timeline (and any other tracks on it — audio, calls, other nodes).
 
-1. Assign `SSAB Resource` and pick an `Animation` on the `SpriteStudioPlayer2D` as usual.
+1. Assign the `Ssab` resource and pick an `Animation` on the `SpriteStudioPlayer2D` as usual.
 2. In the `AnimationPlayer`, add a **Property Track** targeting the node's `frame` property.
 3. Keyframe `frame` over time (e.g. `0` → the last frame across the desired duration). `frame` is a float, so values interpolate.
 4. Play the `AnimationPlayer`.

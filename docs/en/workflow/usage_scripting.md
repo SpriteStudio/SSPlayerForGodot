@@ -71,12 +71,13 @@ func _ready():
     ss_player.user_data.connect(_on_user_data)
 
 func _on_user_data(payload):
+    # payload is a Dictionary; only the keys that were set are present (string / integer / point / rect)
     # Example: Check the string set as user data and process accordingly
-    if payload.string_value == "play_footstep":
+    if payload.get("string") == "play_footstep":
         $AudioStreamPlayer.play()
-    elif payload.string_value == "attack_hit":
-        # Example of passing the damage amount using an integer value (Int)
-        var damage = payload.int_value
+    elif payload.get("string") == "attack_hit":
+        # Example of passing the damage amount using an integer value
+        var damage = payload.get("integer", 0)
         spawn_hitbox(damage)
 ```
 
@@ -86,17 +87,17 @@ func _on_user_data(payload):
 
 When you want to change character equipment in-game, you can dynamically replace the texture of specific parts (cell maps) from your code.
 
-### Example: Changing Weapons
+### Example: Changing Outfits
 
 ```gdscript
-func change_weapon():
-    # Apply a new texture to the cell map named "weapon_map"
-    var new_sword_texture = preload("res://assets/iron_sword.png")
-    ss_player.set_cellmap_texture("weapon_map", new_sword_texture)
+func change_costume():
+    # Use the cell map name defined in SpriteStudio (retrievable via get_cellmap_names(); shown under CellMap Overrides in the Inspector)
+    var new_costume_texture = preload("res://assets/sailor_uniform.png")
+    ss_player.set_cellmap_texture("Clothes 1", new_costume_texture)
 ```
 
 This feature allows you to build an efficient avatar system without needing to prepare multiple animation variations for each part.
 
 > [!TIP]
-> ![Before equipment change](../../assets/7-cellmap_override_before.png)
-> ![After equipment change](../../assets/7-cellmap_override_after.png)
+> ![Before outfit change](../../assets/7-cellmap_override_before.png)
+> ![After outfit change](../../assets/7-cellmap_override_after.png)
