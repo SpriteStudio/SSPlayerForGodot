@@ -71,12 +71,13 @@ func _ready():
     ss_player.user_data.connect(_on_user_data)
 
 func _on_user_data(payload):
-    # 例: ユーザーデータとして設定された文字列(String)を判定して処理
-    if payload.string_value == "play_footstep":
+    # payload は Dictionary。設定されたキーのみ含まれる（string / integer / point / rect）
+    # 例: 文字列(string)を判定して処理
+    if payload.get("string") == "play_footstep":
         $AudioStreamPlayer.play()
-    elif payload.string_value == "attack_hit":
-        # 整数値(Int)を使ってダメージ量などを渡す例
-        var damage = payload.int_value
+    elif payload.get("string") == "attack_hit":
+        # 整数値(integer)を使ってダメージ量などを渡す例
+        var damage = payload.get("integer", 0)
         spawn_hitbox(damage)
 ```
 
@@ -90,7 +91,7 @@ func _on_user_data(payload):
 
 ```gdscript
 func change_costume():
-    # "Clothes 1" というセルマップに対し、新しいテクスチャを適用する
+    # セルマップ名は SpriteStudio で定義された名前（get_cellmap_names() で取得、インスペクタの CellMap Overrides に表示）を指定する
     var new_costume_texture = preload("res://assets/sailor_uniform.png")
     ss_player.set_cellmap_texture("Clothes 1", new_costume_texture)
 ```

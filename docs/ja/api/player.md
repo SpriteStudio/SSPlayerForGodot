@@ -99,7 +99,7 @@ SpriteStudio 上でユーザーデータに設定した値が `Dictionary` と�
 
 `frame` プロパティはアニメート可能なので、`AnimationPlayer` のタイムライン（音・メソッド呼び出し・他ノードなど他トラック）と同期させて SpriteStudio アニメをスクラブできます。
 
-1. `SpriteStudioPlayer2D` に通常どおり `SSAB Resource` を割り当て、`Animation` を選択。
+1. `SpriteStudioPlayer2D` に通常どおり `Ssab`（SSAB リソース）を割り当て、`Animation` を選択。
 2. `AnimationPlayer` で、ノードの `frame` プロパティを対象に **プロパティトラック** を追加。
 3. `frame` を時間に沿ってキーフレーム（例：尺に合わせて `0` → 最終フレーム）。`frame` は float なので補間されます。
 4. `AnimationPlayer` を再生。

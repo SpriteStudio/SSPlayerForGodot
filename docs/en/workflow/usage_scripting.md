@@ -71,12 +71,13 @@ func _ready():
     ss_player.user_data.connect(_on_user_data)
 
 func _on_user_data(payload):
+    # payload is a Dictionary; only the keys that were set are present (string / integer / point / rect)
     # Example: Check the string set as user data and process accordingly
-    if payload.string_value == "play_footstep":
+    if payload.get("string") == "play_footstep":
         $AudioStreamPlayer.play()
-    elif payload.string_value == "attack_hit":
-        # Example of passing the damage amount using an integer value (Int)
-        var damage = payload.int_value
+    elif payload.get("string") == "attack_hit":
+        # Example of passing the damage amount using an integer value
+        var damage = payload.get("integer", 0)
         spawn_hitbox(damage)
 ```
 
@@ -90,7 +91,7 @@ When you want to change character equipment in-game, you can dynamically replace
 
 ```gdscript
 func change_costume():
-    # Apply a new texture to the cell map named "Clothes 1"
+    # Use the cell map name defined in SpriteStudio (retrievable via get_cellmap_names(); shown under CellMap Overrides in the Inspector)
     var new_costume_texture = preload("res://assets/sailor_uniform.png")
     ss_player.set_cellmap_texture("Clothes 1", new_costume_texture)
 ```
