@@ -213,6 +213,59 @@ python3 -m http.server 8000
 サーバー起動後、ブラウザで `http://localhost:8000` にアクセスすると動作確認ができます。
 （本プラグインは Web においては `nothread` での動作となるため、特殊なCORSヘッダーなしの単純なHTTPサーバーで起動可能です）
 
+### Androidプラットフォームのエクスポートと動作確認
+
+Android のエクスポートテンプレートは、エンジンの Gradle プロジェクトでパッケージされるテンプレートAPKです。そのためデスクトップ系と異なり、`install-template.sh` の前にテンプレートのビルドが3段階（ランタイム → ABIごとのエンジンライブラリ → Gradleパッケージ）になります。
+
+**事前準備**
+- Android SDK と NDK、`cargo-ndk`、および Rust の Android ターゲット（`aarch64-linux-android`, `armv7-linux-androideabi`, `x86_64-linux-android`）をインストールしておきます。
+- ビルドスクリプトが参照できるよう、SDK/NDK のパスを環境変数に設定します（環境に合わせて調整してください）:
+  ```bash
+  export ANDROID_HOME="$HOME/Library/Android/sdk"
+  export ANDROID_NDK_ROOT="$ANDROID_HOME/ndk/<ndk-version>"
+  ```
+- Godot のエディタ設定で、Android SDK パスとデバッグ用キーストアを設定します（`export/android/android_sdk_path`, `export/android/debug_keystore`, `export/android/debug_keystore_pass`）。
+
+1. **ランタイムとテンプレートのビルド**
+   まず Rust ランタイムを一度ビルドし、次に ABI／ターゲットごとにエンジンの共有ライブラリをビルドして、Gradle でテンプレートAPKにパッケージします。
+   ```bash
+   # Rust ランタイム（1回のreleaseビルドを両テンプレートで共用します）
+   ./scripts/build-runtime.sh platform=android build=release
+   # ビルドの代わりに、全プラットフォームのプリビルドランタイムを取得することもできます:
+   #   ./scripts/download-sdk.sh
+
+   # ABIごとのエンジン .so。arch: arm64 / arm32 / x86_64, target: template_release / template_debug
+   ./scripts/build.sh platform=android arch=arm64  target=template_release
+   ./scripts/build.sh platform=android arch=arm32  target=template_release
+   ./scripts/build.sh platform=android arch=x86_64 target=template_release
+   ./scripts/build.sh platform=android arch=arm64  target=template_debug   # 必要に応じて他のABIも
+
+   # android_release.apk / android_debug.apk / android_source.zip としてパッケージ
+   (cd godot/platform/android/java && ./gradlew generateGodotTemplates)
+   ```
+   > `arch` は Godot の名称（`arm64`, `arm32`, `x86_64`, `x86_32`）で指定しますが、ランタイムライブラリは対応する Android ABI ディレクトリ（`arm64-v8a`, `armeabi-v7a`, `x86_64`, `x86`）に配置されます。実行する端末／エミュレータの ABI のみビルドすれば十分です。
+
+2. **テンプレートのインストール**
+   ```bash
+   ./scripts/install-template.sh android
+   ```
+
+3. **CLIからのエクスポート実行**
+   ```bash
+   mkdir -p bin_export
+   ./godot/Godot.app/Contents/MacOS/Godot --path ./examples/dev_module/ --headless --export-debug "Android" "$(pwd)/bin_export/dev_module_debug.apk"
+   ```
+   > **Note:** Android のエクスポートには ETC2/ASTC テクスチャインポートの有効化が必要です。無効のままだとメッセージが空の設定エラーでエクスポートが中断します。プロジェクト設定に `rendering/textures/vram_compression/import_etc2_astc=true` を設定してください（`examples/dev_module` では設定済みです）。
+
+4. **端末／エミュレータへのインストールと実行**
+   ```bash
+   adb install -r bin_export/dev_module_debug.apk
+   adb shell am start -n com.crimw.devmodule/com.godot.game.GodotAppLauncher
+   adb logcat -s godot        # エンジンのログ／エラー確認
+   adb exec-out screencap -p > screen.png   # 描画結果のキャプチャ
+   ```
+   `dev_module` サンプルは `SpriteStudioPlayer2D` で `Knight_arrow` アニメーションを autoplay 再生するため、正常に動作すればキャラクターが画面に描画されます。
+
 ### GDExtension のエクスポートと動作確認
 
 GDExtension（例: `dev_gdextension`）の場合、**エンジン本体の再ビルドやカスタムテンプレートのインストールは不要**です。Godot公式が配布している標準のGodotエディタとエクスポートテンプレートを使用して、そのままエクスポートが可能です。
@@ -241,6 +294,20 @@ GDExtension（例: `dev_gdextension`）の場合、**エンジン本体の再ビ
    godot.exe --path .\examples\dev_gdextension\ --headless --export-debug "Windows Desktop" output.exe
    ```
    > 実行時に `.so`, `.framework`, `.dll` などのプラグインファイルは Godot が自動的にエクスポート成果物の中に同梱してくれます。
+
+   **Android の注意点:** Android では上記のデスクトップ手順に加えて、いくつか追加のステップが必要です。
+   - Android 用プラグインライブラリを `./scripts/release-gdextension-android.sh` でビルドします（Android SDK/NDK、`cargo-ndk`、Rust の Android ターゲット、および Android ランタイムが必要。ランタイムは `./scripts/build-runtime.sh platform=android build=release` でビルドするか、`./scripts/download-sdk.sh` でプリビルドを取得します）。`arch` は Godot の名称（`arm64`, `arm32`, `x86_64`）で指定しますが、ランタイムは対応する Android ABI ディレクトリ（`arm64-v8a`, `armeabi-v7a`, `x86_64`）からリンクされます。
+   - **ホスト用**プラグイン（例: `./scripts/release-gdextension-macos.sh`）もビルドしてください。エクスポート時の `.ssab` リソースの読み込みはホストマシン上で行われるため、動作するホストライブラリが無いと `Failed loading resource` エラーで `.ssab` が除外され、生成された APK にアニメーションデータが入りません。
+   - 使用する公式 Godot のバージョンに対応した **Android** のエクスポートテンプレートを導入します（エディタの *エクスポートテンプレートの管理* から、または `.tpz` の中身を `.../export_templates/<version>/` に配置）。
+   - プロジェクト設定で `rendering/textures/vram_compression/import_etc2_astc=true` を有効にします（`examples/dev_gdextension` では設定済み）。無効のままだとメッセージが空の設定エラーでエクスポートが中断します。
+   - あとはエクスポートして端末／エミュレータで実行します。
+     ```bash
+     mkdir -p bin_export
+     godot --path ./examples/dev_gdextension/ --headless --export-debug "Android" "$(pwd)/bin_export/dev_gdextension_debug.apk"
+     adb install -r bin_export/dev_gdextension_debug.apk
+     adb shell am start -n com.crimw.devgdext/com.godot.game.GodotAppLauncher
+     adb logcat -s godot
+     ```
 
 ## GDExtension のデバッグ方法
 

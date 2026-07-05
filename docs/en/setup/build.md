@@ -218,6 +218,59 @@ python3 -m http.server 8000
 After starting the server, access `http://localhost:8000` in your browser to verify it works.
 (Since this plugin operates with `nothread` on the Web, it can be launched with a simple HTTP server without requiring special CORS headers.)
 
+### Android Platform Export and Testing
+
+Android export templates are template APKs packaged by the engine's Gradle project. Unlike the desktop platforms, the template build therefore has three stages (runtime → per-ABI engine libraries → Gradle packaging) before `install-template.sh`.
+
+**Prerequisites**
+- Android SDK and NDK, with `cargo-ndk` and the Rust Android targets installed (`aarch64-linux-android`, `armv7-linux-androideabi`, `x86_64-linux-android`).
+- Export the SDK/NDK paths so the build scripts can find them (adjust to your environment):
+  ```bash
+  export ANDROID_HOME="$HOME/Library/Android/sdk"
+  export ANDROID_NDK_ROOT="$ANDROID_HOME/ndk/<ndk-version>"
+  ```
+- In the Godot editor settings, configure the Android SDK path and a debug keystore (`export/android/android_sdk_path`, `export/android/debug_keystore`, `export/android/debug_keystore_pass`).
+
+1. **Build the runtime and templates**
+   Build the Rust runtime once, then build the engine shared library for each ABI/target, and package them into the template APKs with Gradle.
+   ```bash
+   # Rust runtime (a single release build is reused by both template targets)
+   ./scripts/build-runtime.sh platform=android build=release
+   # Alternatively, fetch the prebuilt runtime for all platforms instead of building it:
+   #   ./scripts/download-sdk.sh
+
+   # Engine .so per ABI. arch: arm64 / arm32 / x86_64, target: template_release / template_debug
+   ./scripts/build.sh platform=android arch=arm64  target=template_release
+   ./scripts/build.sh platform=android arch=arm32  target=template_release
+   ./scripts/build.sh platform=android arch=x86_64 target=template_release
+   ./scripts/build.sh platform=android arch=arm64  target=template_debug   # add other ABIs as needed
+
+   # Package into android_release.apk / android_debug.apk / android_source.zip
+   (cd godot/platform/android/java && ./gradlew generateGodotTemplates)
+   ```
+   > The `arch` values follow Godot's names (`arm64`, `arm32`, `x86_64`, `x86_32`), while the runtime libraries are placed under the matching Android ABI directories (`arm64-v8a`, `armeabi-v7a`, `x86_64`, `x86`). You only need the ABI of the device/emulator you intend to run on.
+
+2. **Install templates**
+   ```bash
+   ./scripts/install-template.sh android
+   ```
+
+3. **Run export from CLI**
+   ```bash
+   mkdir -p bin_export
+   ./godot/Godot.app/Contents/MacOS/Godot --path ./examples/dev_module/ --headless --export-debug "Android" "$(pwd)/bin_export/dev_module_debug.apk"
+   ```
+   > **Note:** Android export requires ETC2/ASTC texture import to be enabled. Otherwise the export aborts with a configuration error whose message is empty. Set `rendering/textures/vram_compression/import_etc2_astc=true` in the project settings (already enabled in `examples/dev_module`).
+
+4. **Install and run on a device / emulator**
+   ```bash
+   adb install -r bin_export/dev_module_debug.apk
+   adb shell am start -n com.crimw.devmodule/com.godot.game.GodotAppLauncher
+   adb logcat -s godot        # check the engine log / errors
+   adb exec-out screencap -p > screen.png   # capture the rendered frame
+   ```
+   The `dev_module` sample plays the `Knight_arrow` animation on `SpriteStudioPlayer2D` with autoplay, so a successful run renders the character on screen.
+
 ### GDExtension Export and Testing
 
 For GDExtensions (e.g., `dev_gdextension`), **rebuilding the engine itself or installing custom templates is unnecessary**. You can export as-is using the standard Godot editor and official export templates distributed by Godot.
@@ -246,6 +299,20 @@ For GDExtensions (e.g., `dev_gdextension`), **rebuilding the engine itself or in
    godot.exe --path .\examples\dev_gdextension\ --headless --export-debug "Windows Desktop" output.exe
    ```
    > During export, Godot will automatically bundle the plugin files (`.so`, `.framework`, `.dll`, etc.) into the exported artifacts.
+
+   **Android note:** Android needs a few extra steps beyond the desktop flow above:
+   - Build the Android plugin libraries with `./scripts/release-gdextension-android.sh` (requires the Android SDK/NDK, `cargo-ndk`, the Rust Android targets, and the Android runtime — build it with `./scripts/build-runtime.sh platform=android build=release` or fetch the prebuilt one with `./scripts/download-sdk.sh`). The `arch` values are Godot's names (`arm64`, `arm32`, `x86_64`), while the runtime is linked from the matching Android ABI directory (`arm64-v8a`, `armeabi-v7a`, `x86_64`).
+   - Also build the **host** plugin (e.g. `./scripts/release-gdextension-macos.sh`). During export the `.ssab` resources are loaded on the host machine, so without a working host library the export drops them with a `Failed loading resource` error and the resulting APK ships without animation data.
+   - Install the official **Android** export templates for the official Godot version you are using (via *Manage Export Templates* in the editor, or by placing the `.tpz` contents under `.../export_templates/<version>/`).
+   - Enable `rendering/textures/vram_compression/import_etc2_astc=true` in the project settings (already set in `examples/dev_gdextension`); otherwise the export aborts with a configuration error whose message is empty.
+   - Then export and run on a device / emulator:
+     ```bash
+     mkdir -p bin_export
+     godot --path ./examples/dev_gdextension/ --headless --export-debug "Android" "$(pwd)/bin_export/dev_gdextension_debug.apk"
+     adb install -r bin_export/dev_gdextension_debug.apk
+     adb shell am start -n com.crimw.devgdext/com.godot.game.GodotAppLauncher
+     adb logcat -s godot
+     ```
 
 ## Debugging the GDExtension
 

@@ -18,3 +18,7 @@ config/name="dev_module"
 run/main_scene="res://node_2d.tscn"
 config/features=PackedStringArray("4.6", "GL Compatibility")
 config/icon="res://icon.svg"
+
+[rendering]
+
+textures/vram_compression/import_etc2_astc=true

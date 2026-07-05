@@ -19,10 +19,24 @@ def get_include_paths(base_dir=""):
         os.path.join(base_dir, "runtime/include"),
     ]
 
+# Godot's scons arch names differ from the Android ABI directory names the SDK
+# packages libraries under (this is also what download-sdk / build-runtime emit).
+# Map the build arch to the on-disk ABI directory so the linker finds the lib.
+_ANDROID_ARCH_TO_ABI = {
+    "arm64": "arm64-v8a",
+    "arm32": "armeabi-v7a",
+    "x86_64": "x86_64",
+    "x86_32": "x86",
+    "x86": "x86",
+}
+
 def get_runtime_lib_path(base_dir, platform, arch):
     # Unify logic: platforms like macos, ios, and web typically don't use arch subdirs in this project's structure
     if platform in ['macos', 'ios', 'web']:
         return os.path.join(base_dir, "runtime", "libs", platform)
+    elif platform == 'android':
+        abi = _ANDROID_ARCH_TO_ABI.get(arch, arch)
+        return os.path.join(base_dir, "runtime", "libs", platform, abi)
     else:
         return os.path.join(base_dir, "runtime", "libs", platform, arch)
 
