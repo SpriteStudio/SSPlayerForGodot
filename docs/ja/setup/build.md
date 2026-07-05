@@ -231,6 +231,8 @@ Android のエクスポートテンプレートは、エンジンの Gradle プ�
    ```bash
    # Rust ランタイム（1回のreleaseビルドを両テンプレートで共用します）
    ./scripts/build-runtime.sh platform=android build=release
+   # ビルドの代わりに、全プラットフォームのプリビルドランタイムを取得することもできます:
+   #   ./scripts/download-sdk.sh
 
    # ABIごとのエンジン .so。arch: arm64 / arm32 / x86_64, target: template_release / template_debug
    ./scripts/build.sh platform=android arch=arm64  target=template_release
@@ -292,6 +294,20 @@ GDExtension（例: `dev_gdextension`）の場合、**エンジン本体の再ビ
    godot.exe --path .\examples\dev_gdextension\ --headless --export-debug "Windows Desktop" output.exe
    ```
    > 実行時に `.so`, `.framework`, `.dll` などのプラグインファイルは Godot が自動的にエクスポート成果物の中に同梱してくれます。
+
+   **Android の注意点:** Android では上記のデスクトップ手順に加えて、いくつか追加のステップが必要です。
+   - Android 用プラグインライブラリを `./scripts/release-gdextension-android.sh` でビルドします（Android SDK/NDK、`cargo-ndk`、Rust の Android ターゲット、および Android ランタイムが必要。ランタイムは `./scripts/build-runtime.sh platform=android build=release` でビルドするか、`./scripts/download-sdk.sh` でプリビルドを取得します）。`arch` は Godot の名称（`arm64`, `arm32`, `x86_64`）で指定しますが、ランタイムは対応する Android ABI ディレクトリ（`arm64-v8a`, `armeabi-v7a`, `x86_64`）からリンクされます。
+   - **ホスト用**プラグイン（例: `./scripts/release-gdextension-macos.sh`）もビルドしてください。エクスポート時の `.ssab` リソースの読み込みはホストマシン上で行われるため、動作するホストライブラリが無いと `Failed loading resource` エラーで `.ssab` が除外され、生成された APK にアニメーションデータが入りません。
+   - 使用する公式 Godot のバージョンに対応した **Android** のエクスポートテンプレートを導入します（エディタの *エクスポートテンプレートの管理* から、または `.tpz` の中身を `.../export_templates/<version>/` に配置）。
+   - プロジェクト設定で `rendering/textures/vram_compression/import_etc2_astc=true` を有効にします（`examples/dev_gdextension` では設定済み）。無効のままだとメッセージが空の設定エラーでエクスポートが中断します。
+   - あとはエクスポートして端末／エミュレータで実行します。
+     ```bash
+     mkdir -p bin_export
+     godot --path ./examples/dev_gdextension/ --headless --export-debug "Android" "$(pwd)/bin_export/dev_gdextension_debug.apk"
+     adb install -r bin_export/dev_gdextension_debug.apk
+     adb shell am start -n com.crimw.devgdext/com.godot.game.GodotAppLauncher
+     adb logcat -s godot
+     ```
 
 ## GDExtension のデバッグ方法
 

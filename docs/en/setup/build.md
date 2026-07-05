@@ -236,6 +236,8 @@ Android export templates are template APKs packaged by the engine's Gradle proje
    ```bash
    # Rust runtime (a single release build is reused by both template targets)
    ./scripts/build-runtime.sh platform=android build=release
+   # Alternatively, fetch the prebuilt runtime for all platforms instead of building it:
+   #   ./scripts/download-sdk.sh
 
    # Engine .so per ABI. arch: arm64 / arm32 / x86_64, target: template_release / template_debug
    ./scripts/build.sh platform=android arch=arm64  target=template_release
@@ -297,6 +299,20 @@ For GDExtensions (e.g., `dev_gdextension`), **rebuilding the engine itself or in
    godot.exe --path .\examples\dev_gdextension\ --headless --export-debug "Windows Desktop" output.exe
    ```
    > During export, Godot will automatically bundle the plugin files (`.so`, `.framework`, `.dll`, etc.) into the exported artifacts.
+
+   **Android note:** Android needs a few extra steps beyond the desktop flow above:
+   - Build the Android plugin libraries with `./scripts/release-gdextension-android.sh` (requires the Android SDK/NDK, `cargo-ndk`, the Rust Android targets, and the Android runtime — build it with `./scripts/build-runtime.sh platform=android build=release` or fetch the prebuilt one with `./scripts/download-sdk.sh`). The `arch` values are Godot's names (`arm64`, `arm32`, `x86_64`), while the runtime is linked from the matching Android ABI directory (`arm64-v8a`, `armeabi-v7a`, `x86_64`).
+   - Also build the **host** plugin (e.g. `./scripts/release-gdextension-macos.sh`). During export the `.ssab` resources are loaded on the host machine, so without a working host library the export drops them with a `Failed loading resource` error and the resulting APK ships without animation data.
+   - Install the official **Android** export templates for the official Godot version you are using (via *Manage Export Templates* in the editor, or by placing the `.tpz` contents under `.../export_templates/<version>/`).
+   - Enable `rendering/textures/vram_compression/import_etc2_astc=true` in the project settings (already set in `examples/dev_gdextension`); otherwise the export aborts with a configuration error whose message is empty.
+   - Then export and run on a device / emulator:
+     ```bash
+     mkdir -p bin_export
+     godot --path ./examples/dev_gdextension/ --headless --export-debug "Android" "$(pwd)/bin_export/dev_gdextension_debug.apk"
+     adb install -r bin_export/dev_gdextension_debug.apk
+     adb shell am start -n com.crimw.devgdext/com.godot.game.GodotAppLauncher
+     adb logcat -s godot
+     ```
 
 ## Debugging the GDExtension
 
