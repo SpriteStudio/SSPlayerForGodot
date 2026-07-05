@@ -18,12 +18,14 @@
     - [AnimationPlayer との連携](workflow/animation_player.md)
     - [アセットのインポートとエディタ連携](workflow/usage_asset_pipeline.md)（初回の `.sspj` インポートはこちら）
     - [スクリプト制御とイベント](workflow/usage_scripting.md)
+    - [プロジェクトのエクスポート](workflow/export.md)
 - **応用**
     - [CLI コンバートと自動化](workflow/import.md)
     - [パフォーマンスチューニングと高度な設定](workflow/tips.md)
 - **API リファレンス**
     - [SpriteStudioPlayer2D](api/player.md)
     - [リソース管理クラス](api/resource.md)
+- [仕様と制約事項](limitations.md)
 - [v1.x からのマイグレーション](migration_from_v1.md)
 
 ## 主な機能 (Key Features)

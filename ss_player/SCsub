@@ -56,7 +56,11 @@ if env['target'] == 'editor':
 # missing source. Pass the static archive by full path instead. Other platforms
 # link it normally via -l from LIBPATH.
 if platform == "ios":
-    if env.get("ios_simulator", False):
+    # Godot's iOS detect.py declares BoolVariable(("simulator", "ios_simulator"), ...),
+    # so the flag is stored under env["simulator"] (the primary name). Reading the
+    # "ios_simulator" alias here always returns False, which would wrongly link the
+    # device slice into simulator builds. Honor "simulator" (with the alias as a fallback).
+    if env.get("simulator", env.get("ios_simulator", False)):
         slice_dir = "ios-arm64_x86_64-simulator"
     else:
         slice_dir = "ios-arm64"

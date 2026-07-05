@@ -166,6 +166,13 @@ $env:PYTHONUTF8=1
 
 開発したカスタムモジュールやGDExtensionが、ビルド後のアプリで正常に動作するか（エクスポートが成功するか）を確認・デバッグするには、CLIを用いたヘッドレスエクスポートが便利です。
 
+> [!IMPORTANT]
+> エクスポート時の共通の注意点（全プラットフォーム）:
+> - **エクスポートする `target` を実際にビルドしておく。** `editor` ビルドだけでは不十分です。`--export-debug` は `template_debug` ライブラリを、`--export-release` は `template_release` を必要とします。これらを未ビルドのままだとエクスポートは「成功」しても、拡張ライブラリが空／欠落した状態で書き出されます（macOS では同梱 framework に対する `CodeSign: Invalid binary format` エラーとして表面化します）。
+> - **拡張のアーキテクチャは手元の runtime スライスに依存する。** GDExtension は `ss_player/runtime/libs/<platform>/` の `libssruntime` をリンクするため、そこに存在するアーキテクチャしかビルドできません。例えば macOS の runtime が `arm64` のみの場合、`universal` / `x86_64` の拡張は作れません。プリセットの `binary_format/architecture` を合わせてください（例: `arm64`）。エンジンテンプレートは `universal` のままで構いません（単一アーキの拡張が、欠けているアーキでロードされないだけです）。
+> - **`universal` / `arm64` / モバイル向けは ETC2/ASTC を有効化する。** プロジェクトに `rendering/textures/vram_compression/import_etc2_astc=true` を設定してください（`project.godot` の `[rendering]`）。未設定だと *「ETC2/ASTC テクスチャフォーマットが無効なため … エクスポートできません」* でエクスポートが中断します。
+> - **エクスポートテンプレートはエディタのバージョンと一致が必要。** `custom_template/debug` / `custom_template/release` を指定するとこのバージョンチェックを回避できます（同梱の `godot/` ソースからビルドしたテンプレートを流用できるのはこのためです）。debug のみのエクスポートでも debug / release **両方** のパスを設定してください。Godot は両方を検証し、未設定だと release テンプレートが見つからないと報告します。
+
 以下の流れで、手元でテンプレートをビルド・インストールし、サンプルプロジェクトをエクスポートします。（以下はmacOSの例です）
 
 1. **ランタイムとテンプレートのビルド**
@@ -212,6 +219,40 @@ python3 -m http.server 8000
 ```
 サーバー起動後、ブラウザで `http://localhost:8000` にアクセスすると動作確認ができます。
 （本プラグインは Web においては `nothread` での動作となるため、特殊なCORSヘッダーなしの単純なHTTPサーバーで起動可能です）
+
+#### Web での GDExtension（Extensions Support / `dlink`）
+
+公式の Godot Web エクスポートテンプレートは GDExtension ライブラリに **対応していません**。**GDExtension** 形態を素のテンプレートで Web エクスポートすると、起動時に次のエラーで失敗します。
+
+> GDExtension libraries are not supported by this engine version. Enable "Extensions Support" for your export preset and/or build your custom template with "dlink_enabled=yes".
+
+Web で GDExtension を読み込むには、動的リンクを有効にした（`dlink_enabled=yes`）エンジンテンプレートが必要です。同梱の `godot/` ソースから、拡張の `threads` モードに合わせてビルドします（本プラグインは `nothread` 版を提供するため `threads=no`）。
+
+```bash
+# dlink 対応の Web テンプレートをソースからビルド（nothreads）
+cd godot
+scons platform=web target=template_debug   dlink_enabled=yes threads=no
+scons platform=web target=template_release dlink_enabled=yes threads=no
+# → godot/bin/godot.web.template_debug.wasm32.nothreads.dlink.zip
+# → godot/bin/godot.web.template_release.wasm32.nothreads.dlink.zip
+```
+
+続いて、ビルドしたテンプレートをインストールし、Godot が名前で解決できるようにします。
+
+```bash
+./scripts/install-template.sh web
+# インストール先 → <export_templates>/<version>/web_nothreads_dlink_debug.zip
+#                                              web_nothreads_dlink_release.zip
+```
+
+インストール後は、Web プリセットで **Extensions Support** を ON にするだけでエクスポートできます。Godot が名前一致で `..._dlink_...` テンプレートを自動選択するため、`custom_template` の指定は不要です。プリセット側の操作（利用者視点）は [プロジェクトのエクスポート → Web](../workflow/export.md#web) を参照してください。
+
+> Godot のテンプレートフォルダにインストールしたくない場合は、代わりに `Web` プリセットの `custom_template/debug` / `custom_template/release` にビルドした `*.dlink.zip` を直接指定することもできます。
+
+dlink テンプレートはエンジンを小さなメインモジュールと大きな `godot.side.wasm` に分割します。エクスポート後に `index.wasm` と並んで `index.side.wasm` が出力されていれば、dlink テンプレートが使われた証拠です。
+
+> [!NOTE]
+> `dlink` / *Extensions Support* が必要なのは **GDExtension** 形態のみです。**カスタムモジュール** 形態はプラグインをエンジンにコンパイルするため、その Web テンプレートは `release-web.sh`（内部で `build.sh`）が生成する通常の（非 `dlink`）`web_nothreads_{debug,release}.zip` で、同じ手順でインストールします。`dlink_enabled` もプリセットの *Extensions Support* も不要です。
 
 ### Androidプラットフォームのエクスポートと動作確認
 
@@ -265,6 +306,46 @@ Android のエクスポートテンプレートは、エンジンの Gradle プ�
    adb exec-out screencap -p > screen.png   # 描画結果のキャプチャ
    ```
    `dev_module` サンプルは `SpriteStudioPlayer2D` で `Knight_arrow` アニメーションを autoplay 再生するため、正常に動作すればキャラクターが画面に描画されます。
+
+### iOSプラットフォームのエクスポートと動作確認
+
+iOS エクスポートには **macOS + Xcode** が必要です。Godot は **Xcode プロジェクト**（すぐ動くアプリではない）を生成し、続けて実機向けに `xcodebuild archive` を自動実行します。これには Apple Developer アカウントが必要なため、**プリセットに App Store Team ID の設定が必須**で、有効な署名が無いと実機 archive 段階で失敗します。署名なしで手早く確認するには、生成された Xcode プロジェクトを自分で **iOS シミュレータ**向けにビルドします。
+
+> [!IMPORTANT]
+> **自前ビルドの iOS テンプレートは MoltenVK を同梱しません。** Godot の iOS エンジンは Vulkan 有効でビルドされるため、アプリのバイナリが `@rpath/MoltenVK.framework/MoltenVK` を**ハードリンク**します（`otool -L` で確認可能）。これは*エンジンのビルド*の性質であり、プロジェクトのレンダラ設定とは無関係です（GL Compatibility のプロジェクトでもリンクされます）。**公式**の Godot iOS テンプレートは `MoltenVK.xcframework` を同梱しますが、`release-ios.sh` が生成するテンプレートは**同梱しません**。自前テンプレートで動作確認する場合は自分で供給する必要があり、無いと起動時に `Library not loaded: @rpath/MoltenVK.framework/MoltenVK` でクラッシュします。
+
+自前テンプレートのシミュレータ動作確認（カスタムモジュールの例。GDExtension も `dev_gdextension` で同じ流れ）：
+
+```bash
+# 1. Xcode プロジェクトを生成（Godot の実機 archive 段階は署名で失敗するが想定内）
+mkdir -p bin_export/ios
+./godot/Godot.app/Contents/MacOS/Godot --path ./examples/dev_module/ --headless \
+    --export-debug "iOS" "$(pwd)/bin_export/ios/dev_module.xcodeproj" || true
+
+# 2. Xcode プロジェクトが期待する場所へ MoltenVK を配置（例: Vulkan SDK から）
+MVK="$HOME/VulkanSDK/<ver>/iOS/lib/MoltenVK.xcframework"
+cp -R "$MVK" bin_export/ios/MoltenVK.xcframework
+
+# 3. シミュレータ向けに署名なしでビルド
+cd bin_export/ios
+xcodebuild -project dev_module.xcodeproj -scheme dev_module \
+    -sdk iphonesimulator -configuration Debug -derivedDataPath ./DerivedData \
+    CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build
+APP="DerivedData/Build/Products/Debug-iphonesimulator/dev_module.app"
+
+# 4. MoltenVK をアプリに埋め込み、ad-hoc 署名し直す（simulator は SDK 由来の署名を拒否するため）
+cp -R "$MVK/ios-arm64_x86_64-simulator/MoltenVK.framework" "$APP/Frameworks/"
+codesign --force --sign - "$APP/Frameworks/MoltenVK.framework"
+codesign --force --sign - "$APP"
+
+# 5. シミュレータを起動してインストール・起動・スクショ
+DEV=$(xcrun simctl list devices available | grep -m1 -oE '\([0-9A-F-]{36}\)' | tr -d '()')
+xcrun simctl boot "$DEV" && xcrun simctl install "$DEV" "$APP"
+xcrun simctl launch "$DEV" com.crimw.devmodule
+xcrun simctl io "$DEV" screenshot screen.png
+```
+
+> **Note:** 本来の解決策は、iOS テンプレート自体（`install-template.sh` / `misc/dist/apple_embedded_xcode`）に `MoltenVK.xcframework` を同梱し、エクスポート時に自動で埋め込み・署名させて公式テンプレートと同等にすることです。上記の手動手順が要るのは**自前ビルド**のテンプレートの場合のみで、公式 Godot エディタ＋公式エクスポートテンプレートを使う一般利用者には影響しません。
 
 ### GDExtension のエクスポートと動作確認
 

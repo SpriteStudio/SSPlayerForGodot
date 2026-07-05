@@ -18,12 +18,14 @@ Animation playback uses `libssruntime` provided by [SpriteStudio-SDK](https://gi
     - [Integration with AnimationPlayer](workflow/animation_player.md)
     - [Asset Import and Editor Integration](workflow/usage_asset_pipeline.md) (start here for the initial `.sspj` import)
     - [Scripting and Events](workflow/usage_scripting.md)
+    - [Exporting Your Project](workflow/export.md)
 - **Advanced Topics**
     - [CLI Conversion and Automation](workflow/import.md)
     - [Performance Tuning and Advanced Settings](workflow/tips.md)
 - **API Reference**
     - [SpriteStudioPlayer2D](api/player.md)
     - [Resource Classes](api/resource.md)
+- [Limitations & Scope](limitations.md)
 - [Migration from v1.x](migration_from_v1.md)
 
 ## Key Features

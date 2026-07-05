@@ -175,7 +175,10 @@ if platform in ["macos", "ios"]:
     plist_subst = {
         "${BUNDLE_LIBRARY}": file_name,
         "${BUNDLE_NAME}": "ssplayer-godot",
-        "${BUNDLE_IDENTIFIER}": "jp.co.cri-mw.spritestudio.ssplayer-godot.{}".format(env["target"]),
+        # CFBundleIdentifier allows only alphanumerics, '-' and '.', so sanitize the
+        # target name ("template_debug" -> "template-debug"); underscores make Xcode
+        # reject the embedded framework on iOS ("invalid CFBundleIdentifier").
+        "${BUNDLE_IDENTIFIER}": "jp.co.cri-mw.spritestudio.ssplayer-godot.{}".format(env["target"].replace("_", "-")),
         "${BUNDLE_VERSION}": version,
         "${MIN_MACOS_VERSION}": "10.12",
         "${MIN_IOS_VERSION}": "12.0"
