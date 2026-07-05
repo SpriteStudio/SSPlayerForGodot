@@ -166,6 +166,13 @@ If you want to debug the C++ code (`ss_player/`) of the plugin embedded as a cus
 
 To verify and debug whether the custom module or GDExtension works correctly in the exported application, using the headless export from the CLI is convenient.
 
+> [!IMPORTANT]
+> Common export pitfalls (all platforms):
+> - **Build the exact `target` you export with.** An `editor` build alone is not enough — `--export-debug` needs the `template_debug` library and `--export-release` needs `template_release`. If those were never built, the export still "succeeds" but ships an empty/missing extension library (on macOS this surfaces as a `CodeSign: Invalid binary format` error on the embedded framework).
+> - **The extension architecture is bounded by the runtime slices you have.** The GDExtension links `libssruntime` from `ss_player/runtime/libs/<platform>/`; you can only build the architectures present there. For example, with an `arm64`-only macOS runtime you cannot produce a `universal` / `x86_64` extension — set the preset's `binary_format/architecture` to match (e.g. `arm64`). The engine template can still be `universal`; a single-arch extension just won't load on the missing arch.
+> - **Enable ETC2/ASTC for `universal` / `arm64` / mobile exports.** Set `rendering/textures/vram_compression/import_etc2_astc=true` in the project (`project.godot` → `[rendering]`), otherwise the export aborts with *"Cannot export … with the ETC2/ASTC texture format disabled."*
+> - **Export templates must match the editor version.** Setting `custom_template/debug` / `custom_template/release` bypasses the version check (this is how a template built from the bundled `godot/` source can be reused). Set **both** debug and release paths even for a debug-only export — Godot validates both and otherwise reports the release template as missing.
+
 The following is the flow for building/installing templates and exporting a sample project. (The example below uses macOS)
 
 1. **Build the runtime and templates**
@@ -217,6 +224,40 @@ python3 -m http.server 8000
 ```
 After starting the server, access `http://localhost:8000` in your browser to verify it works.
 (Since this plugin operates with `nothread` on the Web, it can be launched with a simple HTTP server without requiring special CORS headers.)
+
+#### GDExtension on the Web (Extensions Support / `dlink`)
+
+The official Godot Web export templates do **not** support GDExtension libraries. If you export the **GDExtension** build variant for the Web with a stock template, the page fails at startup with:
+
+> GDExtension libraries are not supported by this engine version. Enable "Extensions Support" for your export preset and/or build your custom template with "dlink_enabled=yes".
+
+To load a GDExtension on the Web, you need an engine template built with dynamic linking enabled (`dlink_enabled=yes`). Build one from the bundled `godot/` source, matching the `threads` mode of your extension (this plugin ships `nothread`, so use `threads=no`):
+
+```bash
+# Build dlink-enabled Web templates from source (nothreads)
+cd godot
+scons platform=web target=template_debug   dlink_enabled=yes threads=no
+scons platform=web target=template_release dlink_enabled=yes threads=no
+# → godot/bin/godot.web.template_debug.wasm32.nothreads.dlink.zip
+# → godot/bin/godot.web.template_release.wasm32.nothreads.dlink.zip
+```
+
+Then install the built templates so Godot can resolve them by name:
+
+```bash
+./scripts/install-template.sh web
+# installs → <export_templates>/<version>/web_nothreads_dlink_debug.zip
+#                                          web_nothreads_dlink_release.zip
+```
+
+Once these are installed, exporting only requires turning on **Extensions Support** in the Web preset — Godot auto-selects the matching `..._dlink_...` template by name, so no `custom_template` is needed. The preset side (from a plugin user's perspective) is covered in [Exporting Your Project → Web](../workflow/export.md#web).
+
+> If you would rather not install them into Godot's templates folder, you can instead point `custom_template/debug` / `custom_template/release` in the `Web` preset directly at the built `*.dlink.zip` files.
+
+A dlink template splits the engine into a small main module plus a large `godot.side.wasm`; after export you will see a corresponding `index.side.wasm` alongside `index.wasm`, which confirms the dlink template was used.
+
+> [!NOTE]
+> `dlink` / *Extensions Support* is required only for the **GDExtension** build variant. The **custom module** variant compiles the plugin into the engine, so its Web template is the ordinary (non-`dlink`) `web_nothreads_{debug,release}.zip` produced by `release-web.sh` (via `build.sh`) and installed the same way — with no `dlink_enabled` and no *Extensions Support* in the preset.
 
 ### Android Platform Export and Testing
 

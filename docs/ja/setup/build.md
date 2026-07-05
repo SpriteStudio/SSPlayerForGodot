@@ -166,6 +166,13 @@ $env:PYTHONUTF8=1
 
 開発したカスタムモジュールやGDExtensionが、ビルド後のアプリで正常に動作するか（エクスポートが成功するか）を確認・デバッグするには、CLIを用いたヘッドレスエクスポートが便利です。
 
+> [!IMPORTANT]
+> エクスポート時の共通の注意点（全プラットフォーム）:
+> - **エクスポートする `target` を実際にビルドしておく。** `editor` ビルドだけでは不十分です。`--export-debug` は `template_debug` ライブラリを、`--export-release` は `template_release` を必要とします。これらを未ビルドのままだとエクスポートは「成功」しても、拡張ライブラリが空／欠落した状態で書き出されます（macOS では同梱 framework に対する `CodeSign: Invalid binary format` エラーとして表面化します）。
+> - **拡張のアーキテクチャは手元の runtime スライスに依存する。** GDExtension は `ss_player/runtime/libs/<platform>/` の `libssruntime` をリンクするため、そこに存在するアーキテクチャしかビルドできません。例えば macOS の runtime が `arm64` のみの場合、`universal` / `x86_64` の拡張は作れません。プリセットの `binary_format/architecture` を合わせてください（例: `arm64`）。エンジンテンプレートは `universal` のままで構いません（単一アーキの拡張が、欠けているアーキでロードされないだけです）。
+> - **`universal` / `arm64` / モバイル向けは ETC2/ASTC を有効化する。** プロジェクトに `rendering/textures/vram_compression/import_etc2_astc=true` を設定してください（`project.godot` の `[rendering]`）。未設定だと *「ETC2/ASTC テクスチャフォーマットが無効なため … エクスポートできません」* でエクスポートが中断します。
+> - **エクスポートテンプレートはエディタのバージョンと一致が必要。** `custom_template/debug` / `custom_template/release` を指定するとこのバージョンチェックを回避できます（同梱の `godot/` ソースからビルドしたテンプレートを流用できるのはこのためです）。debug のみのエクスポートでも debug / release **両方** のパスを設定してください。Godot は両方を検証し、未設定だと release テンプレートが見つからないと報告します。
+
 以下の流れで、手元でテンプレートをビルド・インストールし、サンプルプロジェクトをエクスポートします。（以下はmacOSの例です）
 
 1. **ランタイムとテンプレートのビルド**
@@ -212,6 +219,40 @@ python3 -m http.server 8000
 ```
 サーバー起動後、ブラウザで `http://localhost:8000` にアクセスすると動作確認ができます。
 （本プラグインは Web においては `nothread` での動作となるため、特殊なCORSヘッダーなしの単純なHTTPサーバーで起動可能です）
+
+#### Web での GDExtension（Extensions Support / `dlink`）
+
+公式の Godot Web エクスポートテンプレートは GDExtension ライブラリに **対応していません**。**GDExtension** 形態を素のテンプレートで Web エクスポートすると、起動時に次のエラーで失敗します。
+
+> GDExtension libraries are not supported by this engine version. Enable "Extensions Support" for your export preset and/or build your custom template with "dlink_enabled=yes".
+
+Web で GDExtension を読み込むには、動的リンクを有効にした（`dlink_enabled=yes`）エンジンテンプレートが必要です。同梱の `godot/` ソースから、拡張の `threads` モードに合わせてビルドします（本プラグインは `nothread` 版を提供するため `threads=no`）。
+
+```bash
+# dlink 対応の Web テンプレートをソースからビルド（nothreads）
+cd godot
+scons platform=web target=template_debug   dlink_enabled=yes threads=no
+scons platform=web target=template_release dlink_enabled=yes threads=no
+# → godot/bin/godot.web.template_debug.wasm32.nothreads.dlink.zip
+# → godot/bin/godot.web.template_release.wasm32.nothreads.dlink.zip
+```
+
+続いて、ビルドしたテンプレートをインストールし、Godot が名前で解決できるようにします。
+
+```bash
+./scripts/install-template.sh web
+# インストール先 → <export_templates>/<version>/web_nothreads_dlink_debug.zip
+#                                              web_nothreads_dlink_release.zip
+```
+
+インストール後は、Web プリセットで **Extensions Support** を ON にするだけでエクスポートできます。Godot が名前一致で `..._dlink_...` テンプレートを自動選択するため、`custom_template` の指定は不要です。プリセット側の操作（利用者視点）は [プロジェクトのエクスポート → Web](../workflow/export.md#web) を参照してください。
+
+> Godot のテンプレートフォルダにインストールしたくない場合は、代わりに `Web` プリセットの `custom_template/debug` / `custom_template/release` にビルドした `*.dlink.zip` を直接指定することもできます。
+
+dlink テンプレートはエンジンを小さなメインモジュールと大きな `godot.side.wasm` に分割します。エクスポート後に `index.wasm` と並んで `index.side.wasm` が出力されていれば、dlink テンプレートが使われた証拠です。
+
+> [!NOTE]
+> `dlink` / *Extensions Support* が必要なのは **GDExtension** 形態のみです。**カスタムモジュール** 形態はプラグインをエンジンにコンパイルするため、その Web テンプレートは `release-web.sh`（内部で `build.sh`）が生成する通常の（非 `dlink`）`web_nothreads_{debug,release}.zip` で、同じ手順でインストールします。`dlink_enabled` もプリセットの *Extensions Support* も不要です。
 
 ### Androidプラットフォームのエクスポートと動作確認
 
