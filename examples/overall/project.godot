@@ -19,4 +19,8 @@ run/main_scene="uid://dnijei7f6aclq"
 config/features=PackedStringArray("4.6", "GL Compatibility")
 config/icon="res://icon.svg"
 
+[rendering]
+
+textures/vram_compression/import_etc2_astc=true
+
 
