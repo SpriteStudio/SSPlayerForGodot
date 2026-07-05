@@ -307,6 +307,46 @@ Android のエクスポートテンプレートは、エンジンの Gradle プ�
    ```
    `dev_module` サンプルは `SpriteStudioPlayer2D` で `Knight_arrow` アニメーションを autoplay 再生するため、正常に動作すればキャラクターが画面に描画されます。
 
+### iOSプラットフォームのエクスポートと動作確認
+
+iOS エクスポートには **macOS + Xcode** が必要です。Godot は **Xcode プロジェクト**（すぐ動くアプリではない）を生成し、続けて実機向けに `xcodebuild archive` を自動実行します。これには Apple Developer アカウントが必要なため、**プリセットに App Store Team ID の設定が必須**で、有効な署名が無いと実機 archive 段階で失敗します。署名なしで手早く確認するには、生成された Xcode プロジェクトを自分で **iOS シミュレータ**向けにビルドします。
+
+> [!IMPORTANT]
+> **自前ビルドの iOS テンプレートは MoltenVK を同梱しません。** Godot の iOS エンジンは Vulkan 有効でビルドされるため、アプリのバイナリが `@rpath/MoltenVK.framework/MoltenVK` を**ハードリンク**します（`otool -L` で確認可能）。これは*エンジンのビルド*の性質であり、プロジェクトのレンダラ設定とは無関係です（GL Compatibility のプロジェクトでもリンクされます）。**公式**の Godot iOS テンプレートは `MoltenVK.xcframework` を同梱しますが、`release-ios.sh` が生成するテンプレートは**同梱しません**。自前テンプレートで動作確認する場合は自分で供給する必要があり、無いと起動時に `Library not loaded: @rpath/MoltenVK.framework/MoltenVK` でクラッシュします。
+
+自前テンプレートのシミュレータ動作確認（カスタムモジュールの例。GDExtension も `dev_gdextension` で同じ流れ）：
+
+```bash
+# 1. Xcode プロジェクトを生成（Godot の実機 archive 段階は署名で失敗するが想定内）
+mkdir -p bin_export/ios
+./godot/Godot.app/Contents/MacOS/Godot --path ./examples/dev_module/ --headless \
+    --export-debug "iOS" "$(pwd)/bin_export/ios/dev_module.xcodeproj" || true
+
+# 2. Xcode プロジェクトが期待する場所へ MoltenVK を配置（例: Vulkan SDK から）
+MVK="$HOME/VulkanSDK/<ver>/iOS/lib/MoltenVK.xcframework"
+cp -R "$MVK" bin_export/ios/MoltenVK.xcframework
+
+# 3. シミュレータ向けに署名なしでビルド
+cd bin_export/ios
+xcodebuild -project dev_module.xcodeproj -scheme dev_module \
+    -sdk iphonesimulator -configuration Debug -derivedDataPath ./DerivedData \
+    CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build
+APP="DerivedData/Build/Products/Debug-iphonesimulator/dev_module.app"
+
+# 4. MoltenVK をアプリに埋め込み、ad-hoc 署名し直す（simulator は SDK 由来の署名を拒否するため）
+cp -R "$MVK/ios-arm64_x86_64-simulator/MoltenVK.framework" "$APP/Frameworks/"
+codesign --force --sign - "$APP/Frameworks/MoltenVK.framework"
+codesign --force --sign - "$APP"
+
+# 5. シミュレータを起動してインストール・起動・スクショ
+DEV=$(xcrun simctl list devices available | grep -m1 -oE '\([0-9A-F-]{36}\)' | tr -d '()')
+xcrun simctl boot "$DEV" && xcrun simctl install "$DEV" "$APP"
+xcrun simctl launch "$DEV" com.crimw.devmodule
+xcrun simctl io "$DEV" screenshot screen.png
+```
+
+> **Note:** 本来の解決策は、iOS テンプレート自体（`install-template.sh` / `misc/dist/apple_embedded_xcode`）に `MoltenVK.xcframework` を同梱し、エクスポート時に自動で埋め込み・署名させて公式テンプレートと同等にすることです。上記の手動手順が要るのは**自前ビルド**のテンプレートの場合のみで、公式 Godot エディタ＋公式エクスポートテンプレートを使う一般利用者には影響しません。
+
 ### GDExtension のエクスポートと動作確認
 
 GDExtension（例: `dev_gdextension`）の場合、**エンジン本体の再ビルドやカスタムテンプレートのインストールは不要**です。Godot公式が配布している標準のGodotエディタとエクスポートテンプレートを使用して、そのままエクスポートが可能です。

@@ -312,6 +312,46 @@ Android export templates are template APKs packaged by the engine's Gradle proje
    ```
    The `dev_module` sample plays the `Knight_arrow` animation on `SpriteStudioPlayer2D` with autoplay, so a successful run renders the character on screen.
 
+### iOS Platform Export and Testing
+
+iOS export requires **macOS with Xcode**. Godot generates an **Xcode project** (not a ready-to-run app) and then auto-runs `xcodebuild archive` for a device, which needs an Apple Developer account — so an **App Store Team ID must be set in the preset**, and the device-archive step fails without valid signing. For a quick, unsigned check, build the generated project for the **iOS Simulator** yourself.
+
+> [!IMPORTANT]
+> **Self-built iOS templates do not bundle MoltenVK.** Godot's iOS engine is built with Vulkan, so the app binary hard-links `@rpath/MoltenVK.framework/MoltenVK` (confirm with `otool -L`). This is a property of the *engine build*, not the project's renderer — a GL Compatibility project links it too. The **official** Godot iOS templates ship `MoltenVK.xcframework`; the template produced by `release-ios.sh` does **not**. When testing a self-built template you must supply it yourself, or the app crashes at launch with `Library not loaded: @rpath/MoltenVK.framework/MoltenVK`.
+
+Simulator smoke-test of a self-built template (custom module shown; the GDExtension flow is identical with `dev_gdextension`):
+
+```bash
+# 1. Export the Xcode project (Godot's device-archive step will fail on signing — that's expected)
+mkdir -p bin_export/ios
+./godot/Godot.app/Contents/MacOS/Godot --path ./examples/dev_module/ --headless \
+    --export-debug "iOS" "$(pwd)/bin_export/ios/dev_module.xcodeproj" || true
+
+# 2. Place MoltenVK where the Xcode project expects it (e.g. from the Vulkan SDK)
+MVK="$HOME/VulkanSDK/<ver>/iOS/lib/MoltenVK.xcframework"
+cp -R "$MVK" bin_export/ios/MoltenVK.xcframework
+
+# 3. Build for the Simulator, unsigned
+cd bin_export/ios
+xcodebuild -project dev_module.xcodeproj -scheme dev_module \
+    -sdk iphonesimulator -configuration Debug -derivedDataPath ./DerivedData \
+    CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build
+APP="DerivedData/Build/Products/Debug-iphonesimulator/dev_module.app"
+
+# 4. Embed MoltenVK into the app and ad-hoc re-sign (the simulator rejects the SDK's own signature)
+cp -R "$MVK/ios-arm64_x86_64-simulator/MoltenVK.framework" "$APP/Frameworks/"
+codesign --force --sign - "$APP/Frameworks/MoltenVK.framework"
+codesign --force --sign - "$APP"
+
+# 5. Boot a simulator, install, launch, screenshot
+DEV=$(xcrun simctl list devices available | grep -m1 -oE '\([0-9A-F-]{36}\)' | tr -d '()')
+xcrun simctl boot "$DEV" && xcrun simctl install "$DEV" "$APP"
+xcrun simctl launch "$DEV" com.crimw.devmodule
+xcrun simctl io "$DEV" screenshot screen.png
+```
+
+> **Note:** The proper fix is to bundle `MoltenVK.xcframework` into the iOS template itself (`install-template.sh` / `misc/dist/apple_embedded_xcode`) so the export embeds and signs it automatically, matching the official templates. The manual steps above are only needed for **self-built** templates — end users on the official Godot editor and official export templates are unaffected.
+
 ### GDExtension Export and Testing
 
 For GDExtensions (e.g., `dev_gdextension`), **rebuilding the engine itself or installing custom templates is unnecessary**. You can export as-is using the standard Godot editor and official export templates distributed by Godot.
