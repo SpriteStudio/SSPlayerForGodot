@@ -2150,7 +2150,7 @@ void SsInternalPlayer::_emit_normal_batch(const DrawFrame& f, RID ci,
 
     int vbase = 0;
     int ibase = 0;
-    bool any_default_emitted = false;
+    bool batch_ci_used = false;
 
     // batch->blend_type() is the runtime BlendType; converted to ssab BlendType
     // by raw u8 value (the two enums are layout-equivalent, see chapter 9 §7).
@@ -2176,6 +2176,45 @@ void SsInternalPlayer::_emit_normal_batch(const DrawFrame& f, RID ci,
     }
 
     const bool masking_active = _mask_coverage_valid;
+
+    // Flush the run of contiguous default (shared-shader) parts accumulated so
+    // far onto a canvas_item, giving it a draw_index at the CURRENT rank
+    // position. This is what keeps default and per-part parts interleaved in
+    // rank order within a single batch. Without it, all of a batch's default
+    // parts collapse onto one CI whose draw_index is fixed before any part is
+    // processed, so they always sink behind that batch's per-part parts —
+    // which hid the rank-1 "face" behind the rank-0 shader-driven "head".
+    // The first run reuses the batch CI; a run that resumes after a per-part
+    // part gets a fresh pooled CI so it can carry its own (later) draw_index.
+    auto flush_default_run = [&]() {
+        if (ibase == 0) return;
+        RID run_ci;
+        if (!batch_ci_used) {
+            run_ci = ci;
+            batch_ci_used = true;
+            // The caller gave `ci` a placeholder draw_index before the parts (and
+            // thus the per-part/default split) were known; set its real rank
+            // position now.
+            rs->canvas_item_set_draw_index(ci, _draw_seq++);
+        } else {
+            run_ci = _acquire_per_part_canvas_item(); // fresh CI, draw_index = _draw_seq++
+        }
+        indices.resize(ibase);
+        _apply_partcolor_material(rs, run_ci, s_default_shader_id_hash, ssab_blend);
+        rs->canvas_item_set_transform(run_ci, Transform2D());
+        _emit_partcolor_mesh(rs, run_ci, indices, verts, colors, uvs, custom0, tex_rid);
+        // Restore the accumulators to full batch capacity for the next run and
+        // re-fetch the write pointers (the arrays were shared with the emitted
+        // mesh during the call above).
+        indices.resize(index_count);
+        verts_ptr = verts.ptrw();
+        uvs_ptr = uvs.ptrw();
+        colors_ptr = colors.ptrw();
+        custom0_ptr = custom0.ptrw();
+        indices_ptr = (int32_t*)indices.ptrw();
+        vbase = 0;
+        ibase = 0;
+    };
 
     for (uint16_t k = 0; k < count; k++) {
         int p_idx = (int)draw_order_data[batch->start_rank() + k];
@@ -2210,6 +2249,10 @@ void SsInternalPlayer::_emit_normal_batch(const DrawFrame& f, RID ci,
 
         PartShaderInfo psi = _resolve_part_shader_info(f, part);
         if (psi.is_per_part || masked) {
+            // Emit any default parts accumulated ahead of this per-part part
+            // first, so they keep a lower (behind) draw_index than it — this
+            // per-part CI is acquired (and indexed) right below.
+            flush_default_run();
             // Per-part path: build into the small scratch buffers (vbase=0),
             // acquire dedicated canvas_item + ShaderMaterial, emit one mesh.
             Vector2* p_verts_ptr = _per_part_normal_verts.ptrw();
@@ -2278,23 +2321,17 @@ void SsInternalPlayer::_emit_normal_batch(const DrawFrame& f, RID ci,
             ibase += INDICES_COUNT_QUAD;
         }
         vbase += vert_count;
-        any_default_emitted = true;
     }
 
-    if (!any_default_emitted) {
-        // Pure per-part batch (every part took the per-part route). The batch
-        // canvas_item has nothing to draw; clear any stale commands.
+    // Flush the trailing run of default parts.
+    flush_default_run();
+
+    if (!batch_ci_used) {
+        // Every part in this batch took the per-part route (or the batch was
+        // empty): the batch canvas_item drew nothing this frame. Clear it so
+        // stale geometry from a previous frame on this pooled CI does not linger.
         rs->canvas_item_clear(ci);
-        return;
     }
-
-    // Shrink ONLY the index accumulator to exactly what the Default-pass produced.
-    // The vertex arrays keep their capacity.
-    indices.resize(ibase);
-
-    _apply_partcolor_material(rs, ci, s_default_shader_id_hash, ssab_blend);
-    rs->canvas_item_set_transform(ci, Transform2D());
-    _emit_partcolor_mesh(rs, ci, indices, verts, colors, uvs, custom0, tex_rid);
 }
 
 void SsInternalPlayer::_emit_shape_batch(const DrawFrame& f, RID ci,
