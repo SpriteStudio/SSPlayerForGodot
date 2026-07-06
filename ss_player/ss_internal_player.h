@@ -512,6 +512,13 @@ private:
     // `_release_mask_target` / `_free_mask_targets`. The viewport renders with
     // UPDATE_ONCE (one-frame latency, sidesteps inter-viewport ordering).
     SsMaskCoverageTarget* _mask_target = nullptr; // borrowed; null when idle
+    // The target used on the PREVIOUS frame, held one extra frame across a
+    // size-class transition. On the transition frame the freshly acquired
+    // `_mask_target` has no coverage yet (one-frame viewport latency), so the
+    // coverage pass samples this still-valid previous target instead of dropping
+    // masking for a frame. Released at the start of the next coverage pass (and on
+    // teardown). null when not mid-transition.
+    SsMaskCoverageTarget* _mask_prev = nullptr;
     bool _mask_pool_registered = false;        // this player counts as a pool user
     Ref<Shader> _mask_write_shader;            // loaded from SS_MASK_WRITE
     Vector<Ref<ShaderMaterial>> _mask_write_materials; // per-instance, pooled
@@ -527,6 +534,11 @@ private:
     // the render target is not reallocated as the mask animates.
     static constexpr int MASK_COVERAGE_MAX_DIM = 1024;
     static constexpr int MASK_COVERAGE_MIN_DIM = 64;
+    // Hysteresis on shrinking the size class: only drop to a smaller class once
+    // the footprint is this fraction below the boundary, so a mask hovering on a
+    // class boundary does not flip-flop and thrash a transition every frame.
+    // Growing stays prompt to avoid under-resolution.
+    static constexpr float MASK_SIZE_SHRINK_HYSTERESIS = 0.15f;
     // Local-unit -> screen-pixel scale fed by the Node2D wrapper (see setter).
     float _coverage_screen_scale = 1.0f;
     // Size class to borrow next frame, decided from this frame's footprint. The
