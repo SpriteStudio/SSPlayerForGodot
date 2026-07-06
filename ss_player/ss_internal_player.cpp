@@ -2392,8 +2392,31 @@ void SsInternalPlayer::_emit_shape_batch(const DrawFrame& f, RID ci,
     // shape pipeline now shares the PartColor shader with Normal/Mesh, so
     // the GPU framebuffer blend is selected via _apply_partcolor_material.
     const auto ssab_blend = (ss::format::BlendType)batch->blend_type();
-    bool batch_material_applied = false;
     const bool masking_active = _mask_coverage_valid;
+
+    // Default (shared-shader) parts of a batch must interleave with its per-part
+    // parts by rank, not all sink behind them onto the single batch CI (whose
+    // draw_index is fixed before any part is processed). Emit each contiguous run
+    // of default parts onto its own canvas item, indexed at that run's rank
+    // position: the first run reuses the batch CI; a run resumed after a per-part
+    // part takes a fresh pooled CI. (Same fix as _emit_normal_batch.)
+    RID run_ci;
+    bool batch_ci_used = false;
+    auto default_run_ci = [&]() -> RID {
+        if (run_ci.is_valid()) return run_ci;
+        if (!batch_ci_used) {
+            run_ci = ci;
+            batch_ci_used = true;
+            // Override the placeholder draw_index the caller set before the
+            // per-part/default split (and thus the rank order) was known.
+            f.rs->canvas_item_set_draw_index(ci, _draw_seq++);
+        } else {
+            run_ci = _acquire_per_part_canvas_item(); // draw_index = _draw_seq++
+        }
+        f.rs->canvas_item_set_transform(run_ci, Transform2D());
+        _apply_partcolor_material(f.rs, run_ci, s_default_shader_id_hash, ssab_blend);
+        return run_ci;
+    };
 
     for (uint16_t k = 0; k < count; k++) {
         int p_idx = (int)draw_order_data[batch->start_rank() + k];
@@ -2429,6 +2452,7 @@ void SsInternalPlayer::_emit_shape_batch(const DrawFrame& f, RID ci,
 
         PartShaderInfo psi = _resolve_part_shader_info(f, part);
         if (psi.is_per_part || masked) {
+            run_ci = RID(); // end the current default run; a later default part starts a new CI after this one
             RID part_ci = _acquire_per_part_canvas_item();
             Ref<ShaderMaterial> mat = _acquire_per_part_material(psi.id_hash, ssab_blend);
             // Shape parts have no bound cellmap texture; pass a zero
@@ -2446,18 +2470,14 @@ void SsInternalPlayer::_emit_shape_batch(const DrawFrame& f, RID ci,
                                  _shape_buf.colors, _shape_buf.uvs, _shape_buf.custom0,
                                  RID());
         } else {
-            if (!batch_material_applied) {
-                _apply_partcolor_material(f.rs, ci, s_default_shader_id_hash, ssab_blend);
-                batch_material_applied = true;
-            }
-            _emit_partcolor_mesh(f.rs, ci, _shape_buf.indices, _shape_buf.verts,
+            _emit_partcolor_mesh(f.rs, default_run_ci(), _shape_buf.indices, _shape_buf.verts,
                                  _shape_buf.colors, _shape_buf.uvs, _shape_buf.custom0,
                                  RID());
         }
     }
-    if (!batch_material_applied) {
-        // Every Shape part in this batch took the per-part route. Clear stale
-        // commands on the batch CI so the previous frame's draws don't linger.
+    if (!batch_ci_used) {
+        // Every Shape part in this batch took the per-part route (batch CI unused).
+        // Clear stale commands so the previous frame's draws don't linger.
         f.rs->canvas_item_clear(ci);
     }
 }
@@ -2483,8 +2503,28 @@ void SsInternalPlayer::_emit_mesh_batch(const DrawFrame& f, RID ci,
     // BlendType by raw u8 value (same convention as _emit_normal_batch).
     const auto ssab_blend = (ss::format::BlendType)batch->blend_type();
     const RID tex_rid = tex->get_rid();
-    bool batch_material_applied = false;
     const bool masking_active = _mask_coverage_valid;
+
+    // Interleave default (shared-shader) parts with per-part parts by rank —
+    // emit each contiguous default run onto its own rank-indexed canvas item
+    // (first run reuses the batch CI, later runs take pooled CIs) instead of
+    // collapsing them all onto the batch CI behind the per-part parts.
+    // (Same fix as _emit_normal_batch.)
+    RID run_ci;
+    bool batch_ci_used = false;
+    auto default_run_ci = [&]() -> RID {
+        if (run_ci.is_valid()) return run_ci;
+        if (!batch_ci_used) {
+            run_ci = ci;
+            batch_ci_used = true;
+            f.rs->canvas_item_set_draw_index(ci, _draw_seq++);
+        } else {
+            run_ci = _acquire_per_part_canvas_item(); // draw_index = _draw_seq++
+        }
+        f.rs->canvas_item_set_transform(run_ci, Transform2D());
+        _apply_partcolor_material(f.rs, run_ci, s_default_shader_id_hash, ssab_blend);
+        return run_ci;
+    };
 
     for (uint16_t k = 0; k < count; k++) {
         int p_idx = (int)draw_order_data[batch->start_rank() + k];
@@ -2513,6 +2553,7 @@ void SsInternalPlayer::_emit_mesh_batch(const DrawFrame& f, RID ci,
 
         PartShaderInfo psi = _resolve_part_shader_info(f, part);
         if (psi.is_per_part || masked) {
+            run_ci = RID(); // end the current default run; a later default part starts a new CI after this one
             RID part_ci = _acquire_per_part_canvas_item();
             Ref<ShaderMaterial> mat = _acquire_per_part_material(psi.id_hash, ssab_blend);
             const Vector4 cell_rect = _resolve_cell_rect_uv(f, p_idx, inv_tex_size);
@@ -2527,16 +2568,12 @@ void SsInternalPlayer::_emit_mesh_batch(const DrawFrame& f, RID ci,
                                  _mesh_buf.colors, _mesh_buf.uvs, _mesh_buf.custom0,
                                  tex_rid);
         } else {
-            if (!batch_material_applied) {
-                _apply_partcolor_material(f.rs, ci, s_default_shader_id_hash, ssab_blend);
-                batch_material_applied = true;
-            }
-            _emit_partcolor_mesh(f.rs, ci, _mesh_buf.indices, _mesh_buf.verts,
+            _emit_partcolor_mesh(f.rs, default_run_ci(), _mesh_buf.indices, _mesh_buf.verts,
                                  _mesh_buf.colors, _mesh_buf.uvs, _mesh_buf.custom0,
                                  tex_rid);
         }
     }
-    if (!batch_material_applied) {
+    if (!batch_ci_used) {
         f.rs->canvas_item_clear(ci);
     }
 }
