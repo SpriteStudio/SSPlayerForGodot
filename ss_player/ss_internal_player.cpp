@@ -50,6 +50,23 @@ int ss_quantize_coverage_dim(float px, int min_dim, int max_dim) {
     while (c < v) c <<= 1;
     return c;
 }
+
+// Like ss_quantize_coverage_dim, but sticky: only shrink to a smaller class once
+// the footprint is `shrink_hyst` below the class boundary. This keeps a mask that
+// hovers on a boundary from flip-flopping (each flip is a coverage transition).
+// Growing is prompt (no hysteresis) so the coverage never under-resolves.
+int ss_hysteretic_coverage_dim(float px, int current, int min_dim, int max_dim, float shrink_hyst) {
+    int desired = ss_quantize_coverage_dim(px, min_dim, max_dim);
+    if (desired < current && current > min_dim) {
+        // Class `current` covers (current/2, current]; require px comfortably
+        // below current/2 before dropping down.
+        const float lower_edge = (float)current * 0.5f;
+        if (px > lower_edge * (1.0f - shrink_hyst)) {
+            desired = current; // stay in the larger class
+        }
+    }
+    return desired;
+}
 } // namespace
 
 // One pooled coverage render target of a fixed size class. Global scope so the
@@ -790,15 +807,27 @@ void SsInternalPlayer::_acquire_mask_target(int w, int h) {
     }
     RenderingServer* rs = RenderingServer::get_singleton();
     if (_mask_target) {
-        SsMaskCoveragePool::get().release(rs, _mask_target);
+        // Size-class transition: keep the outgoing target one more frame so the
+        // coverage pass can sample its still-valid coverage while the freshly
+        // acquired target warms up (see _render_mask_coverage). Any earlier
+        // leftover (defensive; normally cleared at the pass start) is returned.
+        if (_mask_prev) {
+            SsMaskCoveragePool::get().release(rs, _mask_prev);
+        }
+        _mask_prev = _mask_target;
         _mask_target = nullptr;
     }
     _mask_target = SsMaskCoveragePool::get().acquire(rs, w, h);
 }
 
 void SsInternalPlayer::_release_mask_target() {
+    RenderingServer* rs = RenderingServer::get_singleton();
+    if (_mask_prev) {
+        SsMaskCoveragePool::get().release(rs, _mask_prev);
+        _mask_prev = nullptr;
+    }
     if (_mask_target) {
-        SsMaskCoveragePool::get().release(RenderingServer::get_singleton(), _mask_target);
+        SsMaskCoveragePool::get().release(rs, _mask_target);
         _mask_target = nullptr;
     }
     _mask_coverage_valid = false;
@@ -839,6 +868,12 @@ Ref<ShaderMaterial> SsInternalPlayer::_acquire_mask_write_material() {
 
 void SsInternalPlayer::_render_mask_coverage(const DrawFrame& f) {
     _mask_coverage_valid = false;
+    // Return the transition leftover held for last frame's sampling; if we are
+    // still transitioning, _acquire_mask_target re-establishes it below.
+    if (_mask_prev) {
+        SsMaskCoveragePool::get().release(RenderingServer::get_singleton(), _mask_prev);
+        _mask_prev = nullptr;
+    }
     if (_mask_writers.is_empty() || !f.frameData) return;
     // Borrow a pooled target of the size class decided last frame (stable thanks
     // to quantization), then re-request its one-shot render this frame.
@@ -1033,16 +1068,27 @@ void SsInternalPlayer::_render_mask_coverage(const DrawFrame& f) {
 
     // Decide the size class to borrow next frame from this frame's footprint.
     // Screen-linked: ~one coverage texel per on-screen pixel of the bbox.
-    _mask_next_w = ss_quantize_coverage_dim(bsize.x * _coverage_screen_scale, MASK_COVERAGE_MIN_DIM, MASK_COVERAGE_MAX_DIM);
-    _mask_next_h = ss_quantize_coverage_dim(bsize.y * _coverage_screen_scale, MASK_COVERAGE_MIN_DIM, MASK_COVERAGE_MAX_DIM);
+    _mask_next_w = ss_hysteretic_coverage_dim(bsize.x * _coverage_screen_scale, _mask_target->w,
+                                              MASK_COVERAGE_MIN_DIM, MASK_COVERAGE_MAX_DIM, MASK_SIZE_SHRINK_HYSTERESIS);
+    _mask_next_h = ss_hysteretic_coverage_dim(bsize.y * _coverage_screen_scale, _mask_target->h,
+                                              MASK_COVERAGE_MIN_DIM, MASK_COVERAGE_MAX_DIM, MASK_SIZE_SHRINK_HYSTERESIS);
 
     // A freshly (re)acquired target still holds the previous tenant's coverage
-    // (or nothing). With one-frame-latency sampling, using it this frame would
-    // show that stale content, so skip masking for one frame — our coverage,
-    // rendered this frame, is what next frame samples.
+    // (or nothing), and with one-frame-latency sampling it is not ready this
+    // frame. On a size-class transition we instead sample `_mask_prev` — last
+    // frame's target, whose coverage is still valid (same one-frame latency as
+    // any normal frame, just at the previous resolution for this one frame) —
+    // so masking never drops for a frame while zooming across a class boundary.
     if (_mask_target->fresh) {
         _mask_target->fresh = false;
-        _mask_coverage_valid = false;
+        if (_mask_prev) {
+            _mask_coverage_tex = rs->viewport_get_texture(_mask_prev->viewport);
+            _mask_coverage_valid = true;
+        } else {
+            // Genuinely the first coverage frame (no previous target to fall back
+            // on) — nothing valid to sample yet, so skip masking this one frame.
+            _mask_coverage_valid = false;
+        }
     } else {
         _mask_coverage_valid = true;
     }
