@@ -70,56 +70,60 @@ jobs:
           platform: ${{ matrix.platform }}
           os: ${{ matrix.os }}
 
-      # (Optional) code signing secrets retrieval omitted for weekly if unnecessary,
-      # but leaving placeholder or basic logic so the build won't fail.
-      - name: Retrieve the secret and decode it to a file
+      # Import the Developer ID Application certificate into an ephemeral keychain
+      # so codesign (run inside the release scripts) can resolve the signing
+      # identity. No-ops when the certificate secret is absent, leaving the
+      # artifacts unsigned.
+      - name: Set up signing keychain
         if: matrix.platform == 'macos' || matrix.platform == 'ios'
         continue-on-error: true # Weeklyでは署名できなくても通す
         env:
-          DEV_CERT_APPLICATION: ${{ secrets.DEV_CERT_APPLICATION }}
-          DEV_CERT_PASS: ${{ secrets.DEV_CERT_PASS }}
-          KC_PASS: ${{ secrets.KC_PASS }}
+          SS_APPLE_CERTIFICATE: ${{ secrets.SS_APPLE_CERTIFICATE }}
+          SS_APPLE_CERTIFICATE_PASSWORD: ${{ secrets.SS_APPLE_CERTIFICATE_PASSWORD }}
         run: |
-          if [ -z "$DEV_CERT_APPLICATION" ]; then
-            echo "Skipping signing setup as secrets are not available."
+          if [ -z "$SS_APPLE_CERTIFICATE" ]; then
+            echo "SS_APPLE_CERTIFICATE not set — skipping keychain setup (artifacts will be unsigned)."
             exit 0
           fi
-          CERTIFICATE_PATH=$RUNNER_TEMP/build_certificate.p12
-          echo -n "$DEV_CERT_APPLICATION" | base64 --decode > $CERTIFICATE_PATH
-          security create-keychain -p "$KC_PASS" ${{ env.KEYCHAIN_PATH }}
-          security set-keychain-settings -lut 21600 ${{ env.KEYCHAIN_PATH }}
-          security unlock-keychain -p "$KC_PASS" ${{ env.KEYCHAIN_PATH }}
-          security import $CERTIFICATE_PATH -P "$DEV_CERT_PASS" -f pkcs12 -k ${{ env.KEYCHAIN_PATH }} -T /usr/bin/codesign
-          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KC_PASS" ${{ env.KEYCHAIN_PATH }}
-          security list-keychain -d user -s ${{ env.KEYCHAIN_PATH }}
+
+          CERTIFICATE_PATH="$RUNNER_TEMP/build_certificate.p12"
+          # Random per-run password for the throwaway keychain; never persisted.
+          KEYCHAIN_PASSWORD="$(openssl rand -base64 24)"
+
+          echo -n "$SS_APPLE_CERTIFICATE" | base64 --decode > "$CERTIFICATE_PATH"
+
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+
+          security import "$CERTIFICATE_PATH" -P "$SS_APPLE_CERTIFICATE_PASSWORD" -f pkcs12 -k "$KEYCHAIN_PATH" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+
+          security list-keychain -d user -s "$KEYCHAIN_PATH" login.keychain-db
+
+          rm -f "$CERTIFICATE_PATH"
 
       - name: build Linux
         if: matrix.platform == 'linux'
         run: ./scripts/release-gdextension-linux.sh
 
+      # release-gdextension-macos.sh signs the frameworks when APPLE_SIGNING_IDENTITY
+      # is present; no-op (unsigned) otherwise, so weekly stays green without secrets.
       - name: build macOS
         if: matrix.platform == 'macos'
         env:
-          DEV_ID_APPLICATION: ${{ secrets.DEV_ID_APPLICATION }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.SS_APPLE_SIGNING_IDENTITY }}
         run: |
           ./scripts/release-gdextension-macos.sh
-          if [ -n "$DEV_ID_APPLICATION" ]; then
-            for f in ./bin/macos/*.framework; do
-              codesign --force --verify --verbose --keychain ${{ env.KEYCHAIN_PATH }} --sign "${DEV_ID_APPLICATION}" $f --deep --options runtime --timestamp
-            done
-          fi
 
+      # release-gdextension-ios.sh signs the XCFrameworks when APPLE_SIGNING_IDENTITY
+      # is present; no-op (unsigned) otherwise.
       - name: build iOS
         if: matrix.platform == 'ios'
         env:
-          DEV_ID_APPLICATION: ${{ secrets.DEV_ID_APPLICATION }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.SS_APPLE_SIGNING_IDENTITY }}
         run: |
           ./scripts/release-gdextension-ios.sh
-          if [ -n "$DEV_ID_APPLICATION" ]; then
-            for f in ./bin/ios/*.xcframework/*/*.framework; do
-              codesign --force --verify --verbose --keychain ${{ env.KEYCHAIN_PATH }} --sign "${DEV_ID_APPLICATION}" $f --deep --options runtime --timestamp
-            done
-          fi
 
       - name: build Android
         if: matrix.platform == 'android'

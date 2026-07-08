@@ -42,6 +42,30 @@ done
 /bin/rm -rf tmp
 popd > /dev/null # ${BINDIR}
 
+# --- Code signing (opt-in via env) ------------------------------------------
+# Signs the XCFrameworks inside-out when APPLE_SIGNING_IDENTITY is set (maps to the
+# SS_APPLE_SIGNING_IDENTITY secret set by CI).
+# iOS is NOT notarized and does NOT use the macOS hardened runtime (--options runtime)
+# nor --deep: sign each embedded .framework first, then the .xcframework wrapper. The
+# consuming app re-signs the embedded framework with its own identity at build time;
+# this signature only lets consumers verify the package's provenance. Runs before the
+# examples sync below so the copied frameworks carry the signature. No-op when unset.
+if [ -n "${APPLE_SIGNING_IDENTITY:-}" ]; then
+    echo "==> Codesigning iOS XCFrameworks as: ${APPLE_SIGNING_IDENTITY}"
+    # Inner frameworks (one per slice) first...
+    for fw in ${BINDIR}/*.xcframework/*/*.framework(N); do
+        codesign --force --sign "${APPLE_SIGNING_IDENTITY}" --timestamp "${fw}"
+        codesign --verify --strict --verbose=2 "${fw}"
+    done
+    # ...then the xcframework wrappers.
+    for xcfw in ${BINDIR}/*.xcframework(N); do
+        codesign --force --sign "${APPLE_SIGNING_IDENTITY}" --timestamp "${xcfw}"
+        codesign --verify --strict --verbose=2 "${xcfw}"
+    done
+else
+    echo "==> Skipping iOS codesign (APPLE_SIGNING_IDENTITY not set)"
+fi
+
 # Sync the xcframework to the examples and remove the leftover .frameworks
 MAIN_PROJECT="dev_gdextension"
 OTHER_PROJECTS=("overall_gdextension" "Ringo")
