@@ -53,12 +53,15 @@ nav:
       - Basic Usage: workflow/usage_basic.md
       - Asset Import & Editor Integration: workflow/usage_asset_pipeline.md
       - Scripting & Events: workflow/usage_scripting.md
+      - AnimationPlayer Integration: workflow/animation_player.md
+      - Exporting Your Project: workflow/export.md
   - Advanced Topics:
       - CLI Conversion & CI/CD: workflow/import.md
       - Performance Tuning & Advanced Settings: workflow/tips.md
   - API Reference:
       - SpriteStudioPlayer2D: api/player.md
       - Resource Classes: api/resource.md
+  - Limitations & Scope: limitations.md
   - Migration Guide: migration_from_v1.md
 
 markdown_extensions:
