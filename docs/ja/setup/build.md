@@ -24,7 +24,7 @@ git clone https://github.com/godotengine/godot-cpp.git -b master
 `godot-cpp` ディレクトリは GDExtension をビルドする場合に必要です。
 
 > [!NOTE]
-> SDK のリリース成果物を使う一般的なビルドでは、サブモジュール `ss_player/SpriteStudio-SDK/` の取得は不要です（`--recursive` を付けずにクローンして構いません）。SpriteStudio-SDK 自体を手元で開発・ビルドする場合のみ、後述の [SpriteStudio-SDK 開発者向け](#spritestudio-sdk-開発者向け) に従って `git submodule update --init --recursive` でサブモジュールを初期化してください。
+> SDK のリリース成果物を使う一般的なビルドでは、サブモジュール `ss_player/SpriteStudio-SDK/` の取得は不要です（`--recursive` を付けずにクローンして構いません）。SpriteStudio-SDK 自体を手元で開発・ビルドする場合のみ、後述の [SpriteStudio-SDK 開発者向け](#spritestudio-sdk) に従って `git submodule update --init --recursive` でサブモジュールを初期化してください。
 
 ## ビルド環境のセットアップ
 
@@ -58,7 +58,7 @@ Homebrew で配布されている `molten-vk` はホストアーキ向けのバ�
 
 > `libssconverter` (`.sspj` → `.ssab` 変換ライブラリ) はデスクトップ向けにのみ同梱されます。iOS / Android / Web 向けの `libssruntime` パッケージには含まれません。
 
-`libssruntime` を SpriteStudio-SDK ソースから自前でビルドしたい場合は [SpriteStudio-SDK 開発者向け](#spritestudio-sdk-開発者向け) を参照してください。
+`libssruntime` を SpriteStudio-SDK ソースから自前でビルドしたい場合は [SpriteStudio-SDK 開発者向け](#spritestudio-sdk) を参照してください。
 
 ## 2-A. GDExtension のビルド
 
@@ -103,7 +103,7 @@ $env:PYTHONUTF8=1
 
 各プラットフォーム向けに `editor` / `template_debug` / `template_release` を一括でビルドするスクリプトを `scripts/` 配下に用意しています。
 内部では前述の `build.sh` / `build-extension.sh` を `target` を変えて連続実行する構成です。
-これらのスクリプトは `libssruntime` を取得・ビルドはしないため、事前に [1. libssruntime の用意](#1-libssruntime-の用意) を済ませておく必要があります。
+これらのスクリプトは `libssruntime` を取得・ビルドはしないため、事前に [1. libssruntime の用意](#1-libssruntime) を済ませておく必要があります。
 
 ### GDExtension
 

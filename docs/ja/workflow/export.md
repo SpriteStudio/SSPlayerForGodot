@@ -16,7 +16,7 @@
    エクスポートダイアログで **Web** プリセット → **オプション** → **Extensions Support** を ON にします。GDExtension ライブラリは、エンジンテンプレートが動的リンクに対応している場合のみ Web で読み込まれます。このオプションが、そのテンプレートを使うよう Godot に指示します。
 
 2. **dlink 対応の Web エクスポートテンプレートがインストールされている必要がある。**
-   素の Godot Web テンプレートは GDExtension に対応していません。`web_nothreads_dlink_debug.zip` / `web_nothreads_dlink_release.zip` テンプレートを Godot のエクスポートテンプレートフォルダに導入しておく必要があります。これらのビルドと導入は上級者向けの手順で、[ビルドガイド → Web での GDExtension](../setup/build.md#webプラットフォームのエクスポートと動作確認) にまとめてあります。導入済みであれば、プリセット側は **Extensions Support** を ON にするだけで、Godot が適切なテンプレートを自動選択します。
+   素の Godot Web テンプレートは GDExtension に対応していません。`web_nothreads_dlink_debug.zip` / `web_nothreads_dlink_release.zip` テンプレートを Godot のエクスポートテンプレートフォルダに導入しておく必要があります。これらのビルドと導入は上級者向けの手順で、[ビルドガイド → Web での GDExtension](../setup/build.md#web-gdextensionextensions-support-dlink) にまとめてあります。導入済みであれば、プリセット側は **Extensions Support** を ON にするだけで、Godot が適切なテンプレートを自動選択します。
 
 > [!WARNING]
 > Web ビルドが起動時に *「GDExtension libraries are not supported by this engine version…」* で失敗する場合、上記2つの要件のいずれかが欠けています（Extensions Support が OFF、または dlink テンプレートが未インストール）。
