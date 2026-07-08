@@ -151,6 +151,48 @@ PackedStringArray SpriteStudioPlayer2D::get_part_names() const {
     return names;
 }
 
+// ---- Override Layer (Phase 2) --------------------------------------------
+
+bool SpriteStudioPlayer2D::set_part_visibility_override(const String& part_name, bool force_hidden, bool cascade) {
+    int idx = _internal->resolve_part_index(part_name);
+    if (idx < 0) return false;
+    return _internal->set_part_visibility_override(idx, force_hidden, cascade);
+}
+
+bool SpriteStudioPlayer2D::clear_part_visibility_override(const String& part_name) {
+    int idx = _internal->resolve_part_index(part_name);
+    if (idx < 0) return false;
+    return _internal->clear_part_visibility_override(idx);
+}
+
+bool SpriteStudioPlayer2D::set_part_color_override(const String& part_name, const Color& color, int blend_op, int priority) {
+    int idx = _internal->resolve_part_index(part_name);
+    if (idx < 0) return false;
+    return _internal->set_part_color_override(idx, color, blend_op, priority);
+}
+
+bool SpriteStudioPlayer2D::clear_part_color_override(const String& part_name) {
+    int idx = _internal->resolve_part_index(part_name);
+    if (idx < 0) return false;
+    return _internal->clear_part_color_override(idx);
+}
+
+bool SpriteStudioPlayer2D::set_part_cell_override(const String& part_name, const String& cellmap_name, const String& cell_name, int priority) {
+    int idx = _internal->resolve_part_index(part_name);
+    if (idx < 0) return false;
+    return _internal->set_part_cell_override(idx, cellmap_name, cell_name, priority);
+}
+
+bool SpriteStudioPlayer2D::clear_part_cell_override(const String& part_name) {
+    int idx = _internal->resolve_part_index(part_name);
+    if (idx < 0) return false;
+    return _internal->clear_part_cell_override(idx);
+}
+
+bool SpriteStudioPlayer2D::clear_all_part_overrides() {
+    return _internal->clear_all_part_overrides();
+}
+
 void SpriteStudioPlayer2D::setAnimation(const String& strName) {
     _internal->setAnimation(strName);
     NOTIFY_PROPERTY_LIST_CHANGED();
@@ -339,6 +381,15 @@ void SpriteStudioPlayer2D::_bind_methods() {
     ClassDB::bind_method( D_METHOD( "get_part_transform", "part_name" ), &SpriteStudioPlayer2D::get_part_transform );
     ClassDB::bind_method( D_METHOD( "is_part_hidden", "part_name" ), &SpriteStudioPlayer2D::is_part_hidden );
     ClassDB::bind_method( D_METHOD( "get_part_names" ), &SpriteStudioPlayer2D::get_part_names );
+
+    // ---- Override Layer (Phase 2): per-part runtime overrides -------------
+    ClassDB::bind_method( D_METHOD( "set_part_visibility_override", "part_name", "force_hidden", "cascade" ), &SpriteStudioPlayer2D::set_part_visibility_override, DEFVAL(false) );
+    ClassDB::bind_method( D_METHOD( "clear_part_visibility_override", "part_name" ), &SpriteStudioPlayer2D::clear_part_visibility_override );
+    ClassDB::bind_method( D_METHOD( "set_part_color_override", "part_name", "color", "blend_op", "priority" ), &SpriteStudioPlayer2D::set_part_color_override, DEFVAL(0), DEFVAL(1) );
+    ClassDB::bind_method( D_METHOD( "clear_part_color_override", "part_name" ), &SpriteStudioPlayer2D::clear_part_color_override );
+    ClassDB::bind_method( D_METHOD( "set_part_cell_override", "part_name", "cellmap_name", "cell_name", "priority" ), &SpriteStudioPlayer2D::set_part_cell_override, DEFVAL(1) );
+    ClassDB::bind_method( D_METHOD( "clear_part_cell_override", "part_name" ), &SpriteStudioPlayer2D::clear_part_cell_override );
+    ClassDB::bind_method( D_METHOD( "clear_all_part_overrides" ), &SpriteStudioPlayer2D::clear_all_part_overrides );
 
     ADD_SIGNAL(
         MethodInfo(
