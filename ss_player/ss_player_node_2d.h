@@ -117,6 +117,13 @@ public:
     bool set_part_cell_override(const String& part_name, const String& cellmap_name, const String& cell_name, int priority);
     bool clear_part_cell_override(const String& part_name);
     bool clear_all_part_overrides();
+    // By-index variants (part_index from get_part_index): skip the name lookup.
+    bool set_part_visibility_override_by_index(int part_index, bool force_hidden, bool cascade);
+    bool clear_part_visibility_override_by_index(int part_index);
+    bool set_part_color_override_by_index(int part_index, const Color& color, int blend_op, int priority);
+    bool clear_part_color_override_by_index(int part_index);
+    bool set_part_cell_override_by_index(int part_index, const String& cellmap_name, const String& cell_name, int priority);
+    bool clear_part_cell_override_by_index(int part_index);
 
 private:
     // Engine-agnostic playback / render core. The Node2D wrapper feeds it the

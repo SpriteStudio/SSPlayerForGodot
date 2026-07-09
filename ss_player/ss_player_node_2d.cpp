@@ -153,40 +153,59 @@ PackedStringArray SpriteStudioPlayer2D::get_part_names() const {
 
 // ---- Override Layer (Phase 2) --------------------------------------------
 
+// By-index variants. The runtime addresses parts by index, so these skip the
+// name lookup — resolve a name once via get_part_index() and reuse the index.
+// An out-of-range index is a no-op returning false (guarded in SsInternalPlayer).
+
+bool SpriteStudioPlayer2D::set_part_visibility_override_by_index(int part_index, bool force_hidden, bool cascade) {
+    return _internal->set_part_visibility_override(part_index, force_hidden, cascade);
+}
+
+bool SpriteStudioPlayer2D::clear_part_visibility_override_by_index(int part_index) {
+    return _internal->clear_part_visibility_override(part_index);
+}
+
+bool SpriteStudioPlayer2D::set_part_color_override_by_index(int part_index, const Color& color, int blend_op, int priority) {
+    return _internal->set_part_color_override(part_index, color, blend_op, priority);
+}
+
+bool SpriteStudioPlayer2D::clear_part_color_override_by_index(int part_index) {
+    return _internal->clear_part_color_override(part_index);
+}
+
+bool SpriteStudioPlayer2D::set_part_cell_override_by_index(int part_index, const String& cellmap_name, const String& cell_name, int priority) {
+    return _internal->set_part_cell_override(part_index, cellmap_name, cell_name, priority);
+}
+
+bool SpriteStudioPlayer2D::clear_part_cell_override_by_index(int part_index) {
+    return _internal->clear_part_cell_override(part_index);
+}
+
+// Name-based convenience wrappers — resolve the name and delegate to the
+// by-index variant (an unknown name resolves to -1 → no-op returning false).
+
 bool SpriteStudioPlayer2D::set_part_visibility_override(const String& part_name, bool force_hidden, bool cascade) {
-    int idx = _internal->resolve_part_index(part_name);
-    if (idx < 0) return false;
-    return _internal->set_part_visibility_override(idx, force_hidden, cascade);
+    return set_part_visibility_override_by_index(_internal->resolve_part_index(part_name), force_hidden, cascade);
 }
 
 bool SpriteStudioPlayer2D::clear_part_visibility_override(const String& part_name) {
-    int idx = _internal->resolve_part_index(part_name);
-    if (idx < 0) return false;
-    return _internal->clear_part_visibility_override(idx);
+    return clear_part_visibility_override_by_index(_internal->resolve_part_index(part_name));
 }
 
 bool SpriteStudioPlayer2D::set_part_color_override(const String& part_name, const Color& color, int blend_op, int priority) {
-    int idx = _internal->resolve_part_index(part_name);
-    if (idx < 0) return false;
-    return _internal->set_part_color_override(idx, color, blend_op, priority);
+    return set_part_color_override_by_index(_internal->resolve_part_index(part_name), color, blend_op, priority);
 }
 
 bool SpriteStudioPlayer2D::clear_part_color_override(const String& part_name) {
-    int idx = _internal->resolve_part_index(part_name);
-    if (idx < 0) return false;
-    return _internal->clear_part_color_override(idx);
+    return clear_part_color_override_by_index(_internal->resolve_part_index(part_name));
 }
 
 bool SpriteStudioPlayer2D::set_part_cell_override(const String& part_name, const String& cellmap_name, const String& cell_name, int priority) {
-    int idx = _internal->resolve_part_index(part_name);
-    if (idx < 0) return false;
-    return _internal->set_part_cell_override(idx, cellmap_name, cell_name, priority);
+    return set_part_cell_override_by_index(_internal->resolve_part_index(part_name), cellmap_name, cell_name, priority);
 }
 
 bool SpriteStudioPlayer2D::clear_part_cell_override(const String& part_name) {
-    int idx = _internal->resolve_part_index(part_name);
-    if (idx < 0) return false;
-    return _internal->clear_part_cell_override(idx);
+    return clear_part_cell_override_by_index(_internal->resolve_part_index(part_name));
 }
 
 bool SpriteStudioPlayer2D::clear_all_part_overrides() {
@@ -390,6 +409,14 @@ void SpriteStudioPlayer2D::_bind_methods() {
     ClassDB::bind_method( D_METHOD( "set_part_cell_override", "part_name", "cellmap_name", "cell_name", "priority" ), &SpriteStudioPlayer2D::set_part_cell_override, DEFVAL(1) );
     ClassDB::bind_method( D_METHOD( "clear_part_cell_override", "part_name" ), &SpriteStudioPlayer2D::clear_part_cell_override );
     ClassDB::bind_method( D_METHOD( "clear_all_part_overrides" ), &SpriteStudioPlayer2D::clear_all_part_overrides );
+
+    // By-index variants
+    ClassDB::bind_method( D_METHOD( "set_part_visibility_override_by_index", "part_index", "force_hidden", "cascade" ), &SpriteStudioPlayer2D::set_part_visibility_override_by_index, DEFVAL(false) );
+    ClassDB::bind_method( D_METHOD( "clear_part_visibility_override_by_index", "part_index" ), &SpriteStudioPlayer2D::clear_part_visibility_override_by_index );
+    ClassDB::bind_method( D_METHOD( "set_part_color_override_by_index", "part_index", "color", "blend_op", "priority" ), &SpriteStudioPlayer2D::set_part_color_override_by_index, DEFVAL(0), DEFVAL(1) );
+    ClassDB::bind_method( D_METHOD( "clear_part_color_override_by_index", "part_index" ), &SpriteStudioPlayer2D::clear_part_color_override_by_index );
+    ClassDB::bind_method( D_METHOD( "set_part_cell_override_by_index", "part_index", "cellmap_name", "cell_name", "priority" ), &SpriteStudioPlayer2D::set_part_cell_override_by_index, DEFVAL(1) );
+    ClassDB::bind_method( D_METHOD( "clear_part_cell_override_by_index", "part_index" ), &SpriteStudioPlayer2D::clear_part_cell_override_by_index );
 
     ADD_SIGNAL(
         MethodInfo(
