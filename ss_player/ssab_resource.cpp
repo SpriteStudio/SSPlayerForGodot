@@ -16,6 +16,7 @@ void SSABResource::_bind_methods() {
   ClassDB::bind_method(D_METHOD("get_animation_count"), &SSABResource::get_animation_count);
   ClassDB::bind_method(D_METHOD("get_animation_names"), &SSABResource::get_animation_names);
   ClassDB::bind_method(D_METHOD("get_cellmap_names"), &SSABResource::get_cellmap_names);
+  ClassDB::bind_method(D_METHOD("get_cell_names", "cellmap_name"), &SSABResource::get_cell_names);
   }
 bool SSABResource::is_valid() const {
   if (binary.size() == 0) {
@@ -127,6 +128,35 @@ Vector<String> SSABResource::get_cellmap_names() {
         for (int i = 0; i < a->external_textures()->size(); i++) {
             auto etexture = a->external_textures()->Get(i);
             vec.push_back(String::utf8(etexture->name()->c_str()));
+        }
+    }
+    return vec;
+}
+
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+PackedStringArray SSABResource::get_cell_names(const String &cellmap_name) {
+    PackedStringArray vec;
+#else
+Vector<String> SSABResource::get_cell_names(const String &cellmap_name) {
+    Vector<String> vec;
+#endif
+    if (!is_valid()) {
+        return vec;
+    }
+    auto a = get_ss_anime_binary();
+    if (a->cellmaps() != nullptr) {
+        for (int i = 0; i < a->cellmaps()->size(); i++) {
+            auto cellmap = a->cellmaps()->Get(i);
+            if (cellmap_name != String::utf8(cellmap->name()->c_str())) {
+                continue;
+            }
+            if (cellmap->cells() != nullptr) {
+                for (int j = 0; j < cellmap->cells()->size(); j++) {
+                    auto cell = cellmap->cells()->Get(j);
+                    vec.push_back(String::utf8(cell->name()->c_str()));
+                }
+            }
+            break;
         }
     }
     return vec;
