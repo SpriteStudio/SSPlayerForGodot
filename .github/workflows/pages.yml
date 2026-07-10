@@ -1,0 +1,79 @@
+name: Publish docs via GitHub Pages
+
+# Build the MkDocs site and deploy it to GitHub Pages via the artifact method
+# (no gh-pages branch) — matching SSPlayerForWeb / SSPlayerForRenPy.
+#
+# Triggers stay on the docs hot path: push to main and manual dispatch deploy,
+# while PRs only build with --strict to catch broken links / nav gaps.
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'docs/**'
+      - 'mkdocs.yml'
+      - '.github/workflows/pages.yml'
+  pull_request:
+    paths:
+      - 'docs/**'
+      - 'mkdocs.yml'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+# Permissions required by the artifact-based Pages deploy. No contents:write —
+# the gh-pages branch is gone.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Serialize deploys per ref; cancel only superseded PR builds, never a main deploy.
+concurrency:
+  group: docs-pages-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: 3.x
+          cache: pip
+          cache-dependency-path: docs/requirements.txt
+
+      - run: echo "cache_id=$(date --utc '+%V')" >> "$GITHUB_ENV"
+
+      - uses: actions/cache@v5
+        with:
+          key: mkdocs-material-${{ env.cache_id }}
+          path: .cache
+          restore-keys: |
+            mkdocs-material-
+
+      - name: Install dependencies
+        run: pip install -r docs/requirements.txt
+
+      # Fail the build on broken links / missing nav entries so PRs catch it before merge.
+      - name: Build docs (strict validation)
+        run: mkdocs build --strict
+
+      # Only the MkDocs output (site/) is served — no examples/demos to bundle.
+      - name: Upload Pages artifact
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: site
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5
