@@ -30,5 +30,13 @@ foreach ($TEST in $TESTS) {
         if (!(Test-Path $GD_OUTPUT_DIR)) { New-Item -ItemType Directory -Path $GD_OUTPUT_DIR }
         & $CONVERTER "$SSPJ_PATH" -o "$GD_OUTPUT_DIR"
     }
+
+    # Ringo is also converted into the Override_Ringo demo project
+    if ($TEST -eq "Ringo") {
+        $OR_OUTPUT_DIR = Join-Path $EXAMPLES_DIR "Override_Ringo/ssab_generated/Ringo"
+        Write-Host "Updating SSAB for $TEST in $OR_OUTPUT_DIR..."
+        if (!(Test-Path $OR_OUTPUT_DIR)) { New-Item -ItemType Directory -Path $OR_OUTPUT_DIR }
+        & $CONVERTER "$SSPJ_PATH" -o "$OR_OUTPUT_DIR"
+    }
 }
 Write-Host "Done!"

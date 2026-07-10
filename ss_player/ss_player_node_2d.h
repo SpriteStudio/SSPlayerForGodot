@@ -104,6 +104,27 @@ public:
     // All part names in the current binary (for the attachment's dropdown).
     PackedStringArray get_part_names() const;
 
+    // ---- Override Layer (Phase 2): per-part runtime overrides -------------
+    // Overrides win over both keyframes and blend for the named part. Return
+    // false when the part name is unknown / no animation is bound.
+    // priority: 0=on next keyframe (NON), 1=until next animation (default),
+    // 2=permanent (survives animation changes). blend_op: 0=Mix 1=Mul 2=Add
+    // 3=Sub. Color parts: Normal only; Cell parts: Normal + Mask.
+    bool set_part_visibility_override(const String& part_name, bool force_hidden, bool cascade);
+    bool clear_part_visibility_override(const String& part_name);
+    bool set_part_color_override(const String& part_name, const Color& color, int blend_op, int priority);
+    bool clear_part_color_override(const String& part_name);
+    bool set_part_cell_override(const String& part_name, const String& cellmap_name, const String& cell_name, int priority);
+    bool clear_part_cell_override(const String& part_name);
+    bool clear_all_part_overrides();
+    // By-index variants (part_index from get_part_index): skip the name lookup.
+    bool set_part_visibility_override_by_index(int part_index, bool force_hidden, bool cascade);
+    bool clear_part_visibility_override_by_index(int part_index);
+    bool set_part_color_override_by_index(int part_index, const Color& color, int blend_op, int priority);
+    bool clear_part_color_override_by_index(int part_index);
+    bool set_part_cell_override_by_index(int part_index, const String& cellmap_name, const String& cell_name, int priority);
+    bool clear_part_cell_override_by_index(int part_index);
+
 private:
     // Engine-agnostic playback / render core. The Node2D wrapper feeds it the
     // host canvas item and per-tick delta, and forwards its events back to

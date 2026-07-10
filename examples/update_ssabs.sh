@@ -36,6 +36,14 @@ for TEST in "${TESTS[@]}"; do
         mkdir -p "${GD_OUTPUT_DIR}"
         "${CONVERTER}" "${SSPJ_PATH}" -o "${GD_OUTPUT_DIR}"
     fi
+
+    # Ringo is also converted into the Override_Ringo demo project
+    if [ "${TEST}" == "Ringo" ]; then
+        OR_OUTPUT_DIR="${EXAMPLES_DIR}/Override_Ringo/ssab_generated/Ringo"
+        echo "Updating SSAB for ${TEST} in ${OR_OUTPUT_DIR}..."
+        mkdir -p "${OR_OUTPUT_DIR}"
+        "${CONVERTER}" "${SSPJ_PATH}" -o "${OR_OUTPUT_DIR}"
+    fi
 done
 
 echo "Done!"

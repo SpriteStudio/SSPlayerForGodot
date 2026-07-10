@@ -37,9 +37,12 @@ public:
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
   PackedStringArray get_animation_names();
   PackedStringArray get_cellmap_names();
+  // Cell names inside a cellmap (for the per-part cell override API).
+  PackedStringArray get_cell_names(const String &cellmap_name);
 #else
   Vector<String> get_animation_names();
   Vector<String> get_cellmap_names();
+  Vector<String> get_cell_names(const String &cellmap_name);
 #endif
 
   uint32_t get_cellmap_hash(const String &cellmap_name);

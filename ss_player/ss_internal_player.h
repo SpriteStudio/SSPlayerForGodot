@@ -204,6 +204,19 @@ public:
     int get_part_count() const;
     String get_part_name(int p_part_index) const;
 
+    // ---- Override Layer (Phase 2): per-part runtime overrides ------------
+    // Thin wrappers over the ssruntime override FFI. Each is a no-op returning
+    // false when the part index is invalid or no runtime context is bound.
+    // priority: 0=on-next-keyframe (NON), 1=until-next-animation, 2=permanent
+    // (visibility takes no priority). blend_op: 0=Mix 1=Mul 2=Add 3=Sub.
+    bool set_part_visibility_override(int p_part_index, bool p_force_hidden, bool p_cascade);
+    bool clear_part_visibility_override(int p_part_index);
+    bool set_part_color_override(int p_part_index, const Color& p_color, int p_blend_op, int p_priority);
+    bool clear_part_color_override(int p_part_index);
+    bool set_part_cell_override(int p_part_index, const String& p_cellmap_name, const String& p_cell_name, int p_priority);
+    bool clear_part_cell_override(int p_part_index);
+    bool clear_all_part_overrides();
+
 private:
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
     using SsVec2Array = PackedVector2Array;

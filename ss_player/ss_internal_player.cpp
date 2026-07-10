@@ -355,6 +355,54 @@ String SsInternalPlayer::get_part_name(int p_part_index) const {
     return _part_names[p_part_index];
 }
 
+// ---- Override Layer (Phase 2) --------------------------------------------
+
+bool SsInternalPlayer::set_part_visibility_override(int p_part_index, bool p_force_hidden, bool p_cascade) {
+    if (p_part_index < 0 || runtime_ctx == nullptr) return false;
+    // force: 0 = clear/revert, 1 = force-hide (2 = force-visible is reserved).
+    return ss_runtime_set_part_visibility_override(runtime_ctx, (uint32_t)p_part_index, p_force_hidden ? 1 : 0, p_cascade ? 1 : 0);
+}
+
+bool SsInternalPlayer::clear_part_visibility_override(int p_part_index) {
+    if (p_part_index < 0 || runtime_ctx == nullptr) return false;
+    return ss_runtime_clear_part_visibility_override(runtime_ctx, (uint32_t)p_part_index);
+}
+
+bool SsInternalPlayer::set_part_color_override(int p_part_index, const Color& p_color, int p_blend_op, int p_priority) {
+    if (p_part_index < 0 || runtime_ctx == nullptr) return false;
+    // Godot Color (gamma/sRGB 0..1 under Compatibility 2D) -> packed 0xRRGGBBAA,
+    // the same 8-bit sRGB space the runtime does its color math in.
+    auto to_u8 = [](float v) -> uint32_t { return (uint32_t)(int)(CLAMP(v, 0.0f, 1.0f) * 255.0f + 0.5f); };
+    uint32_t rgba = (to_u8(p_color.r) << 24) | (to_u8(p_color.g) << 16) | (to_u8(p_color.b) << 8) | to_u8(p_color.a);
+    return ss_runtime_set_part_color_override(runtime_ctx, (uint32_t)p_part_index, (unsigned char)p_blend_op, rgba, (unsigned char)p_priority);
+}
+
+bool SsInternalPlayer::clear_part_color_override(int p_part_index) {
+    if (p_part_index < 0 || runtime_ctx == nullptr) return false;
+    return ss_runtime_clear_part_color_override(runtime_ctx, (uint32_t)p_part_index);
+}
+
+bool SsInternalPlayer::set_part_cell_override(int p_part_index, const String& p_cellmap_name, const String& p_cell_name, int p_priority) {
+    if (p_part_index < 0 || runtime_ctx == nullptr) return false;
+    // Names are FNV-1a hashed to match the SSAB's own cell identity (cellmap
+    // name is without the `.ssce` extension).
+    CharString cm = p_cellmap_name.utf8();
+    CharString cn = p_cell_name.utf8();
+    uint32_t cellmap_hash = ss_runtime_hash_string(cm.get_data());
+    uint32_t cell_hash = ss_runtime_hash_string(cn.get_data());
+    return ss_runtime_set_part_cell_override(runtime_ctx, (uint32_t)p_part_index, cellmap_hash, cell_hash, (unsigned char)p_priority);
+}
+
+bool SsInternalPlayer::clear_part_cell_override(int p_part_index) {
+    if (p_part_index < 0 || runtime_ctx == nullptr) return false;
+    return ss_runtime_clear_part_cell_override(runtime_ctx, (uint32_t)p_part_index);
+}
+
+bool SsInternalPlayer::clear_all_part_overrides() {
+    if (runtime_ctx == nullptr) return false;
+    return ss_runtime_clear_all_part_overrides(runtime_ctx);
+}
+
 void SsInternalPlayer::onSSABReloaded() {
     String prev_anim = _strAnimationSelected;
     Ref<SSABResource> current = _ssabRes;
