@@ -29,7 +29,10 @@ public:
         _owner->emit_signal(SNAME("signal_emitted"), command, value);
     }
     void onAudio(const Dictionary& payload) override {
+        // Observation channel: always fires (any direction, even in the editor).
         _owner->emit_signal(SNAME("audio"), payload);
+        // Built-in / backend playback (forward-only, runtime-only).
+        _owner->_handle_audio(payload);
     }
 
 private:
@@ -46,6 +49,11 @@ SpriteStudioPlayer2D::SpriteStudioPlayer2D() {
 }
 
 SpriteStudioPlayer2D::~SpriteStudioPlayer2D() {
+    if (_audio_controller) {
+        _audio_controller->stop_all();
+        memdelete(_audio_controller);
+        _audio_controller = nullptr;
+    }
     if (_internal) {
         _internal->setEventSink(nullptr);
         memdelete(_internal);
@@ -233,8 +241,37 @@ bool SpriteStudioPlayer2D::isAutoplay() const {
 bool SpriteStudioPlayer2D::isPlaying() const { return _internal->isPlaying(); }
 void SpriteStudioPlayer2D::play(float p_start_frame) { _internal->play(p_start_frame); }
 bool SpriteStudioPlayer2D::isPausing() const { return _internal->isPausing(); }
+// Per the Player porting doc, built-in audio is fired-and-forgotten: it is not
+// coupled to animation pause or stop. Sounds already playing run to completion.
 void SpriteStudioPlayer2D::pause() { _internal->pause(); }
 void SpriteStudioPlayer2D::stop() { _internal->stop(); }
+
+void SpriteStudioPlayer2D::_handle_audio(const Dictionary& payload) {
+    if (!_play_audio) return;
+    // Plays during real forward playback, including the editor preview (the
+    // runtime also fires audio events on reverse playback, which is a limitation).
+    if (!_internal->isPlayingForward()) return;
+
+    if (_audio_controller == nullptr) {
+        _audio_controller = memnew(SsAudioController(this));
+    }
+    _audio_controller->play(payload, getSSABResource(), _audio_backend.ptr(), _audio_volume);
+}
+
+void SpriteStudioPlayer2D::set_play_audio(bool p_enabled) {
+    _play_audio = p_enabled;
+    // Turning built-in playback off stops any in-flight built-in voices.
+    if (!_play_audio && _audio_controller) _audio_controller->stop_all();
+}
+bool SpriteStudioPlayer2D::is_play_audio() const { return _play_audio; }
+
+void SpriteStudioPlayer2D::set_audio_volume(float p_volume) { _audio_volume = p_volume; }
+float SpriteStudioPlayer2D::get_audio_volume() const { return _audio_volume; }
+
+void SpriteStudioPlayer2D::set_audio_backend(const Ref<SpriteStudioAudioBackend>& p_backend) {
+    _audio_backend = p_backend;
+}
+Ref<SpriteStudioAudioBackend> SpriteStudioPlayer2D::get_audio_backend() const { return _audio_backend; }
 
 void SpriteStudioPlayer2D::set_flip_h(bool p_flip) {
     _flip_h = p_flip;
@@ -382,6 +419,13 @@ void SpriteStudioPlayer2D::_bind_methods() {
     ClassDB::bind_method( D_METHOD( "set_cellmap_texture", "cellmap_name", "texture" ), &SpriteStudioPlayer2D::set_cellmap_texture );
     ClassDB::bind_method( D_METHOD( "get_cellmap_texture", "cellmap_name" ), &SpriteStudioPlayer2D::get_cellmap_texture );
 
+    ClassDB::bind_method( D_METHOD( "set_play_audio", "enabled" ), &SpriteStudioPlayer2D::set_play_audio );
+    ClassDB::bind_method( D_METHOD( "is_play_audio" ), &SpriteStudioPlayer2D::is_play_audio );
+    ClassDB::bind_method( D_METHOD( "set_audio_volume", "volume" ), &SpriteStudioPlayer2D::set_audio_volume );
+    ClassDB::bind_method( D_METHOD( "get_audio_volume" ), &SpriteStudioPlayer2D::get_audio_volume );
+    ClassDB::bind_method( D_METHOD( "set_audio_backend", "backend" ), &SpriteStudioPlayer2D::set_audio_backend );
+    ClassDB::bind_method( D_METHOD( "get_audio_backend" ), &SpriteStudioPlayer2D::get_audio_backend );
+
     ClassDB::bind_method( D_METHOD( "set_offset", "offset" ), &SpriteStudioPlayer2D::set_offset );
     ClassDB::bind_method( D_METHOD( "get_offset" ), &SpriteStudioPlayer2D::get_offset );
 
@@ -505,6 +549,15 @@ bool SpriteStudioPlayer2D::_set(const StringName& p_name, const Variant& p_prope
     } else if (name == "animation_section_end") {
         setAnimationSection(getAnimationSectionStart(), (int)p_property);
         return true;
+    } else if (name == "play_audio") {
+        set_play_audio(p_property);
+        return true;
+    } else if (name == "audio_volume") {
+        set_audio_volume(p_property);
+        return true;
+    } else if (name == "audio_backend") {
+        set_audio_backend(p_property);
+        return true;
     }
 
     if (name.begins_with("cellmaps/")) {
@@ -566,6 +619,15 @@ bool SpriteStudioPlayer2D::_get(const StringName& p_name, Variant& r_property) c
     } else if (name == "animation_section_end") {
         r_property = getAnimationSectionEnd();
         return true;
+    } else if (name == "play_audio") {
+        r_property = is_play_audio();
+        return true;
+    } else if (name == "audio_volume") {
+        r_property = get_audio_volume();
+        return true;
+    } else if (name == "audio_backend") {
+        r_property = get_audio_backend();
+        return true;
     }
 
     if (name.begins_with("cellmaps/")) {
@@ -614,6 +676,11 @@ void SpriteStudioPlayer2D::_get_property_list(List<PropertyInfo>* p_list) const 
     p_list->push_back(PropertyInfo(Variant::VECTOR2, "offset"));
     p_list->push_back(PropertyInfo(Variant::BOOL, "flip_h"));
     p_list->push_back(PropertyInfo(Variant::BOOL, "flip_v"));
+
+    p_list->push_back(PropertyInfo(Variant::NIL, "Audio", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_GROUP));
+    p_list->push_back(PropertyInfo(Variant::BOOL, "play_audio"));
+    p_list->push_back(PropertyInfo(Variant::FLOAT, "audio_volume", PROPERTY_HINT_RANGE, "0,1,0.01"));
+    p_list->push_back(PropertyInfo(Variant::OBJECT, "audio_backend", PROPERTY_HINT_RESOURCE_TYPE, "SpriteStudioAudioBackend"));
 
     if (has_res) {
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
@@ -668,6 +735,9 @@ void SpriteStudioPlayer2D::_notification(int p_notification) {
             break;
         case NOTIFICATION_EXIT_TREE:
             _internal->setParentCanvasItem(RID());
+            // The pooled AudioStreamPlayer children leave the tree with us and
+            // stop; reset the controller's bookkeeping to match.
+            if (_audio_controller) _audio_controller->stop_all();
             break;
         case NOTIFICATION_INTERNAL_PROCESS:
             if (_process_mode == ANIMATION_PROCESS_IDLE) {
@@ -677,6 +747,9 @@ void SpriteStudioPlayer2D::_notification(int p_notification) {
                 // attachments can mirror their parts in the same frame.
                 emit_signal(SNAME("frame_updated"), _internal->getFrame());
             }
+            // Audio voices advance independently of the animation's play/pause
+            // state (fire-and-forget), so tick every frame the node processes.
+            if (_audio_controller) _audio_controller->tick();
             break;
         case NOTIFICATION_INTERNAL_PHYSICS_PROCESS:
             if (_process_mode == ANIMATION_PROCESS_PHYSICS) {
@@ -684,6 +757,7 @@ void SpriteStudioPlayer2D::_notification(int p_notification) {
                 _internal->update(get_physics_process_delta_time());
                 emit_signal(SNAME("frame_updated"), _internal->getFrame());
             }
+            if (_audio_controller) _audio_controller->tick();
             break;
         case NOTIFICATION_DRAW:
             // The InternalPlayer handles the actual RenderingServer calls for

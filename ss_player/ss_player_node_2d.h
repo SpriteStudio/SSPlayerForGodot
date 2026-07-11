@@ -7,6 +7,8 @@ using namespace godot;
 #include "scene/2d/node_2d.h"
 #endif
 
+#include "ss_audio_backend.h"
+#include "ss_audio_controller.h"
 #include "ss_internal_player.h"
 #include "ssab_resource.h"
 
@@ -93,6 +95,19 @@ public:
     void set_cellmap_texture(const String &cellmap_name, const Ref<Texture2D> &texture);
     Ref<Texture2D> get_cellmap_texture(const String &cellmap_name) const;
 
+    // ---- Audio -------------------------------------------------------------
+    // Built-in audio playback for the animation's audio events. Toggle off to
+    // handle audio yourself via the "audio" signal.
+    void set_play_audio(bool p_enabled);
+    bool is_play_audio() const;
+    // Volume of built-in playback, linear [0,1]. Ignored when a backend is set.
+    void set_audio_volume(float p_volume);
+    float get_audio_volume() const;
+    // Optional override backend; when set, built-in playback is suppressed and
+    // audio events are routed to it instead.
+    void set_audio_backend(const Ref<SpriteStudioAudioBackend> &p_backend);
+    Ref<SpriteStudioAudioBackend> get_audio_backend() const;
+
     // ---- Part query API (consumed by SpriteStudioPartAttachment2D) --------
     // Resolve a part name to its index in the current binary; -1 if unknown.
     int get_part_index(const String& part_name) const;
@@ -130,6 +145,17 @@ private:
     // host canvas item and per-tick delta, and forwards its events back to
     // GDScript signals via _SignalSink.
     SsInternalPlayer* _internal = nullptr;
+
+    // Built-in audio playback (lazily created on the first audio event during
+    // forward playback). Owns pooled AudioStreamPlayer children.
+    SsAudioController* _audio_controller = nullptr;
+    bool _play_audio = true;
+    float _audio_volume = 1.0f;
+    Ref<SpriteStudioAudioBackend> _audio_backend;
+
+    // Routes one audio event to the backend / built-in controller, applying the
+    // forward-playback and editor guards. The "audio" signal fires regardless.
+    void _handle_audio(const Dictionary& payload);
 
     HashMap<String, Ref<Texture2D>> _cellmap_overrides;
     bool _autoplay = false;

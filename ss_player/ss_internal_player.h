@@ -116,6 +116,10 @@ public:
 
     // Playback control — 1:1 mirror of the previous SpriteStudioPlayer2D API.
     bool isPlaying() const;
+    // True when the effective playback direction is forward (speed > 0 and not
+    // reversed). Audio playback is gated on this: the runtime fires audio events
+    // on reverse playback too, but reverse audio is a documented limitation.
+    bool isPlayingForward() const;
     void play(float p_start_frame = -1.0f);
     bool isPausing() const;
     void pause();
