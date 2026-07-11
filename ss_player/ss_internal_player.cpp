@@ -447,6 +447,10 @@ bool SsInternalPlayer::isPlaying() const {
     return ss_runtime_is_playing(runtime_ctx);
 }
 
+bool SsInternalPlayer::isPlayingForward() const {
+    return ss_runtime_is_playing_forward(runtime_ctx);
+}
+
 void SsInternalPlayer::play(float p_start_frame) {
     // play() always heads out (rewinds to a start frame); "resume" is pause()'s
     // toggle, not play(). So a fresh play must clear each slot's "last started
@@ -704,9 +708,15 @@ void SsInternalPlayer::update(float delta_seconds) {
         if (_event_sink) _event_sink->onAnimationFinished(_strAnimationSelected);
     }
 
-    float draw_frame = _sub_frame_enabled ? frame_no : floorf(frame_no);
-    if (previous_frame_no == draw_frame && !_needs_continuous_update()) return;
-
+    // Process passed events (user data / signal / audio) BEFORE the draw-dedup
+    // early-return below. `ss_runtime_update` reports every frame it stepped
+    // through this tick — including the start frame on the first update after
+    // play() (the runtime's `needs_evaluation`). Gating event handling on a
+    // change of integer draw frame would drop a start-frame event (e.g. an audio
+    // key on frame 0) whenever that first tick doesn't advance the integer frame
+    // — a timing-dependent loss seen in the editor preview but not a running
+    // project. Events must fire whenever the runtime reports them, regardless of
+    // whether we also redraw.
     if (_currentAnimationData && _currentAnimationData->events() != nullptr) {
         int event_count = ss_runtime_get_passed_event_count(runtime_ctx);
         for (int i = 0; i < event_count; i++) {
@@ -796,6 +806,9 @@ void SsInternalPlayer::update(float delta_seconds) {
             }
         }
     }
+
+    float draw_frame = _sub_frame_enabled ? frame_no : floorf(frame_no);
+    if (previous_frame_no == draw_frame && !_needs_continuous_update()) return;
 
     _seek_and_redraw(frame_no, delta_seconds, was_looped);
 }

@@ -32,6 +32,7 @@ static void editor_init_callback() {
 #endif
 
 #include "ssab_resource.h"
+#include "ss_audio_backend.h"
 #include "ss_player_node_2d.h"
 #include "ss_part_attachment_2d.h"
 #include "ssqb_resource.h"
@@ -79,6 +80,7 @@ void register_ss_player_types() {
 
 #endif
 
+  GDREGISTER_CLASS(SpriteStudioAudioBackend);
   GDREGISTER_CLASS(SpriteStudioPlayer2D);
   GDREGISTER_CLASS(SpriteStudioPartAttachment2D);
 }

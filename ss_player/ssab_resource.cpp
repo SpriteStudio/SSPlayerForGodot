@@ -17,6 +17,8 @@ void SSABResource::_bind_methods() {
   ClassDB::bind_method(D_METHOD("get_animation_names"), &SSABResource::get_animation_names);
   ClassDB::bind_method(D_METHOD("get_cellmap_names"), &SSABResource::get_cellmap_names);
   ClassDB::bind_method(D_METHOD("get_cell_names", "cellmap_name"), &SSABResource::get_cell_names);
+  ClassDB::bind_method(D_METHOD("get_sound_stream", "sound_list_name_hash", "sound_name_hash"), &SSABResource::get_sound_stream);
+  ClassDB::bind_method(D_METHOD("get_sound_info", "sound_list_name_hash", "sound_name_hash"), &SSABResource::get_sound_info);
   }
 bool SSABResource::is_valid() const {
   if (binary.size() == 0) {
@@ -234,6 +236,79 @@ ss::format::AnimationData *SSABResource::find_animation_by_hash(uint32_t name_ha
 
 String SSABResource::get_parent_dir() const {
     return this->_parent_dir;
+}
+
+const ss::format::SoundFile *SSABResource::_find_sound_file(uint32_t sound_list_name_hash,
+                                                           uint32_t sound_name_hash) {
+    if (!is_valid()) {
+        return nullptr;
+    }
+    auto a = get_ss_anime_binary();
+    auto sound_lists = a->sound_lists();
+    if (sound_lists == nullptr) {
+        return nullptr;
+    }
+    for (uint32_t i = 0; i < sound_lists->size(); i++) {
+        auto sound_list = sound_lists->Get(i);
+        if (!sound_list || sound_list->name_hash() != sound_list_name_hash) {
+            continue;
+        }
+        auto files = sound_list->table_data();
+        if (files == nullptr) {
+            return nullptr;
+        }
+        for (uint32_t j = 0; j < files->size(); j++) {
+            auto file = files->Get(j);
+            if (file && file->name_hash() == sound_name_hash) {
+                return file;
+            }
+        }
+        return nullptr;
+    }
+    return nullptr;
+}
+
+Ref<AudioStream> SSABResource::get_sound_stream(uint32_t sound_list_name_hash, uint32_t sound_name_hash) {
+    uint64_t key = ((uint64_t)sound_list_name_hash << 32) | (uint64_t)sound_name_hash;
+    if (_sound_cache.has(key)) {
+        return _sound_cache[key];
+    }
+
+    Ref<AudioStream> stream;
+    const ss::format::SoundFile *file = _find_sound_file(sound_list_name_hash, sound_name_hash);
+    if (file != nullptr && file->file_path() != nullptr) {
+        String path = _parent_dir.path_join(String::utf8(file->file_path()->c_str()));
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+        Ref<Resource> res = ResourceLoader::get_singleton()->load(path, "AudioStream", ResourceLoader::CACHE_MODE_REUSE);
+#else
+        Ref<Resource> res = ResourceLoader::load(path, "AudioStream", ResourceFormatLoader::CACHE_MODE_REUSE, nullptr);
+#endif
+        stream = Ref<AudioStream>(res);
+    }
+
+    // Cache even a null result so a missing/unsupported file is not re-loaded on
+    // every event; the identity cannot change for a given binary.
+    _sound_cache[key] = stream;
+    return stream;
+}
+
+Dictionary SSABResource::get_sound_info(uint32_t sound_list_name_hash, uint32_t sound_name_hash) {
+    Dictionary info;
+    const ss::format::SoundFile *file = _find_sound_file(sound_list_name_hash, sound_name_hash);
+    if (file == nullptr) {
+        return info;
+    }
+    if (file->name()) {
+        info["alias"] = String::utf8(file->name()->c_str());
+    }
+    if (file->file_path()) {
+        String rel = String::utf8(file->file_path()->c_str());
+        info["file_path"] = rel;
+        info["path"] = _parent_dir.path_join(rel);
+    }
+    info["file_path_hash"] = (int64_t)file->file_path_hash();
+    info["time_total"] = (int64_t)file->time_total();
+    return info;
 }
 
 #ifndef SPRITESTUDIO_GODOT_EXTENSION

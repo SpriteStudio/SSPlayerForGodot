@@ -113,6 +113,15 @@
 		<member name="sub_frame_enabled" type="bool" default="false">
 			If [code]true[/code], interpolates between integer frames for smoother sub-frame playback.
 		</member>
+		<member name="play_audio" type="bool" default="true">
+			If [code]true[/code], the built-in audio player plays the sounds emitted by the animation's audio parts. Set to [code]false[/code] to handle audio yourself via the [signal audio] signal. Audio is fired-and-forgotten: it plays only when its frame is passed during forward playback (reverse playback does not play sound), it is not resynced on seek, and it keeps playing while the animation is paused.
+		</member>
+		<member name="audio_volume" type="float" default="1.0">
+			Volume of the built-in audio playback, as a linear value in [code][0, 1][/code]. Ignored when [member audio_backend] is set.
+		</member>
+		<member name="audio_backend" type="SpriteStudioAudioBackend">
+			Optional override backend. When assigned, built-in playback is suppressed and each audio event is routed to the backend's [code]play_audio[/code] method instead (e.g. to drive audio middleware).
+		</member>
 	</members>
 	<signals>
 		<signal name="animation_started">
@@ -150,6 +159,12 @@
 			<param index="1" name="value" type="Dictionary" />
 			<description>
 				Emitted when a signal attribute on the timeline fires. [param command] is the command id; [param value] holds its parameters.
+			</description>
+		</signal>
+		<signal name="audio">
+			<param index="0" name="payload" type="Dictionary" />
+			<description>
+				Emitted when an audio part fires an audio event. [param payload] carries [code]part_index[/code], [code]sound_list_name_hash[/code], [code]sound_name_hash[/code], [code]sound_name[/code] and [code]loop_num[/code] (the play count). This is an observation channel and fires in every playback direction (and in the editor), independently of [member play_audio].
 			</description>
 		</signal>
 	</signals>
