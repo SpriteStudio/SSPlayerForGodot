@@ -40,7 +40,7 @@ using namespace godot;
 #endif
 #endif
 
-#include "ssconverter.h"
+#include "ssconverter.hpp"
 
 void SSImporter::_bind_methods() {
     ADD_SIGNAL(MethodInfo("import_started"));

@@ -37,7 +37,7 @@ using namespace godot;
 
 #include "ssab_resource.h"
 
-// Forward declaration; full definition comes from runtime/include/ssruntime.h.
+// Forward declaration; full definition comes from runtime/include/ssruntime.hpp.
 struct ss_event_instance_info;
 
 namespace ss {

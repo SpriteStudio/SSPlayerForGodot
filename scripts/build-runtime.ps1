@@ -85,8 +85,8 @@ popd
 # 1. Collect Headers
 $INCLUDE_OUTPUT = "$rootDirectory/ss_player/runtime/include"
 New-Item -ItemType Directory -Path $INCLUDE_OUTPUT -Force | Out-Null
-Copy-Item "$SDK_DIR/libs/ssconverter/target/ssconverter.h" "$INCLUDE_OUTPUT/" -Force
-Copy-Item "$SDK_DIR/libs/ssruntime/target/ssruntime.h" "$INCLUDE_OUTPUT/" -Force
+Copy-Item "$SDK_DIR/libs/ssconverter/target/ssconverter.hpp" "$INCLUDE_OUTPUT/" -Force
+Copy-Item "$SDK_DIR/libs/ssruntime/target/ssruntime.hpp" "$INCLUDE_OUTPUT/" -Force
 
 # 1.5. Collect Licenses
 $RUNTIME_OUTPUT = "$rootDirectory/ss_player/runtime"
