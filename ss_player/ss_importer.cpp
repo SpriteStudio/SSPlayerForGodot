@@ -289,7 +289,7 @@ void *SSImporter::_process_file(const String &source_sspj_path, const String &ds
     CharString src_utf8 = source_sspj_path.utf8();
     CharString dst_utf8 = dst_dir_path.utf8();
 
-    ss_converter_convert(ctx, src_utf8.get_data(), dst_utf8.get_data(), [](const char *msg) {
+    ss_converter_convert(ctx, src_utf8.get_data(), dst_utf8.get_data(), false, [](const char *msg) {
         print_line(String::utf8(msg));
     });
 
