@@ -42,7 +42,7 @@ The `molten-vk` package distributed via Homebrew only provides binaries for the 
 
 ## 1. Prepare libssruntime
 
-Fetches and extracts the SDK package version pinned in `ss_player/SDK_VERSION.txt`.
+Fetches and extracts the SDK package version pinned in `scripts/SDK_VERSION.txt`.
 
 **macOS / Linux**
 
