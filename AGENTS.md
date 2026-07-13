@@ -27,7 +27,7 @@ A Godot Engine integration for SpriteStudio 7, providing a C++ `SpriteStudioPlay
 
 *   **FFI Safety:** C++ interacts with Rust via a C-API. Ensure `SsState` and other Rust-allocated handles are properly released via their respective `*_release` functions to avoid leaks.
 *   **Performance:** Avoid per-frame allocations in the playback hot path. Use the `DrawBatch` plans emitted by the runtime directly for rendering.
-*   **SDK Versioning:** `ss_player/SDK_VERSION.txt` pins the required SDK release. Binaries in `ss_player/runtime/` must match this version.
+*   **SDK Versioning:** `scripts/SDK_VERSION.txt` pins the required SDK release. Binaries in `ss_player/runtime/` must match this version.
 *   **Build System:** `SConstruct` and `SCsub` files must be updated if new C++ source files are added.
 
 ## Verification

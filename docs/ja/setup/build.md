@@ -42,7 +42,7 @@ Homebrew で配布されている `molten-vk` はホストアーキ向けのバ�
 
 ## 1. libssruntime の用意
 
-`ss_player/SDK_VERSION.txt` で指定されたバージョンの SDK パッケージを取得・展開します。
+`scripts/SDK_VERSION.txt` で指定されたバージョンの SDK パッケージを取得・展開します。
 
 **macOS / Linux**
 
