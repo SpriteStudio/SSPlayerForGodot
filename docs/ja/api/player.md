@@ -39,7 +39,7 @@ func _ready() -> void:
 * `set_frame_rate(fps: int)` / `get_frame_rate() -> int`
 * `set_animation_section(start: int, end: int)`: 再生するフレーム区間を限定します。
 * `set_playback_direction(direction: int, style: int)`: 再生方向と再生スタイルを指定します。値の意味は下表を参照してください。
-* `set_loop_count(count: int)` / `get_loop_count() -> int`: `-1` で無限ループ、`0` で1回だけ再生、`n` で `n` 回繰り返し。
+* `set_loop_count(count: int)` / `get_loop_count() -> int`: `n` で `n` 回再生して停止（`1` なら1回のみ）。`-1` で無限ループ（`0` も無限ループの別名）。
 * `set_frame_skip_enabled(enabled: bool)` / `is_frame_skip_enabled() -> bool` (デフォルト: `true`)
 * `set_sub_frame_enabled(enabled: bool)` / `is_sub_frame_enabled() -> bool` (デフォルト: `false`)
 * `set_cellmap_texture(cellmap_name: String, texture: Texture2D)` / `get_cellmap_texture(cellmap_name: String) -> Texture2D`
@@ -59,8 +59,8 @@ func _ready() -> void:
 | --- | --- | --- |
 | `animation_started` | `anim_name: String` | 再生が開始された時 |
 | `animation_changed` | `anim_name: String` | アニメーションが切り替わった時 |
-| `animation_finished` | `anim_name: String` | 再生が終了した時（非ループ時のみ） |
-| `animation_looped` | `anim_name: String` | ループして先頭に戻った時 |
+| `animation_finished` | `anim_name: String` | 指定したループ回数をすべて再生し終えた時。無限ループでは発火しない |
+| `animation_looped` | `anim_name: String` | 1周して先頭に戻った時。最終周では発火せず `animation_finished` になる |
 | `user_data` | `payload: Dictionary` | タイムライン上の「ユーザーデータ」キーに到達した時 |
 | `signal_emitted` | `command: String, value: Dictionary` | タイムライン上の「シグナル」キーに到達した時 |
 | `audio` | `payload: Dictionary` | タイムライン上の「オーディオ」キーに到達した時 |

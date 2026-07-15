@@ -40,7 +40,7 @@ One of the most powerful features for Godot users is event linkage using "Signal
 
 * `animation_changed(anim_name)`: Emitted when the animation is changed.
 * `animation_started(anim_name)`: Emitted when animation playback starts.
-* `animation_finished(anim_name)`: Emitted when animation playback finishes (for non-looping animations).
+* `animation_finished(anim_name)`: Emitted once every configured loop has been played (never under an infinite loop).
 * `animation_looped(anim_name)`: Emitted when the animation loops and returns to the beginning.
 * `user_data(payload)`: Emitted when reaching a frame containing user data (events) configured in the animation.
 
