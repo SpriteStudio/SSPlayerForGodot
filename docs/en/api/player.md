@@ -39,7 +39,7 @@ func _ready() -> void:
 * `set_frame_rate(fps: int)` / `get_frame_rate() -> int`
 * `set_animation_section(start: int, end: int)`: Limits the playback to a specific frame range.
 * `set_playback_direction(direction: int, style: int)`: Sets the playback direction and style. See the table below for values.
-* `set_loop_count(count: int)` / `get_loop_count() -> int`: `-1` means infinite loop. `0` plays once with no repeat. `n` repeats `n` times.
+* `set_loop_count(count: int)` / `get_loop_count() -> int`: `n` plays `n` cycles then stops (`1` plays once). `-1` means infinite loop (`0` is an alias for infinite).
 * `set_frame_skip_enabled(enabled: bool)` / `is_frame_skip_enabled() -> bool` (default: `true`)
 * `set_sub_frame_enabled(enabled: bool)` / `is_sub_frame_enabled() -> bool` (default: `false`)
 * `set_cellmap_texture(cellmap_name: String, texture: Texture2D)` / `get_cellmap_texture(cellmap_name: String) -> Texture2D`
@@ -59,8 +59,8 @@ func _ready() -> void:
 | --- | --- | --- |
 | `animation_started` | `anim_name: String` | Playback starts |
 | `animation_changed` | `anim_name: String` | The animation name is changed |
-| `animation_finished` | `anim_name: String` | Playback reaches the end (non-looping only) |
-| `animation_looped` | `anim_name: String` | The animation loops back to the start |
+| `animation_finished` | `anim_name: String` | Every configured loop has been played. Never emitted under an infinite loop |
+| `animation_looped` | `anim_name: String` | The animation looped back to the start. Not emitted on the final cycle, which emits `animation_finished` instead |
 | `user_data` | `payload: Dictionary` | A "User Data" keyframe on the timeline is hit |
 | `signal_emitted` | `command: String, value: Dictionary` | A "Signal" keyframe on the timeline is hit |
 | `audio` | `payload: Dictionary` | An "Audio" keyframe on the timeline is hit |

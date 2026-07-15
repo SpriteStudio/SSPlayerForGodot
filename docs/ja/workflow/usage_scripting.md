@@ -40,8 +40,8 @@ Godot ユーザーにとって最も強力な機能の一つが「シグナル (
 
 * `animation_changed(anim_name)` : アニメーションが切り替わった時
 * `animation_started(anim_name)` : アニメーションの再生が開始された時
-* `animation_finished(anim_name)`: アニメーションの再生が終了した時（非ループ時）
-* `animation_looped(anim_name)`  : アニメーションがループして先頭に戻った時
+* `animation_finished(anim_name)`: 指定したループ回数をすべて再生し終えた時（無限ループでは発火しません）
+* `animation_looped(anim_name)`  : アニメーションが1周して先頭に戻った時
 * `user_data(payload)`           : アニメーションに設定されたユーザーデータ（イベント）のフレームに到達した時
 
 ### 実装例: アニメーションの連続再生

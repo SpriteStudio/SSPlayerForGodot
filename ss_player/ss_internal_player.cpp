@@ -700,11 +700,15 @@ void SsInternalPlayer::update(float delta_seconds) {
     auto d = delta_seconds * 1000.0f;
     float frame_no = ss_runtime_update(runtime_ctx, d);
 
+    // `is_looped` is a pulse the runtime clears on entry to every update, so
+    // reading it right after the tick is what catches it. `is_finished` is a
+    // sticky state instead; the `is_playing` early-return above is what keeps
+    // it from re-emitting, since only play() clears it.
     const bool was_looped = ss_runtime_is_looped(runtime_ctx);
     if (was_looped) {
         if (_event_sink) _event_sink->onAnimationLooped(_strAnimationSelected);
     }
-    if (ss_runtime_is_end_frame_reached(runtime_ctx)) {
+    if (ss_runtime_is_finished(runtime_ctx)) {
         if (_event_sink) _event_sink->onAnimationFinished(_strAnimationSelected);
     }
 
