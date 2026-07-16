@@ -18,7 +18,7 @@ done
 # --- Code signing (opt-in via env) ------------------------------------------
 # Signs the GDExtension frameworks with a Developer ID Application identity when
 # APPLE_SIGNING_IDENTITY is set (maps to the SS_APPLE_SIGNING_IDENTITY secret; the
-# CI sets it in .github/workflows/extension.yml). Hardened runtime (--options
+# CI sets it in .github/workflows/release.yml). Hardened runtime (--options
 # runtime) + a secure timestamp. Not notarized. No-op (unsigned) when the identity
 # is absent, so local builds without a certificate still succeed.
 if [ -n "${APPLE_SIGNING_IDENTITY:-}" ]; then
