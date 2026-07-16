@@ -238,6 +238,12 @@ jobs:
           cd ../output
           zip -r ssplayer-godot-extension-${{ env.GODOT_VERSION }}.zip addons/
 
+          # Canonical checksum manifest so a consumer can verify the downloaded
+          # zip's integrity (`sha256sum -c SHA256SUMS --ignore-missing`). Covers
+          # the zips built by THIS run; a follow-up dispatch for another Godot
+          # version replaces it with one covering only its own zip.
+          sha256sum *.zip > SHA256SUMS
+
       - name: Upload final release package
         uses: actions/upload-artifact@v7
         with:
@@ -246,8 +252,14 @@ jobs:
 
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
-          files: output/ssplayer-godot-extension-${{ env.GODOT_VERSION }}.zip
-          draft: true
+          files: |
+            output/ssplayer-godot-extension-${{ env.GODOT_VERSION }}.zip
+            output/SHA256SUMS
+          tag_name: ${{ github.ref_name }}
           generate_release_notes: true
+          draft: false
+          # SemVer プレリリース (例: v7.0.0-beta.1) はタグ名に '-' を含むため
+          # 自動的に prerelease 扱いにする。正式版 (v7.1.0) は false。
+          prerelease: ${{ contains(github.ref_name, '-') }}
