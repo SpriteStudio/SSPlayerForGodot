@@ -1594,7 +1594,7 @@ void SsInternalPlayer::_drive_instance_slot(InstanceChildState& state,
     // child Player's event sink on transition (via play()), and the redraw.
     const ss_instance_step_result r = ss_instance_slot_step(
         state.instance_slot, info, child->runtime_ctx,
-        child->previous_frame_no, parent_frame_no, delta_seconds, parent_looped);
+        parent_frame_no, delta_seconds, parent_looped);
 
     if (r.transitioned) {
         // Controller is already configured + playing inside step(); play()
