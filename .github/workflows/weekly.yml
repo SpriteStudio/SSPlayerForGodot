@@ -62,7 +62,13 @@ jobs:
           repository: 'godot-cpp'
 
       - name: Download Prebuilt SDK (ssruntime)
+        if: matrix.platform != 'windows'
         run: ./scripts/download-sdk.sh
+
+      - name: Download Prebuilt SDK (ssruntime, Windows)
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        run: ./scripts/download-sdk.ps1
 
       - name: setup for gdextension
         uses: ./.github/actions/setup-extension
