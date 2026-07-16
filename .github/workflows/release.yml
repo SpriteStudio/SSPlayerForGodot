@@ -259,7 +259,11 @@ jobs:
             output/SHA256SUMS
           tag_name: ${{ github.ref_name }}
           generate_release_notes: true
-          draft: false
+          # SDK の release.yml と違い、こちらはタグ push で自動起動するため
+          # draft で作成し、内容確認後に手動で Publish する (SDK 側は
+          # upload_release=true を付けた明示的な dispatch 自体が公開ゲート)。
+          draft: true
           # SemVer プレリリース (例: v7.0.0-beta.1) はタグ名に '-' を含むため
           # 自動的に prerelease 扱いにする。正式版 (v7.1.0) は false。
+          # draft 上に設定され、Publish 後もそのまま引き継がれる。
           prerelease: ${{ contains(github.ref_name, '-') }}
