@@ -46,7 +46,6 @@ void SSImporter::_bind_methods() {
     ADD_SIGNAL(MethodInfo("import_started"));
     ADD_SIGNAL(MethodInfo("import_finished"));
     ADD_SIGNAL(MethodInfo("import_files_resolved", PropertyInfo(Variant::PACKED_STRING_ARRAY, "sspj_paths")));
-    ClassDB::bind_method(D_METHOD("_on_filesystem_changed", "dir"), &SSImporter::_on_filesystem_changed);
     ClassDB::bind_method(D_METHOD("_on_budget_use_found"), &SSImporter::_on_budget_use_found);
     ClassDB::bind_method(D_METHOD("_on_budget_action", "action"), &SSImporter::_on_budget_action);
     ClassDB::bind_method(D_METHOD("_abort_scan_and_idle"), &SSImporter::_abort_scan_and_idle);
@@ -138,6 +137,11 @@ void SSImporter::_notification(int p_what) {
         if (done) {
             _finalize_convert();
         }
+        return;
+    }
+
+    if (_fs_syncing) {
+        _poll_fs_sync();
         return;
     }
 }
@@ -381,13 +385,13 @@ void SSImporter::_begin_convert(const String &p_dialog_title) {
     _import_generated_files.clear();
     _convert_source_map = _load_source_map();
 
-    // Make sure every destination directory exists. A missing dir means new
-    // folders appear in res:// and the editor filesystem needs a full rescan.
+    // Make sure every destination directory exists. Brand-new folders (and
+    // everything the converter writes into them) are registered with the
+    // editor filesystem by the post-convert sync phase.
     Ref<DirAccess> da = DirAccess::open("res://");
     if (da.is_valid()) {
         for (int i = 0; i < _plan_dst.size(); i++) {
             if (!da->dir_exists(_plan_dst[i])) {
-                _needs_full_scan = true;
                 da->make_dir_recursive(_plan_dst[i]);
             }
         }
@@ -485,31 +489,14 @@ void SSImporter::_finalize_convert() {
         _save_source_map(_convert_source_map);
     }
 
-#if defined(SPRITESTUDIO_GODOT_EXTENSION) || (VERSION_MAJOR >= 4 && VERSION_MINOR >= 6)
-    auto *efs = EditorInterface::get_singleton()->get_resource_filesystem();
-#else
-    auto *efs = EditorInterface::get_singleton()->get_resource_file_system();
-#endif
-    for (int i = 0; i < _import_generated_files.size(); i++) {
-        efs->update_file(_import_generated_files[i]);
-    }
-    if (_needs_full_scan) {
-        efs->scan();
-    } else {
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
-        efs->scan_sources();
-#else
-        efs->scan_changes();
-#endif
-    }
-
-    if (!target_dir.is_empty()) {
-        if (!efs->is_connected("filesystem_changed", Callable(this, "_on_filesystem_changed"))) {
-            efs->connect("filesystem_changed", Callable(this, "_on_filesystem_changed").bind(target_dir), Object::CONNECT_ONE_SHOT);
-        }
-    }
-
-    _idle_reset();
+    // Registering the generated files with the editor filesystem is deferred
+    // to the sync phase: doing it here races with any scan the editor already
+    // has in flight (e.g. the scan_changes() fired when the window regained
+    // focus from the OS drag & drop), which can silently swallow both the
+    // update_file() calls and a scan() request, leaving the new files
+    // invisible until the next full rescan (editor restart).
+    _navigate_dir = target_dir;
+    _enter_fs_sync();
 }
 
 void SSImporter::_idle_reset() {
@@ -545,17 +532,110 @@ void SSImporter::_idle_reset() {
     _failed_files.clear();
     _failed_reasons.clear();
     _import_generated_files.clear();
-    _needs_full_scan = false;
     _import_dialog = nullptr;
+
+    _fs_syncing = false;
+    _fs_scan_issued = false;
+    _fs_settle_frames = 0;
+    _fs_wait_frames = 0;
+    _navigate_dir = String();
 
     emit_signal("import_finished");
 }
 
-void SSImporter::_on_filesystem_changed(const String &p_dir) {
-    Object *fs_dock = (Object *)EditorInterface::get_singleton()->get_file_system_dock();
-    if (fs_dock) {
-        fs_dock->call_deferred("navigate_to_path", p_dir);
+// --------------------------------------------------------------------------
+// Filesystem-sync phase
+// --------------------------------------------------------------------------
+
+void SSImporter::_enter_fs_sync() {
+    // Release the convert-phase flag so the PROCESS poll falls through to
+    // _poll_fs_sync(); everything else (generated file list, dialogs already
+    // closed) is cleaned up by _idle_reset() once the sync finishes.
+    _is_converting = false;
+    _convert_canceling = false;
+
+    _fs_syncing = true;
+    _fs_scan_issued = false;
+    _fs_settle_frames = 0;
+    _fs_wait_frames = 0;
+    set_process(true);
+}
+
+void SSImporter::_poll_fs_sync() {
+#if defined(SPRITESTUDIO_GODOT_EXTENSION) || (VERSION_MAJOR >= 4 && VERSION_MINOR >= 6)
+    auto *efs = EditorInterface::get_singleton()->get_resource_filesystem();
+#else
+    auto *efs = EditorInterface::get_singleton()->get_resource_file_system();
+#endif
+    if (!efs) {
+        _finish_fs_sync();
+        return;
     }
+
+    _fs_wait_frames++;
+    // Safety valve so a perpetually-busy editor cannot wedge the importer; on
+    // timeout the (self-queuing) scan request below is still issued, so the
+    // files are picked up eventually even though we stop waiting for them.
+    bool timed_out = _fs_wait_frames > FS_SYNC_MAX_WAIT_FRAMES;
+
+    if (!_fs_scan_issued) {
+        // A scan that is already running may have listed the output
+        // directories before the converter finished writing into them, so its
+        // results cannot be trusted (and it would silently swallow update_file
+        // and scan requests). Wait for the editor to go idle first.
+        if (efs->is_scanning() && !timed_out) {
+            return;
+        }
+        // Register the outputs we know about (this also creates the in-memory
+        // entries for brand-new folders), then request a sources scan for
+        // everything else the converter wrote (textures, subfolders). Unlike
+        // scan(), which is dropped without retry while another scan runs,
+        // scan_sources()/scan_changes() re-queues itself and is never lost; it
+        // registers new subdirectories and auto-imports importable files.
+        for (int i = 0; i < _import_generated_files.size(); i++) {
+            efs->update_file(_import_generated_files[i]);
+        }
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+        efs->scan_sources();
+#else
+        efs->scan_changes();
+#endif
+        _fs_scan_issued = true;
+        _fs_settle_frames = 0;
+        if (timed_out) {
+            _finish_fs_sync();
+        }
+        return;
+    }
+
+    if (timed_out) {
+        _finish_fs_sync();
+        return;
+    }
+
+    // Wait for the requested scan to run to completion before revealing the
+    // output folder. The scan may start a frame or two late (it queued behind
+    // a scan that slipped in first) or may have already completed
+    // synchronously, so instead of tracking start/stop edges just require the
+    // filesystem to stay idle for a few consecutive frames.
+    if (efs->is_scanning()) {
+        _fs_settle_frames = 0;
+        return;
+    }
+    _fs_settle_frames++;
+    if (_fs_settle_frames >= FS_SYNC_SETTLE_FRAMES) {
+        _finish_fs_sync();
+    }
+}
+
+void SSImporter::_finish_fs_sync() {
+    if (!_navigate_dir.is_empty()) {
+        Object *fs_dock = (Object *)EditorInterface::get_singleton()->get_file_system_dock();
+        if (fs_dock) {
+            fs_dock->call_deferred("navigate_to_path", _navigate_dir);
+        }
+    }
+    _idle_reset();
 }
 
 // --------------------------------------------------------------------------

@@ -35,8 +35,9 @@ public:
   void _notification(int p_what);
 
   // True while a directory scan OR a conversion batch is in progress (including
-  // while a pre-convert collision prompt is open).
-  bool is_importing() const { return _is_scanning || _is_converting || _awaiting_collision; }
+  // while a pre-convert collision prompt is open and while the post-convert
+  // filesystem sync is still waiting on the editor scan).
+  bool is_importing() const { return _is_scanning || _is_converting || _awaiting_collision || _fs_syncing; }
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
   void queue_import(const PackedStringArray &p_sspj_files, const String &p_output_dir);
@@ -78,6 +79,13 @@ private:
   static const uint64_t SCAN_MAX_ENTRIES = 50000;
   static const uint64_t SCAN_MAX_MILLIS = 5000;
 
+  // Post-convert filesystem-sync budget. MAX_WAIT caps how long we wait for
+  // the editor's scans (safety valve, ~30 s at 60 fps); SETTLE is how many
+  // consecutive idle frames must pass before the requested scan is considered
+  // done (covers the 1-2 frame gap before a self-queued scan actually starts).
+  static const int FS_SYNC_MAX_WAIT_FRAMES = 1800;
+  static const int FS_SYNC_SETTLE_FRAMES = 10;
+
   // ---- shared across scan + convert ----
   SSProgressDialog *_import_dialog = nullptr;
   Node *_budget_dialog = nullptr;
@@ -89,7 +97,20 @@ private:
   Vector<String> _plan_src;    // absolute .sspj paths to convert
   Vector<String> _plan_dst;    // matching res:// destination dirs
   Vector<String> _import_generated_files;
-  bool _needs_full_scan = false;
+
+  // ---- filesystem-sync phase (post-convert) ----
+  // A scan that is already running when conversion finishes may have listed
+  // the output directories before the converter wrote into them, so its
+  // results cannot be trusted; scan() requests issued while it runs are
+  // silently dropped, and update_file() is a no-op during a full scan. The
+  // sync phase therefore waits for the editor to go idle, registers the
+  // generated files, requests a sources scan (self-queuing, never dropped)
+  // and waits for it to complete before revealing the output folder.
+  bool _fs_syncing = false;
+  bool _fs_scan_issued = false;
+  int _fs_settle_frames = 0;
+  int _fs_wait_frames = 0;
+  String _navigate_dir; // output folder to reveal in the dock when sync ends
 
   // ---- scan phase ----
   bool _is_scanning = false;
@@ -141,7 +162,11 @@ private:
   void _idle_reset();
 
   void *_process_file(const String &source_sspj_path, const String &dst_dir_path);
-  void _on_filesystem_changed(const String &p_dir);
+
+  // filesystem-sync helpers (see the member block above for the rationale)
+  void _enter_fs_sync();
+  void _poll_fs_sync();
+  void _finish_fs_sync();
 
   Dictionary _load_source_map() const;
   void _save_source_map(const Dictionary &p_map);
