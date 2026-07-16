@@ -9,9 +9,6 @@ on:
         required: true
         type: choice
         options:
-          - "4.3"
-          - "4.4"
-          - "4.5"
           - "4.6"
           - "4.7"
         default: "4.6"
@@ -77,6 +74,18 @@ jobs:
           owner: 'godotengine'
           repository: 'godot-cpp'
 
+      # Fetch the prebuilt SDK runtime (headers + static libs) that the
+      # GDExtension build links against. Requires the SpriteStudio-SDK release
+      # assets to be downloadable from GitHub Releases.
+      - name: Download Prebuilt SDK (ssruntime)
+        if: matrix.platform != 'windows'
+        run: ./scripts/download-sdk.sh
+
+      - name: Download Prebuilt SDK (ssruntime, Windows)
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        run: ./scripts/download-sdk.ps1
+
       - name: setup for gdextension
         uses: ./.github/actions/setup-extension
         with:
@@ -119,17 +128,36 @@ jobs:
 
           rm -f "$CERTIFICATE_PATH"
 
+      # Decode the App Store Connect API key (.p8) used to notarize the macOS
+      # frameworks and expose its path to the macOS build step. No-ops when the
+      # secret is absent. macOS only (iOS is not notarized).
+      - name: Prepare Apple API key
+        if: matrix.platform == 'macos'
+        env:
+          SS_APPLE_API_KEY_BASE64: ${{ secrets.SS_APPLE_API_KEY_BASE64 }}
+        run: |
+          if [ -z "$SS_APPLE_API_KEY_BASE64" ]; then
+            echo "SS_APPLE_API_KEY_BASE64 not set — skipping API key setup (frameworks will not be notarized)."
+            exit 0
+          fi
+          echo "$SS_APPLE_API_KEY_BASE64" | base64 --decode > "$RUNNER_TEMP/apple_api_key.p8"
+          echo "APPLE_API_KEY_PATH=$RUNNER_TEMP/apple_api_key.p8" >> "$GITHUB_ENV"
+
       - name: build Linux
         if: matrix.platform == 'linux'
         run: |
           ./scripts/release-gdextension-linux.sh api_version=${{ env.GODOT_VERSION }}
 
       # release-gdextension-macos.sh signs the frameworks (hardened runtime +
-      # timestamp) when APPLE_SIGNING_IDENTITY is present.
+      # timestamp) when APPLE_SIGNING_IDENTITY is present, and notarizes them
+      # when the APPLE_API_* App Store Connect credentials are also present.
+      # APPLE_API_KEY_PATH is set by the "Prepare Apple API key" step above.
       - name: build macOS
         if: matrix.platform == 'macos'
         env:
           APPLE_SIGNING_IDENTITY: ${{ secrets.SS_APPLE_SIGNING_IDENTITY }}
+          APPLE_API_ISSUER: ${{ secrets.SS_APPLE_API_ISSUER }}
+          APPLE_API_KEY: ${{ secrets.SS_APPLE_API_KEY }}
         run: |
           ./scripts/release-gdextension-macos.sh api_version=${{ env.GODOT_VERSION }}
 
