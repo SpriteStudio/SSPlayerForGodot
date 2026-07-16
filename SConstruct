@@ -18,6 +18,13 @@ def validate_parent_dir(key, val, env):
 # --- Environment Setup ---
 localEnv = Environment(tools=["default"], PLATFORM="")
 
+# Derived-file cache: share compiled objects across builds/targets when
+# SCONS_CACHE points at a directory (the CI wires it to an actions/cache
+# path). ~ is expanded here because SCons does not do it itself.
+scons_cache = os.environ.get("SCONS_CACHE")
+if scons_cache:
+    CacheDir(os.path.expanduser(scons_cache))
+
 # Import shared source definitions
 sys.path.append(os.path.join(str(Dir("#").abspath), "ss_player"))
 import sources
