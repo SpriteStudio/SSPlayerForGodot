@@ -10,6 +10,7 @@ env:
   LC_ALL: en_US.UTF-8
   PYTHONIOENCODING: utf8
   KEYCHAIN_PATH: app-signing.keychain-db
+  SCONS_CACHE: ~/.scons_cache
 
 jobs:
   gdextension:
@@ -61,14 +62,72 @@ jobs:
           owner: 'godotengine'
           repository: 'godot-cpp'
 
-      - name: Download Prebuilt SDK (ssruntime)
-        run: ./scripts/download-sdk.sh
-
       - name: setup for gdextension
         uses: ./.github/actions/setup-extension
         with:
           platform: ${{ matrix.platform }}
           os: ${{ matrix.os }}
+
+      - name: Setup Rust (Stable)
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup Rust Cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: "ss_player/SpriteStudio-SDK"
+          key: ${{ matrix.platform }}
+
+      - name: Setup SCons Cache
+        uses: actions/cache@v3
+        with:
+          path: ~/.scons_cache
+          key: ${{ runner.os }}-${{ matrix.platform }}-scons-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.platform }}-scons-
+
+      # weekly は develop HEAD の検証なので、リリース版 SDK (download-sdk) では
+      # なく submodule のソースから runtime をビルドする (pr.yml と同じ方針)。
+      - name: Build Runtime (SDK)
+        if: matrix.platform == 'linux'
+        run: ./scripts/build-runtime.sh platform=linux build=release
+
+      - name: Build Runtime (SDK, macOS universal)
+        if: matrix.platform == 'macos'
+        run: |
+          rustup target add aarch64-apple-darwin
+          rustup target add x86_64-apple-darwin
+          ./scripts/build-runtime.sh platform=macos arch=universal build=release
+
+      - name: Build Runtime (SDK, iOS)
+        if: matrix.platform == 'ios'
+        run: |
+          rustup target add aarch64-apple-ios
+          rustup target add aarch64-apple-ios-sim
+          rustup target add x86_64-apple-ios
+          ./scripts/build-runtime.sh platform=ios build=release
+
+      - name: Build Runtime (SDK, Android)
+        if: matrix.platform == 'android'
+        run: |
+          cargo install cargo-ndk
+          rustup target add aarch64-linux-android
+          rustup target add armv7-linux-androideabi
+          rustup target add x86_64-linux-android
+          ./scripts/build-runtime.sh platform=android build=release
+
+      - name: Build Runtime (SDK, Web)
+        if: matrix.platform == 'web'
+        run: |
+          rustup target add wasm32-unknown-unknown
+          rustup toolchain install nightly
+          rustup target add wasm32-unknown-unknown --toolchain nightly
+          rustup component add rust-src --toolchain nightly
+          ./scripts/build-runtime.sh platform=web build=release
+
+      - name: Build Runtime (SDK, Windows)
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        run: ./scripts/build-runtime.ps1 platform=windows build=release
 
       # Import the Developer ID Application certificate into an ephemeral keychain
       # so codesign (run inside the release scripts) can resolve the signing
