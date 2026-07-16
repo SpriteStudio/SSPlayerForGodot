@@ -4,7 +4,8 @@
 // generate_version_header() in ss_player/sources.py, which runs from both the
 // GDExtension build (SConstruct) and the custom module build (SCsub).
 //
-//   @SSPLAYER_VERSION@       <- ss_player/VERSION.txt (single source of truth)
+//   @SSPLAYER_VERSION@       <- ss_player/VERSION.txt (single source of truth;
+//                               tag-style leading "v" is stripped at build time)
 //   @SSPLAYER_GIT_HASH@      <- short git commit hash, or "unknown" without git
 //   @SSPLAYER_VERSION_FULL@  <- "<version>+<hash>", or just "<version>" without git
 //
