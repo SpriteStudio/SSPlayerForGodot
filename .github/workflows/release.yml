@@ -13,6 +13,14 @@ on:
           - "4.7"
         default: "4.6"
         description: "Target Godot API version"
+      upload_release:
+        # タグ push は常にアップロードする。手動実行 (workflow_dispatch) では
+        # 既定でビルドのみ行い、true を指定した場合だけ Release へ添付する
+        # (v* タグの ref 上で実行したときのみ有効)。
+        description: 'Upload to GitHub Release (only effective on a v* tag ref)'
+        required: false
+        default: false
+        type: boolean
 
 env:
   GODOT_VERSION: ${{ inputs.godot_version || '4.6' }}
@@ -20,6 +28,7 @@ env:
   LC_ALL: en_US.UTF-8
   PYTHONIOENCODING: utf8
   KEYCHAIN_PATH: app-signing.keychain-db
+  SCONS_CACHE: ~/.scons_cache
 
 concurrency:
   group: ci-scons-${{ github.actor }}-${{ github.head_ref || github.run_number }}-${{ github.ref }}
@@ -91,6 +100,14 @@ jobs:
         with:
           platform: ${{ matrix.platform }}
           os: ${{ matrix.os }}
+
+      - name: Setup SCons Cache
+        uses: actions/cache@v3
+        with:
+          path: ~/.scons_cache
+          key: ${{ runner.os }}-${{ matrix.platform }}-scons-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.platform }}-scons-
 
       # Import the Developer ID Application certificate into an ephemeral keychain
       # so codesign (run inside the release scripts) can resolve the signing
@@ -250,8 +267,10 @@ jobs:
           name: ssplayer-godot-extension-${{ env.GODOT_VERSION }}-${{ steps.commit.outputs.short }}
           path: output
 
+      # タグ push では常に draft を作成。workflow_dispatch では upload_release=true
+      # を付けた場合のみ (SDK の release.yml と同じゲート)。どちらも v* タグ上に限る。
       - name: Create GitHub Release
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: startsWith(github.ref, 'refs/tags/v') && (github.event_name == 'push' || inputs.upload_release)
         uses: softprops/action-gh-release@v3
         with:
           files: |
