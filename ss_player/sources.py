@@ -55,13 +55,21 @@ def _ss_player_dir():
     return os.path.dirname(os.path.abspath(__file__))
 
 def read_version():
-    """Canonical semantic version from ss_player/VERSION.txt."""
+    """Canonical semantic version from ss_player/VERSION.txt.
+
+    The file carries the tag-style "v" prefix (e.g. "v7.1.0") so its content
+    stays byte-identical to the release tag; the prefix is stripped here so
+    the version stamped into the binary remains a bare semantic version.
+    """
     path = os.path.join(_ss_player_dir(), "VERSION.txt")
     try:
         with open(path, "r") as f:
-            return f.read().strip() or "0.0.0"
+            version = f.read().strip()
     except (OSError, IOError):
         return "0.0.0"
+    if version.startswith("v"):
+        version = version[1:]
+    return version or "0.0.0"
 
 def _git_hash_via_command(repo_dir):
     # Short commit hash via the git binary. Cross-platform (no shell=True).
