@@ -6,6 +6,9 @@ ROOTDIR=$(cd "$BASEDIR/.." && pwd -P)
 TARGET_DIR="${ROOTDIR}/ss_player"
 VERSION_FILE="${SCRIPTDIR}/SDK_VERSION.txt"
 CURRENT_VERSION_FILE="${TARGET_DIR}/runtime/VERSION"
+# Downloaded zip is cached here (gitignored) so a re-run that needs the same
+# version reuses it instead of re-downloading tens of MB.
+CACHE_DIR="${SCRIPTDIR}/.sdk-cache"
 
 TARGET_VERSION=$(tr -d ' \r\n' < "$VERSION_FILE")
 
@@ -19,47 +22,50 @@ fi
 
 BASE_URL="https://github.com/cri-middleware/SpriteStudio-SDK/releases/download/${TARGET_VERSION}"
 ASSET="spritestudio-sdk-static-libs.zip"
-ZIP_FILE="${TARGET_DIR}/sdk.zip"
-SUMS_FILE="${TARGET_DIR}/SHA256SUMS"
+# Keep the release asset's own name so it matches the SHA256SUMS entry directly.
+ZIP_FILE="${CACHE_DIR}/${ASSET}"
+SUMS_FILE="${CACHE_DIR}/SHA256SUMS"
 
 echo "Target SDK Version: ${TARGET_VERSION}"
+mkdir -p "$CACHE_DIR"
 
-# Fetch the release's SHA256SUMS manifest and verify the downloaded zip against
-# it before extracting, so a corrupted or tampered download fails loudly.
+sha256_of() {
+    if command -v sha256sum >/dev/null 2>&1; then
+        sha256sum "$1" | awk '{print $1}'
+    else
+        shasum -a 256 "$1" | awk '{print $1}'
+    fi
+}
+
+# Fetch the checksum manifest (small): it both verifies integrity and decides
+# whether an already-cached zip can be reused without re-downloading.
 echo "Downloading checksum manifest: ${BASE_URL}/SHA256SUMS"
 curl -fL -o "$SUMS_FILE" "${BASE_URL}/SHA256SUMS"
+EXPECTED=$(awk -v n="$ASSET" '$2 == n {print $1}' "$SUMS_FILE")
+if [ -z "$EXPECTED" ]; then
+    echo "ERROR: no checksum entry for ${ASSET} in SHA256SUMS" >&2
+    exit 1
+fi
 
-echo "Downloading SDK: ${BASE_URL}/${ASSET}"
-curl -fL -o "$ZIP_FILE" "${BASE_URL}/${ASSET}"
-
-# Verify <file> against the manifest entry for <asset-name>. Uses sha256sum
-# (Linux) or shasum -a 256 (macOS), matching the manifest line by asset name.
-verify_sha256() {
-    local file="$1" name="$2" expected actual
-    expected=$(awk -v n="$name" '$2 == n {print $1}' "$SUMS_FILE")
-    if [ -z "$expected" ]; then
-        echo "ERROR: no checksum entry for ${name} in SHA256SUMS" >&2
+# Reuse the cached zip when it already matches the manifest; otherwise download.
+if [ -f "$ZIP_FILE" ] && [ "$(sha256_of "$ZIP_FILE")" = "$EXPECTED" ]; then
+    echo "Reusing cached ${ASSET}"
+else
+    echo "Downloading SDK: ${BASE_URL}/${ASSET}"
+    curl -fL -o "$ZIP_FILE" "${BASE_URL}/${ASSET}"
+    if [ "$(sha256_of "$ZIP_FILE")" != "$EXPECTED" ]; then
+        echo "ERROR: checksum mismatch for ${ASSET}" >&2
+        rm -f "$ZIP_FILE"
         exit 1
     fi
-    if command -v sha256sum >/dev/null 2>&1; then
-        actual=$(sha256sum "$file" | awk '{print $1}')
-    else
-        actual=$(shasum -a 256 "$file" | awk '{print $1}')
-    fi
-    if [ "$expected" != "$actual" ]; then
-        echo "ERROR: checksum mismatch for ${name}" >&2
-        echo "  expected: ${expected}" >&2
-        echo "  actual:   ${actual}" >&2
-        exit 1
-    fi
-    echo "Checksum OK: ${name}"
-}
-verify_sha256 "$ZIP_FILE" "$ASSET"
+fi
+echo "Checksum OK: ${ASSET}"
 
+# The release archive is a flat tree (libs/, include/, VERSION, …) with no
+# wrapper directory, so extract it straight into ss_player/runtime/.
 echo "Extracting SDK..."
 rm -rf "${TARGET_DIR}/runtime"
-unzip -q -o "$ZIP_FILE" -d "${TARGET_DIR}/"
-rm "$ZIP_FILE" "$SUMS_FILE"
+unzip -q -o "$ZIP_FILE" -d "${TARGET_DIR}/runtime"
 
 echo "$TARGET_VERSION" > "$CURRENT_VERSION_FILE"
 
