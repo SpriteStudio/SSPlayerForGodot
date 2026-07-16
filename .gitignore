@@ -9,6 +9,7 @@ compile_commands.json
 /ss_player/runtime/include
 /ss_player/runtime/libs
 /ss_player/runtime/*.md
+/scripts/.sdk-cache/
 /examples/dev_*/ssab_generated
 /examples/dev_*/.ssplayer_sources.cfg
 /examples/*/addons/spritestudio
