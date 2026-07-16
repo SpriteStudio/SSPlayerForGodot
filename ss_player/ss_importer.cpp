@@ -46,7 +46,6 @@ void SSImporter::_bind_methods() {
     ADD_SIGNAL(MethodInfo("import_started"));
     ADD_SIGNAL(MethodInfo("import_finished"));
     ADD_SIGNAL(MethodInfo("import_files_resolved", PropertyInfo(Variant::PACKED_STRING_ARRAY, "sspj_paths")));
-    ClassDB::bind_method(D_METHOD("_on_filesystem_changed", "dir"), &SSImporter::_on_filesystem_changed);
     ClassDB::bind_method(D_METHOD("_on_budget_use_found"), &SSImporter::_on_budget_use_found);
     ClassDB::bind_method(D_METHOD("_on_budget_action", "action"), &SSImporter::_on_budget_action);
     ClassDB::bind_method(D_METHOD("_abort_scan_and_idle"), &SSImporter::_abort_scan_and_idle);
@@ -138,6 +137,11 @@ void SSImporter::_notification(int p_what) {
         if (done) {
             _finalize_convert();
         }
+        return;
+    }
+
+    if (_awaiting_reimport) {
+        _poll_reimport();
         return;
     }
 }
@@ -379,6 +383,8 @@ void SSImporter::_begin_convert(const String &p_dialog_title) {
     _failed_files.clear();
     _failed_reasons.clear();
     _import_generated_files.clear();
+    _pending_reimport.clear();
+    _navigate_dir = String();
     _convert_source_map = _load_source_map();
 
     // Make sure every destination directory exists. A missing dir means new
@@ -434,7 +440,7 @@ void SSImporter::_convert_poll() {
 
         CConverterError result = ss_converter_get_result(ctx);
         if (result == CConverterError::Success) {
-            _record_ssabs_in_dir(_convert_source_map, _active_dst[i], _active_src[i]);
+            _record_generated_files_in_dir(_convert_source_map, _active_dst[i], _active_src[i]);
         } else if (result == CConverterError::ErrorAborted) {
             // Canceled mid-file; not a failure, nothing to record.
         } else {
@@ -493,7 +499,11 @@ void SSImporter::_finalize_convert() {
     for (int i = 0; i < _import_generated_files.size(); i++) {
         efs->update_file(_import_generated_files[i]);
     }
-    if (_needs_full_scan) {
+    // A full recursive scan is the only thing that registers files inside a
+    // brand-new subdirectory (font/, sound/) — update_file and scan_changes both
+    // miss them. Force it whenever there are textures to import; the reimport phase
+    // waits for this scan to finish before importing the exact files.
+    if (_needs_full_scan || !_pending_reimport.is_empty()) {
         efs->scan();
     } else {
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
@@ -503,12 +513,24 @@ void SSImporter::_finalize_convert() {
 #endif
     }
 
-    if (!target_dir.is_empty()) {
-        if (!efs->is_connected("filesystem_changed", Callable(this, "_on_filesystem_changed"))) {
-            efs->connect("filesystem_changed", Callable(this, "_on_filesystem_changed").bind(target_dir), Object::CONNECT_ONE_SHOT);
-        }
+    // If textures were written, hand off to the deterministic reimport phase: it
+    // waits for the scan kicked above (or the editor's own auto-scan) to finish —
+    // so every file, subfolders included, is registered — then reimports the exact
+    // files on a normal frame. This replaces the old timer / `filesystem_changed`
+    // approach, whose timing race made subfolder import flaky (sometimes needing a
+    // focus toggle or an editor restart, sometimes not).
+    _navigate_dir = target_dir;
+    if (any_success && !_pending_reimport.is_empty()) {
+        _enter_reimport_wait();
+        return;
     }
 
+    if (!target_dir.is_empty()) {
+        Object *fs_dock = (Object *)EditorInterface::get_singleton()->get_file_system_dock();
+        if (fs_dock) {
+            fs_dock->call_deferred("navigate_to_path", target_dir);
+        }
+    }
     _idle_reset();
 }
 
@@ -551,11 +573,99 @@ void SSImporter::_idle_reset() {
     emit_signal("import_finished");
 }
 
-void SSImporter::_on_filesystem_changed(const String &p_dir) {
-    Object *fs_dock = (Object *)EditorInterface::get_singleton()->get_file_system_dock();
-    if (fs_dock) {
-        fs_dock->call_deferred("navigate_to_path", p_dir);
+void SSImporter::_enter_reimport_wait() {
+    // Release the convert-phase state so the PROCESS poll falls through to the
+    // reimport branch instead of re-running conversion, but keep processing and do
+    // NOT emit `import_finished` yet — that fires from `_finish_reimport`, once the
+    // textures are actually imported.
+    _is_converting = false;
+    _convert_canceling = false;
+    _active_ctx.clear();
+    _active_src.clear();
+    _active_dst.clear();
+    _pending_index = 0;
+    _convert_total = 0;
+    _convert_done = 0;
+    _convert_prev_done = -1;
+
+    _awaiting_reimport = true;
+    _reimport_scan_seen = false;
+    _reimport_in_progress = false;
+    _reimport_wait_frames = 0;
+    _reimport_settle = 0;
+    set_process(true);
+}
+
+void SSImporter::_poll_reimport() {
+    // reimport_files() below shows a progress dialog that pumps the main loop, which
+    // re-enters this PROCESS callback. Bail on re-entry so we never call
+    // reimport_files() recursively (Godot forbids it: "reimport_files() recursively").
+    if (_reimport_in_progress) {
+        return;
     }
+#if defined(SPRITESTUDIO_GODOT_EXTENSION) || (VERSION_MAJOR >= 4 && VERSION_MINOR >= 6)
+    auto *efs = EditorInterface::get_singleton()->get_resource_filesystem();
+#else
+    auto *efs = EditorInterface::get_singleton()->get_resource_file_system();
+#endif
+    _reimport_wait_frames++;
+
+    // Wait for the scan (ours from `_finalize_convert`, or the editor's own
+    // auto-scan reacting to the freshly written files) to finish, so every file —
+    // subfolders included — is registered before we reimport. A hard cap keeps a
+    // perpetually-busy editor from wedging us here.
+    bool timed_out = _reimport_wait_frames > 1800;
+    if (!timed_out) {
+        if (efs && efs->is_scanning()) {
+            // A scan is running; remember it and keep waiting for it to finish.
+            _reimport_scan_seen = true;
+            _reimport_settle = 0;
+            return;
+        }
+        // Not scanning right now. scan() is async, so if we haven't yet observed a
+        // scan start, give it a brief grace period before concluding it's done —
+        // otherwise we'd reimport before the scan registers the subfolder files.
+        if (!_reimport_scan_seen && _reimport_wait_frames < 4) {
+            return;
+        }
+        // Scan finished (or was instant). Let its registration settle a few frames.
+        if (_reimport_settle < 3) {
+            _reimport_settle++;
+            return;
+        }
+    }
+
+    // The scan above only REGISTERS the new files (they show as broken "×");
+    // in-session, reimport_files() is the only thing that actually imports them.
+    // The files are registered now (scan settled), so this first-imports them —
+    // subfolders included. The re-entry guard at the top absorbs the PROCESS
+    // callbacks fired by this call's own progress-dialog pump.
+    if (efs && !_pending_reimport.is_empty()) {
+        PackedStringArray to_reimport;
+        for (int i = 0; i < _pending_reimport.size(); i++) {
+            to_reimport.push_back(_pending_reimport[i]);
+        }
+        _reimport_in_progress = true;
+        efs->reimport_files(to_reimport);
+        _reimport_in_progress = false;
+    }
+    _pending_reimport.clear();
+    _finish_reimport();
+}
+
+void SSImporter::_finish_reimport() {
+    if (!_navigate_dir.is_empty()) {
+        Object *fs_dock = (Object *)EditorInterface::get_singleton()->get_file_system_dock();
+        if (fs_dock) {
+            fs_dock->call_deferred("navigate_to_path", _navigate_dir);
+        }
+        _navigate_dir = String();
+    }
+    _awaiting_reimport = false;
+    _reimport_scan_seen = false;
+    _reimport_wait_frames = 0;
+    _reimport_settle = 0;
+    _idle_reset();
 }
 
 // --------------------------------------------------------------------------
@@ -749,7 +859,7 @@ void SSImporter::_save_source_map(const Dictionary &p_map) {
     cfg->save(SSPLAYER_SOURCES_CFG_PATH);
 }
 
-void SSImporter::_record_ssabs_in_dir(Dictionary &p_map, const String &p_dst_dir, const String &p_sspj_path) {
+void SSImporter::_record_generated_files_in_dir(Dictionary &p_map, const String &p_dst_dir, const String &p_sspj_path) {
     Ref<DirAccess> da = DirAccess::open(p_dst_dir);
     if (da.is_null()) {
         return;
@@ -758,15 +868,32 @@ void SSImporter::_record_ssabs_in_dir(Dictionary &p_map, const String &p_dst_dir
     da->list_dir_begin();
     String fname = da->get_next();
     while (!fname.is_empty()) {
+        if (fname == "." || fname == "..") {
+            fname = da->get_next();
+            continue;
+        }
+        String path = p_dst_dir.path_join(fname);
+        // Subdirectories (font/, sound/) the converter created are intentionally
+        // NOT descended into: in-session, neither update_file nor scan() registers
+        // a brand-new subdir with the EditorFileSystem, so its files can be neither
+        // found nor reimported (they show up only after the editor's next startup /
+        // full re-scan). Queuing them here just produces "Can't find file during
+        // reimport" errors, so we leave them for that restart.
         if (!da->current_is_dir()) {
-            String ext = fname.get_extension();
+            String ext = fname.get_extension().to_lower();
             if (ext == "ssab" || ext == "ssqb") {
-                String output_path = p_dst_dir.path_join(fname);
                 // Re-insert to bump to most-recent in iteration order.
-                p_map.erase(output_path);
-                p_map[output_path] = _make_relative_path(p_sspj_path);
-                _refresh_cached_output(output_path);
-                _import_generated_files.push_back(output_path);
+                p_map.erase(path);
+                p_map[path] = _make_relative_path(p_sspj_path);
+                _refresh_cached_output(path);
+                _import_generated_files.push_back(path);
+            } else if (ext != "import") {
+                // A top-level texture the converter wrote alongside the binary.
+                // update_file registers it (parent dir is known), so the deferred
+                // reimport in _poll_reimport can first-import it in-session.
+                // Not in the source map — only .ssab/.ssqb map to a .sspj.
+                _import_generated_files.push_back(path);
+                _pending_reimport.push_back(path);
             }
         }
         fname = da->get_next();

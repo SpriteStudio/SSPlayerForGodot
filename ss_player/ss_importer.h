@@ -36,7 +36,7 @@ public:
 
   // True while a directory scan OR a conversion batch is in progress (including
   // while a pre-convert collision prompt is open).
-  bool is_importing() const { return _is_scanning || _is_converting || _awaiting_collision; }
+  bool is_importing() const { return _is_scanning || _is_converting || _awaiting_collision || _awaiting_reimport; }
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
   void queue_import(const PackedStringArray &p_sspj_files, const String &p_output_dir);
@@ -89,7 +89,20 @@ private:
   Vector<String> _plan_src;    // absolute .sspj paths to convert
   Vector<String> _plan_dst;    // matching res:// destination dirs
   Vector<String> _import_generated_files;
+  // Textures to import once the post-conversion scan settles (drained in
+  // `_poll_reimport`); intentionally NOT cleared by `_idle_reset`.
+  Vector<String> _pending_reimport;
+  // Output folder to reveal in the dock after import; drained in
+  // `_finish_reimport`; intentionally NOT cleared by `_idle_reset`.
+  String _navigate_dir;
   bool _needs_full_scan = false;
+
+  // ---- reimport phase (deterministic scan-wait before importing textures) ----
+  bool _awaiting_reimport = false;
+  bool _reimport_scan_seen = false;    // observed is_scanning() true at least once
+  bool _reimport_in_progress = false;  // guards reimport_files() re-entry via its dialog pump
+  int _reimport_wait_frames = 0;       // frames spent waiting for the scan to finish
+  int _reimport_settle = 0;            // settle frames after the scan goes idle
 
   // ---- scan phase ----
   bool _is_scanning = false;
@@ -141,13 +154,17 @@ private:
   void _idle_reset();
 
   void *_process_file(const String &source_sspj_path, const String &dst_dir_path);
-  void _on_filesystem_changed(const String &p_dir);
+  // Deterministic texture reimport: wait for the post-conversion scan to finish,
+  // then reimport the exact files on a normal frame (no focus/timing dependence).
+  void _enter_reimport_wait();
+  void _poll_reimport();
+  void _finish_reimport();
 
   Dictionary _load_source_map() const;
   void _save_source_map(const Dictionary &p_map);
   String _make_relative_path(const String &p_abs_path) const;
   String _make_absolute_path(const String &p_rel_path) const;
-  void _record_ssabs_in_dir(Dictionary &p_map, const String &p_dst_dir, const String &p_sspj_path);
+  void _record_generated_files_in_dir(Dictionary &p_map, const String &p_dst_dir, const String &p_sspj_path);
   void _evict_lru(Dictionary &p_map);
   // Refreshes the in-memory cached resource (SSABResource / SSQBResource) so
   // any active SpriteStudioPlayer2D referencing it picks up the new binary
