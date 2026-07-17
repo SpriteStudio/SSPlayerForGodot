@@ -910,10 +910,16 @@ void SSImporter::_collect_output_files(const String &p_dir, Vector<String> &r_ou
             String path = p_dir.path_join(fname);
             if (da->current_is_dir()) {
                 _collect_output_files(path, r_out);
-            } else if (fname.get_extension() != "import") {
-                // .import sidecars are produced by the editor on import, not by
-                // the converter; register only the real source files.
-                r_out.push_back(path);
+            } else {
+                // .import and .uid are editor-generated sidecars, not converter
+                // outputs and not standalone resources. They are present when
+                // reconverting into a directory that was already imported;
+                // registering them makes the editor show them as broken ("X").
+                // Register only the real files the converter wrote.
+                String ext = fname.get_extension().to_lower();
+                if (ext != "import" && ext != "uid") {
+                    r_out.push_back(path);
+                }
             }
         }
         fname = da->get_next();
