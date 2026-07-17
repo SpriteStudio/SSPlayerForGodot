@@ -489,12 +489,8 @@ void SSImporter::_finalize_convert() {
         _save_source_map(_convert_source_map);
     }
 
-    // Registering the generated files with the editor filesystem is deferred
-    // to the sync phase: doing it here races with any scan the editor already
-    // has in flight (e.g. the scan_changes() fired when the window regained
-    // focus from the OS drag & drop), which can silently swallow both the
-    // update_file() calls and a scan() request, leaving the new files
-    // invisible until the next full rescan (editor restart).
+    // Registering the generated files with the editor filesystem is handled by
+    // the sync phase (it waits for the editor to be idle, then runs a scan).
     _navigate_dir = target_dir;
     _enter_fs_sync();
 }
@@ -573,33 +569,18 @@ void SSImporter::_poll_fs_sync() {
     }
 
     _fs_wait_frames++;
-    // Safety valve so a perpetually-busy editor cannot wedge the importer; on
-    // timeout the (self-queuing) scan request below is still issued, so the
-    // files are picked up eventually even though we stop waiting for them.
+    // Safety valve so a perpetually-busy editor cannot wedge the importer.
     bool timed_out = _fs_wait_frames > FS_SYNC_MAX_WAIT_FRAMES;
 
     if (!_fs_scan_issued) {
-        // A scan that is already running may have listed the output
-        // directories before the converter finished writing into them, so its
-        // results cannot be trusted (and it would silently swallow update_file
-        // and scan requests). Wait for the editor to go idle first.
+        // A scan issued while the editor is already scanning is dropped, so wait
+        // for it to go idle first.
         if (efs->is_scanning() && !timed_out) {
             return;
         }
-        // Register the outputs we know about (this also creates the in-memory
-        // entries for brand-new folders), then request a sources scan for
-        // everything else the converter wrote (textures, subfolders). Unlike
-        // scan(), which is dropped without retry while another scan runs,
-        // scan_sources()/scan_changes() re-queues itself and is never lost; it
-        // registers new subdirectories and auto-imports importable files.
-        for (int i = 0; i < _import_generated_files.size(); i++) {
-            efs->update_file(_import_generated_files[i]);
-        }
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
-        efs->scan_sources();
-#else
-        efs->scan_changes();
-#endif
+        // Full scan: registers the new output folder (and its sub-folders) and
+        // imports the generated textures.
+        efs->scan();
         _fs_scan_issued = true;
         _fs_settle_frames = 0;
         if (timed_out) {
@@ -613,11 +594,9 @@ void SSImporter::_poll_fs_sync() {
         return;
     }
 
-    // Wait for the requested scan to run to completion before revealing the
-    // output folder. The scan may start a frame or two late (it queued behind
-    // a scan that slipped in first) or may have already completed
-    // synchronously, so instead of tracking start/stop edges just require the
-    // filesystem to stay idle for a few consecutive frames.
+    // Wait for the scan (and its imports) to finish before refreshing and
+    // revealing the folder. It may start a frame late or complete synchronously,
+    // so require a few consecutive idle frames rather than edge-tracking.
     if (efs->is_scanning()) {
         _fs_settle_frames = 0;
         return;
@@ -629,6 +608,15 @@ void SSImporter::_poll_fs_sync() {
 }
 
 void SSImporter::_finish_fs_sync() {
+    // Refresh the cached ssab/ssqb: emitting "changed" makes any live
+    // SpriteStudioPlayer2D reload the binary and pick up the new textures. This
+    // runs after the scan, so the textures are already imported.
+    for (int i = 0; i < _import_generated_files.size(); i++) {
+        String ext = _import_generated_files[i].get_extension().to_lower();
+        if (ext == "ssab" || ext == "ssqb") {
+            _refresh_cached_output(_import_generated_files[i]);
+        }
+    }
     if (!_navigate_dir.is_empty()) {
         Object *fs_dock = (Object *)EditorInterface::get_singleton()->get_file_system_dock();
         if (fs_dock) {
@@ -845,7 +833,8 @@ void SSImporter::_record_ssabs_in_dir(Dictionary &p_map, const String &p_dst_dir
                 // Re-insert to bump to most-recent in iteration order.
                 p_map.erase(output_path);
                 p_map[output_path] = _make_relative_path(p_sspj_path);
-                _refresh_cached_output(output_path);
+                // Cached resources are refreshed later, in _finish_fs_sync(),
+                // once the scan has imported the textures.
                 _import_generated_files.push_back(output_path);
             }
         }

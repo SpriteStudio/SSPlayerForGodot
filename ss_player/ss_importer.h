@@ -99,13 +99,9 @@ private:
   Vector<String> _import_generated_files;
 
   // ---- filesystem-sync phase (post-convert) ----
-  // A scan that is already running when conversion finishes may have listed
-  // the output directories before the converter wrote into them, so its
-  // results cannot be trusted; scan() requests issued while it runs are
-  // silently dropped, and update_file() is a no-op during a full scan. The
-  // sync phase therefore waits for the editor to go idle, registers the
-  // generated files, requests a sources scan (self-queuing, never dropped)
-  // and waits for it to complete before revealing the output folder.
+  // Waits for the editor to be idle, runs a full scan to register the new output
+  // folder and import its textures, waits for the scan to finish, then refreshes
+  // the cached ssab/ssqb before revealing the folder in the dock.
   bool _fs_syncing = false;
   bool _fs_scan_issued = false;
   int _fs_settle_frames = 0;
