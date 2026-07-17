@@ -12,7 +12,6 @@
 #include <godot_cpp/classes/dir_access.hpp>
 #include <godot_cpp/classes/editor_file_system.hpp>
 #include <godot_cpp/classes/editor_interface.hpp>
-#include <godot_cpp/classes/file_access.hpp>
 #include <godot_cpp/classes/editor_settings.hpp>
 #include <godot_cpp/classes/config_file.hpp>
 #include <godot_cpp/classes/os.hpp>
@@ -26,7 +25,6 @@ using namespace godot;
 #include "core/config/project_settings.h"
 #include "core/io/dir_access.h"
 #include "core/io/config_file.h"
-#include "core/io/file_access.h"
 #include "core/io/resource.h"
 #include "core/os/os.h"
 #include "editor/editor_interface.h"
@@ -491,38 +489,13 @@ void SSImporter::_finalize_convert() {
         _save_source_map(_convert_source_map);
     }
 
-    // So far _import_generated_files holds only the ssab/ssqb that
-    // _record_ssabs_in_dir captured. The converter also writes the sibling PNG
-    // textures the player requires (the layout is always "reference", never
-    // embedded) plus any sub-folders, and those were never added here -- so
-    // update_file() never registered them and their appearance in the dock
-    // depended on the editor happening to scan the output folder, which is
-    // unreliable on Windows. Rebuild the list by walking each output directory
-    // ourselves (right after the converter closed the files, from the same
-    // process) so every generated file is registered directly by exact path.
-    if (any_success) {
-        Vector<String> out_dirs;
-        for (int i = 0; i < _import_generated_files.size(); i++) {
-            String d = _import_generated_files[i].get_base_dir();
-            if (!out_dirs.has(d)) {
-                out_dirs.push_back(d);
-            }
-        }
-        Vector<String> all_files;
-        for (int i = 0; i < out_dirs.size(); i++) {
-            _collect_output_files(out_dirs[i], all_files);
-        }
-        if (!all_files.is_empty()) {
-            _import_generated_files = all_files;
-        }
-    }
-
-    // Registering the generated files with the editor filesystem is deferred
-    // to the sync phase: doing it here races with any scan the editor already
-    // has in flight (e.g. the scan_changes() fired when the window regained
-    // focus from the OS drag & drop), which can silently swallow both the
-    // update_file() calls and a scan() request, leaving the new files
-    // invisible until the next full rescan (editor restart).
+    // Registering the generated files with the editor filesystem is deferred to
+    // the sync phase. Issuing a scan here would race the editor's own scan that
+    // an OS drag & drop kicks off when the window regains focus: a scan() issued
+    // while another scan runs is silently dropped, so the new files would stay
+    // invisible until the next full rescan (an editor restart). The sync phase
+    // waits for the editor to go idle, then runs a full scan that reliably picks
+    // up the brand-new output folder and imports its textures.
     _navigate_dir = target_dir;
     _enter_fs_sync();
 }
@@ -564,7 +537,6 @@ void SSImporter::_idle_reset() {
 
     _fs_syncing = false;
     _fs_scan_issued = false;
-    _fs_reimporting = false;
     _fs_settle_frames = 0;
     _fs_wait_frames = 0;
     _navigate_dir = String();
@@ -585,19 +557,12 @@ void SSImporter::_enter_fs_sync() {
 
     _fs_syncing = true;
     _fs_scan_issued = false;
-    _fs_reimporting = false;
     _fs_settle_frames = 0;
     _fs_wait_frames = 0;
     set_process(true);
 }
 
 void SSImporter::_poll_fs_sync() {
-    // reimport_files() below pumps the main loop, which re-enters this PROCESS
-    // callback; bail on re-entry so we never call reimport_files() recursively
-    // (Godot forbids that) and never advance the sync state from within it.
-    if (_fs_reimporting) {
-        return;
-    }
 #if defined(SPRITESTUDIO_GODOT_EXTENSION) || (VERSION_MAJOR >= 4 && VERSION_MINOR >= 6)
     auto *efs = EditorInterface::get_singleton()->get_resource_filesystem();
 #else
@@ -609,69 +574,24 @@ void SSImporter::_poll_fs_sync() {
     }
 
     _fs_wait_frames++;
-    // Safety valve so a perpetually-busy editor cannot wedge the importer; on
-    // timeout the (self-queuing) scan request below is still issued, so the
-    // files are picked up eventually even though we stop waiting for them.
+    // Safety valve so a perpetually-busy editor cannot wedge the importer.
     bool timed_out = _fs_wait_frames > FS_SYNC_MAX_WAIT_FRAMES;
 
     if (!_fs_scan_issued) {
-        // A scan that is already running may have listed the output
-        // directories before the converter finished writing into them, so its
-        // results cannot be trusted (and it would silently swallow update_file
-        // and scan requests). Wait for the editor to go idle first.
+        // scan() is silently dropped while another scan is already running, so
+        // wait for the editor to go idle before issuing ours. (An OS drag & drop
+        // refocuses the window, which kicks off the editor's own scan_changes().)
         if (efs->is_scanning() && !timed_out) {
             return;
         }
-        // Register the outputs we know about (this also creates the in-memory
-        // entries for brand-new folders), then request a sources scan for
-        // everything else the converter wrote (textures, subfolders). Unlike
-        // scan(), which is dropped without retry while another scan runs,
-        // scan_sources()/scan_changes() re-queues itself and is never lost; it
-        // registers new subdirectories and auto-imports importable files.
-        for (int i = 0; i < _import_generated_files.size(); i++) {
-            efs->update_file(_import_generated_files[i]);
-        }
-        // Diagnostic for the Windows-only repro: a generated file we cannot
-        // open for reading here means another process (e.g. antivirus) still
-        // holds it, which no scan retry can fix. Logging it lets a real repro
-        // distinguish an external file lock from scan timing.
-        int unopenable = 0;
-        for (int i = 0; i < _import_generated_files.size(); i++) {
-            Ref<FileAccess> fa = FileAccess::open(_import_generated_files[i], FileAccess::READ);
-            if (fa.is_null()) {
-                unopenable++;
-            }
-        }
-        if (unopenable > 0) {
-            WARN_PRINT(vformat("SSImporter: %d of %d generated files were not openable at registration time (possible external file lock).", unopenable, (int)_import_generated_files.size()));
-        }
-        // Import the sibling textures now, by exact path, so the imported
-        // texture exists before _finish_fs_sync() refreshes the ssab and a live
-        // player resolves it. reimport_files() runs synchronously (pumping the
-        // main loop); the re-entry guard at the top of this function absorbs the
-        // PROCESS callbacks that pump fires. ssab/ssqb are not imported resources
-        // (they load directly), so they are excluded here.
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
-        PackedStringArray to_reimport;
-#else
-        Vector<String> to_reimport;
-#endif
-        for (int i = 0; i < _import_generated_files.size(); i++) {
-            String ext = _import_generated_files[i].get_extension().to_lower();
-            if (ext != "ssab" && ext != "ssqb") {
-                to_reimport.push_back(_import_generated_files[i]);
-            }
-        }
-        if (!to_reimport.is_empty()) {
-            _fs_reimporting = true;
-            efs->reimport_files(to_reimport);
-            _fs_reimporting = false;
-        }
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
-        efs->scan_sources();
-#else
-        efs->scan_changes();
-#endif
+        // Full rescan. This is the only editor call that reliably registers a
+        // brand-new output directory (and its sub-folders) and auto-imports the
+        // sibling textures: update_file()/reimport_files() require the directory
+        // to have been scanned already, and scan_changes() only descends into a
+        // directory whose modified_time changed -- which NTFS reports late on
+        // Windows, so it misses the freshly written folder. A full scan walks the
+        // tree unconditionally, so it always finds the new files.
+        efs->scan();
         _fs_scan_issued = true;
         _fs_settle_frames = 0;
         if (timed_out) {
@@ -685,11 +605,10 @@ void SSImporter::_poll_fs_sync() {
         return;
     }
 
-    // Wait for the requested scan to run to completion before revealing the
-    // output folder. The scan may start a frame or two late (it queued behind
-    // a scan that slipped in first) or may have already completed
-    // synchronously, so instead of tracking start/stop edges just require the
-    // filesystem to stay idle for a few consecutive frames.
+    // Wait for the scan (and the imports it triggers) to finish before we refresh
+    // the cached ssab and reveal the folder. The scan may start a frame late or
+    // complete synchronously, so require a few consecutive idle frames rather
+    // than tracking start/stop edges.
     if (efs->is_scanning()) {
         _fs_settle_frames = 0;
         return;
@@ -701,8 +620,8 @@ void SSImporter::_poll_fs_sync() {
 }
 
 void SSImporter::_finish_fs_sync() {
-    // The sibling textures are imported now (the reimport above finished and the
-    // scan settled), so it is finally safe to refresh the cached ssab/ssqb:
+    // The sibling textures are imported now (the full scan above finished and ran
+    // their imports), so it is finally safe to refresh the cached ssab/ssqb:
     // emitting "changed" makes any live SpriteStudioPlayer2D reload the binary
     // and resolve its textures, which now exist as imported resources. Doing
     // this before import produced "Failed loading resource" for the PNGs.
@@ -933,37 +852,6 @@ void SSImporter::_record_ssabs_in_dir(Dictionary &p_map, const String &p_dst_dir
                 // import) makes a live player try to resolve not-yet-imported PNGs
                 // and log "Failed loading resource".
                 _import_generated_files.push_back(output_path);
-            }
-        }
-        fname = da->get_next();
-    }
-    da->list_dir_end();
-}
-
-void SSImporter::_collect_output_files(const String &p_dir, Vector<String> &r_out) const {
-    Ref<DirAccess> da = DirAccess::open(p_dir);
-    if (da.is_null()) {
-        return;
-    }
-
-    da->list_dir_begin();
-    String fname = da->get_next();
-    while (!fname.is_empty()) {
-        // Guard against the navigational entries so the recursion terminates.
-        if (fname != "." && fname != "..") {
-            String path = p_dir.path_join(fname);
-            if (da->current_is_dir()) {
-                _collect_output_files(path, r_out);
-            } else {
-                // .import and .uid are editor-generated sidecars, not converter
-                // outputs and not standalone resources. They are present when
-                // reconverting into a directory that was already imported;
-                // registering them makes the editor show them as broken ("X").
-                // Register only the real files the converter wrote.
-                String ext = fname.get_extension().to_lower();
-                if (ext != "import" && ext != "uid") {
-                    r_out.push_back(path);
-                }
             }
         }
         fname = da->get_next();

@@ -99,16 +99,15 @@ private:
   Vector<String> _import_generated_files;
 
   // ---- filesystem-sync phase (post-convert) ----
-  // A scan that is already running when conversion finishes may have listed
-  // the output directories before the converter wrote into them, so its
-  // results cannot be trusted; scan() requests issued while it runs are
-  // silently dropped, and update_file() is a no-op during a full scan. The
-  // sync phase therefore waits for the editor to go idle, registers the
-  // generated files, requests a sources scan (self-queuing, never dropped)
-  // and waits for it to complete before revealing the output folder.
+  // A scan() issued while another scan is already running is silently dropped,
+  // so a scan fired right after conversion (racing the editor's own scan that an
+  // OS drag & drop triggers on focus) can be lost, leaving the new files hidden
+  // until an editor restart. The sync phase therefore waits for the editor to go
+  // idle, runs a full scan -- the only call that reliably registers a brand-new
+  // output folder (and its sub-folders) and imports its textures -- waits for it
+  // to finish, then refreshes the cached ssab/ssqb before revealing the folder.
   bool _fs_syncing = false;
   bool _fs_scan_issued = false;
-  bool _fs_reimporting = false; // guards against re-entry while reimport_files() pumps the loop
   int _fs_settle_frames = 0;
   int _fs_wait_frames = 0;
   String _navigate_dir; // output folder to reveal in the dock when sync ends
@@ -174,11 +173,6 @@ private:
   String _make_relative_path(const String &p_abs_path) const;
   String _make_absolute_path(const String &p_rel_path) const;
   void _record_ssabs_in_dir(Dictionary &p_map, const String &p_dst_dir, const String &p_sspj_path);
-  // Recursively collects every file the converter wrote under p_dir (ssab/ssqb,
-  // the sibling PNG textures the player requires, and any sub-folder contents)
-  // into r_out, so each can be registered with the editor filesystem by exact
-  // path instead of relying on a directory scan to discover it.
-  void _collect_output_files(const String &p_dir, Vector<String> &r_out) const;
   void _evict_lru(Dictionary &p_map);
   // Refreshes the in-memory cached resource (SSABResource / SSQBResource) so
   // any active SpriteStudioPlayer2D referencing it picks up the new binary
