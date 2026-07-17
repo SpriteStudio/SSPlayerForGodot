@@ -564,6 +564,7 @@ void SSImporter::_idle_reset() {
 
     _fs_syncing = false;
     _fs_scan_issued = false;
+    _fs_reimporting = false;
     _fs_settle_frames = 0;
     _fs_wait_frames = 0;
     _navigate_dir = String();
@@ -584,12 +585,19 @@ void SSImporter::_enter_fs_sync() {
 
     _fs_syncing = true;
     _fs_scan_issued = false;
+    _fs_reimporting = false;
     _fs_settle_frames = 0;
     _fs_wait_frames = 0;
     set_process(true);
 }
 
 void SSImporter::_poll_fs_sync() {
+    // reimport_files() below pumps the main loop, which re-enters this PROCESS
+    // callback; bail on re-entry so we never call reimport_files() recursively
+    // (Godot forbids that) and never advance the sync state from within it.
+    if (_fs_reimporting) {
+        return;
+    }
 #if defined(SPRITESTUDIO_GODOT_EXTENSION) || (VERSION_MAJOR >= 4 && VERSION_MINOR >= 6)
     auto *efs = EditorInterface::get_singleton()->get_resource_filesystem();
 #else
@@ -637,6 +645,28 @@ void SSImporter::_poll_fs_sync() {
         if (unopenable > 0) {
             WARN_PRINT(vformat("SSImporter: %d of %d generated files were not openable at registration time (possible external file lock).", unopenable, (int)_import_generated_files.size()));
         }
+        // Import the sibling textures now, by exact path, so the imported
+        // texture exists before _finish_fs_sync() refreshes the ssab and a live
+        // player resolves it. reimport_files() runs synchronously (pumping the
+        // main loop); the re-entry guard at the top of this function absorbs the
+        // PROCESS callbacks that pump fires. ssab/ssqb are not imported resources
+        // (they load directly), so they are excluded here.
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+        PackedStringArray to_reimport;
+#else
+        Vector<String> to_reimport;
+#endif
+        for (int i = 0; i < _import_generated_files.size(); i++) {
+            String ext = _import_generated_files[i].get_extension().to_lower();
+            if (ext != "ssab" && ext != "ssqb") {
+                to_reimport.push_back(_import_generated_files[i]);
+            }
+        }
+        if (!to_reimport.is_empty()) {
+            _fs_reimporting = true;
+            efs->reimport_files(to_reimport);
+            _fs_reimporting = false;
+        }
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
         efs->scan_sources();
 #else
@@ -671,6 +701,17 @@ void SSImporter::_poll_fs_sync() {
 }
 
 void SSImporter::_finish_fs_sync() {
+    // The sibling textures are imported now (the reimport above finished and the
+    // scan settled), so it is finally safe to refresh the cached ssab/ssqb:
+    // emitting "changed" makes any live SpriteStudioPlayer2D reload the binary
+    // and resolve its textures, which now exist as imported resources. Doing
+    // this before import produced "Failed loading resource" for the PNGs.
+    for (int i = 0; i < _import_generated_files.size(); i++) {
+        String ext = _import_generated_files[i].get_extension().to_lower();
+        if (ext == "ssab" || ext == "ssqb") {
+            _refresh_cached_output(_import_generated_files[i]);
+        }
+    }
     if (!_navigate_dir.is_empty()) {
         Object *fs_dock = (Object *)EditorInterface::get_singleton()->get_file_system_dock();
         if (fs_dock) {
@@ -887,7 +928,10 @@ void SSImporter::_record_ssabs_in_dir(Dictionary &p_map, const String &p_dst_dir
                 // Re-insert to bump to most-recent in iteration order.
                 p_map.erase(output_path);
                 p_map[output_path] = _make_relative_path(p_sspj_path);
-                _refresh_cached_output(output_path);
+                // The cached ssab/ssqb is refreshed later, in _finish_fs_sync(),
+                // AFTER the sibling textures are imported. Refreshing here (before
+                // import) makes a live player try to resolve not-yet-imported PNGs
+                // and log "Failed loading resource".
                 _import_generated_files.push_back(output_path);
             }
         }

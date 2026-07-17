@@ -108,6 +108,7 @@ private:
   // and waits for it to complete before revealing the output folder.
   bool _fs_syncing = false;
   bool _fs_scan_issued = false;
+  bool _fs_reimporting = false; // guards against re-entry while reimport_files() pumps the loop
   int _fs_settle_frames = 0;
   int _fs_wait_frames = 0;
   String _navigate_dir; // output folder to reveal in the dock when sync ends
