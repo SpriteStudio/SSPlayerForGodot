@@ -173,6 +173,11 @@ private:
   String _make_relative_path(const String &p_abs_path) const;
   String _make_absolute_path(const String &p_rel_path) const;
   void _record_ssabs_in_dir(Dictionary &p_map, const String &p_dst_dir, const String &p_sspj_path);
+  // Recursively collects every file the converter wrote under p_dir (ssab/ssqb,
+  // the sibling PNG textures the player requires, and any sub-folder contents)
+  // into r_out, so each can be registered with the editor filesystem by exact
+  // path instead of relying on a directory scan to discover it.
+  void _collect_output_files(const String &p_dir, Vector<String> &r_out) const;
   void _evict_lru(Dictionary &p_map);
   // Refreshes the in-memory cached resource (SSABResource / SSQBResource) so
   // any active SpriteStudioPlayer2D referencing it picks up the new binary

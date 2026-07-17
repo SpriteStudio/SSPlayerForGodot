@@ -12,6 +12,7 @@
 #include <godot_cpp/classes/dir_access.hpp>
 #include <godot_cpp/classes/editor_file_system.hpp>
 #include <godot_cpp/classes/editor_interface.hpp>
+#include <godot_cpp/classes/file_access.hpp>
 #include <godot_cpp/classes/editor_settings.hpp>
 #include <godot_cpp/classes/config_file.hpp>
 #include <godot_cpp/classes/os.hpp>
@@ -25,6 +26,7 @@ using namespace godot;
 #include "core/config/project_settings.h"
 #include "core/io/dir_access.h"
 #include "core/io/config_file.h"
+#include "core/io/file_access.h"
 #include "core/io/resource.h"
 #include "core/os/os.h"
 #include "editor/editor_interface.h"
@@ -489,6 +491,32 @@ void SSImporter::_finalize_convert() {
         _save_source_map(_convert_source_map);
     }
 
+    // So far _import_generated_files holds only the ssab/ssqb that
+    // _record_ssabs_in_dir captured. The converter also writes the sibling PNG
+    // textures the player requires (the layout is always "reference", never
+    // embedded) plus any sub-folders, and those were never added here -- so
+    // update_file() never registered them and their appearance in the dock
+    // depended on the editor happening to scan the output folder, which is
+    // unreliable on Windows. Rebuild the list by walking each output directory
+    // ourselves (right after the converter closed the files, from the same
+    // process) so every generated file is registered directly by exact path.
+    if (any_success) {
+        Vector<String> out_dirs;
+        for (int i = 0; i < _import_generated_files.size(); i++) {
+            String d = _import_generated_files[i].get_base_dir();
+            if (!out_dirs.has(d)) {
+                out_dirs.push_back(d);
+            }
+        }
+        Vector<String> all_files;
+        for (int i = 0; i < out_dirs.size(); i++) {
+            _collect_output_files(out_dirs[i], all_files);
+        }
+        if (!all_files.is_empty()) {
+            _import_generated_files = all_files;
+        }
+    }
+
     // Registering the generated files with the editor filesystem is deferred
     // to the sync phase: doing it here races with any scan the editor already
     // has in flight (e.g. the scan_changes() fired when the window regained
@@ -594,6 +622,20 @@ void SSImporter::_poll_fs_sync() {
         // registers new subdirectories and auto-imports importable files.
         for (int i = 0; i < _import_generated_files.size(); i++) {
             efs->update_file(_import_generated_files[i]);
+        }
+        // Diagnostic for the Windows-only repro: a generated file we cannot
+        // open for reading here means another process (e.g. antivirus) still
+        // holds it, which no scan retry can fix. Logging it lets a real repro
+        // distinguish an external file lock from scan timing.
+        int unopenable = 0;
+        for (int i = 0; i < _import_generated_files.size(); i++) {
+            Ref<FileAccess> fa = FileAccess::open(_import_generated_files[i], FileAccess::READ);
+            if (fa.is_null()) {
+                unopenable++;
+            }
+        }
+        if (unopenable > 0) {
+            WARN_PRINT(vformat("SSImporter: %d of %d generated files were not openable at registration time (possible external file lock).", unopenable, (int)_import_generated_files.size()));
         }
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
         efs->scan_sources();
@@ -847,6 +889,31 @@ void SSImporter::_record_ssabs_in_dir(Dictionary &p_map, const String &p_dst_dir
                 p_map[output_path] = _make_relative_path(p_sspj_path);
                 _refresh_cached_output(output_path);
                 _import_generated_files.push_back(output_path);
+            }
+        }
+        fname = da->get_next();
+    }
+    da->list_dir_end();
+}
+
+void SSImporter::_collect_output_files(const String &p_dir, Vector<String> &r_out) const {
+    Ref<DirAccess> da = DirAccess::open(p_dir);
+    if (da.is_null()) {
+        return;
+    }
+
+    da->list_dir_begin();
+    String fname = da->get_next();
+    while (!fname.is_empty()) {
+        // Guard against the navigational entries so the recursion terminates.
+        if (fname != "." && fname != "..") {
+            String path = p_dir.path_join(fname);
+            if (da->current_is_dir()) {
+                _collect_output_files(path, r_out);
+            } else if (fname.get_extension() != "import") {
+                // .import sidecars are produced by the editor on import, not by
+                // the converter; register only the real source files.
+                r_out.push_back(path);
             }
         }
         fname = da->get_next();
