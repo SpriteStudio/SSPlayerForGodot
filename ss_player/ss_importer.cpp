@@ -489,13 +489,8 @@ void SSImporter::_finalize_convert() {
         _save_source_map(_convert_source_map);
     }
 
-    // Registering the generated files with the editor filesystem is deferred to
-    // the sync phase. Issuing a scan here would race the editor's own scan that
-    // an OS drag & drop kicks off when the window regains focus: a scan() issued
-    // while another scan runs is silently dropped, so the new files would stay
-    // invisible until the next full rescan (an editor restart). The sync phase
-    // waits for the editor to go idle, then runs a full scan that reliably picks
-    // up the brand-new output folder and imports its textures.
+    // Registering the generated files with the editor filesystem is handled by
+    // the sync phase (it waits for the editor to be idle, then runs a scan).
     _navigate_dir = target_dir;
     _enter_fs_sync();
 }
@@ -578,19 +573,13 @@ void SSImporter::_poll_fs_sync() {
     bool timed_out = _fs_wait_frames > FS_SYNC_MAX_WAIT_FRAMES;
 
     if (!_fs_scan_issued) {
-        // scan() is silently dropped while another scan is already running, so
-        // wait for the editor to go idle before issuing ours. (An OS drag & drop
-        // refocuses the window, which kicks off the editor's own scan_changes().)
+        // A scan issued while the editor is already scanning is dropped, so wait
+        // for it to go idle first.
         if (efs->is_scanning() && !timed_out) {
             return;
         }
-        // Full rescan. This is the only editor call that reliably registers a
-        // brand-new output directory (and its sub-folders) and auto-imports the
-        // sibling textures: update_file()/reimport_files() require the directory
-        // to have been scanned already, and scan_changes() only descends into a
-        // directory whose modified_time changed -- which NTFS reports late on
-        // Windows, so it misses the freshly written folder. A full scan walks the
-        // tree unconditionally, so it always finds the new files.
+        // Full scan: registers the new output folder (and its sub-folders) and
+        // imports the generated textures.
         efs->scan();
         _fs_scan_issued = true;
         _fs_settle_frames = 0;
@@ -605,10 +594,9 @@ void SSImporter::_poll_fs_sync() {
         return;
     }
 
-    // Wait for the scan (and the imports it triggers) to finish before we refresh
-    // the cached ssab and reveal the folder. The scan may start a frame late or
-    // complete synchronously, so require a few consecutive idle frames rather
-    // than tracking start/stop edges.
+    // Wait for the scan (and its imports) to finish before refreshing and
+    // revealing the folder. It may start a frame late or complete synchronously,
+    // so require a few consecutive idle frames rather than edge-tracking.
     if (efs->is_scanning()) {
         _fs_settle_frames = 0;
         return;
@@ -620,11 +608,9 @@ void SSImporter::_poll_fs_sync() {
 }
 
 void SSImporter::_finish_fs_sync() {
-    // The sibling textures are imported now (the full scan above finished and ran
-    // their imports), so it is finally safe to refresh the cached ssab/ssqb:
-    // emitting "changed" makes any live SpriteStudioPlayer2D reload the binary
-    // and resolve its textures, which now exist as imported resources. Doing
-    // this before import produced "Failed loading resource" for the PNGs.
+    // Refresh the cached ssab/ssqb: emitting "changed" makes any live
+    // SpriteStudioPlayer2D reload the binary and pick up the new textures. This
+    // runs after the scan, so the textures are already imported.
     for (int i = 0; i < _import_generated_files.size(); i++) {
         String ext = _import_generated_files[i].get_extension().to_lower();
         if (ext == "ssab" || ext == "ssqb") {
@@ -847,10 +833,8 @@ void SSImporter::_record_ssabs_in_dir(Dictionary &p_map, const String &p_dst_dir
                 // Re-insert to bump to most-recent in iteration order.
                 p_map.erase(output_path);
                 p_map[output_path] = _make_relative_path(p_sspj_path);
-                // The cached ssab/ssqb is refreshed later, in _finish_fs_sync(),
-                // AFTER the sibling textures are imported. Refreshing here (before
-                // import) makes a live player try to resolve not-yet-imported PNGs
-                // and log "Failed loading resource".
+                // Cached resources are refreshed later, in _finish_fs_sync(),
+                // once the scan has imported the textures.
                 _import_generated_files.push_back(output_path);
             }
         }
