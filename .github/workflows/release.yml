@@ -1,8 +1,9 @@
 name: release gdextension
+# workflow_dispatch のみ。
+# 既定 (upload_release=false) はビルドのみ (release/X.Y ブランチ上の QA 用)。
+# Release の作成は v* タグ ref 上で upload_release=true を付けた明示的な
+# dispatch のみ。
 on:
-  push:
-    tags:
-      - 'v*'
   workflow_dispatch:
     inputs:
       godot_version:
@@ -14,8 +15,7 @@ on:
         default: "4.6"
         description: "Target Godot API version"
       upload_release:
-        # タグ push は常にアップロードする。手動実行 (workflow_dispatch) では
-        # 既定でビルドのみ行い、true を指定した場合だけ Release へ添付する
+        # 既定でビルドのみ行い、true を指定した場合だけ Release を作成する
         # (v* タグの ref 上で実行したときのみ有効)。
         description: 'Upload to GitHub Release (only effective on a v* tag ref)'
         required: false
@@ -267,10 +267,9 @@ jobs:
           name: ssplayer-godot-extension-${{ env.GODOT_VERSION }}-${{ steps.commit.outputs.short }}
           path: output
 
-      # タグ push では常に draft を作成。workflow_dispatch では upload_release=true
-      # を付けた場合のみ (SDK の release.yml と同じゲート)。どちらも v* タグ上に限る。
+      # upload_release=true を付けた明示的な dispatch のみ。v* タグ上に限る。
       - name: Create GitHub Release
-        if: startsWith(github.ref, 'refs/tags/v') && (github.event_name == 'push' || inputs.upload_release)
+        if: startsWith(github.ref, 'refs/tags/v') && inputs.upload_release
         uses: softprops/action-gh-release@v3
         with:
           files: |
@@ -278,10 +277,9 @@ jobs:
             output/SHA256SUMS
           tag_name: ${{ github.ref_name }}
           generate_release_notes: true
-          # SDK の release.yml と違い、こちらはタグ push で自動起動するため
-          # draft で作成し、内容確認後に手動で Publish する (SDK 側は
-          # upload_release=true を付けた明示的な dispatch 自体が公開ゲート)。
-          draft: true
+          # upload_release=true を付けた明示的な dispatch 自体が公開ゲートの
+          # ため、draft は作らず即公開する。
+          draft: false
           # SemVer プレリリース (例: v7.0.0-beta.1) はタグ名に '-' を含むため
           # 自動的に prerelease 扱いにする。正式版 (v7.1.0) は false。
           # draft 上に設定され、Publish 後もそのまま引き継がれる。
