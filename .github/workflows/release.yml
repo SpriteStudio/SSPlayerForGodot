@@ -284,3 +284,19 @@ jobs:
           # 自動的に prerelease 扱いにする。正式版 (v7.1.0) は false。
           # draft 上に設定され、Publish 後もそのまま引き継がれる。
           prerelease: ${{ contains(github.ref_name, '-') }}
+
+  # Release 公開後、Godot Asset Library の既存アセットへ 4.6 zip を指す編集を
+  # 提出する (承認は人手)。upload_release=true の v* タグで 4.6 ビルドのときだけ。
+  # 提出ロジックは再利用可能ワークフロー assetlib.yml に委譲。
+  publish-assetlib:
+    needs: package
+    if: >-
+      startsWith(github.ref, 'refs/tags/v') &&
+      inputs.upload_release &&
+      inputs.godot_version == '4.6'
+    uses: ./.github/workflows/assetlib.yml
+    with:
+      tag: ${{ github.ref_name }}
+      api_version: "4.6"
+      submit: true
+    secrets: inherit

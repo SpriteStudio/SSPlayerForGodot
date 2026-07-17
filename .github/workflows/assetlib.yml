@@ -1,0 +1,113 @@
+name: publish to godot asset library
+# 再利用可能ワークフロー。release.yml から submit:true で呼ばれるか、単体
+# dispatch (既定 submit:false=ドライラン) で使う。GitHub Releases に上がった
+# GDExtension zip を、既存アセットへ「編集」として提出する。提出後は Asset
+# Library のモデレーション承認待ちで、自動公開はされない。
+# 初回のアセット登録は GUI で行い、採番された asset_id を
+# vars.GODOT_ASSETLIB_ASSET_ID に設定しておくこと。
+on:
+  workflow_call:
+    inputs:
+      tag:
+        required: true
+        type: string
+      api_version:
+        required: false
+        type: string
+        default: "4.6"
+      submit:
+        required: false
+        type: boolean
+        default: false
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (例: v7.0.0)'
+        required: true
+        type: string
+      api_version:
+        description: '指す zip の Godot API 版'
+        required: true
+        type: choice
+        options:
+          - "4.6"
+          - "4.7"
+        default: "4.6"
+      submit:
+        description: 'true で実提出 / false はドライラン (zip 存在チェックのみ)'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  submit:
+    runs-on: ubuntu-latest
+    env:
+      ASSETLIB_API: https://godotengine.org/asset-library/api
+      REPO_URL: https://github.com/${{ github.repository }}
+      TAG: ${{ inputs.tag }}
+      API_VERSION: ${{ inputs.api_version }}
+      ASSET_ID: ${{ vars.GODOT_ASSETLIB_ASSET_ID }}
+
+    steps:
+      - name: Resolve & verify download URL
+        id: url
+        run: |
+          DL="$REPO_URL/releases/download/$TAG/ssplayer-godot-extension-$API_VERSION.zip"
+          echo "url=$DL" >> "$GITHUB_OUTPUT"
+          echo "Asset zip: $DL"
+          # Release アセットの伝播ラグを考慮して数回リトライ。
+          for i in 1 2 3 4 5; do
+            if curl -sSfIL -o /dev/null "$DL"; then ok=1; break; fi
+            echo "  not ready yet ($i/5)…"; sleep 5
+          done
+          [ "${ok:-}" = 1 ] || { echo "::error::zip が見つかりません: $DL"; exit 1; }
+
+      - name: Dry run (submit=false)
+        if: ${{ !inputs.submit }}
+        run: |
+          echo "submit=false: 提出はスキップ (ドライラン)"
+          echo "  asset_id=$ASSET_ID  version=${TAG#v}  godot=$API_VERSION"
+          echo "  download_url=${{ steps.url.outputs.url }}"
+
+      - name: Submit edit to Asset Library
+        if: ${{ inputs.submit }}
+        env:
+          USERNAME: ${{ secrets.GODOT_ASSETLIB_USERNAME }}
+          PASSWORD: ${{ secrets.GODOT_ASSETLIB_PASSWORD }}
+          DL: ${{ steps.url.outputs.url }}
+        run: |
+          set -euo pipefail
+          [ -n "$ASSET_ID" ] || { echo "::error::vars.GODOT_ASSETLIB_ASSET_ID が未設定"; exit 1; }
+
+          # 1) login → 短命トークンを取得。
+          token=$(curl -sSf -X POST "$ASSETLIB_API/login" \
+            -H 'Content-Type: application/json' \
+            -d "$(jq -n --arg u "$USERNAME" --arg p "$PASSWORD" '{username:$u,password:$p}')" \
+            | jq -er '.token')
+          echo "::add-mask::$token"
+          logout() {
+            curl -sS -X POST "$ASSETLIB_API/logout" -H 'Content-Type: application/json' \
+              -d "$(jq -n --arg t "$token" '{token:$t}')" >/dev/null || true
+          }
+          trap logout EXIT   # 失敗時も必ず logout してトークンを無効化。
+
+          # 2) 編集を提出。edit は変更フィールドのみで足りるため、初回 GUI 登録で
+          #    設定済みの title/description/category_id/cost/icon_url には触れない。
+          payload=$(jq -n \
+            --arg token   "$token" \
+            --arg version "${TAG#v}" \
+            --arg gv      "$API_VERSION" \
+            --arg commit  "$TAG" \
+            --arg dl      "$DL" \
+            --arg browse  "$REPO_URL" \
+            --arg issues  "$REPO_URL/issues" \
+            '{token:$token, version_string:$version, godot_version:$gv,
+              download_provider:"Custom", download_commit:$commit,
+              download_url:$dl, browse_url:$browse, issues_url:$issues}')
+          resp=$(curl -sSf -X POST "$ASSETLIB_API/asset/$ASSET_ID" \
+            -H 'Content-Type: application/json' -d "$payload")
+          echo "提出完了: edit #$(echo "$resp" | jq -er '.id') — モデレーション承認待ち"
