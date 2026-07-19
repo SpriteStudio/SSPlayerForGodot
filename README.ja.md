@@ -4,7 +4,7 @@
 
 **Godot のゲームに、プロフェッショナルな2Dアニメーションを。直感的な使いやすさと、極限のパフォーマンスを両立するプラグイン。**
 
-> **注意:** 本 `develop` ブランチは現在開発中のバージョンです。安定版は [main ブランチ](https://github.com/SpriteStudio/SSPlayerForGodot/tree/main) または [Releases](https://github.com/SpriteStudio/SSPlayerForGodot/releases) から取得してください。本ブランチで扱う API・ワークフローは予告なく変更される可能性があり、いかなる保証もサポートも提供しません（リクエストやバグ報告への返信もできません）。
+> **注意:** 本 `develop` ブランチは現在開発中のバージョンです。安定版は [main ブランチ](https://github.com/cri-middleware/SSPlayerForGodot/tree/main) または [Releases](https://github.com/cri-middleware/SSPlayerForGodot/releases) から取得してください。本ブランチで扱う API・ワークフローは予告なく変更される可能性があり、いかなる保証もサポートも提供しません（リクエストやバグ報告への返信もできません）。
 
 **[OPTPiX SpriteStudio 7](https://www.webtech.co.jp/spritestudio/)** のアニメーション (`.ssab`) を [Godot Engine](https://godotengine.org/) 上で再生するためのハイパフォーマンスな拡張プラグイン（GDExtension / カスタムモジュール）です。Godot の強力な機能と、専用アニメーションツールの表現力を組み合わせることで、リッチな2Dゲーム開発をサポートします。
 
@@ -45,7 +45,7 @@
 ### 1. サンプルで動作確認する
 
 1. **Godot Engine の準備**: [公式サイト](https://godotengine.org/download/) から 4.6 系のエディタをダウンロードします。
-2. **GDExtension の取得**: [Releases](https://github.com/SpriteStudio/SSPlayerForGodot/releases) から最新パッケージをダウンロードし、展開します。
+2. **GDExtension の取得**: [Releases](https://github.com/cri-middleware/SSPlayerForGodot/releases) から最新パッケージをダウンロードし、展開します。
 3. **サンプルの準備**: 取得した `addons` フォルダを、本リポジトリの [examples/Ringo](./examples/Ringo) フォルダ内にコピーします。
 4. **確認**: Godot Engine で [examples/Ringo](./examples/Ringo) プロジェクトを開き、`Ringo.tscn` を開くことですぐにアニメーションの動作を確認できます。
 

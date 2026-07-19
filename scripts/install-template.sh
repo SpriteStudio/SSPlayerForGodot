@@ -16,14 +16,14 @@ ROOTDIR=$(cd "$ROOTDIR" && pwd -P)
 
 pushd "$ROOTDIR" > /dev/null
 
-# 1. 実行OSの判定とベースディレクトリの設定
+# 1. Detect the host OS and choose the base export-templates directory.
 if [ "$(uname)" = "Darwin" ]; then
     TEMPLATES_BASE="$HOME/Library/Application Support/Godot/export_templates"
 else
     TEMPLATES_BASE="$HOME/.local/share/godot/export_templates"
 fi
 
-# 2. Godotのバージョン情報を version.py から取得してディレクトリ名を生成
+# 2. Read the Godot version from version.py to build the templates directory name.
 GODOT_MAJOR=$(grep '^major' godot/version.py | cut -d '=' -f 2 | tr -d ' ')
 GODOT_MINOR=$(grep '^minor' godot/version.py | cut -d '=' -f 2 | tr -d ' ')
 GODOT_PATCH=$(grep '^patch' godot/version.py | cut -d '=' -f 2 | tr -d ' ')

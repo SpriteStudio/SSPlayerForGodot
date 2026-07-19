@@ -1,7 +1,7 @@
 # SpriteStudioPlayer for Godot
 
 本developブランチは現在開発中のバージョンです。  
-安定版は [mainブランチ](https://github.com/SpriteStudio/SSPlayerForGodot/tree/main) または、[Releases](https://github.com/SpriteStudio/SSPlayerForGodot/releases)から取得してください。  
+安定版は [mainブランチ](https://github.com/cri-middleware/SSPlayerForGodot/tree/main) または、[Releases](https://github.com/cri-middleware/SSPlayerForGodot/releases)から取得してください。  
 本developブランチに関してはいかなる保証もサポートも提供しません。リクエストやバグ報告への返信もできません。  
 インターフェースは予告なく変更される可能性があります。
 
@@ -85,12 +85,12 @@ Windows / macOS でのビルドおよび実行を確認しています。
 
 リポジトリの `examples/` フォルダに SDK のテストプロジェクトに基づいたサンプルプロジェクトがあります。
 
-- [Ringo](../../examples/Ringo) — 「りんご」のテスト
-- [allAttributeV7](../../examples/allAttributeV7) — 全属性の機能テスト
-- [allPartsV7](../../examples/allPartsV7) — 全パーツ種の機能テスト
-- [overall](../../examples/overall) — 総合的な機能テスト
-- [overall_gdextension](../../examples/overall_gdextension) — GDExtension 版での総合テスト
-- [ParticleEffect](../../examples/ParticleEffect) — エフェクト機能のテスト
+- [Ringo](https://github.com/cri-middleware/SSPlayerForGodot/tree/main/examples/Ringo) — 「りんご」のテスト
+- [allAttributeV7](https://github.com/cri-middleware/SSPlayerForGodot/tree/main/examples/allAttributeV7) — 全属性の機能テスト
+- [allPartsV7](https://github.com/cri-middleware/SSPlayerForGodot/tree/main/examples/allPartsV7) — 全パーツ種の機能テスト
+- [overall](https://github.com/cri-middleware/SSPlayerForGodot/tree/main/examples/overall) — 総合的な機能テスト
+- [overall_gdextension](https://github.com/cri-middleware/SSPlayerForGodot/tree/main/examples/overall_gdextension) — GDExtension 版での総合テスト
+- [ParticleEffect](https://github.com/cri-middleware/SSPlayerForGodot/tree/main/examples/ParticleEffect) — エフェクト機能のテスト
 
 ## 関連リポジトリ
 

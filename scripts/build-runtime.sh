@@ -82,14 +82,14 @@ if [[ "$IS_HOST_BUILD" == "true" ]]; then
     fi
     SRC_DIR="target/$BUILD_MODE"
 else
-    # クロスコンパイルまたは特殊なビルド
+    # Cross-compilation or special-case per-platform builds.
     case "$PLATFORM" in
         macos)
             ./scripts/release-macos.sh $BUILD_MODE
             SRC_DIR="target/universal-apple-darwin/$BUILD_MODE"
             ;;
         ios)
-            # The SDK now emits a single XCFramework (device + simulator slices).
+            # The SDK emits a single XCFramework (device + simulator slices).
             # Godot links one variant at a time into its per-variant libSSGodot
             # framework, so pick the matching static slice: device (arm64) or the
             # universal simulator slice (arm64 + x86_64, already lipo'd by the SDK).
