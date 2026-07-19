@@ -12,6 +12,9 @@ env:
   LC_ALL: en_US.UTF-8
   PYTHONIOENCODING: utf8
 
+permissions:
+  contents: read
+
 concurrency:
   group: ci-pr-${{ github.actor }}-${{ github.head_ref || github.run_number }}-${{ github.ref }}
   cancel-in-progress: true
@@ -36,7 +39,7 @@ jobs:
           submodules: recursive
 
       - name: clone Godot Cpp repository
-        uses: GuillaumeFalourd/clone-github-repo-action@v2.3
+        uses: GuillaumeFalourd/clone-github-repo-action@19817562c346ff60f9935158dede6c5ece8fd0ac # v2.3
         with:
           depth: 1
           branch: master
@@ -44,10 +47,10 @@ jobs:
           repository: 'godot-cpp'
 
       - name: Setup Rust (Stable)
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4 # stable
 
       - name: Setup Rust Cache
-        uses: Swatinem/rust-cache@v2
+        uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
         with:
           workspaces: "ss_player/SpriteStudio-SDK"
 
