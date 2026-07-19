@@ -1864,8 +1864,8 @@ int SsInternalPlayer::_build_normal(const DrawFrame& f, int p_idx,
         if (blend_idx < 0 || blend_idx > 3) blend_idx = 0;
     }
 
-    // Output PMA flag — parked at 0 for now; wired so the shader path is
-    // ready when the host turns PMA on globally or per texture.
+    // Output premultiplied-alpha flag. Held at 0 (disabled); the shader path
+    // reads this per-vertex so PMA can be enabled globally or per texture.
     const float pma_flag = 0.0f;
 
     for (int j = 0; j < CORNERS_COUNT; j++) {
@@ -2025,12 +2025,6 @@ SsInternalPlayer::PartShaderInfo SsInternalPlayer::_resolve_part_shader_info(con
             psi.map1 = _resolve_map_texture(sh->map1_cellmap_name_hash());
         }
     }
-    // Debug override: when set, force the dispatch through a specific catalog
-    // entry. Useful while verifying the per-part path before authoring .sspj
-    // content that actually exercises a custom shader id.
-    if (_test_shader_id_hash_override != 0) {
-        psi.id_hash = _test_shader_id_hash_override;
-    }
     if (!s_shader_catalog_map.has(psi.id_hash)) {
         psi.id_hash = s_default_shader_id_hash;
     }
@@ -2090,19 +2084,31 @@ void SsInternalPlayer::_emit_partcolor_mesh(RenderingServer* rs, RID ci,
                                             const SsVec2Array& uvs,
                                             const SsFloatArray& custom0,
                                             const RID& texture_rid) {
-    Array arrays;
-    arrays.resize(Mesh::ARRAY_MAX);
-    arrays[Mesh::ARRAY_VERTEX] = verts;
-    arrays[Mesh::ARRAY_TEX_UV] = uvs;
-    arrays[Mesh::ARRAY_COLOR]  = colors;
-    arrays[Mesh::ARRAY_CUSTOM0] = custom0;
-    arrays[Mesh::ARRAY_INDEX]  = indices;
+    // Reuse the member scratch Array instead of allocating one per call.
+    if (_surface_arrays.size() != Mesh::ARRAY_MAX) {
+        _surface_arrays.resize(Mesh::ARRAY_MAX);
+    }
+    _surface_arrays[Mesh::ARRAY_VERTEX]  = verts;
+    _surface_arrays[Mesh::ARRAY_TEX_UV]  = uvs;
+    _surface_arrays[Mesh::ARRAY_COLOR]   = colors;
+    _surface_arrays[Mesh::ARRAY_CUSTOM0] = custom0;
+    _surface_arrays[Mesh::ARRAY_INDEX]   = indices;
     // CUSTOM0 carries 4 floats per vertex (ARRAY_CUSTOM_RGBA_FLOAT).
     const uint64_t flags = (uint64_t)Mesh::ARRAY_CUSTOM_RGBA_FLOAT << Mesh::ARRAY_FORMAT_CUSTOM0_SHIFT;
 
     RID mesh_rid = _acquire_mesh_rid(rs);
-    rs->mesh_add_surface_from_arrays(mesh_rid, RenderingServer::PRIMITIVE_TRIANGLES, arrays, Array(), Dictionary(), flags);
+    rs->mesh_add_surface_from_arrays(mesh_rid, RenderingServer::PRIMITIVE_TRIANGLES, _surface_arrays,
+                                     _surface_empty_blend_shapes, _surface_empty_lods, flags);
     rs->canvas_item_add_mesh(ci, mesh_rid, Transform2D(), Color(1, 1, 1, 1), texture_rid);
+
+    // Drop the CoW references to the caller's scratch buffers so the next
+    // part's writes into them do not trigger a copy-on-write against this
+    // reused Array. mesh_add_surface_from_arrays has already copied the data.
+    _surface_arrays[Mesh::ARRAY_VERTEX]  = Variant();
+    _surface_arrays[Mesh::ARRAY_TEX_UV]  = Variant();
+    _surface_arrays[Mesh::ARRAY_COLOR]   = Variant();
+    _surface_arrays[Mesh::ARRAY_CUSTOM0] = Variant();
+    _surface_arrays[Mesh::ARRAY_INDEX]   = Variant();
 }
 
 RID SsInternalPlayer::_acquire_mesh_rid(RenderingServer* rs) {
@@ -2759,6 +2765,9 @@ void SsInternalPlayer::_fetchAnimation() {
         runtime_res = nullptr;
     }
 
+    // Borrow (do not copy) the resource's buffer to keep loading zero-copy. The
+    // buffer must remain valid and unmodified until runtime_res is destroyed;
+    // every resource change re-creates this borrow via _fetchAnimation.
     runtime_res = ss_resource_create_borrow(_ssabRes->get_data_ptr(), _ssabRes->get_data_size());
     if (runtime_res == nullptr) {
         ERR_PRINT("SSAB Resource Create Failed");
