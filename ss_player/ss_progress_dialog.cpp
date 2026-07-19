@@ -95,7 +95,7 @@ void SSProgressDialog::step(const String &message, int step_value) {
 void SSProgressDialog::_on_cancel_pressed() {
     canceled = true;
     status_label->set_text("Canceling...");
-    cancel_button->set_disabled(true); // 二重押し防止
+    cancel_button->set_disabled(true); // Prevent a second cancel press while canceling.
 }
 
 bool SSProgressDialog::is_canceled() const {

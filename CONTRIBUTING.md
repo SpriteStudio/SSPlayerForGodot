@@ -41,6 +41,11 @@ If you find a bug, please use the provided Issue Templates. Include:
 - Godot Engine 4.x
 - A C++ compiler (GCC, Clang, or MSVC)
 - Python 3 and SCons
+- A Rust toolchain (required to build the `libssruntime` runtime)
+- zsh (the build scripts use a `#!/usr/bin/env zsh` shebang)
+- The `godot-cpp` submodule, cloned via `git submodule update --init --recursive`
+
+For the complete build guide, see [docs/en/setup/build.md](./docs/en/setup/build.md).
 
 ### Build the Plugin
 To compile the Godot Extension, you must first build the Rust runtime from the SDK, and then compile the C++ extension using the provided build scripts:
@@ -85,10 +90,10 @@ By contributing to this project, you agree that your contributions will be licen
 SSPlayerForGodot にご関心をお寄せいただき、ありがとうございます！ バグ報告、機能提案、ドキュメントの改善、コードの提供など、あらゆる形での貢献を歓迎します。
 
 ## 目次
-- [行動規範](#行動規範-1)
-- [貢献する方法](#貢献する方法-1)
-- [開発環境のセットアップ](#開発環境のセットアップ-1)
-- [コーディング規約](#コーディング規約-1)
+- [行動規範](#行動規範)
+- [貢献する方法](#貢献する方法)
+- [開発環境のセットアップ](#開発環境のセットアップ)
+- [コーディング規約](#コーディング規約)
 
 ## 行動規範
 [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md) を参照してください。
@@ -123,6 +128,11 @@ Godot Engineとのネイティブな統合と高いパフォーマンスを維�
 - Godot Engine 4.x
 - C++ コンパイラ (GCC, Clang, MSVC のいずれか)
 - Python 3 および SCons
+- Rust ツールチェイン (`libssruntime` ランタイムのビルドに必要です)
+- zsh (ビルドスクリプトは `#!/usr/bin/env zsh` を使用しています)
+- `godot-cpp` サブモジュール (`git submodule update --init --recursive` で取得してください)
+
+完全なビルド手順については、[docs/ja/setup/build.md](./docs/ja/setup/build.md) を参照してください。
 
 ### ビルド方法
 提供されているスクリプトを使用して、まずSDKからRustランタイムをビルドし、次にGDExtensionをコンパイルします。

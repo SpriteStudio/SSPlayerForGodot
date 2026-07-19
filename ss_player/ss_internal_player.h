@@ -254,11 +254,6 @@ private:
     // composite. Shaders themselves are always shareable (the per-part
     // distinction lives on the material, not the underlying shader code).
     HashMap<uint64_t, Ref<Shader>> _partcolor_shaders;
-    // Test-only override: when non-zero, parts that would normally dispatch
-    // through the Default catalog entry pass this id_hash instead. Used to
-    // exercise the dispatch path before the FFI exposes real SS Shader
-    // attribute data. Remove once the FFI wiring lands (task: dispatch FFI).
-    uint32_t _test_shader_id_hash_override = 0;
 
     // Per-part ShaderMaterial pool for variants whose catalog entry has
     // `is_per_part=true`. Godot binds material state per-material (not
@@ -312,6 +307,14 @@ private:
     // instantiating Ref<ArrayMesh> resources. Allocated RIDs are freed in the destructor.
     Vector<RID> _mesh_pool;
     int _mesh_pool_in_use = 0;
+    // Reused scratch for _emit_partcolor_mesh so the per-part/per-frame draw
+    // path does not heap-allocate a fresh surface Array (plus the empty
+    // blend-shape / LOD arguments) on every call. The element slots are cleared
+    // after each surface build so they never pin the caller's scratch buffers
+    // via copy-on-write.
+    Array _surface_arrays;
+    Array _surface_empty_blend_shapes;
+    Dictionary _surface_empty_lods;
     // Per-batch canvas_item pool. Index == draw_batches[i] order. Recyclable
     // across frames; pool grows monotonically to peak batch count, unused
     // entries are hidden rather than freed.
@@ -401,7 +404,7 @@ private:
 
         inline const float* get_world_matrix(int p_idx) const {
             constexpr int FLOATS_PER_MATRIX = 16;
-            if (world_matrices && (uintptr_t)p_idx * FLOATS_PER_MATRIX < world_matrices_len) {
+            if (world_matrices && (uintptr_t)p_idx * FLOATS_PER_MATRIX + FLOATS_PER_MATRIX <= world_matrices_len) {
                 return world_matrices + (p_idx * FLOATS_PER_MATRIX);
             }
             return nullptr;
@@ -742,9 +745,7 @@ private:
     // Read the part's SS Shader attribute (if any) out of the current
     // frame's PartAttributeShader vector and pair it with the catalog entry.
     // When no attribute is present, `id_hash` defaults to "Default" and
-    // `is_per_part` resolves to false (the shared batch path). The
-    // `_test_shader_id_hash_override` field, when non-zero, replaces the
-    // resolved id_hash for debug routing.
+    // `is_per_part` resolves to false (the shared batch path).
     PartShaderInfo _resolve_part_shader_info(const DrawFrame& f, const ss::runtime::PartState* part);
     // Compute the part's cell-rectangle UV bounds for the ss_cell_rect
     // uniform. Returns (left_u, top_v, right_u, bottom_v). Inputs come from

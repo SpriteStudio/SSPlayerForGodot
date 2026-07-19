@@ -1,7 +1,7 @@
 # SpriteStudioPlayer for Godot
 
 This `develop` branch is a work-in-progress version.  
-The stable version can be obtained from the [main branch](https://github.com/SpriteStudio/SSPlayerForGodot/tree/main) or from [Releases](https://github.com/SpriteStudio/SSPlayerForGodot/releases).  
+The stable version can be obtained from the [main branch](https://github.com/cri-middleware/SSPlayerForGodot/tree/main) or from [Releases](https://github.com/cri-middleware/SSPlayerForGodot/releases).  
 No warranty or support is provided for this branch, and we cannot respond to feature requests or bug reports.  
 Interfaces may change without notice.  
 
@@ -85,12 +85,12 @@ Build and execution have been verified on Windows / macOS.
 
 Sample projects based on SDK test projects are available under the `examples/` folder in the repository.
 
-- [Ringo](../../examples/Ringo) — Test for Ringo
-- [allAttributeV7](../../examples/allAttributeV7) — Functional test for all attributes
-- [allPartsV7](../../examples/allPartsV7) — Functional test for all part types
-- [overall](../../examples/overall) — Comprehensive functional test
-- [overall_gdextension](../../examples/overall_gdextension) — Comprehensive test for GDExtension
-- [ParticleEffect](../../examples/ParticleEffect) — Test for effect features
+- [Ringo](https://github.com/cri-middleware/SSPlayerForGodot/tree/main/examples/Ringo) — Test for Ringo
+- [allAttributeV7](https://github.com/cri-middleware/SSPlayerForGodot/tree/main/examples/allAttributeV7) — Functional test for all attributes
+- [allPartsV7](https://github.com/cri-middleware/SSPlayerForGodot/tree/main/examples/allPartsV7) — Functional test for all part types
+- [overall](https://github.com/cri-middleware/SSPlayerForGodot/tree/main/examples/overall) — Comprehensive functional test
+- [overall_gdextension](https://github.com/cri-middleware/SSPlayerForGodot/tree/main/examples/overall_gdextension) — Comprehensive test for GDExtension
+- [ParticleEffect](https://github.com/cri-middleware/SSPlayerForGodot/tree/main/examples/ParticleEffect) — Test for effect features
 
 ## Related Repositories
 

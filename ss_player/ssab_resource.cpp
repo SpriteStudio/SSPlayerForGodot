@@ -39,6 +39,19 @@ bool SSABResource::is_valid() const {
     return false;
   }
 
+  // The runtime indexes parts() positionally over each animation's
+  // parts_animation_data; parsing unchecked under panic=abort, a list longer
+  // than parts() aborts the process at resource-create time. Reject that here
+  // (a shorter list never indexes out of range, so only '>').
+  const uint32_t parts_size = ssab->parts()->size();
+  const auto *animations = ssab->animations();
+  for (uint32_t a = 0; a < animations->size(); a++) {
+    const auto *pad = animations->Get(a)->parts_animation_data();
+    if (pad && pad->size() > parts_size) {
+      return false;
+    }
+  }
+
   return true;
 }
 
@@ -319,7 +332,6 @@ Error SSABResource::copy_from(const Ref<Resource> &p_resource) {
   const Ref<SSABResource> &ssabFile =
       static_cast<const Ref<SSABResource> &>(p_resource);
   this->binary = ssabFile->binary;
-  emit_signal(SNAME("ssab_file_changed"));
   return OK;
 }
 #endif

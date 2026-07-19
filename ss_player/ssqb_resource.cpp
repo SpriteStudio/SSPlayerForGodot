@@ -27,9 +27,15 @@ Error SSQBResource::load_from_file(const String &path) {
     return error;
 #endif
 
-  return error;
+  // .ssqb is untrusted input; reject a structurally-invalid buffer here before
+  // any accessor follows its offsets (see get_ss_sequence_binary).
+  ::flatbuffers::Verifier verifier(binary.ptr(), binary.size());
+  if (!ss::format::VerifySsSequenceBinaryBuffer(verifier)) {
+    binary.clear();
+    return ERR_INVALID_DATA;
+  }
 
-  // return ERR_FILE_UNRECOGNIZED;
+  return error;
 }
 
 Error SSQBResource::save_to_file(const String &path) {
@@ -52,6 +58,8 @@ const ss::format::SsSequenceBinary *SSQBResource::get_ss_sequence_binary() {
   if (binary.size() == 0) {
     return nullptr;
   }
+  // binary is validated at load time (load_from_file runs the FlatBuffers
+  // Verifier and clears the buffer on failure), so this cast is safe.
   return ss::format::GetSsSequenceBinary(this->binary.ptr());
 }
 
@@ -65,7 +73,6 @@ Error SSQBResource::copy_from(const Ref<Resource> &p_resource) {
   const Ref<SSQBResource> &ssqbFile =
       static_cast<const Ref<SSQBResource> &>(p_resource);
   this->binary = ssqbFile->binary;
-  emit_signal(SNAME("ssqb_file_changed"));
   return OK;
 }
 #endif

@@ -10,7 +10,7 @@
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
   #include <godot_cpp/core/version.hpp>
   #include <godot_cpp/variant/string_name.hpp>
-  #define SNAME(x) godot::StringName(x)
+  #define SNAME(x) ([]() -> const godot::StringName & { static const godot::StringName *_ss_sname = new godot::StringName(x); return *_ss_sname; }())
   #define EMPTY(x) ((x).is_empty())
   #define VARIANT_FLOAT Variant::FLOAT
   #define NOTIFY_PROPERTY_LIST_CHANGED() notify_property_list_changed()

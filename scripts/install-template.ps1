@@ -11,10 +11,10 @@ $RootDir = Resolve-Path "$BaseDir\.." | Select-Object -ExpandProperty Path
 
 Push-Location $RootDir
 
-# 1. 実行OSの判定とベースディレクトリの設定 (Windows)
+# 1. Set the base export-templates directory (Windows / %APPDATA%).
 $TemplatesBase = "$env:APPDATA\Godot\export_templates"
 
-# 2. Godotのバージョン情報を version.py から取得してディレクトリ名を生成
+# 2. Read the Godot version from version.py to build the templates directory name.
 $VersionPy = Get-Content "godot\version.py"
 $GodotMajor = ($VersionPy | Select-String '^major').Line.Split('=')[1].Trim(" `'""")
 $GodotMinor = ($VersionPy | Select-String '^minor').Line.Split('=')[1].Trim(" `'""")

@@ -30,6 +30,11 @@ env:
   KEYCHAIN_PATH: app-signing.keychain-db
   SCONS_CACHE: ~/.scons_cache
 
+# Least-privilege default token; the package job below elevates to
+# contents: write only to publish the GitHub Release.
+permissions:
+  contents: read
+
 concurrency:
   group: ci-scons-${{ github.actor }}-${{ github.head_ref || github.run_number }}-${{ github.ref }}
   cancel-in-progress: true
@@ -76,7 +81,7 @@ jobs:
         with:
           submodules: recursive
       - name: clone Godot Cpp repository
-        uses: GuillaumeFalourd/clone-github-repo-action@v2.3
+        uses: GuillaumeFalourd/clone-github-repo-action@19817562c346ff60f9935158dede6c5ece8fd0ac # v2.3
         with:
           depth: 1
           branch: master
@@ -206,8 +211,20 @@ jobs:
         run: |
           ./scripts/release-gdextension-web.sh api_version=${{ env.GODOT_VERSION }}
 
+      # Stage the runtime third-party license files (produced by the SDK
+      # download step) into the uploaded artifact so the packaging job can
+      # bundle them into the release zip, as required by the licenses of the
+      # statically-linked Rust crates. shell: bash so the Windows runner works.
+      - name: Stage third-party license files
+        shell: bash
+        run: |
+          mkdir -p bin/licenses
+          cp ss_player/runtime/THIRD-PARTY-LICENSES.ssruntime.md bin/licenses/
+          cp ss_player/runtime/THIRD-PARTY-LICENSES.ssconverter.md bin/licenses/
+          cp ss_player/runtime/LICENSE.md bin/licenses/runtime-LICENSE.md
+
       - id: commit
-        uses: pr-mpt/actions-commit-hash@v4
+        uses: pr-mpt/actions-commit-hash@9e673021a12f5b5506d4da77ffbb8446e8a37b4a # v4
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7
@@ -219,6 +236,9 @@ jobs:
   package:
     needs: gdextension
     runs-on: ubuntu-latest
+    # Needs write access to publish the GitHub Release (softprops/action-gh-release).
+    permissions:
+      contents: write
 
     steps:
       - uses: actions/checkout@v7
@@ -230,7 +250,7 @@ jobs:
           path: artifacts
 
       - id: commit
-        uses: pr-mpt/actions-commit-hash@v4
+        uses: pr-mpt/actions-commit-hash@9e673021a12f5b5506d4da77ffbb8446e8a37b4a # v4
 
       - name: Zip all artifacts
         run: |
@@ -239,6 +259,17 @@ jobs:
           mkdir -p addons/spritestudio/bin
           cp ../misc/spritestudio.gdextension addons/spritestudio/
           cp ../LICENSE.md addons/spritestudio/
+
+          # Bundle third-party license notices next to the statically-linked
+          # native binaries: FlatBuffers (Apache-2.0), godot-cpp (MIT), and the
+          # Rust runtime crates. The runtime crate licenses were staged into
+          # each platform artifact's licenses/ dir and are identical across
+          # platforms, so copy them from the linux artifact.
+          mkdir -p addons/spritestudio/licenses
+          cp ../LICENSE.md addons/spritestudio/licenses/
+          cp ../THIRD_PARTY_NOTICES.md addons/spritestudio/licenses/
+          cp ../licenses/Apache-2.0.txt addons/spritestudio/licenses/
+          cp extension-${{ env.GODOT_VERSION }}-linux-${{ steps.commit.outputs.short }}/licenses/* addons/spritestudio/licenses/
 
           mv extension-${{ env.GODOT_VERSION }}-android-${{ steps.commit.outputs.short }}/android addons/spritestudio/bin/
           mv extension-${{ env.GODOT_VERSION }}-ios-${{ steps.commit.outputs.short }}/ios addons/spritestudio/bin/
@@ -270,7 +301,7 @@ jobs:
       # upload_release=true を付けた明示的な dispatch のみ。v* タグ上に限る。
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/v') && inputs.upload_release
-        uses: softprops/action-gh-release@v3
+        uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3
         with:
           files: |
             output/ssplayer-godot-extension-${{ env.GODOT_VERSION }}.zip

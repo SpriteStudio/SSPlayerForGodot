@@ -22,13 +22,13 @@ runs:
 
     - name: Setup Android dependencies
       if: inputs.platform == 'android'
-      uses: nttld/setup-ndk@v1
+      uses: nttld/setup-ndk@ed92fe6cadad69be94a966a7ee3271275e62f779 # v1
       with:
         ndk-version: r23c
         link-to-sdk: true
 
     - name: Setup Web dependencies
       if: inputs.platform == 'web'
-      uses: mymindstorm/setup-emsdk@v14
+      uses: mymindstorm/setup-emsdk@6ab9eb1bda2574c4ddb79809fc9247783eaf9021 # v14
       with:
         no-cache: true

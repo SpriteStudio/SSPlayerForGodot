@@ -1,5 +1,5 @@
 extends SpriteStudioPlayer2D
-## Override Layer API (Phase 2) demo — runs on the Ringo sample.
+## Override Layer API demo — runs on the Ringo sample.
 ##
 ## Open this project and press Play. The Ringo animation keeps playing while the
 ## demo cycles through the three per-part runtime overrides and shows the current

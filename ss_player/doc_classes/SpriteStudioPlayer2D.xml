@@ -21,7 +21,7 @@
 		<method name="pause">
 			<return type="void" />
 			<description>
-				Pauses playback, keeping the current frame.
+				Toggles the paused state, keeping the current frame: calling [method pause] again while paused resumes playback. A paused animation is still considered playing ([method is_playing] returns [code]true[/code]); use [method is_pausing] to detect the paused state.
 			</description>
 		</method>
 		<method name="stop">
@@ -33,7 +33,7 @@
 		<method name="is_playing" qualifiers="const">
 			<return type="bool" />
 			<description>
-				Returns [code]true[/code] while the animation is playing.
+				Returns [code]true[/code] while the animation is playing, [b]including while it is paused[/b]. Use [method is_pausing] to distinguish a paused animation.
 			</description>
 		</method>
 		<method name="is_pausing" qualifiers="const">

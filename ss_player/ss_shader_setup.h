@@ -43,8 +43,8 @@
 // `ss_output_color()` are I/O extension points: the former wraps the input
 // sampler call (so future variants can fold inverse-PMA or other input-side
 // conversions there), and the latter wraps the output stage (currently
-// optional premultiplied-alpha conversion; future linear/HDR conversions
-// will land here as well).
+// optional premultiplied-alpha conversion; linear/HDR conversions would
+// also go here).
 const char* SHADER_HEADER = "shader_type canvas_item;\n";
 
 const char* LIBRARY_VS =
@@ -61,14 +61,6 @@ const char* DEFAULT_VS =
 
 const char* DEFAULT_FS =
 #include "shaders/default.fs"
-;
-
-// Stub fragment shader for per-part material dispatch verification. Inverts
-// the red channel of the sampled texture so the dispatch path is visually
-// distinguishable from Default. Kept around as a known-good per-part path
-// regression check while more SS6-ported variants land.
-const char* TESTSTUB_FS =
-#include "shaders/teststub.fs"
 ;
 
 // SS6 SDK port: "ss-sepia". Sepia / grayscale tone with a single signed
@@ -184,7 +176,6 @@ struct EmbeddedShader {
 
 static const EmbeddedShader EMBEDDED_SHADERS[] = {
     { "Default",  DEFAULT_FS,  false },
-    { "TestStub", TESTSTUB_FS, true  },
     { "ss-sepia",   SS_SEPIA_FS,   true  },
     { "ss-outline", SS_OUTLINE_FS, true  },
     { "ss-bmask",   SS_BMASK_FS,   true  },
