@@ -101,3 +101,85 @@ This feature allows you to build an efficient avatar system without needing to p
 > [!TIP]
 > ![Before outfit change](../../assets/7-cellmap_override_before.png)
 > ![After outfit change](../../assets/7-cellmap_override_after.png)
+
+---
+
+## Part Overrides (Color / Cell / Visibility)
+
+Per-part runtime overrides let a script say "make this part this color / this cell / hidden **now**". An override wins over both the keyframe and any animation blending, so it does not have to fight the animation.
+
+```gdscript
+@onready var ss_player = $SpriteStudioPlayer2D
+
+func _ready():
+    # Tint a part red (multiply). Applies to normal (image) parts.
+    ss_player.set_part_color_override("body", Color.RED, 1)  # 1 = Mul
+
+    # Make a part draw a different cell (cell map name is written without ".ssce").
+    ss_player.set_part_cell_override("body", "Ringo", "effect3")
+
+    # Force-hide a part, cascading to its descendants.
+    ss_player.set_part_visibility_override("body", true, true)
+
+    # Revert
+    ss_player.clear_part_color_override("body")
+    ss_player.clear_all_part_overrides()
+```
+
+| Method | Description |
+|---|---|
+| `get_part_index(part_name)` | Part index, or `-1` if the part is not in the asset |
+| `set_part_color_override(part_name, color, blend_op = 0, priority = 1)` | Color override (single color) |
+| `set_part_cell_override(part_name, cellmap_name, cell_name, priority = 1)` | Draw a different cell |
+| `set_part_visibility_override(part_name, force_hidden, cascade = false)` | Force-hide (`force_hidden = false` reverts to the animation) |
+| `clear_part_color_override` / `clear_part_cell_override` / `clear_part_visibility_override` | Clear one override on one part |
+| `clear_all_part_overrides()` | Clear every override on the player |
+| `*_by_index(part_index, ...)` | Part-index variant of each method above (skips the name lookup) |
+
+Every method returns `false` when the part is unknown or the runtime rejects the call.
+
+The cell map / cell names you can pass to a cell override are enumerated from the resource:
+
+```gdscript
+var ssab := ss_player.get_ssab_resource()
+print(ssab.get_cellmap_names())        # -> ["Ringo", ...]
+print(ssab.get_cell_names("Ringo"))    # -> ["effect3", ...]
+```
+
+> **On choosing between a texture swap and a cell override**: `set_cellmap_texture()` in the previous section replaces a **whole cell map (texture)** at once, affecting every part that uses it. This feature instead replaces the cell that a **single part** draws. Pick whichever matches your intent.
+
+> **On using part indices**: Part indices are stable within one asset (the same `.ssab`), so if you set overrides frequently, resolve the name once with `get_part_index()` and reuse that index with the `*_by_index()` variants.
+
+### Blend operation (`blend_op`)
+
+The `blend_op` of `set_part_color_override()` offers the same four operations as the keyframed Part Color.
+
+| Value | Blend operation |
+|---|---|
+| `0` | Mix (default) |
+| `1` | Mul (multiply) |
+| `2` | Add |
+| `3` | Sub (subtract) |
+
+An out-of-range value fails the call and returns `false`.
+
+### Priority mode (`priority`)
+
+Color and cell overrides conflict with the animation, so they take a `priority` (visibility does not — it is a plain force-hide flag, and any new animation clears it):
+
+| Value | Priority mode | Behavior |
+|---|---|---|
+| `0` | OverwriteOnNextKeyframe | The override applies until the animation data updates that attribute |
+| `1` | HoldUntilNextAnimation (default) | The override wins for the current animation and is cleared when a new animation is set up |
+| `2` | Permanent | The override applies for as long as the same animation data (`.ssab`) is playing, surviving animation changes |
+
+### Notes
+
+- **Color** applies to normal parts, **cell** to normal and mask parts; other part types silently ignore the override (the call still returns `true`).
+- Colors are interpreted in the same 8-bit sRGB space as the authored Part Color, and alpha is pre-multiplied by the runtime — pass the color as authored, without converting it yourself.
+- A cell override is resolved when you set it, so an unknown cell map / cell name fails immediately (returns `false`).
+- Overrides live on the runtime, which owns their lifecycle. Do not re-apply them after an animation change; choose the priority mode that expresses what you want instead.
+- Assigning a different `.ssab` resource clears every override, because part identity is lost.
+- Overrides do not reach parts **inside** an instance part (the child animation runs as a separate player). Force-hiding the instance part itself does stop its contents from being drawn.
+
+> **On when an override is not reflected in the drawing**: While playback is stopped or paused — or on any frame that does not advance — the drawing is not rebuilt, so setting or clearing an override will not appear on screen. Call `set_frame(get_frame())` to force a redraw when you need it reflected immediately.

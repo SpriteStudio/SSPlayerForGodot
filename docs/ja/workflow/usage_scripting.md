@@ -101,3 +101,85 @@ func change_costume():
 > [!TIP]
 > ![着せ替え前](../../assets/7-cellmap_override_before.png)
 > ![着せ替え後](../../assets/7-cellmap_override_after.png)
+
+---
+
+## パーツオーバーライド（パーツカラー / セル / 表示指定）
+
+パーツ単位のランタイムオーバーライドは、「このパーツを**今**この色に / このセルに / 非表示に」とスクリプトから指示する機能です。オーバーライドはキーフレームやアニメーションのブレンドよりも優先されるので、アニメーションと取り合いになりません。
+
+```gdscript
+@onready var ss_player = $SpriteStudioPlayer2D
+
+func _ready():
+    # パーツを赤く着色（乗算）。通常（画像）パーツに適用されます。
+    ss_player.set_part_color_override("body", Color.RED, 1)  # 1 = Mul
+
+    # 別のセルを描画させる（セルマップ名は ".ssce" を付けずに指定）。
+    ss_player.set_part_cell_override("body", "Ringo", "effect3")
+
+    # パーツを強制非表示にする（子孫にもカスケード）。
+    ss_player.set_part_visibility_override("body", true, true)
+
+    # 解除
+    ss_player.clear_part_color_override("body")
+    ss_player.clear_all_part_overrides()
+```
+
+| メソッド | 説明 |
+|---|---|
+| `get_part_index(part_name)` | パーツインデックス。アセットに無ければ `-1` |
+| `set_part_color_override(part_name, color, blend_op = 0, priority = 1)` | パーツカラーオーバーライド（単色） |
+| `set_part_cell_override(part_name, cellmap_name, cell_name, priority = 1)` | 別のセルで描画する |
+| `set_part_visibility_override(part_name, force_hidden, cascade = false)` | 強制非表示（`force_hidden = false` でアニメーションに戻す） |
+| `clear_part_color_override` / `clear_part_cell_override` / `clear_part_visibility_override` | 1 パーツの 1 オーバーライドを解除 |
+| `clear_all_part_overrides()` | そのプレーヤの全オーバーライドを解除 |
+| `*_by_index(part_index, ...)` | 上記各メソッドのパーツインデックス指定版（パーツ名の解決を省略） |
+
+各メソッドは、パーツが不明な場合やランタイムが受け付けなかった場合に `false` を返します。
+
+セルオーバーライドに指定できるセルマップ名 / セル名は、リソース側から列挙できます。
+
+```gdscript
+var ssab := ss_player.get_ssab_resource()
+print(ssab.get_cellmap_names())        # → ["Ringo", ...]
+print(ssab.get_cell_names("Ringo"))    # → ["effect3", ...]
+```
+
+> **テクスチャとセルの差し替えの使い分けについて**: 前節の `set_cellmap_texture()` は**セルマップ（テクスチャ）まるごと**の差し替えで、そのセルマップを使う全パーツにまとめて効きます。こちらは**パーツ 1 つ単位**で、描画するセルそのものを差し替える機能です。目的に応じて使い分けてください。
+
+> **パーツインデックスの使い方について**: パーツインデックスは同一アセット（同じ `.ssab`）内では安定しているので、頻繁にオーバーライドするなら `get_part_index()` で一度パーツ名をパーツインデックスに解決して、`*_by_index()` にそのインデックスを使い回すことを推奨します。
+
+### 合成モード（blend_op）
+
+`set_part_color_override()` の `blend_op` は、キーフレームのパーツカラーと同じ 4 種です。
+
+| 値 | 合成モード |
+|---|---|
+| `0` | Mix（既定） |
+| `1` | Mul（乗算） |
+| `2` | Add（加算） |
+| `3` | Sub（減算） |
+
+範囲外の値を渡した場合は設定に失敗し、`false` を返します。
+
+### 優先モード（priority）
+
+パーツカラーとセルのオーバーライドはアニメーションと競合するため、`priority` を取ります（表示指定にはありません。単なる強制非表示フラグで、アニメーションを設定し直すと必ずクリアされます）。
+
+| 値 | 優先モード | 挙動 |
+|---|---|---|
+| `0` | OverwriteOnNextKeyframe | アニメーションデータが当該アトリビュートを更新するまで、オーバーライドが適用される |
+| `1` | HoldUntilNextAnimation（既定） | 現在のアニメーション中は勝ち続け、新しいアニメーションを設定するとオーバーライドが解除される |
+| `2` | Permanent | 同じアニメーションデータ（`.ssab`）である間、オーバーライドが適用される（アニメーション変更をまたいでも持続） |
+
+### 注意点
+
+- **カラー**は通常パーツ、**セル**は通常パーツとマスクパーツに適用されます。それ以外の種別のパーツでは黙って無視されます（呼び出し自体は `true` を返します）。
+- 色はオーサリングされた Part Color と同じ 8bit sRGB 空間として解釈され、アルファはランタイム側で pre-multiply されます。自前で変換せず、オーサリングどおりの色を渡してください。
+- セルオーバーライドは設定時に解決されるため、存在しないセルマップ名 / セル名はその場で失敗します（`false` を返します）。
+- オーバーライドはランタイムが保持し、そのライフサイクルもランタイムが管理します。アニメーション変更後に再適用する必要はありません。意図に合った優先モードを選んでください。
+- 別の `.ssab` リソースを割り当てると、パーツの同一性が失われるため全オーバーライドが解除されます。
+- インスタンスパーツ**配下**のパーツには届きません（子アニメーションは別のプレーヤとして動作するためです）。インスタンスパーツ自体を強制非表示にした場合は、その配下もまとめて描画されなくなります。
+
+> **オーバーライドの設定が描画に反映されないタイミングについて**: アニメーション停止 / 一時停止中や、フレームが進まない状況では描画が更新されないため、オーバーライドの設定・解除が画面に反映されません。その場で反映させたい場合は `set_frame(get_frame())` を呼んで再描画させてください。
