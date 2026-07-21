@@ -53,6 +53,44 @@ func _ready() -> void:
 | `style` | `0` | 通常 / 片道 (Normal) |
 | `style` | `1` | 往復再生 (PingPong) |
 
+## パーツの参照
+
+* `get_part_names() -> PackedStringArray`: 現在のアニメーションに含まれる全パーツ名。
+* `get_part_index(part_name: String) -> int`: パーツ名をパーツインデックスへ解決します。存在しない場合は `-1`。
+* `get_part_transform(part_name: String) -> Transform2D`: 現在のフレームでのパーツのローカル `Transform2D`。パーツが不明な場合は単位行列を返します。
+* `is_part_hidden(part_name: String) -> bool`: 現在のフレームでそのパーツが非表示かどうか。
+
+## パーツオーバーライド
+
+パーツ単位で、カラー / セル / 表示指定をキーフレームより優先して上書きします。各メソッドは成功時に `true`、パーツが不明な場合やランタイムが受け付けなかった場合に `false` を返します。詳細と注意点は [スクリプト制御とイベント → パーツオーバーライド](../workflow/usage_scripting.md) を参照してください。
+
+* `set_part_color_override(part_name: String, color: Color, blend_op: int = 0, priority: int = 1) -> bool`
+* `set_part_cell_override(part_name: String, cellmap_name: String, cell_name: String, priority: int = 1) -> bool`
+* `set_part_visibility_override(part_name: String, force_hidden: bool, cascade: bool = false) -> bool`
+* `clear_part_color_override(part_name: String) -> bool` / `clear_part_cell_override(part_name: String) -> bool` / `clear_part_visibility_override(part_name: String) -> bool`
+* `clear_all_part_overrides() -> bool`
+* 各メソッドには、パーツ名の解決を省略できるインデックス指定版 `*_by_index(part_index: int, ...)` があります（インデックスは `get_part_index()` で取得）。
+
+### `blend_op` の値
+
+| 値 | 合成モード |
+| --- | --- |
+| `0` | Mix（既定） |
+| `1` | Mul（乗算） |
+| `2` | Add（加算） |
+| `3` | Sub（減算） |
+
+### `priority` の値
+
+| 値 | 優先モード | 意味 |
+| --- | --- | --- |
+| `0` | OverwriteOnNextKeyframe | アニメーションが当該アトリビュートを更新するまで適用 |
+| `1` | HoldUntilNextAnimation（既定） | 現在のアニメーション中は適用され、アニメーション変更で解除 |
+| `2` | Permanent | 同じ `.ssab` を再生している間は適用（アニメーション変更をまたいで持続） |
+
+> [!NOTE]
+> 表示指定（`set_part_visibility_override`）に `priority` はありません。常にキーフレームに勝ち、アニメーションを設定し直すと必ずクリアされます。
+
 ## シグナル
 
 | シグナル | 引数 | 発行タイミング |

@@ -53,6 +53,44 @@ func _ready() -> void:
 | `style` | `0` | Normal / One-way |
 | `style` | `1` | PingPong (Round-trip) |
 
+## Part queries
+
+* `get_part_names() -> PackedStringArray`: Every part name in the current animation.
+* `get_part_index(part_name: String) -> int`: Resolves a part name to its part index, or `-1` if it does not exist.
+* `get_part_transform(part_name: String) -> Transform2D`: The part's local `Transform2D` on the current frame. Returns the identity when the part is unknown.
+* `is_part_hidden(part_name: String) -> bool`: Whether the part is hidden on the current frame.
+
+## Part overrides
+
+Override a single part's color / cell / visibility so that it wins over the keyframes. Every method returns `true` on success, or `false` when the part is unknown or the runtime rejects the call. See [Scripting and Event-Driven Control → Part Overrides](../workflow/usage_scripting.md) for the details and caveats.
+
+* `set_part_color_override(part_name: String, color: Color, blend_op: int = 0, priority: int = 1) -> bool`
+* `set_part_cell_override(part_name: String, cellmap_name: String, cell_name: String, priority: int = 1) -> bool`
+* `set_part_visibility_override(part_name: String, force_hidden: bool, cascade: bool = false) -> bool`
+* `clear_part_color_override(part_name: String) -> bool` / `clear_part_cell_override(part_name: String) -> bool` / `clear_part_visibility_override(part_name: String) -> bool`
+* `clear_all_part_overrides() -> bool`
+* Each method has an index-based variant `*_by_index(part_index: int, ...)` that skips the name lookup (get the index from `get_part_index()`).
+
+### Values for `blend_op`
+
+| Value | Blend operation |
+| --- | --- |
+| `0` | Mix (default) |
+| `1` | Mul (multiply) |
+| `2` | Add |
+| `3` | Sub (subtract) |
+
+### Values for `priority`
+
+| Value | Priority mode | Meaning |
+| --- | --- | --- |
+| `0` | OverwriteOnNextKeyframe | Applies until the animation updates that attribute |
+| `1` | HoldUntilNextAnimation (default) | Applies for the current animation; cleared when a new animation is set up |
+| `2` | Permanent | Applies for as long as the same `.ssab` is playing, surviving animation changes |
+
+> [!NOTE]
+> `set_part_visibility_override` has no `priority`. It always wins over the keyframes and is always cleared when a new animation is set up.
+
 ## Signals
 
 | Signal | Arguments | Emitted When |
