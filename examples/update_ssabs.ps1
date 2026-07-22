@@ -12,7 +12,7 @@ $CONVERTER = Join-Path $SDK_DIR "target/debug/ssconverter-cli.exe"
 Pop-Location
 
 # List of tests to update SSABs
-$TESTS = @("allAttributeV7", "allPartsV7", "overall", "ParticleEffect", "Ringo")
+$TESTS = @("overall", "Ringo")
 
 foreach ($TEST in $TESTS) {
     $SSPJ_PATH = Join-Path $SDK_TESTS_DIR "$TEST/$TEST.sspj"
@@ -31,12 +31,17 @@ foreach ($TEST in $TESTS) {
         & $CONVERTER "$SSPJ_PATH" -o "$GD_OUTPUT_DIR"
     }
 
-    # Ringo is also converted into the Override_Ringo demo project
+    # Ringo is also converted into the Override_Ringo and Scripting demo projects
     if ($TEST -eq "Ringo") {
         $OR_OUTPUT_DIR = Join-Path $EXAMPLES_DIR "Override_Ringo/ssab_generated/Ringo"
         Write-Host "Updating SSAB for $TEST in $OR_OUTPUT_DIR..."
         if (!(Test-Path $OR_OUTPUT_DIR)) { New-Item -ItemType Directory -Path $OR_OUTPUT_DIR }
         & $CONVERTER "$SSPJ_PATH" -o "$OR_OUTPUT_DIR"
+
+        $SCR_OUTPUT_DIR = Join-Path $EXAMPLES_DIR "Scripting/ssab_generated/Ringo"
+        Write-Host "Updating SSAB for $TEST in $SCR_OUTPUT_DIR..."
+        if (!(Test-Path $SCR_OUTPUT_DIR)) { New-Item -ItemType Directory -Path $SCR_OUTPUT_DIR }
+        & $CONVERTER "$SSPJ_PATH" -o "$SCR_OUTPUT_DIR"
     }
 }
 Write-Host "Done!"

@@ -1,19 +1,20 @@
-[gd_scene load_steps=3 format=3 uid="uid://dxr71lkltwqb6"]
+[gd_scene format=3 uid="uid://dxr71lkltwqb6"]
 
-[ext_resource type="SSABResource" uid="uid://cmjtnhtns0pal" path="res://ssab_generated/Ringo/Ringo.ssab" id="1_w6qk1"]
-[ext_resource type="Script" path="res://Main.gd" id="2_script"]
+[ext_resource type="SSABResource" uid="uid://8gkvbx11moo7" path="res://ssab_generated/Ringo/Ringo.ssab" id="1_w6qk1"]
+[ext_resource type="Script" uid="uid://b3cq851ps63hy" path="res://Main.gd" id="2_script"]
 
-[node name="Node2D" type="Node2D"]
+[node name="Node2D" type="Node2D" unique_id=1253394950]
 script = ExtResource("2_script")
 
-[node name="Ringo" type="SpriteStudioPlayer2D" parent="."]
-position = Vector2(400, 300)
+[node name="Ringo" type="SpriteStudioPlayer2D" parent="." unique_id=318940931]
+position = Vector2(560, 567)
 ssab = ExtResource("1_w6qk1")
 animation = "attack1"
-playing = true
 sub_frame_enabled = true
+animation_section_end = 19
+cellmaps/Ringo = null
 
-[node name="Label" type="Label" parent="."]
+[node name="Label" type="Label" parent="." unique_id=1577769087]
 offset_left = 30.0
 offset_top = 30.0
 offset_right = 400.0

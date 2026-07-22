@@ -67,13 +67,11 @@ For the data-flow diagram, key features, supported versions, and more, see the *
 
 Sample projects based on SDK test projects are available under the [examples folder](./examples/).
 
-- [Ringo](./examples/Ringo) — Test for Ringo
+- [Ringo](./examples/Ringo) — Basic quickstart test for Ringo
 - [Scripting](./examples/Scripting) — GDScript example for controlling animations and signals
-- [allAttributeV7](./examples/allAttributeV7) — Functional test for all attributes
-- [allPartsV7](./examples/allPartsV7) — Functional test for all part types
-- [overall](./examples/overall) — Comprehensive functional test
-- [overall_gdextension](./examples/overall_gdextension) — Comprehensive test for GDExtension
-- [ParticleEffect](./examples/ParticleEffect) — Test for effect features
+- [Override_Ringo](./examples/Override_Ringo) — Attribute/material override example
+- [overall](./examples/overall) — Comprehensive functional test (Custom Module)
+- [overall_gdextension](./examples/overall_gdextension) — Comprehensive functional test (GDExtension)
 
 ## 🔗 Related Repositories
 

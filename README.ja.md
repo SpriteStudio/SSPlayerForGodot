@@ -67,13 +67,11 @@
 
 [examples フォルダ](./examples/) に SDK のテストプロジェクトに基づいたサンプルプロジェクトがあります。
 
-- [Ringo](./examples/Ringo) — Ringo用のテスト
+- [Ringo](./examples/Ringo) — Ringo用の基本クイックスタートテスト
 - [Scripting](./examples/Scripting) — GDScriptを用いたアニメーション制御やシグナル受信のサンプル
-- [allAttributeV7](./examples/allAttributeV7) — 全アトリビュートの機能テスト
-- [allPartsV7](./examples/allPartsV7) — 全パーツ種の機能テスト
-- [overall](./examples/overall) — 総合的な機能テスト
-- [overall_gdextension](./examples/overall_gdextension) — GDExtension 版での総合テスト
-- [ParticleEffect](./examples/ParticleEffect) — エフェクト機能のテスト
+- [Override_Ringo](./examples/Override_Ringo) — アトリビュート・マテリアルのオーバーライドサンプル
+- [overall](./examples/overall) — 総合的な機能テスト（カスタムモジュール版）
+- [overall_gdextension](./examples/overall_gdextension) — 総合的な機能テスト（GDExtension版）
 
 ## 🔗 関連リポジトリ
 
