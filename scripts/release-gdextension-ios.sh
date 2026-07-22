@@ -68,7 +68,7 @@ fi
 
 # Sync the xcframework to the examples and remove the leftover .frameworks
 MAIN_PROJECT="dev_gdextension"
-OTHER_PROJECTS=("overall_gdextension" "Ringo")
+OTHER_PROJECTS=("overall_gdextension")
 
 # Clean up leftover .frameworks and copy .xcframeworks to MAIN_PROJECT
 rm -rf examples/${MAIN_PROJECT}/addons/spritestudio/bin/ios/*.framework

@@ -120,7 +120,7 @@ done
 
 # Copy .gdextension and binaries to example projects in the idiomatic addons structure
 MAIN_PROJECT="dev_gdextension"
-OTHER_PROJECTS=("overall_gdextension" "Ringo" "Override_Ringo")
+OTHER_PROJECTS=("overall_gdextension")
 
 # Ensure MAIN_PROJECT has the .gdextension and icons
 /bin/cp misc/spritestudio.gdextension "./examples/${MAIN_PROJECT}/addons/spritestudio/"
