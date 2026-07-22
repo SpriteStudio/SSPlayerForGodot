@@ -73,11 +73,11 @@ graph LR
 
 ## Supported Versions
 
-- **Godot Engine**: [4.6 branch](https://github.com/godotengine/godot/tree/4.6)
+- **Godot Engine**: [4.7 branch](https://github.com/godotengine/godot/tree/4.7)
 - **godot-cpp**: [master branch](https://github.com/godotengine/godot-cpp/tree/master)
 
 > [!NOTE]
-> GDExtension is officially supported starting from Godot 4.6.
+> GDExtension is officially supported starting from Godot 4.7.
 
 Build and execution have been verified on Windows / macOS.
 

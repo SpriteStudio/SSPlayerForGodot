@@ -16,7 +16,7 @@ GDExtension またはカスタムモジュール組み込み Godot Engine を自
 ```bash
 git clone https://github.com/cri-middleware/SSPlayerForGodot.git
 cd SSPlayerForGodot
-git clone https://github.com/godotengine/godot.git -b 4.6
+git clone https://github.com/godotengine/godot.git -b 4.7
 git clone https://github.com/godotengine/godot-cpp.git -b master
 ```
 
@@ -81,7 +81,7 @@ $env:PYTHONUTF8=1
 
 ## 2-B. カスタムモジュール組み込み Godot Engine のビルド
 
-`godot` を `4.6` ブランチで clone 済みであることが前提です。
+`godot` を `4.7` ブランチで clone 済みであることが前提です。
 `build.sh` / `build.ps1` は `custom_modules=../ss_player` を指定して `scons` を実行します。
 
 **macOS / Linux**

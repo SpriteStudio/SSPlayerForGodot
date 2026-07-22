@@ -1,5 +1,7 @@
 #pragma once
 
+#include "ss_macros.h"
+
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
 #include <godot_cpp/classes/node2d.hpp>
 #include <godot_cpp/variant/node_path.hpp>

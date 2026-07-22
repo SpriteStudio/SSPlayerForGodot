@@ -17,7 +17,7 @@ $scons_default_opts = @{
     target = "editor"
     compiledb = "yes"
     use_static_cpp = "no"
-    api_version = "4.6"
+    api_version = "4.7"
 }
 
 # winbuild default options

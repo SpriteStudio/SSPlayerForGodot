@@ -26,7 +26,7 @@ declare -A scons_default_opts=(
     [platform]=${PLATFORM}
     [target]="editor"
     [compiledb]="yes"
-    [api_version]="4.6"
+    [api_version]="4.7"
 )
 
 # macbuild default options

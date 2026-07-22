@@ -23,6 +23,7 @@
 using namespace godot;
 #else
 #include "core/config/project_settings.h"
+#include "servers/display/display_server.h"
 #include "core/input/input_event.h"
 #include "editor/gui/editor_file_dialog.h"
 #include "scene/gui/box_container.h"

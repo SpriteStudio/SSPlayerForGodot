@@ -6,7 +6,7 @@ Steps for getting started with SpriteStudioPlayer for Godot.
 
 The shortest path to using the plugin without any build work.
 
-1. Download a 4.6-series Godot Engine from the [official site](https://godotengine.org/download/).
+1. Download a 4.7-series Godot Engine from the [official site](https://godotengine.org/download/).
 2. Download the GDExtension bundle for your platform from the [SSPlayerForGodot Releases](https://github.com/cri-middleware/SSPlayerForGodot/releases).
 3. Extract the ZIP and copy the `addons` folder it contains into your Godot project root directory.
    * If placed correctly, `res://addons/spritestudio/spritestudio.gdextension` should exist.

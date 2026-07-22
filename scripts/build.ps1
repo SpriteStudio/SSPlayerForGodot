@@ -37,7 +37,7 @@ $scons_default_opts = @{
 $winbuild_default_opts = @{
     cpus = $cpus
     ccache = "no"
-    version = "4.6"
+    version = "4.7"
 }
 
 $opts = @{}

@@ -16,7 +16,7 @@ Clone this repository, and clone Godot Engine / godot-cpp depending on your buil
 ```bash
 git clone https://github.com/cri-middleware/SSPlayerForGodot.git
 cd SSPlayerForGodot
-git clone https://github.com/godotengine/godot.git -b 4.6
+git clone https://github.com/godotengine/godot.git -b 4.7
 git clone https://github.com/godotengine/godot-cpp.git -b master
 ```
 
@@ -81,7 +81,7 @@ Output is placed under `bin/<platform>/`, and the GDExtension package (including
 
 ## 2-B. Build the Custom-Module Godot Engine
 
-Requires `godot` to be cloned at the `4.6` branch.
+Requires `godot` to be cloned at the `4.7` branch.
 `build.sh` / `build.ps1` invoke `scons` with `custom_modules=../ss_player`.
 
 **macOS / Linux**

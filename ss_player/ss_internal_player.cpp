@@ -119,8 +119,8 @@ public:
         // UPDATE_ONCE: re-requested each frame the target is rendered. Maskable
         // parts sample the previous frame's result (one-frame latency), which
         // sidesteps inter-viewport render ordering.
-        rs->viewport_set_update_mode(t->viewport, RenderingServer::VIEWPORT_UPDATE_ONCE);
-        rs->viewport_set_clear_mode(t->viewport, RenderingServer::VIEWPORT_CLEAR_ALWAYS);
+        rs->viewport_set_update_mode(t->viewport, RS_VIEWPORT_UPDATE_ONCE);
+        rs->viewport_set_clear_mode(t->viewport, RS_VIEWPORT_CLEAR_ALWAYS);
         rs->viewport_set_transparent_background(t->viewport, true);
         rs->viewport_set_disable_3d(t->viewport, true);
         rs->viewport_set_active(t->viewport, true);
@@ -944,7 +944,7 @@ void SsInternalPlayer::_render_mask_coverage(const DrawFrame& f) {
     // to quantization), then re-request its one-shot render this frame.
     _acquire_mask_target(_mask_next_w, _mask_next_h);
     RenderingServer* rs = f.rs;
-    rs->viewport_set_update_mode(_mask_target->viewport, RenderingServer::VIEWPORT_UPDATE_ONCE);
+    rs->viewport_set_update_mode(_mask_target->viewport, RS_VIEWPORT_UPDATE_ONCE);
 
     auto draw_batches = f.frameData->draw_batches();
     auto draw_order = f.frameData->draw_order();
@@ -2097,7 +2097,7 @@ void SsInternalPlayer::_emit_partcolor_mesh(RenderingServer* rs, RID ci,
     const uint64_t flags = (uint64_t)Mesh::ARRAY_CUSTOM_RGBA_FLOAT << Mesh::ARRAY_FORMAT_CUSTOM0_SHIFT;
 
     RID mesh_rid = _acquire_mesh_rid(rs);
-    rs->mesh_add_surface_from_arrays(mesh_rid, RenderingServer::PRIMITIVE_TRIANGLES, _surface_arrays,
+    rs->mesh_add_surface_from_arrays(mesh_rid, RS_PRIMITIVE_TRIANGLES, _surface_arrays,
                                      _surface_empty_blend_shapes, _surface_empty_lods, flags);
     rs->canvas_item_add_mesh(ci, mesh_rid, Transform2D(), Color(1, 1, 1, 1), texture_rid);
 

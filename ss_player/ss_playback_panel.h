@@ -1,5 +1,7 @@
 #pragma once
 
+#include "ss_macros.h"
+
 #ifdef TOOLS_ENABLED
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
