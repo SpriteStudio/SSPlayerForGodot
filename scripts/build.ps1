@@ -38,6 +38,8 @@ $winbuild_default_opts = @{
     cpus = $cpus
     ccache = "no"
     version = "4.7"
+    strip = "no"
+    deps = "yes"
 }
 
 $opts = @{}
@@ -53,6 +55,8 @@ function usage() {
     echo "  cpus=<nums>         number of scons -j option (default: $cpus)"
     # echo "  ccache=<yes|no>     Enable ccache (default: $($winbuild_default_opts.ccache))"
     echo "  version=<version>   Godot version. $APP uses this version at can not getting Godot version from git branch or tag. (default: $($winbuild_default_opts.version))"
+    echo "  strip=<yes|no>      Accepted for parity with build.sh; MSVC keeps debug info in a separate .pdb, so nothing is stripped (default: $($winbuild_default_opts.strip))"
+    echo "  deps=<yes|no>       Install the missing Godot third-party build dependencies (AccessKit / ANGLE) before building (default: $($winbuild_default_opts.deps))"
     echo "Godot scons options: "
     pushd $rootDirectory/godot
     scons --help
@@ -97,7 +101,7 @@ if (![string]::IsNullOrEmpty($GODOT_BRANCH)) {
 echo "Godot Version: ${VERSION}"
 
 # validate scons command options from winbuild options
-$scons_command_opts = "platform=$($internal_opts.platform)"
+$scons_command_opts = ""
 foreach ($key in $opts.Keys) {
     if ($winbuild_default_opts.ContainsKey($key)) {
         # skip winbuild default options
@@ -106,10 +110,45 @@ foreach ($key in $opts.Keys) {
     $scons_command_opts += " $key=$($opts[$key])"
 }
 $j = $opts["cpus"]
-$scons_command_opts += "$scons_command_opts -j $j"
-
+$scons_command_opts += " -j $j"
 
 echo "scons command options: $scons_command_opts"
+
+# Godot 4.6+ links two prebuilt third-party SDKs that are not part of the engine
+# source tree: AccessKit (screen reader support) and ANGLE (OpenGL ES driver).
+# Without them scons silently disables those drivers, so the produced editor and
+# templates would lack features the official builds ship with. The installers
+# come from the Godot checkout itself, which keeps the dependency versions in
+# sync with the engine revision being built.
+function install_godot_deps() {
+    # Mirrors the destination logic of godot/misc/scripts/install_*.py.
+    if ($env:LOCALAPPDATA -and -not $env:MSYSTEM) {
+        $deps_dir = Join-Path (Join-Path $env:LOCALAPPDATA "Godot") "build_deps"
+    } else {
+        $deps_dir = Join-Path (Join-Path (Join-Path $rootDirectory "godot") "bin") "build_deps"
+    }
+
+    # install_angle.py unpacks one directory per arch (angle-<arch>-<abi>).
+    $angle_dirs = @(Get-ChildItem -Path $deps_dir -Directory -Filter "angle*" -ErrorAction SilentlyContinue)
+
+    # The installers resolve their destination relative to the working directory.
+    pushd $rootDirectory/godot
+    if (-not (Test-Path (Join-Path $deps_dir "accesskit"))) {
+        echo "Installing AccessKit into $deps_dir ..."
+        python misc/scripts/install_accesskit.py
+    }
+    if ($angle_dirs.Count -eq 0) {
+        echo "Installing ANGLE into $deps_dir ..."
+        python misc/scripts/install_angle.py
+    }
+    popd
+}
+
+# AccessKit and ANGLE only apply to the desktop platforms; the mobile and web
+# platforms have no such dependency, so skip the download there.
+if ($opts.deps -eq "yes" -and @("windows", "win") -contains $opts.platform) {
+    install_godot_deps
+}
 
 pushd $rootDirectory/godot
 Invoke-Expression "scons $scons_command_opts"

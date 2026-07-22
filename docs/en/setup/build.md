@@ -36,6 +36,18 @@ For build tools (compiler, Python, SCons, etc.) on each platform, follow the off
 
 ### Notes
 
+#### Godot third-party build dependencies (AccessKit / ANGLE)
+
+Godot 4.7 links two prebuilt SDKs that are not part of the engine source tree: **AccessKit** (screen reader support) and **ANGLE** (the OpenGL ES rendering driver). If they are missing, `scons` prints a warning and silently disables those drivers, producing binaries that lack features the official Godot builds ship with.
+
+`build.sh` / `build.ps1` download them on the first desktop build (using the installers in the `godot/` checkout, so the versions always match the engine revision) into `godot/bin/build_deps/` — or `%LOCALAPPDATA%\Godot\build_deps` on Windows. Pass `deps=no` to skip the download and build without those drivers:
+
+```sh
+./scripts/build.sh deps=no
+```
+
+The mobile and web platforms do not use either dependency, so nothing is downloaded for them.
+
 #### Building Universal Binaries on macOS
 
 The `molten-vk` package distributed via Homebrew only provides binaries for the host architecture, so linking fails when building with `arch=universal`. Install the universal-capable [Vulkan SDK for MoltenVK](https://vulkan.lunarg.com/sdk/home) instead.

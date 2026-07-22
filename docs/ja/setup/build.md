@@ -36,6 +36,18 @@ git clone https://github.com/godotengine/godot-cpp.git -b master
 
 ### 注意点
 
+#### Godot のサードパーティビルド依存 (AccessKit / ANGLE)
+
+Godot 4.7 は、エンジンのソースツリーに含まれない 2 つのビルド済み SDK をリンクします。**AccessKit** (スクリーンリーダー対応) と **ANGLE** (OpenGL ES レンダリングドライバ) です。これらが無い場合、`scons` は警告を出したうえで該当ドライバを無効化してビルドを続行するため、公式 Godot ビルドにある機能を欠いたバイナリができあがります。
+
+`build.sh` / `build.ps1` は、デスクトップ向けの初回ビルド時にこれらを `godot/bin/build_deps/` (Windows では `%LOCALAPPDATA%\Godot\build_deps`) へ自動でダウンロードします。インストーラは `godot/` チェックアウト内のものを使うため、依存のバージョンはビルド対象のエンジンリビジョンと常に一致します。ダウンロードを行わず、該当ドライバ無しでビルドしたい場合は `deps=no` を指定してください。
+
+```sh
+./scripts/build.sh deps=no
+```
+
+モバイル / Web プラットフォームはどちらの依存も使わないため、ダウンロードは行われません。
+
 #### macOS で Universal Binary をビルドする場合
 
 Homebrew で配布されている `molten-vk` はホストアーキ向けのバイナリのみ提供されるため、`arch=universal` 指定で Universal Binary をビルドする際はリンクに失敗します。代わりに [Vulkan SDK for MoltenVK](https://vulkan.lunarg.com/sdk/home) (Universal 対応版) をインストールしてください。

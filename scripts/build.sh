@@ -39,6 +39,7 @@ declare -A build_default_opts=(
     [ccache]="no"
     [version]="4.7"
     [strip]="no"
+    [deps]="yes"
 )
 
 declare -A opts=(
@@ -57,6 +58,7 @@ func usage() {
     echo "  ccache=<yes|no>     Enable ccache (default: ${build_default_opts[ccache]})"
     echo "  version=<version>   Godot version. $APP uses this version at can not getting Godot version from git branch or tag. (default: ${build_default_opts[version]})"
     echo "  strip=<yes|no>      Execute strip command to the app binary (default: ${build_default_opts[strip]})"
+    echo "  deps=<yes|no>       Install the missing Godot third-party build dependencies (AccessKit / ANGLE) before building (default: ${build_default_opts[deps]})"
     echo "Godot scons options: "
     pushd $ROOTDIR/godot > /dev/null
     scons --help
@@ -145,9 +147,56 @@ for key value in ${(kv)opts}; do
     fi
     scons_command_opts="$scons_command_opts $key=$value"
 done
-scons_command_opts="$scons_command_opts -j $build_default_opts[cpus]"
+scons_command_opts="$scons_command_opts -j ${opts[cpus]}"
 
 echo "scons command options: $scons_command_opts"
+
+# Godot 4.6+ links two prebuilt third-party SDKs that are not part of the engine
+# source tree: AccessKit (screen reader support) and ANGLE (OpenGL ES driver).
+# Without them scons silently disables those drivers, so the produced editor and
+# templates would lack features the official builds ship with. The installers
+# come from the Godot checkout itself, which keeps the dependency versions in
+# sync with the engine revision being built.
+func install_godot_deps() {
+    # Mirrors the destination logic of godot/misc/scripts/install_*.py.
+    local deps_dir
+    if [[ -n ${LOCALAPPDATA} && -z ${MSYSTEM} ]]; then
+        deps_dir="${LOCALAPPDATA}/Godot/build_deps"
+    else
+        deps_dir="${ROOTDIR}/godot/bin/build_deps"
+    fi
+
+    # install_angle.py unpacks one directory per arch (angle-<arch>-<abi>).
+    local angle_dirs=(${deps_dir}/angle*(N))
+
+    local python_bin="python3"
+    if ! type python3 > /dev/null 2>&1; then
+        python_bin="python"
+    fi
+
+    # The installers resolve their destination relative to the working directory.
+    pushd ${ROOTDIR}/godot > /dev/null
+    if [[ ! -d ${deps_dir}/accesskit ]]; then
+        echo "Installing AccessKit into ${deps_dir} ..."
+        ${python_bin} misc/scripts/install_accesskit.py
+    fi
+    if [[ $1 != "linux" && ${#angle_dirs} -eq 0 ]]; then
+        echo "Installing ANGLE into ${deps_dir} ..."
+        ${python_bin} misc/scripts/install_angle.py
+    fi
+    popd > /dev/null
+}
+
+# AccessKit and ANGLE only apply to the desktop platforms; the mobile and web
+# platforms have no such dependency, so skip the download there. ANGLE is
+# additionally macOS/Windows only.
+if [[ ${opts[deps]} == "yes" ]]; then
+    case ${opts[platform]} in
+        macos)               install_godot_deps macos ;;
+        win | windows)       install_godot_deps windows ;;
+        linux | linuxbsd)    install_godot_deps linux ;;
+    esac
+fi
 
 pushd $ROOTDIR/godot
 
