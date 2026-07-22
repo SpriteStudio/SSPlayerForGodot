@@ -16,8 +16,12 @@ compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 
 config/name="dev_module"
 run/main_scene="res://node_2d.tscn"
-config/features=PackedStringArray("4.6", "GL Compatibility")
+config/features=PackedStringArray("4.7", "GL Compatibility")
 config/icon="res://icon.svg"
+
+[display]
+
+window/vsync/vsync_mode=0
 
 [rendering]
 

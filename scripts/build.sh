@@ -37,7 +37,7 @@ declare -A scons_default_opts=(
 declare -A build_default_opts=(
     [cpus]=${CPUS}
     [ccache]="no"
-    [version]="4.6"
+    [version]="4.7"
     [strip]="no"
 )
 

@@ -10,9 +10,8 @@ on:
         required: true
         type: choice
         options:
-          - "4.6"
           - "4.7"
-        default: "4.6"
+        default: "4.7"
         description: "Target Godot API version"
       upload_release:
         # 既定でビルドのみ行い、true を指定した場合だけ Release を作成する
@@ -23,7 +22,7 @@ on:
         type: boolean
 
 env:
-  GODOT_VERSION: ${{ inputs.godot_version || '4.6' }}
+  GODOT_VERSION: ${{ inputs.godot_version || '4.7' }}
   LANG: en_US.UTF-8
   LC_ALL: en_US.UTF-8
   PYTHONIOENCODING: utf8

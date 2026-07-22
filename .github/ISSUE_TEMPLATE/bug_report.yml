@@ -42,7 +42,7 @@ body:
     attributes:
       label: Godot Version / Godotのバージョン
       description: What version of Godot are you using? / ご利用のGodotのバージョンを記載してください。
-      placeholder: e.g. 4.6.0-stable
+      placeholder: e.g. 4.7.0-stable
     validations:
       required: true
 

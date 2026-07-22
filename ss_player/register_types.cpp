@@ -38,10 +38,10 @@ static void editor_init_callback() {
 #include "ssqb_resource.h"
 #include "ss_translation.h"
 
-static SSABResourceFormatLoader *ssab_loader = nullptr;
-static SSABResourceFormatSaver *ssab_saver = nullptr;
-static SSQBResourceFormatLoader *ssqb_loader = nullptr;
-static SSQBResourceFormatSaver *ssqb_saver = nullptr;
+static Ref<SSABResourceFormatLoader> ssab_loader;
+static Ref<SSABResourceFormatSaver> ssab_saver;
+static Ref<SSQBResourceFormatLoader> ssqb_loader;
+static Ref<SSQBResourceFormatSaver> ssqb_saver;
 
 void register_ss_player_types() {
 
@@ -52,32 +52,21 @@ void register_ss_player_types() {
   GDREGISTER_CLASS(SSQBResourceFormatLoader);
   GDREGISTER_CLASS(SSQBResourceFormatSaver);
 
+  ssab_loader = memnew(SSABResourceFormatLoader);
+  ssab_saver = memnew(SSABResourceFormatSaver);
+  ssqb_loader = memnew(SSQBResourceFormatLoader);
+  ssqb_saver = memnew(SSQBResourceFormatSaver);
+
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
-  ssab_loader = memnew(SSABResourceFormatLoader);
   ResourceLoader::get_singleton()->add_resource_format_loader(ssab_loader);
-
-  ssab_saver = memnew(SSABResourceFormatSaver);
   ResourceSaver::get_singleton()->add_resource_format_saver(ssab_saver);
-
-  ssqb_loader = memnew(SSQBResourceFormatLoader);
   ResourceLoader::get_singleton()->add_resource_format_loader(ssqb_loader);
-
-  ssqb_saver = memnew(SSQBResourceFormatSaver);
   ResourceSaver::get_singleton()->add_resource_format_saver(ssqb_saver);
-
 #else
-  ssab_loader = memnew(SSABResourceFormatLoader);
   ResourceLoader::add_resource_format_loader(ssab_loader);
-
-  ssab_saver = memnew(SSABResourceFormatSaver);
   ResourceSaver::add_resource_format_saver(ssab_saver);
-
-  ssqb_loader = memnew(SSQBResourceFormatLoader);
   ResourceLoader::add_resource_format_loader(ssqb_loader);
-
-  ssqb_saver = memnew(SSQBResourceFormatSaver);
   ResourceSaver::add_resource_format_saver(ssqb_saver);
-
 #endif
 
   GDREGISTER_CLASS(SpriteStudioAudioBackend);
@@ -86,45 +75,39 @@ void register_ss_player_types() {
 }
 
 void unregister_ss_player_types() {
+  if (ssab_loader.is_valid()) {
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
-  if (ssab_loader) {
     ResourceLoader::get_singleton()->remove_resource_format_loader(ssab_loader);
-    ssab_loader = nullptr;
-  }
-  if (ssab_saver) {
-    ResourceSaver::get_singleton()->remove_resource_format_saver(ssab_saver);
-    ssab_saver = nullptr;
-  }
-
-  if (ssqb_loader) {
-    ResourceLoader::get_singleton()->remove_resource_format_loader(ssqb_loader);
-    ssqb_loader = nullptr;
-  }
-  if (ssqb_saver) {
-    ResourceSaver::get_singleton()->remove_resource_format_saver(ssqb_saver);
-    ssqb_saver = nullptr;
-  }
-
 #else
-  if (ssab_loader) {
     ResourceLoader::remove_resource_format_loader(ssab_loader);
-    ssab_loader = nullptr;
-  }
-  if (ssab_saver) {
-    ResourceSaver::remove_resource_format_saver(ssab_saver);
-    ssab_saver = nullptr;
-  }
-
-  if (ssqb_loader) {
-    ResourceLoader::remove_resource_format_loader(ssqb_loader);
-    ssqb_loader = nullptr;
-  }
-  if (ssqb_saver) {
-    ResourceSaver::remove_resource_format_saver(ssqb_saver);
-    ssqb_saver = nullptr;
-  }
-
 #endif
+    ssab_loader.unref();
+  }
+  if (ssab_saver.is_valid()) {
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+    ResourceSaver::get_singleton()->remove_resource_format_saver(ssab_saver);
+#else
+    ResourceSaver::remove_resource_format_saver(ssab_saver);
+#endif
+    ssab_saver.unref();
+  }
+
+  if (ssqb_loader.is_valid()) {
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+    ResourceLoader::get_singleton()->remove_resource_format_loader(ssqb_loader);
+#else
+    ResourceLoader::remove_resource_format_loader(ssqb_loader);
+#endif
+    ssqb_loader.unref();
+  }
+  if (ssqb_saver.is_valid()) {
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+    ResourceSaver::get_singleton()->remove_resource_format_saver(ssqb_saver);
+#else
+    ResourceSaver::remove_resource_format_saver(ssqb_saver);
+#endif
+    ssqb_saver.unref();
+  }
 }
 
 void initialize_ss_player_module(ModuleInitializationLevel level) {

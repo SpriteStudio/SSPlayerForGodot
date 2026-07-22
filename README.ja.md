@@ -44,7 +44,7 @@
 
 ### 1. サンプルで動作確認する
 
-1. **Godot Engine の準備**: [公式サイト](https://godotengine.org/download/) から 4.6 系のエディタをダウンロードします。
+1. **Godot Engine の準備**: [公式サイト](https://godotengine.org/download/) から 4.7 系のエディタをダウンロードします。
 2. **GDExtension の取得**: [Releases](https://github.com/cri-middleware/SSPlayerForGodot/releases) から最新パッケージをダウンロードし、展開します。
 3. **サンプルの準備**: 取得した `addons` フォルダを、本リポジトリの [examples/Ringo](./examples/Ringo) フォルダ内にコピーします。
 4. **確認**: Godot Engine で [examples/Ringo](./examples/Ringo) プロジェクトを開き、`Ringo.tscn` を開くことですぐにアニメーションの動作を確認できます。
