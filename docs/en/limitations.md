@@ -25,10 +25,13 @@ Per-platform caveats to keep in mind:
 
 ## Playback Feature Constraints
 
-These come from the shared `libssruntime` and therefore apply regardless of build variant.
+These come from the shared `libssruntime` and therefore apply regardless of build variant. They
+apply to every official player too, so the full explanations — and the rest of the shared
+constraints (embedded mode, unvalidated `.ssab` input, and so on) — live in the portal:
+**[Shared Limitations](https://cri-middleware.github.io/SpriteStudio-Docs/sdk/limitations/)**.
 
 > [!WARNING]
-> - **`independent=true` parts (Instance / Effect) do not reverse or seek correctly.** An `independent=true` child runs on its own real-time clock, detached from the parent timeline. Parent **reverse playback** and **seeking** break it; only **forward** playback (including forward frame-skips) is correct. Prefer authoring without `independent=true` for animations that may be played in reverse or seeked.
-> - **Seeking does not fire the events it skips over.** Jumping the playhead directly (e.g. setting the frame) does **not** emit the `UserData` / `Signal` / `Audio` events on the frames passed over — only the destination frame's events fire. If you need every intermediate event, advance the animation step by step instead of jumping.
-> - **No reverse audio.** Sounds fire only while the animation advances forward in time. When the effective direction is backward (reverse direction, ping-pong return, or negative speed), audio events are skipped — audio cannot be played in reverse.
-> - **Animation blending is same-`.ssab` only.** Cross-`.ssab` (cross-resource) blending is not supported, and every blended animation must assign the **same Cell to the same part**; mismatched Cells cause size / pivot mismatches that break the pose.
+> - **`independent=true` parts (Instance / Effect) do not reverse or seek correctly.** Only forward playback (including forward frame-skips) is correct.
+> - **Seeking does not fire the events it skips over.** Only the destination frame's `UserData` / `Signal` / `Audio` events fire.
+> - **No reverse audio.** Sounds are skipped whenever the effective direction is backward (reverse direction, ping-pong return, or negative speed).
+> - **Animation blending is same-`.ssab` only**, and every blended animation must assign the same Cell to the same part.
