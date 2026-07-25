@@ -290,22 +290,25 @@ void SSImportControl::start_intercepting() {
 void SSImportControl::stop_intercepting() {
     if (!is_intercepting) return;
 
+    // Drop the intercept state up-front: every exit path below must leave this
+    // control un-intercepting, or a later start_intercepting() early-returns and
+    // the editor's own files_dropped handlers stay disconnected for the session.
+    is_intercepting = false;
+
     auto window = get_window();
-    if (!window) return;
+    if (window) {
+        if (window->is_connected("files_dropped", Callable(this, "_on_window_files_dropped"))) {
+            window->disconnect("files_dropped", Callable(this, "_on_window_files_dropped"));
+        }
 
-    if (window->is_connected("files_dropped", Callable(this, "_on_window_files_dropped"))) {
-        window->disconnect("files_dropped", Callable(this, "_on_window_files_dropped"));
-    }
-
-    for (int i = 0; i < original_drop_handlers.size(); i++) {
-        const Callable &handler = original_drop_handlers[i];
-        if (handler.is_valid() && !window->is_connected("files_dropped", handler)) {
-            window->connect("files_dropped", handler);
+        for (int i = 0; i < original_drop_handlers.size(); i++) {
+            const Callable &handler = original_drop_handlers[i];
+            if (handler.is_valid() && !window->is_connected("files_dropped", handler)) {
+                window->connect("files_dropped", handler);
+            }
         }
     }
     original_drop_handlers.clear();
-
-    is_intercepting = false;
 }
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
@@ -359,6 +362,10 @@ void SSImportControl::_on_window_files_dropped(const Vector<String> &p_files) {
 
         if (!dirs.is_empty()) {
             // A folder was dropped: scan it (and any loose .sspj) and import all.
+            if (!importer) {
+                ERR_PRINT("SSImportControl: importer is not set.");
+                return;
+            }
             importer->queue_scan_and_import(dirs, sspj_files, path_line_edit->get_text());
         } else {
             _start_import(sspj_files);
@@ -701,11 +708,16 @@ void SSImportControl::_ensure_output_dir_exists() {
     auto *efs = EditorInterface::get_singleton()->get_resource_file_system();
 #endif
     if (!efs) return;
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
-    efs->scan_sources();
-#else
-    efs->scan_changes();
-#endif
+    // Full scan: scan_sources()/scan_changes() are mtime-driven and do not
+    // reliably notice a brand-new directory (parent-mtime granularity on
+    // Windows), so the folder would not show up in the FileSystem dock until an
+    // unrelated rescan. The importer's own sync phase uses a full scan for the
+    // same reason (see SSImporter::_poll_fs_sync). A scan issued while one is
+    // already running is dropped, so skip it then — the in-flight scan (and the
+    // importer's own, on the next import) covers the new folder.
+    if (!efs->is_scanning()) {
+        efs->scan();
+    }
 }
 
 #endif // #ifdef TOOLS_ENABLED

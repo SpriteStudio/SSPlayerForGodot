@@ -80,6 +80,12 @@ public:
 #endif
 private:
     String _parent_dir;
+    // Cached result of the whole-buffer FlatBuffers verification run by
+    // is_valid(): -1 = not verified yet, 0 = invalid, 1 = valid. Reset to -1
+    // wherever `binary` is replaced (load_from_file / copy_from).
+    mutable int8_t _valid_cache = -1;
+    // The actual verification; is_valid() is the cached front-end.
+    bool _verify_binary() const;
     // (sound_list_name_hash << 32 | sound_name_hash) -> loaded AudioStream.
     // Populated lazily by get_sound_stream so repeated events share one stream.
     HashMap<uint64_t, Ref<AudioStream>> _sound_cache;

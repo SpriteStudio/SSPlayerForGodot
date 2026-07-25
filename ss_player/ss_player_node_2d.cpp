@@ -136,8 +136,12 @@ int SpriteStudioPlayer2D::get_part_index(const String& part_name) const {
 Transform2D SpriteStudioPlayer2D::get_part_transform(const String& part_name) const {
     Transform2D xf;
     int idx = _internal->resolve_part_index(part_name);
-    if (idx >= 0) {
-        _internal->try_get_part_local_transform(idx, xf);
+    if (idx >= 0 && _internal->try_get_part_local_transform(idx, xf)) {
+        // The runtime's world matrix is relative to the internal root canvas
+        // item, which carries flip / offset. Compose it here so the result is
+        // the part's transform in THIS node's local space — otherwise an
+        // attachment pinned to a part detaches the moment the player is flipped.
+        xf = _make_root_transform() * xf;
     }
     return xf;
 }
@@ -294,12 +298,16 @@ void SpriteStudioPlayer2D::set_offset(const Vector2& p_offset) {
 
 Vector2 SpriteStudioPlayer2D::get_offset() const { return _offset; }
 
-void SpriteStudioPlayer2D::_update_root_transform() {
+Transform2D SpriteStudioPlayer2D::_make_root_transform() const {
     Transform2D xform;
     xform.columns[0].x = _flip_h ? -1.0 : 1.0;
     xform.columns[1].y = _flip_v ? -1.0 : 1.0;
     xform.columns[2] = _offset;
-    _internal->setRootTransform(xform);
+    return xform;
+}
+
+void SpriteStudioPlayer2D::_update_root_transform() {
+    _internal->setRootTransform(_make_root_transform());
 }
 
 void SpriteStudioPlayer2D::_push_coverage_screen_scale() {

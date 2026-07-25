@@ -164,6 +164,10 @@ private:
     Vector2 _offset;
     AnimationProcessMode _process_mode = ANIMATION_PROCESS_IDLE;
     
+    // flip_h / flip_v / offset as one matrix. Applied to the internal root canvas
+    // item (so it is NOT part of the Node2D transform) and composed onto part
+    // transforms by get_part_transform, which must report where a part is drawn.
+    Transform2D _make_root_transform() const;
     void _update_root_transform();
     void _push_coverage_screen_scale();
 

@@ -187,8 +187,16 @@ void SSResourceInspectorPlugin::_on_generate_animation_library_pressed(const Str
         int track_frame = anim->add_track(Animation::TYPE_VALUE);
         anim->track_set_path(track_frame, NodePath(".:frame"));
         anim->track_insert_key(track_frame, 0.0, 0.0f);
-        anim->track_insert_key(track_frame, length, (float)total_frames);
-        
+        // The player exposes frames 0..total_frame-1, and the last frame occupies
+        // the final 1/fps slice of `length`. Keying the last VALID frame at its own
+        // start time keeps the interpolated rate at exactly one frame per 1/fps and
+        // holds it until the clip ends; keying `total_frames` at `length` instead
+        // would push one frame past the animation and get clamped by the runtime.
+        const int max_frame = total_frames - 1;
+        if (max_frame > 0) {
+            anim->track_insert_key(track_frame, (double)max_frame / fps, (float)max_frame);
+        }
+
         anim->value_track_set_update_mode(track_frame, Animation::UPDATE_CONTINUOUS);
         anim->track_set_interpolation_type(track_frame, Animation::INTERPOLATION_LINEAR);
 
@@ -203,7 +211,12 @@ void SSResourceInspectorPlugin::_on_generate_animation_library_pressed(const Str
 #endif
 
     if (err == OK) {
-        EditorInterface::get_singleton()->get_resource_filesystem()->scan();
+#if defined(SPRITESTUDIO_GODOT_EXTENSION) || (VERSION_MAJOR >= 4 && VERSION_MINOR >= 6)
+        auto *efs = EditorInterface::get_singleton()->get_resource_filesystem();
+#else
+        auto *efs = EditorInterface::get_singleton()->get_resource_file_system();
+#endif
+        if (efs) efs->scan();
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
         UtilityFunctions::print("Generated AnimationLibrary: " + out_path);
 #else
