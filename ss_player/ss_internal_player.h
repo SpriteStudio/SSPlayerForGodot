@@ -518,6 +518,10 @@ private:
     // premultiplied-blend coverage accumulator), so cap at 24 writers / frame.
     static constexpr int MAX_MASK_WRITERS = 24;
     Vector<MaskWriter> _mask_writers;
+    // Per part index (parallel to `_parts_by_idx`): 1 when the part is a "pure"
+    // mask this frame. Rebuilt with `_mask_writers` so the emit paths can test it
+    // once per part without walking the writer list.
+    LocalVector<uint8_t> _part_pure_mask;
     // Populate `_mask_writers` from this frame's draw_order + static PartData.
     // Returns true if at least one writer is present (i.e., masking is active
     // this frame). Only the top-root player owns the mask state.
@@ -547,6 +551,12 @@ private:
     // matrices already applied) -> coverage UV [0,1]. Set per frame by the
     // coverage pass and read by maskable shaders. Identity until masking runs.
     Transform2D _mask_local_to_uv;
+    // The UV transform derived from THIS frame's writer bbox. Shaders sample the
+    // coverage rendered on the PREVIOUS frame (UPDATE_ONCE latency), so this is
+    // held back one frame and only then promoted to `_mask_local_to_uv` — using
+    // it immediately would map positions through a bbox the sampled texels were
+    // never rasterized with, sliding the mask off its target as the bbox moves.
+    Transform2D _mask_local_to_uv_pending;
     bool _mask_coverage_valid = false;         // true if this frame drew coverage
     // Coverage-bitmap dimension bounds in pixels. The per-axis size is the
     // mask's on-screen footprint, quantized up to a power-of-two size class in
@@ -593,7 +603,10 @@ private:
     bool _part_in_mask_scope(uint16_t rank) const;
     // True if the part is a "pure" mask (PartTypeMask or a shape/text/nines
     // *_mask): it feeds the coverage bitmap but must not draw its own colour.
-    // write_mask (clipping) writers are NOT pure — they draw AND mask.
+    // write_mask (clipping) writers are NOT pure — they draw AND mask. Valid for
+    // any player with writers this frame, coverage rendered or not (an instance
+    // child's mask parts must stay invisible even though the parent owns the
+    // coverage pass), so callers must NOT gate it on `_mask_coverage_valid`.
     bool _is_pure_mask_part(int p_idx) const;
     void _apply_mask_uniforms(Ref<ShaderMaterial> mat, uint16_t rank, bool visible_inside);
     void _set_mask_uv_uniform(Ref<ShaderMaterial> mat, const Transform2D& local_to_uv);

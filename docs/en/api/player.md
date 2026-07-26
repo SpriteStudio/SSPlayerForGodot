@@ -57,7 +57,7 @@ func _ready() -> void:
 
 * `get_part_names() -> PackedStringArray`: Every part name in the current animation.
 * `get_part_index(part_name: String) -> int`: Resolves a part name to its part index, or `-1` if it does not exist.
-* `get_part_transform(part_name: String) -> Transform2D`: The part's local `Transform2D` on the current frame. Returns the identity when the part is unknown.
+* `get_part_transform(part_name: String) -> Transform2D`: The part's `Transform2D` on the current frame, in the player node's local space (`flip_h` / `flip_v` / `offset` included). Returns the identity when the part is unknown.
 * `is_part_hidden(part_name: String) -> bool`: Whether the part is hidden on the current frame.
 
 ## Part overrides

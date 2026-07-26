@@ -721,11 +721,18 @@ void SsInternalPlayer::update(float delta_seconds) {
     // — a timing-dependent loss seen in the editor preview but not a running
     // project. Events must fire whenever the runtime reports them, regardless of
     // whether we also redraw.
-    if (_currentAnimationData && _currentAnimationData->events() != nullptr) {
+    const auto* events = _currentAnimationData ? _currentAnimationData->events() : nullptr;
+    if (events != nullptr) {
+        const uint32_t events_size = events->size();
         int event_count = ss_runtime_get_passed_event_count(runtime_ctx);
         for (int i = 0; i < event_count; i++) {
             int event_idx = ss_runtime_get_passed_event_index(runtime_ctx, i);
-            auto events_per_frame = _currentAnimationData->events()->Get(event_idx);
+            // The index comes from the runtime and is only meaningful against the
+            // animation currently bound there; a not-found (-1) or an index left
+            // over from a different animation would read past the FlatBuffer.
+            if (event_idx < 0 || (uint32_t)event_idx >= events_size) continue;
+            auto events_per_frame = events->Get((uint32_t)event_idx);
+            if (!events_per_frame) continue;
 
             if (auto users = events_per_frame->users()) {
                 for (uint32_t j = 0; j < users->size(); j++) {
@@ -819,12 +826,22 @@ void SsInternalPlayer::update(float delta_seconds) {
 
 bool SsInternalPlayer::_build_mask_writers(const DrawFrame& f) {
     _mask_writers.clear();
+    // Clear before any early return: a part that stopped masking this frame must
+    // stop being suppressed by the emit paths.
+    if (!_part_pure_mask.is_empty()) {
+        memset(_part_pure_mask.ptr(), 0, _part_pure_mask.size());
+    }
     if (!f.frameData || !f.binary) return false;
     auto parts_meta = f.binary->parts();
     auto draw_order = f.frameData->draw_order();
     if (!parts_meta || !draw_order) return false;
 
     const int total_meta = (int)parts_meta->size();
+    if ((int)_part_pure_mask.size() != total_meta) {
+        _part_pure_mask.resize(total_meta);
+        if (total_meta > 0) memset(_part_pure_mask.ptr(), 0, total_meta);
+    }
+    uint8_t* pure_mask_flags = _part_pure_mask.ptr();
     const uint32_t n = draw_order->size();
     for (uint32_t rank = 0; rank < n; rank++) {
         const int p_idx = (int)draw_order->Get(rank);
@@ -842,7 +859,14 @@ bool SsInternalPlayer::_build_mask_writers(const DrawFrame& f) {
         const bool writes = pure_mask || pd->mask_write();
         if (!writes) continue;
 
-        if ((int)_mask_writers.size() >= MAX_MASK_WRITERS) break; // bitmap holds 32
+        // Flag it even when the writer list is already full: a pure mask that does
+        // not fit the bitmap still masks nothing, so it must not fall back to
+        // drawing its own colour over the scene.
+        if (pure_mask) pure_mask_flags[p_idx] = 1;
+
+        // Bitmap holds 24 writers; keep scanning past that so the pure masks that
+        // did not fit are still flagged above.
+        if ((int)_mask_writers.size() >= MAX_MASK_WRITERS) continue;
 
         MaskWriter w;
         w.part_index = p_idx;
@@ -1110,7 +1134,14 @@ void SsInternalPlayer::_render_mask_coverage(const DrawFrame& f) {
     uv.columns[0] = Vector2(1.0f / bsize.x, 0);
     uv.columns[1] = Vector2(0, 1.0f / bsize.y);
     uv.columns[2] = Vector2(-bmin.x / bsize.x, -bmin.y / bsize.y);
-    _mask_local_to_uv = uv;
+    // What the shaders sample this frame is the coverage rendered LAST frame (the
+    // UPDATE_ONCE latency below), rasterized with last frame's bbox -> viewport
+    // transform. So publish last frame's UV transform and hold this one back;
+    // publishing `uv` now would offset/scale the lookup by the per-frame bbox
+    // delta. The same holds on a size-class transition, where `_mask_prev` is
+    // sampled: it too was rendered with the previous frame's bbox.
+    _mask_local_to_uv = _mask_local_to_uv_pending;
+    _mask_local_to_uv_pending = uv;
 
     // Frame mask state consumed by the maskable emit path (P3).
     _mask_coverage_tex = rs->viewport_get_texture(_mask_target->viewport);
@@ -1167,10 +1198,8 @@ bool SsInternalPlayer::_part_in_mask_scope(uint16_t rank) const {
 }
 
 bool SsInternalPlayer::_is_pure_mask_part(int p_idx) const {
-    for (int i = 0; i < _mask_writers.size(); i++) {
-        if (_mask_writers[i].part_index == p_idx) return !_mask_writers[i].is_clipping;
-    }
-    return false;
+    if (p_idx < 0 || (uint32_t)p_idx >= _part_pure_mask.size()) return false;
+    return _part_pure_mask[p_idx] != 0;
 }
 
 void SsInternalPlayer::_set_mask_uv_uniform(Ref<ShaderMaterial> mat, const Transform2D& local_to_uv) {
@@ -1346,16 +1375,16 @@ void SsInternalPlayer::_drawAnimation(float frame_no, float delta_seconds, bool 
         // Pure masks feed only the coverage bitmap and must not draw their own
         // colour (PartTypeMask has no draw branch below; this also suppresses
         // shape/text/nines *_mask color draws so they read as holes, not fills).
-        if (_mask_coverage_valid && batch->count() > 0
-            && _is_pure_mask_part((int)draw_order_data[batch->start_rank()])) {
-            continue;
-        }
+        // Normal / Shape / Mesh batches group several parts by texture + blend
+        // and can mix mask and non-mask parts, so those test per part inside
+        // their emit loops; the single-part kinds are handled here.
         if (kind == ss::runtime::DrawBatchKind_Normal) {
             _emit_normal_batch(f, ci, batch, draw_order_data);
         } else if (kind == ss::runtime::DrawBatchKind_Shape) {
             _emit_shape_batch(f, ci, batch, draw_order_data);
         } else if (kind == ss::runtime::DrawBatchKind_Instance) {
             int p_idx = (int)draw_order_data[batch->start_rank()];
+            if (_is_pure_mask_part(p_idx)) continue;
             const auto* part = (p_idx >= 0 && p_idx < (int)_parts_by_idx.size()) ? _parts_by_idx[p_idx] : nullptr;
             if (!part) continue;
             const float* drawing_m = f.get_world_matrix(p_idx);
@@ -1363,6 +1392,7 @@ void SsInternalPlayer::_drawAnimation(float frame_no, float delta_seconds, bool 
             _emit_instance_slot(f, ci, p_idx, drawing_m, batch->start_rank());
         } else if (kind == ss::runtime::DrawBatchKind_Effect) {
             int p_idx = (int)draw_order_data[batch->start_rank()];
+            if (_is_pure_mask_part(p_idx)) continue;
             const auto* part = (p_idx >= 0 && p_idx < (int)_parts_by_idx.size()) ? _parts_by_idx[p_idx] : nullptr;
             if (!part) continue;
             const float* drawing_m = f.get_world_matrix(p_idx);
@@ -1675,7 +1705,10 @@ void SsInternalPlayer::_emit_effect_slot(const DrawFrame& f, RID ci, int p_idx, 
     // The returned EffectDrawPlan carries everything Godot needs to draw:
     // commands keyed by cellmap_hash + blend, plus flat verts/uvs/colors/indices.
     const ss_effect_event_info ev = ss_runtime_get_active_effect_event(runtime_ctx, (uint32_t)p_idx);
-    const float fps = _currentAnimationData->fps() > 0 ? (float)_currentAnimationData->fps() : 60.0f;
+    // _currentAnimationData is null whenever _fetchAnimation bailed out; the
+    // effect simulator still needs a sane frame rate to step with.
+    const float fps = (_currentAnimationData && _currentAnimationData->fps() > 0)
+                      ? (float)_currentAnimationData->fps() : 60.0f;
     const ss_effect_step_result step = ss_effect_slot_step(
         slot.effect_slot, ev, f.frame_no, f.delta_seconds, fps, f.parent_looped,
         /*y_flip*/ true, /*vert_stride*/ 2);
@@ -2259,6 +2292,11 @@ void SsInternalPlayer::_emit_normal_batch(const DrawFrame& f, RID ci,
     SsFloatArray& custom0 = _normal_custom0;
     SsIntArray&   indices = _normal_indices;
 
+    // The accumulators are peak-retained (grown above, never shrunk), so their
+    // size is the largest batch seen so far, not this run's. Remember the
+    // capacity to restore after each run trims itself down for the emit.
+    const int verts_cap = verts.size(); // uvs / colors track this exactly
+
     Vector2* verts_ptr = verts.ptrw();
     Vector2* uvs_ptr = uvs.ptrw();
     Color* colors_ptr = colors.ptrw();
@@ -2316,7 +2354,16 @@ void SsInternalPlayer::_emit_normal_batch(const DrawFrame& f, RID ci,
         } else {
             run_ci = _acquire_per_part_canvas_item(); // fresh CI, draw_index = _draw_seq++
         }
+        // Trim every stream to what this run actually wrote. mesh_add_surface_from_arrays
+        // uploads whatever it is handed and derives the surface AABB from
+        // ARRAY_VERTEX, so leaving the peak-retained tail in place would upload
+        // the previous (larger) batch's vertex count on every small run and size
+        // the culling rect against geometry that is not drawn.
         indices.resize(ibase);
+        verts.resize(vbase);
+        uvs.resize(vbase);
+        colors.resize(vbase);
+        custom0.resize(vbase * 4);
         _apply_partcolor_material(rs, run_ci, s_default_shader_id_hash, ssab_blend);
         rs->canvas_item_set_transform(run_ci, Transform2D());
         _emit_partcolor_mesh(rs, run_ci, indices, verts, colors, uvs, custom0, tex_rid);
@@ -2324,6 +2371,10 @@ void SsInternalPlayer::_emit_normal_batch(const DrawFrame& f, RID ci,
         // re-fetch the write pointers (the arrays were shared with the emitted
         // mesh during the call above).
         indices.resize(index_count);
+        verts.resize(verts_cap);
+        uvs.resize(verts_cap);
+        colors.resize(verts_cap);
+        custom0.resize(verts_cap * 4);
         verts_ptr = verts.ptrw();
         uvs_ptr = uvs.ptrw();
         colors_ptr = colors.ptrw();
@@ -2336,6 +2387,9 @@ void SsInternalPlayer::_emit_normal_batch(const DrawFrame& f, RID ci,
     for (uint16_t k = 0; k < count; k++) {
         int p_idx = (int)draw_order_data[batch->start_rank() + k];
         if (p_idx < 0 || p_idx >= (int)_parts_by_idx.size()) continue;
+        // Pure masks feed the coverage bitmap only; drawing their colour would
+        // paint the mask art over the scene instead of cutting a hole in it.
+        if (_is_pure_mask_part(p_idx)) continue;
         const auto* part = _parts_by_idx[p_idx];
         if (!part) continue;
 
@@ -2492,6 +2546,8 @@ void SsInternalPlayer::_emit_shape_batch(const DrawFrame& f, RID ci,
     for (uint16_t k = 0; k < count; k++) {
         int p_idx = (int)draw_order_data[batch->start_rank() + k];
         if (p_idx < 0 || p_idx >= (int)_parts_by_idx.size()) continue;
+        // A shape flagged as a mask is coverage-only (see _emit_normal_batch).
+        if (_is_pure_mask_part(p_idx)) continue;
         const auto* part = _parts_by_idx[p_idx];
         if (!part) continue;
 
@@ -2600,6 +2656,8 @@ void SsInternalPlayer::_emit_mesh_batch(const DrawFrame& f, RID ci,
     for (uint16_t k = 0; k < count; k++) {
         int p_idx = (int)draw_order_data[batch->start_rank() + k];
         if (p_idx < 0 || p_idx >= (int)_parts_by_idx.size()) continue;
+        // A mesh flagged as a mask is coverage-only (see _emit_normal_batch).
+        if (_is_pure_mask_part(p_idx)) continue;
         const auto* part = _parts_by_idx[p_idx];
         if (!part) continue;
 
@@ -2760,6 +2818,12 @@ void SsInternalPlayer::_fetchAnimation() {
     _free_per_part_canvas_items();
     _free_mask_targets();
 
+    // Drop the previous animation up-front: it points into the OLD resource's
+    // FlatBuffer, which setSSABResource may already have freed by releasing the
+    // last Ref. Every failure path below returns without re-assigning it, and
+    // update() / _emit_effect_slot dereference it on the next tick.
+    _currentAnimationData = nullptr;
+
     if (runtime_res != nullptr) {
         ss_resource_destroy(runtime_res);
         runtime_res = nullptr;
@@ -2806,6 +2870,9 @@ void SsInternalPlayer::_fetchAnimation() {
     bool setup = ss_runtime_setup_animation_by_hash(runtime_ctx, _animationSelectedHash);
     if (!setup) {
         ERR_PRINT("SSAB Setup Animation Failed by hash: " + String::num_int64(_animationSelectedHash));
+        // The runtime has no animation bound, so nothing may consume this frame's
+        // animation data either.
+        _currentAnimationData = nullptr;
         return;
     }
 

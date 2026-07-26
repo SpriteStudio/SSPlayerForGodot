@@ -7,6 +7,15 @@ R"GLSL(
 // RGBA8 channel (e.g. R for bits 0..7, value (1<<(bit%8))/255). Additive
 // blending then ORs the disjoint bits together across writers.
 //
+// LIMITATION: add is only equivalent to OR while no texel receives the same bit
+// twice. That holds across writers (their bits are disjoint) and for the quad /
+// pentagon and triangulated-shape geometry we emit, but a single writer whose
+// own triangles overlap (e.g. a bone-deformed mesh folded onto itself) adds its
+// bit twice into the shared texels, which carries into the neighbouring bit —
+// those texels then read as a different writer's mask. Godot's canvas render
+// modes offer no saturating (max) blend, so fixing this properly needs a
+// stencil-style write rather than a shader change.
+//
 // Cutout: a texel contributes to the mask only where the writer sprite's alpha
 // is strictly greater than `mask_threshold`. The player derives the threshold
 // from the part's `mask` attribute (PartState.mask()); mask == 0 maps to

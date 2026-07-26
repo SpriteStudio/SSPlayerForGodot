@@ -21,6 +21,18 @@ void SSABResource::_bind_methods() {
   ClassDB::bind_method(D_METHOD("get_sound_info", "sound_list_name_hash", "sound_name_hash"), &SSABResource::get_sound_info);
   }
 bool SSABResource::is_valid() const {
+  // Verification walks the whole buffer, and nearly every accessor below gates
+  // on it (selecting a player in the editor alone triggers several, and each
+  // Instance child does one per animation lookup), so a multi-megabyte SSAB
+  // would be re-verified many times per operation. The buffer is immutable
+  // between load_from_file / copy_from, both of which reset the cache.
+  if (_valid_cache < 0) {
+    _valid_cache = _verify_binary() ? 1 : 0;
+  }
+  return _valid_cache != 0;
+}
+
+bool SSABResource::_verify_binary() const {
   if (binary.size() == 0) {
     return false;
   }
@@ -58,6 +70,8 @@ bool SSABResource::is_valid() const {
 Error SSABResource::load_from_file(const String &path) {
   Error error = OK;
   _parent_dir = path.get_base_dir();
+  // New buffer: drop the cached verification verdict before touching `binary`.
+  _valid_cache = -1;
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
   binary = FileAccess::get_file_as_bytes(path);
   if (binary.size() == 0) {
@@ -72,6 +86,7 @@ Error SSABResource::load_from_file(const String &path) {
 
   if (!is_valid()) {
     binary.clear();
+    _valid_cache = -1;
     return ERR_INVALID_DATA;
   }
 
@@ -332,6 +347,7 @@ Error SSABResource::copy_from(const Ref<Resource> &p_resource) {
   const Ref<SSABResource> &ssabFile =
       static_cast<const Ref<SSABResource> &>(p_resource);
   this->binary = ssabFile->binary;
+  _valid_cache = -1;
   return OK;
 }
 #endif

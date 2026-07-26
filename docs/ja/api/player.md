@@ -57,7 +57,7 @@ func _ready() -> void:
 
 * `get_part_names() -> PackedStringArray`: 現在のアニメーションに含まれる全パーツ名。
 * `get_part_index(part_name: String) -> int`: パーツ名をパーツインデックスへ解決します。存在しない場合は `-1`。
-* `get_part_transform(part_name: String) -> Transform2D`: 現在のフレームでのパーツのローカル `Transform2D`。パーツが不明な場合は単位行列を返します。
+* `get_part_transform(part_name: String) -> Transform2D`: 現在のフレームでのパーツの `Transform2D`（プレイヤーノードのローカル空間。`flip_h` / `flip_v` / `offset` を含みます）。パーツが不明な場合は単位行列を返します。
 * `is_part_hidden(part_name: String) -> bool`: 現在のフレームでそのパーツが非表示かどうか。
 
 ## パーツオーバーライド
