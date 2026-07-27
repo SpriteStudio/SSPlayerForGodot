@@ -343,6 +343,11 @@ private:
     const ss::format::AnimationData* _currentAnimationData = nullptr;
     void* runtime_ctx = nullptr;
     void* runtime_res = nullptr;
+    // Set whenever the assigned SSAB (or its buffer) changes, cleared once
+    // `_fetchAnimation` has re-borrowed and re-bound it. An animation change
+    // within the same SSAB must NOT re-bind: binding drops every part override,
+    // including the Permanent-priority ones documented to survive it.
+    bool _res_rebind_pending = true;
     float previous_frame_no = -1.0f;
     float _speed_rate = 1.0f;
     bool _sub_frame_enabled = false;

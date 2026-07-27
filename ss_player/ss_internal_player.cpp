@@ -304,6 +304,9 @@ void SsInternalPlayer::setSSABResource(const Ref<SSABResource>& ssabRes) {
     _ssabRes = ssabRes;
     _strAnimationSelected = "";
     _animationSelectedHash = 0;
+    // A different resource — or the same one reloaded from disk, which may have
+    // moved its buffer — invalidates the borrow the runtime holds.
+    _res_rebind_pending = true;
 
     if (!_ssabRes.is_null()) {
         if (!_ssabRes->is_valid()) {
@@ -2814,6 +2817,7 @@ void SsInternalPlayer::_fetchAnimation() {
             ss_resource_destroy(runtime_res);
             runtime_res = nullptr;
         }
+        _res_rebind_pending = true;
         _currentAnimationData = nullptr;
         // Free instance children before their parent canvas items — each
         // child's _root_ci is parented to a batch CI from
@@ -2840,24 +2844,33 @@ void SsInternalPlayer::_fetchAnimation() {
     // update() / _emit_effect_slot dereference it on the next tick.
     _currentAnimationData = nullptr;
 
-    if (runtime_res != nullptr) {
-        ss_resource_destroy(runtime_res);
-        runtime_res = nullptr;
-    }
+    // Re-borrow and re-bind only when the SSAB itself changed. Binding tells the
+    // runtime the part identities may be new, so it drops every part override —
+    // correct for a new SSAB, wrong for an animation change within one, where
+    // Permanent-priority overrides are documented to persist (the runtime's
+    // setup step keeps them). Re-binding here made every `animation = ...`
+    // discard them.
+    if (_res_rebind_pending || runtime_res == nullptr) {
+        if (runtime_res != nullptr) {
+            ss_resource_destroy(runtime_res);
+            runtime_res = nullptr;
+        }
 
-    // Borrow (do not copy) the resource's buffer to keep loading zero-copy. The
-    // buffer must remain valid and unmodified until runtime_res is destroyed;
-    // every resource change re-creates this borrow via _fetchAnimation.
-    runtime_res = ss_resource_create_borrow(_ssabRes->get_data_ptr(), _ssabRes->get_data_size());
-    if (runtime_res == nullptr) {
-        ERR_PRINT("SSAB Resource Create Failed");
-        return;
-    }
+        // Borrow (do not copy) the resource's buffer to keep loading zero-copy.
+        // The buffer must remain valid and unmodified until runtime_res is
+        // destroyed; every resource change re-creates this borrow.
+        runtime_res = ss_resource_create_borrow(_ssabRes->get_data_ptr(), _ssabRes->get_data_size());
+        if (runtime_res == nullptr) {
+            ERR_PRINT("SSAB Resource Create Failed");
+            return;
+        }
 
-    bool binded = ss_runtime_bind_resource(runtime_ctx, runtime_res);
-    if (!binded) {
-        ERR_PRINT("SSAB Resource Bind Failed");
-        return;
+        bool binded = ss_runtime_bind_resource(runtime_ctx, runtime_res);
+        if (!binded) {
+            ERR_PRINT("SSAB Resource Bind Failed");
+            return;
+        }
+        _res_rebind_pending = false;
     }
 
     // Per-batch canvas_item pool grows on demand inside _drawAnimation via
