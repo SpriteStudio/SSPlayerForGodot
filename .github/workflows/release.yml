@@ -259,6 +259,13 @@ jobs:
           cp ../misc/spritestudio.gdextension addons/spritestudio/
           cp ../LICENSE.md addons/spritestudio/
 
+          # Editor icons referenced by the [icons] section of
+          # spritestudio.gdextension. They are source files, not build outputs,
+          # so they never reach the platform artifacts — copy them straight from
+          # the tree (same set as scripts/build-extension.sh).
+          mkdir -p addons/spritestudio/icons
+          cp ../ss_player/icons/icon_*.svg addons/spritestudio/icons/
+
           # Bundle third-party license notices next to the statically-linked
           # native binaries: FlatBuffers (Apache-2.0), godot-cpp (MIT), and the
           # Rust runtime crates. The runtime crate licenses were staged into

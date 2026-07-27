@@ -167,6 +167,12 @@
 				Emitted when an audio part fires an audio event. [param payload] carries [code]part_index[/code], [code]sound_list_name_hash[/code], [code]sound_name_hash[/code], [code]sound_name[/code] and [code]loop_num[/code] (the play count). This is an observation channel and fires in every playback direction (and in the editor), independently of [member play_audio].
 			</description>
 		</signal>
+		<signal name="frame_updated">
+			<param index="0" name="frame_no" type="float" />
+			<description>
+				Emitted after the animation state has been evaluated for [param frame_no], before the parts are drawn. Connect to this to read part poses in the same frame they render, independently of [member animation_process_mode]. [SpriteStudioPartAttachment2D] uses this signal internally.
+			</description>
+		</signal>
 	</signals>
 	<constants>
 		<constant name="ANIMATION_PROCESS_PHYSICS" value="0" enum="AnimationProcessMode">

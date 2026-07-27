@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="SSQBResource" inherits="Resource" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+	<brief_description>
+		A SpriteStudio 7 sequence binary ([code].ssqb[/code]).
+	</brief_description>
+	<description>
+		Holds the sequence binary produced from a SpriteStudio sequence ([code].ssqe[/code]) alongside the animations, either by dropping the project onto the editor (the [b]SS Import Dock[/b]) or by running [code]ssconverter-cli[/code].
+		A sequence is a playlist that chains animations together. The resource loads and saves today, but no node consumes it yet — sequence playback is not implemented in this version, so loading a [code].ssqb[/code] has no effect on [SpriteStudioPlayer2D]. See [SSABResource] for the animation data that is playable.
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="load_from_file">
+			<return type="int" enum="Error" />
+			<param index="0" name="path" type="String" />
+			<description>
+				Replaces the contents of this resource with the [code].ssqb[/code] file at [param path]. Returns [constant OK] on success.
+			</description>
+		</method>
+		<method name="save_to_file">
+			<return type="int" enum="Error" />
+			<param index="0" name="path" type="String" />
+			<description>
+				Writes the held binary to [param path] unchanged. Returns [constant OK] on success.
+			</description>
+		</method>
+	</methods>
+</class>
