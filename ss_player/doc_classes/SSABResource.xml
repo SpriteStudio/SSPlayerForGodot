@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="SSABResource" inherits="Resource" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+	<brief_description>
+		A SpriteStudio 7 animation binary ([code].ssab[/code]).
+	</brief_description>
+	<description>
+		Holds the animation binary produced from a SpriteStudio project ([code].sspj[/code]), either by dropping the project onto the editor (the [b]SS Import Dock[/b]) or by running [code]ssconverter-cli[/code]. Assign it to [member SpriteStudioPlayer2D.ssab] to play it.
+		Loading does not parse the file: the runtime reads the FlatBuffers buffer in place and borrows it rather than copying, so load cost is close to the cost of reading the bytes. The buffer stays immutable until [method load_from_file] replaces it.
+		Textures and audio referenced by the animation are resolved relative to the directory the resource was loaded from, so keep the converter's output directory intact when moving files around.
+		[b]Note:[/b] when several [SpriteStudioPlayer2D] nodes share one resource, enable [member Resource.resource_local_to_scene] so each node gets its own playback state.
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="load_from_file">
+			<return type="int" enum="Error" />
+			<param index="0" name="path" type="String" />
+			<description>
+				Replaces the contents of this resource with the [code].ssab[/code] file at [param path]. Returns [constant OK] on success.
+				The buffer is verified before it is used, so a truncated or untrusted file fails here rather than during playback.
+			</description>
+		</method>
+		<method name="save_to_file">
+			<return type="int" enum="Error" />
+			<param index="0" name="path" type="String" />
+			<description>
+				Writes the held binary to [param path] unchanged. Returns [constant OK] on success.
+			</description>
+		</method>
+		<method name="is_valid" qualifiers="const">
+			<return type="bool" />
+			<description>
+				Returns [code]true[/code] when the held buffer passes verification. The result is computed once and cached until the buffer is replaced, so this is cheap to call repeatedly. The accessors below return empty results while this is [code]false[/code].
+			</description>
+		</method>
+		<method name="get_animation_count">
+			<return type="int" />
+			<description>
+				Returns the number of animations in the resource.
+			</description>
+		</method>
+		<method name="get_animation_names">
+			<return type="PackedStringArray" />
+			<description>
+				Returns the name of every animation, in the order they appear in the binary. These are the values accepted by [member SpriteStudioPlayer2D.animation].
+			</description>
+		</method>
+		<method name="get_cellmap_names">
+			<return type="PackedStringArray" />
+			<description>
+				Returns the name of every cellmap (texture atlas) the animation references. Each one corresponds to a [code]cellmaps/[/code] override slot in the inspector and to the [param cellmap_name] accepted by [method SpriteStudioPlayer2D.set_cellmap_texture].
+			</description>
+		</method>
+		<method name="get_cell_names">
+			<return type="PackedStringArray" />
+			<param index="0" name="cellmap_name" type="String" />
+			<description>
+				Returns the names of the cells inside [param cellmap_name]. Returns an empty array when that cellmap does not exist.
+			</description>
+		</method>
+		<method name="get_sound_stream">
+			<return type="AudioStream" />
+			<param index="0" name="sound_list_name_hash" type="int" />
+			<param index="1" name="sound_name_hash" type="int" />
+			<description>
+				Returns the [AudioStream] for an audio event, or [code]null[/code] when the referenced file is missing. Both hashes are carried by the payload of [signal SpriteStudioPlayer2D.audio], so this is how a script plays animation audio through its own [AudioStreamPlayer].
+			</description>
+		</method>
+		<method name="get_sound_info">
+			<return type="Dictionary" />
+			<param index="0" name="sound_list_name_hash" type="int" />
+			<param index="1" name="sound_name_hash" type="int" />
+			<description>
+				Returns metadata for an audio event without loading the stream: [code]alias[/code] (the name authored in SpriteStudio), [code]file_path[/code] (relative to this resource), [code]path[/code] (the resolved project path), [code]file_path_hash[/code] and [code]time_total[/code]. Returns an empty [Dictionary] when the event is unknown.
+			</description>
+		</method>
+	</methods>
+</class>

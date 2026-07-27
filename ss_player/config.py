@@ -9,6 +9,9 @@ def configure(env):
 def get_doc_classes():
     return [
         "SpriteStudioPlayer2D",
+        "SpriteStudioPartAttachment2D",
+        "SSABResource",
+        "SSQBResource",
     ]
 
 def get_doc_path():

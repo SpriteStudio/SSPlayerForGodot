@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="SpriteStudioPartAttachment2D" inherits="Node2D" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+	<brief_description>
+		Mirrors the pose of one SpriteStudio part onto a [Node2D].
+	</brief_description>
+	<description>
+		Tracks a single part of a [SpriteStudioPlayer2D] animation and copies its pose onto a [Node2D] every frame. Use it to pin Godot content — a weapon sprite, a particle emitter, an [Area2D] — to a part of the animation.
+		It is modeled on [RemoteTransform2D] and shares its vocabulary ([member remote_path], [member use_global_coordinates], [member update_position], [member update_rotation], [member update_scale]), adding [member part_name] and [member follow_path] to say which part of which player to follow.
+		With [member remote_path] left empty the node drives itself, so children simply follow through scene-tree inheritance — this is the usual setup. Set [member remote_path] to drive a [Node2D] elsewhere in the scene instead, decoupled from the player's subtree.
+		The player neither creates nor owns this node: author it in the scene tree yourself and it stays under your control. It reads the pose the player has already computed — it does not make the player do extra work — by connecting to [signal SpriteStudioPlayer2D.frame_updated], so it stays in step with the frame being rendered regardless of the player's [member SpriteStudioPlayer2D.animation_process_mode].
+		[b]Note:[/b] in the editor, [member part_name] is presented as a dropdown of the resolved player's part names. It remains free text, so a name still works when the player cannot be resolved at edit time.
+	</description>
+	<tutorials>
+	</tutorials>
+	<members>
+		<member name="part_name" type="String" setter="set_part_name" getter="get_part_name" default="&quot;&quot;">
+			Name of the part to follow, as authored in SpriteStudio.
+		</member>
+		<member name="follow_path" type="NodePath" setter="set_follow_path" getter="get_follow_path" default="NodePath(&quot;&quot;)">
+			Path to the [SpriteStudioPlayer2D] whose part is followed. When empty, the nearest ancestor [SpriteStudioPlayer2D] is used.
+		</member>
+		<member name="remote_path" type="NodePath" setter="set_remote_path" getter="get_remote_path" default="NodePath(&quot;&quot;)">
+			Path to the [Node2D] that receives the part's pose. When empty, this node drives itself and its children follow through the scene tree.
+		</member>
+		<member name="use_global_coordinates" type="bool" setter="set_use_global_coordinates" getter="get_use_global_coordinates" default="true">
+			If [code]true[/code], the pose is applied in global space; if [code]false[/code], in the target's local space. Matches [member RemoteTransform2D.use_global_coordinates].
+		</member>
+		<member name="update_position" type="bool" setter="set_update_position" getter="get_update_position" default="true">
+			If [code]true[/code], the part's position is copied to the target.
+		</member>
+		<member name="update_rotation" type="bool" setter="set_update_rotation" getter="get_update_rotation" default="true">
+			If [code]true[/code], the part's rotation is copied to the target.
+		</member>
+		<member name="update_scale" type="bool" setter="set_update_scale" getter="get_update_scale" default="false">
+			If [code]true[/code], the part's scale is copied to the target. Off by default: with position and rotation enabled the resulting transform already carries the part's scale in most setups, and copying it as well tends to double-apply it to child nodes.
+		</member>
+		<member name="on_part_hidden" type="int" setter="set_on_part_hidden" getter="get_on_part_hidden" enum="SpriteStudioPartAttachment2D.HiddenBehavior" default="0">
+			What to do on frames where the tracked part is hidden. See [enum HiddenBehavior].
+			This applies only to a part that exists but is hidden on the current frame. A part that is absent from the animation altogether always hides the target.
+		</member>
+	</members>
+	<constants>
+		<constant name="FOLLOW_ALWAYS" value="0" enum="HiddenBehavior">
+			Keep following the part's pose while it is hidden, leaving the target visible.
+		</constant>
+		<constant name="HIDE_TARGET" value="1" enum="HiddenBehavior">
+			Hide the driven target for as long as the part is hidden.
+		</constant>
+	</constants>
+</class>
