@@ -78,7 +78,7 @@ struct SsMaskCoverageTarget {
     int canvas_items_in_use = 0;
     int w = 0;
     int h = 0;
-    bool fresh = false;           // first frame after (re)acquire: skip masking once
+    RID parent_viewport;          // host viewport this target currently renders under
 };
 
 namespace {
@@ -102,33 +102,43 @@ public:
         }
     }
 
-    SsMaskCoverageTarget* acquire(RenderingServer* rs, int w, int h) {
+    SsMaskCoverageTarget* acquire(RenderingServer* rs, int w, int h, RID parent_viewport) {
         const uint64_t key = ((uint64_t)(uint32_t)w << 32) | (uint32_t)h;
         Vector<SsMaskCoverageTarget*>* lst = _free.getptr(key);
         if (lst && !lst->is_empty()) {
             SsMaskCoverageTarget* t = (*lst)[lst->size() - 1];
             lst->remove_at(lst->size() - 1);
-            t->fresh = true;
+            _set_parent(rs, t, parent_viewport);
             return t;
         }
         SsMaskCoverageTarget* t = memnew(SsMaskCoverageTarget);
         t->w = w;
         t->h = h;
-        t->fresh = true;
         t->viewport = rs->viewport_create();
-        // UPDATE_ONCE: re-requested each frame the target is rendered. Maskable
-        // parts sample the previous frame's result (one-frame latency), which
-        // sidesteps inter-viewport render ordering.
+        // UPDATE_ONCE: re-requested each frame the target is rendered. The
+        // target renders under the borrowing player's host viewport (see
+        // `_set_parent`), so its coverage is available to that player's parts
+        // in the same frame.
         rs->viewport_set_update_mode(t->viewport, RS_VIEWPORT_UPDATE_ONCE);
         rs->viewport_set_clear_mode(t->viewport, RS_VIEWPORT_CLEAR_ALWAYS);
         rs->viewport_set_transparent_background(t->viewport, true);
         rs->viewport_set_disable_3d(t->viewport, true);
-        rs->viewport_set_active(t->viewport, true);
         rs->viewport_set_size(t->viewport, w, h);
+        // Parent before activating: activation is what flags the server's
+        // active-viewport order dirty (see `_set_parent`).
+        rs->viewport_set_parent_viewport(t->viewport, parent_viewport);
+        t->parent_viewport = parent_viewport;
+        rs->viewport_set_active(t->viewport, true);
         t->canvas = rs->canvas_create();
         rs->viewport_attach_canvas(t->viewport, t->canvas);
         _all.push_back(t);
         return t;
+    }
+
+    // Keep a still-borrowed target's parent link in sync with its borrower's
+    // host viewport (the node may have moved to another viewport since acquire).
+    void reparent(RenderingServer* rs, SsMaskCoverageTarget* t, RID parent_viewport) {
+        if (t) _set_parent(rs, t, parent_viewport);
     }
 
     void release(RenderingServer* rs, SsMaskCoverageTarget* t) {
@@ -142,11 +152,35 @@ public:
             }
         }
         t->canvas_items_in_use = 0;
+        // Drop the parent link while idle. The server never detaches children
+        // when a viewport is freed, and a viewport whose parent RID no longer
+        // resolves is dropped from the render order entirely — so an idle
+        // target must not keep pointing at a host that may go away.
+        _set_parent(rs, t, RID());
         const uint64_t key = ((uint64_t)(uint32_t)t->w << 32) | (uint32_t)t->h;
         _free[key].push_back(t);
     }
 
 private:
+    // Re-parent a target's viewport. Targets are shared between players, which
+    // may live under different viewports, so this runs on every acquire (and on
+    // release, to clear the link).
+    //
+    // `viewport_set_parent_viewport` only assigns the parent; it does NOT flag
+    // the server's sorted active-viewport list dirty. `viewport_set_active`
+    // does, so toggle it to force the re-sort that puts this target ahead of
+    // its host. Without that, the new parent is ignored until something else
+    // dirties the order.
+    void _set_parent(RenderingServer* rs, SsMaskCoverageTarget* t, RID parent_viewport) {
+        if (t->parent_viewport == parent_viewport) {
+            return;
+        }
+        rs->viewport_set_parent_viewport(t->viewport, parent_viewport);
+        t->parent_viewport = parent_viewport;
+        rs->viewport_set_active(t->viewport, false);
+        rs->viewport_set_active(t->viewport, true);
+    }
+
     void free_all(RenderingServer* rs) {
         for (int i = 0; i < _all.size(); i++) {
             SsMaskCoverageTarget* t = _all[i];
@@ -270,6 +304,9 @@ void SsInternalPlayer::setSSABResource(const Ref<SSABResource>& ssabRes) {
     _ssabRes = ssabRes;
     _strAnimationSelected = "";
     _animationSelectedHash = 0;
+    // A different resource — or the same one reloaded from disk, which may have
+    // moved its buffer — invalidates the borrow the runtime holds.
+    _res_rebind_pending = true;
 
     if (!_ssabRes.is_null()) {
         if (!_ssabRes->is_valid()) {
@@ -882,6 +919,19 @@ bool SsInternalPlayer::_build_mask_writers(const DrawFrame& f) {
     return !_mask_writers.is_empty();
 }
 
+void SsInternalPlayer::setHostViewport(RID p_viewport) {
+    if (_host_viewport == p_viewport) {
+        return;
+    }
+    _host_viewport = p_viewport;
+    // A target borrowed while under the old viewport would keep rendering (and
+    // sorting) under it, so move it across immediately. Pooled targets pick the
+    // current host up at acquire time.
+    if (_mask_target) {
+        SsMaskCoveragePool::get().reparent(RenderingServer::get_singleton(), _mask_target, _host_viewport);
+    }
+}
+
 void SsInternalPlayer::_acquire_mask_target(int w, int h) {
     if (_mask_write_shader.is_null()) {
         _mask_write_shader.instantiate();
@@ -896,25 +946,17 @@ void SsInternalPlayer::_acquire_mask_target(int w, int h) {
     }
     RenderingServer* rs = RenderingServer::get_singleton();
     if (_mask_target) {
-        // Size-class transition: keep the outgoing target one more frame so the
-        // coverage pass can sample its still-valid coverage while the freshly
-        // acquired target warms up (see _render_mask_coverage). Any earlier
-        // leftover (defensive; normally cleared at the pass start) is returned.
-        if (_mask_prev) {
-            SsMaskCoveragePool::get().release(rs, _mask_prev);
-        }
-        _mask_prev = _mask_target;
+        // Size-class transition. The freshly acquired target is rendered before
+        // this player draws (it is parented to the host viewport), so it carries
+        // this frame's coverage and the outgoing one can go back right away.
+        SsMaskCoveragePool::get().release(rs, _mask_target);
         _mask_target = nullptr;
     }
-    _mask_target = SsMaskCoveragePool::get().acquire(rs, w, h);
+    _mask_target = SsMaskCoveragePool::get().acquire(rs, w, h, _host_viewport);
 }
 
 void SsInternalPlayer::_release_mask_target() {
     RenderingServer* rs = RenderingServer::get_singleton();
-    if (_mask_prev) {
-        SsMaskCoveragePool::get().release(rs, _mask_prev);
-        _mask_prev = nullptr;
-    }
     if (_mask_target) {
         SsMaskCoveragePool::get().release(rs, _mask_target);
         _mask_target = nullptr;
@@ -957,12 +999,6 @@ Ref<ShaderMaterial> SsInternalPlayer::_acquire_mask_write_material() {
 
 void SsInternalPlayer::_render_mask_coverage(const DrawFrame& f) {
     _mask_coverage_valid = false;
-    // Return the transition leftover held for last frame's sampling; if we are
-    // still transitioning, _acquire_mask_target re-establishes it below.
-    if (_mask_prev) {
-        SsMaskCoveragePool::get().release(RenderingServer::get_singleton(), _mask_prev);
-        _mask_prev = nullptr;
-    }
     if (_mask_writers.is_empty() || !f.frameData) return;
     // Borrow a pooled target of the size class decided last frame (stable thanks
     // to quantization), then re-request its one-shot render this frame.
@@ -1134,14 +1170,12 @@ void SsInternalPlayer::_render_mask_coverage(const DrawFrame& f) {
     uv.columns[0] = Vector2(1.0f / bsize.x, 0);
     uv.columns[1] = Vector2(0, 1.0f / bsize.y);
     uv.columns[2] = Vector2(-bmin.x / bsize.x, -bmin.y / bsize.y);
-    // What the shaders sample this frame is the coverage rendered LAST frame (the
-    // UPDATE_ONCE latency below), rasterized with last frame's bbox -> viewport
-    // transform. So publish last frame's UV transform and hold this one back;
-    // publishing `uv` now would offset/scale the lookup by the per-frame bbox
-    // delta. The same holds on a size-class transition, where `_mask_prev` is
-    // sampled: it too was rendered with the previous frame's bbox.
-    _mask_local_to_uv = _mask_local_to_uv_pending;
-    _mask_local_to_uv_pending = uv;
+    // The coverage target renders under this player's host viewport, so what the
+    // shaders sample this frame is the coverage rasterized this frame, with the
+    // `ct` above. Publish the matching UV transform immediately: holding it back
+    // a frame would map positions through a bbox the sampled texels were never
+    // rasterized with, sliding the mask off its target as the bbox moves.
+    _mask_local_to_uv = uv;
 
     // Frame mask state consumed by the maskable emit path (P3).
     _mask_coverage_tex = rs->viewport_get_texture(_mask_target->viewport);
@@ -1169,25 +1203,10 @@ void SsInternalPlayer::_render_mask_coverage(const DrawFrame& f) {
     _mask_next_h = ss_hysteretic_coverage_dim(bsize.y * _coverage_screen_scale, _mask_target->h,
                                               MASK_COVERAGE_MIN_DIM, MASK_COVERAGE_MAX_DIM, MASK_SIZE_SHRINK_HYSTERESIS);
 
-    // A freshly (re)acquired target still holds the previous tenant's coverage
-    // (or nothing), and with one-frame-latency sampling it is not ready this
-    // frame. On a size-class transition we instead sample `_mask_prev` — last
-    // frame's target, whose coverage is still valid (same one-frame latency as
-    // any normal frame, just at the previous resolution for this one frame) —
-    // so masking never drops for a frame while zooming across a class boundary.
-    if (_mask_target->fresh) {
-        _mask_target->fresh = false;
-        if (_mask_prev) {
-            _mask_coverage_tex = rs->viewport_get_texture(_mask_prev->viewport);
-            _mask_coverage_valid = true;
-        } else {
-            // Genuinely the first coverage frame (no previous target to fall back
-            // on) — nothing valid to sample yet, so skip masking this one frame.
-            _mask_coverage_valid = false;
-        }
-    } else {
-        _mask_coverage_valid = true;
-    }
+    // The target was re-requested (UPDATE_ONCE) above and renders ahead of this
+    // player's host viewport, so its coverage is this frame's — valid from the
+    // very first frame of masking and across size-class transitions alike.
+    _mask_coverage_valid = true;
 }
 
 bool SsInternalPlayer::_part_in_mask_scope(uint16_t rank) const {
@@ -2798,6 +2817,7 @@ void SsInternalPlayer::_fetchAnimation() {
             ss_resource_destroy(runtime_res);
             runtime_res = nullptr;
         }
+        _res_rebind_pending = true;
         _currentAnimationData = nullptr;
         // Free instance children before their parent canvas items — each
         // child's _root_ci is parented to a batch CI from
@@ -2824,24 +2844,33 @@ void SsInternalPlayer::_fetchAnimation() {
     // update() / _emit_effect_slot dereference it on the next tick.
     _currentAnimationData = nullptr;
 
-    if (runtime_res != nullptr) {
-        ss_resource_destroy(runtime_res);
-        runtime_res = nullptr;
-    }
+    // Re-borrow and re-bind only when the SSAB itself changed. Binding tells the
+    // runtime the part identities may be new, so it drops every part override —
+    // correct for a new SSAB, wrong for an animation change within one, where
+    // Permanent-priority overrides are documented to persist (the runtime's
+    // setup step keeps them). Re-binding here made every `animation = ...`
+    // discard them.
+    if (_res_rebind_pending || runtime_res == nullptr) {
+        if (runtime_res != nullptr) {
+            ss_resource_destroy(runtime_res);
+            runtime_res = nullptr;
+        }
 
-    // Borrow (do not copy) the resource's buffer to keep loading zero-copy. The
-    // buffer must remain valid and unmodified until runtime_res is destroyed;
-    // every resource change re-creates this borrow via _fetchAnimation.
-    runtime_res = ss_resource_create_borrow(_ssabRes->get_data_ptr(), _ssabRes->get_data_size());
-    if (runtime_res == nullptr) {
-        ERR_PRINT("SSAB Resource Create Failed");
-        return;
-    }
+        // Borrow (do not copy) the resource's buffer to keep loading zero-copy.
+        // The buffer must remain valid and unmodified until runtime_res is
+        // destroyed; every resource change re-creates this borrow.
+        runtime_res = ss_resource_create_borrow(_ssabRes->get_data_ptr(), _ssabRes->get_data_size());
+        if (runtime_res == nullptr) {
+            ERR_PRINT("SSAB Resource Create Failed");
+            return;
+        }
 
-    bool binded = ss_runtime_bind_resource(runtime_ctx, runtime_res);
-    if (!binded) {
-        ERR_PRINT("SSAB Resource Bind Failed");
-        return;
+        bool binded = ss_runtime_bind_resource(runtime_ctx, runtime_res);
+        if (!binded) {
+            ERR_PRINT("SSAB Resource Bind Failed");
+            return;
+        }
+        _res_rebind_pending = false;
     }
 
     // Per-batch canvas_item pool grows on demand inside _drawAnimation via

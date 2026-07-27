@@ -182,6 +182,13 @@ public:
     // wrapper each frame before update(); 1.0 until then.
     void setCoverageScreenScale(float p_scale) { _coverage_screen_scale = (p_scale > 0.0f) ? p_scale : 1.0f; }
 
+    // Viewport the owning Node2D renders into. The mask coverage target is
+    // parented to it so the server renders coverage before this player's parts
+    // sample it, in the same frame. Set by the Node2D wrapper on tree changes
+    // (an invalid RID when outside the tree, where no coverage pass runs); a
+    // target already borrowed is re-parented on the spot.
+    void setHostViewport(RID p_viewport);
+
     void setCellMapOverrideTexture(uint32_t cellmap_name_hash, const Ref<Texture2D>& texture);
     Ref<Texture2D> getCellMapTexture(uint32_t cellmap_name_hash) const;
 
@@ -336,6 +343,11 @@ private:
     const ss::format::AnimationData* _currentAnimationData = nullptr;
     void* runtime_ctx = nullptr;
     void* runtime_res = nullptr;
+    // Set whenever the assigned SSAB (or its buffer) changes, cleared once
+    // `_fetchAnimation` has re-borrowed and re-bound it. An animation change
+    // within the same SSAB must NOT re-bind: binding drops every part override,
+    // including the Permanent-priority ones documented to survive it.
+    bool _res_rebind_pending = true;
     float previous_frame_no = -1.0f;
     float _speed_rate = 1.0f;
     bool _sub_frame_enabled = false;
@@ -534,29 +546,20 @@ private:
     // geometry is rendered into it by `_render_mask_coverage`; maskable shaders
     // sample the result (P3). Acquired by `_acquire_mask_target`, returned by
     // `_release_mask_target` / `_free_mask_targets`. The viewport renders with
-    // UPDATE_ONCE (one-frame latency, sidesteps inter-viewport ordering).
+    // UPDATE_ONCE, parented to `_host_viewport` so it is drawn before the parts
+    // that sample it.
     SsMaskCoverageTarget* _mask_target = nullptr; // borrowed; null when idle
-    // The target used on the PREVIOUS frame, held one extra frame across a
-    // size-class transition. On the transition frame the freshly acquired
-    // `_mask_target` has no coverage yet (one-frame viewport latency), so the
-    // coverage pass samples this still-valid previous target instead of dropping
-    // masking for a frame. Released at the start of the next coverage pass (and on
-    // teardown). null when not mid-transition.
-    SsMaskCoverageTarget* _mask_prev = nullptr;
+    RID _host_viewport;                        // viewport the owning node draws into
     bool _mask_pool_registered = false;        // this player counts as a pool user
     Ref<Shader> _mask_write_shader;            // loaded from SS_MASK_WRITE
     Vector<Ref<ShaderMaterial>> _mask_write_materials; // per-instance, pooled
     int _mask_write_materials_in_use = 0;
     // Maps this player's local space (the space batch geometry lives in, world
     // matrices already applied) -> coverage UV [0,1]. Set per frame by the
-    // coverage pass and read by maskable shaders. Identity until masking runs.
+    // coverage pass and read by maskable shaders. Derived from the same writer
+    // bbox the coverage was rasterized with this frame. Identity until masking
+    // runs.
     Transform2D _mask_local_to_uv;
-    // The UV transform derived from THIS frame's writer bbox. Shaders sample the
-    // coverage rendered on the PREVIOUS frame (UPDATE_ONCE latency), so this is
-    // held back one frame and only then promoted to `_mask_local_to_uv` — using
-    // it immediately would map positions through a bbox the sampled texels were
-    // never rasterized with, sliding the mask off its target as the bbox moves.
-    Transform2D _mask_local_to_uv_pending;
     bool _mask_coverage_valid = false;         // true if this frame drew coverage
     // Coverage-bitmap dimension bounds in pixels. The per-axis size is the
     // mask's on-screen footprint, quantized up to a power-of-two size class in
