@@ -55,10 +55,12 @@ func _ready() -> void:
 
 ## Part queries
 
-* `get_part_names() -> PackedStringArray`: Every part name in the current animation.
+* `get_part_names() -> PackedStringArray`: Every part name in the asset (`.ssab`). Parts do not depend on the animation, so the list is the same for every animation in that asset.
 * `get_part_index(part_name: String) -> int`: Resolves a part name to its part index, or `-1` if it does not exist.
 * `get_part_transform(part_name: String) -> Transform2D`: The part's `Transform2D` on the current frame, in the player node's local space (`flip_h` / `flip_v` / `offset` included). Returns the identity when the part is unknown.
 * `is_part_hidden(part_name: String) -> bool`: Whether the part is hidden on the current frame.
+
+See [Scripting and Event-Driven Control → Part Tracking](../workflow/usage_scripting.md) for `SpriteStudioPartAttachment2D`, the node that makes another node follow a specified part.
 
 ## Part overrides
 
@@ -99,6 +101,7 @@ Override a single part's color / cell / visibility so that it wins over the keyf
 | `animation_changed` | `anim_name: String` | The animation name is changed |
 | `animation_finished` | `anim_name: String` | Every configured loop has been played. Never emitted under an infinite loop |
 | `animation_looped` | `anim_name: String` | The animation looped back to the start. Not emitted on the final cycle, which emits `animation_finished` instead |
+| `frame_updated` | `frame_no: float` | The frame's part poses have just been finalized (right after the player's update, before the render phase). Which process it fires in follows `animation_process_mode` |
 | `user_data` | `payload: Dictionary` | A "User Data" keyframe on the timeline is hit |
 | `signal_emitted` | `command: String, value: Dictionary` | A "Signal" keyframe on the timeline is hit |
 | `audio` | `payload: Dictionary` | An "Audio" keyframe on the timeline is hit |

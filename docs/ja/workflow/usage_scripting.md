@@ -104,6 +104,79 @@ func change_costume():
 
 ---
 
+## パーツトラッキング（指定パーツへの追従）
+
+指定したパーツに、ユーザーが用意したノード（武器・エフェクト・当たり判定など）を毎フレーム追従させる機能です。プレーヤはノードを生成も破棄もせず、姿勢を書き込むだけの連動（Constraint）方式で、対象のライフサイクルはユーザーが所有します。
+
+追従には専用ノード **`SpriteStudioPartAttachment2D`** を使います。`SpriteStudioPlayer2D` の子として置き、`part_name` に追従したいパーツ名を指定してください。このノードの下に武器やエフェクトをぶら下げれば、シーンツリーの継承でまとめて追従します。
+
+> **プロパティは Godot 標準の `RemoteTransform2D` を踏襲**しています。これに「どのプレーヤの、どのパーツに追従するか」を指定する `follow_path` / `part_name` が加わった形です。
+
+| プロパティ | 説明 |
+|---|---|
+| **Part Name** (`part_name`) | 追従対象のパーツ名（`.ssab` の PartData 名）。インスペクタではアセットのパーツ名からドロップダウンで選べます（プレーヤを解決できない場面のために手入力も可） |
+| **Follow Path** (`follow_path`) | 追従元の `SpriteStudioPlayer2D`。空（既定）なら**最も近い祖先**のプレーヤを使います |
+| **Remote Path** (`remote_path`) | 駆動する対象の `Node2D`。空（既定）なら自分自身を動かし、子はシーンツリーの継承で追従します。指定するとその外部ノードへ姿勢を書き込みます（プレーヤのサブツリーの外に置いた資産を追従させたい場合） |
+| **Use Global Coordinates** (`use_global_coordinates`) | ON（既定）でグローバル座標として、OFF で対象のローカル座標として書き込みます |
+| **Update Position / Update Rotation** (`update_position` / `update_rotation`) | 位置 / 回転を反映します（ともに既定 ON） |
+| **Update Scale** (`update_scale`) | スケールを反映します（既定 OFF） |
+| **On Part Hidden** (`on_part_hidden`) | パーツが hide のフレームでの挙動。`Follow Always`（追従を継続。既定）/ `Hide Target`（対象を非表示） |
+
+### スクリプトからの参照
+
+ノードを置かずに、プレーヤへ直接パーツの姿勢を問い合わせることもできます。
+
+```gdscript
+@onready var ss_player = $SpriteStudioPlayer2D
+@onready var muzzle = $Muzzle
+
+func _ready():
+    print(ss_player.get_part_names())    # → ["root", "body", "hand_R", ...]
+
+    # そのフレームのパーツ姿勢が確定するたびに通知される
+    ss_player.frame_updated.connect(_on_frame_updated)
+
+func _on_frame_updated(frame_no: float):
+    # get_part_transform() はプレーヤローカル。グローバルにするならプレーヤの変換を掛ける
+    muzzle.global_transform = ss_player.global_transform * ss_player.get_part_transform("hand_R")
+```
+
+| API | 説明 |
+|---|---|
+| `get_part_names()` | アセット（`.ssab`）に含まれる全パーツ名 |
+| `get_part_index(part_name)` | パーツインデックス。アセットに無ければ `-1` |
+| `get_part_transform(part_name)` | そのパーツの現在フレームの変換（`Transform2D`。プレーヤローカルで、`flip_h` / `flip_v` / `offset` を適用済み）。パーツが不明なら単位行列 |
+| `is_part_hidden(part_name)` | そのパーツが現在フレームで hide かどうか。パーツが不明なら `false` |
+| signal `frame_updated(frame_no: float)` | そのフレームのパーツ姿勢が確定した直後に発火する |
+
+> **一瞬の姿勢だけが要る場合**: 弾の発射位置を取るなど、常時追従させるまでもない場合は、`SpriteStudioPartAttachment2D` を置かずに `get_part_transform()` を直接呼ぶ方が簡潔です。
+
+### 追従のタイミングと精度
+
+追従は、プレーヤが自身の更新を終えた直後に発行する `frame_updated` シグナルで駆動されます。パーツの変換が確定した後・描画の前なので、追従先は**同じフレーム内**で更新されます。どのプロセスで発火するかは、プレーヤの `animation_process_mode`（`Idle`（既定）/ `Physics`）に従います。
+
+Godot の `Transform2D` は 2×3 のアフィン変換をそのまま保持できるため、`update_position` / `update_rotation` / `update_scale` が**すべて ON** のときは変換を丸ごと代入します。この場合は**せん断（Skew）や負のスケールも含めて厳密に一致**し、対象をプレーヤの子に置いても別階層に置いても差はありません。
+
+1 つでも OFF にすると、`RemoteTransform2D` と同じく有効な成分だけを個別に書き込むため、せん断は保持されません。既定は `update_scale` のみ OFF なので、**既定では位置と回転だけが反映されます**。
+
+> **別階層の対象は 1 フレーム遅れることがあります。** 姿勢は駆動時点のプレーヤの `global_transform` を使って書き込むため、その後にプレーヤ自身を動かしても、対象が追随するのは次のフレームです。`SpriteStudioPartAttachment2D`（とその子）をプレーヤの子に置いた場合は、シーンツリーの継承で常に追随します。
+
+> **`RigidBody2D` を追従対象にしないでください。** 毎フレーム transform を直接書き換えるとソルバがテレポートとして扱い、物理が破綻します。動く床のように他の剛体を押す必要がある場合は、Godot 標準の `AnimatableBody2D`（`sync_to_physics` を ON）を対象にし、プレーヤの `animation_process_mode` を `Physics` にして物理フレームで駆動してください。当たり判定を運ぶだけなら `Area2D` / `StaticBody2D` で十分です。
+
+### 注意点
+
+- **対象の `visible` はアタッチメントが操作します。** 次の 2 つの場合に自動で非表示になり、条件が解消すると自動で再表示されます。ユーザー側で設定した表示状態は上書きされることがあります。
+    - パーツ名がアセットに存在しない（この場合は `On Part Hidden` の設定に関係なく常に非表示）
+    - パーツが hide のフレームで、かつ `On Part Hidden` が `Hide Target`
+- パーツ名は、そのプレーヤ自身が読み込んでいる `.ssab` のパーツから解決されます。**インスタンスパーツの内部（子アニメーション）のパーツは指定できません**（インスタンスパーツ自体は指定できます）。
+- パーツ名の解決はアセット（`.ssab`）単位で、アニメーションには依存しません。`.ssab` を差し替えると自動で解決し直されるため、設定をやり直す必要はありません。
+- 同名のパーツが複数ある場合は、最初に見つかったものが使われます。
+- 追従するのは**空間的な変換だけ**です。描画順（Z 順）は追従しないため、追従させたノードが SpriteStudio のパーツの「間」に自動で挟まることはありません。前後関係が必要な場合は `z_index` などで別途調整してください。
+- 対象にできるのは `Node2D` 系のノードです。`Control`（UI）はアンカーと矩形でレイアウトされるため対象にできません。
+- 編集モードでも、プレビュー再生やフレームのスクラブでプレーヤが更新されれば、そのタイミングで追従します。
+
+---
+
 ## パーツオーバーライド（パーツカラー / セル / 表示指定）
 
 パーツ単位のランタイムオーバーライドは、「このパーツを**今**この色に / このセルに / 非表示に」とスクリプトから指示する機能です。オーバーライドはキーフレームやアニメーションのブレンドよりも優先されるので、アニメーションと取り合いになりません。
