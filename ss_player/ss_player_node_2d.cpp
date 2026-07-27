@@ -2,8 +2,10 @@
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
 #include <godot_cpp/classes/engine.hpp>
+#include <godot_cpp/classes/viewport.hpp>
 #else
 #include "core/config/engine.h"
+#include "scene/main/viewport.h"
 #endif
 
 class SpriteStudioPlayer2D::_SignalSink : public SsPlayerEventSink {
@@ -320,6 +322,14 @@ void SpriteStudioPlayer2D::_push_coverage_screen_scale() {
     const float sx = sc.x < 0.0f ? -sc.x : sc.x;
     const float sy = sc.y < 0.0f ? -sc.y : sc.y;
     _internal->setCoverageScreenScale(sx > sy ? sx : sy);
+}
+
+void SpriteStudioPlayer2D::_push_host_viewport() {
+    // The mask coverage target is parented to this viewport so the server draws
+    // it before us. Tree changes are the only thing that can move a node to
+    // another viewport, so pushing it there keeps the link current.
+    Viewport* vp = get_viewport();
+    _internal->setHostViewport(vp ? vp->get_viewport_rid() : RID());
 }
 
 void SpriteStudioPlayer2D::set_animation_process_mode(int p_mode) {
@@ -735,6 +745,7 @@ void SpriteStudioPlayer2D::_notification(int p_notification) {
             // here so editor reloads (which destroy / reattach the canvas)
             // don't leave the InternalPlayer floating.
             _internal->setParentCanvasItem(get_canvas_item());
+            _push_host_viewport();
             if (_process_mode == ANIMATION_PROCESS_IDLE) {
                 set_process_internal(true);
             } else {
@@ -743,6 +754,7 @@ void SpriteStudioPlayer2D::_notification(int p_notification) {
             break;
         case NOTIFICATION_EXIT_TREE:
             _internal->setParentCanvasItem(RID());
+            _internal->setHostViewport(RID());
             // The pooled AudioStreamPlayer children leave the tree with us and
             // stop; reset the controller's bookkeeping to match.
             if (_audio_controller) _audio_controller->stop_all();

@@ -170,6 +170,7 @@ private:
     Transform2D _make_root_transform() const;
     void _update_root_transform();
     void _push_coverage_screen_scale();
+    void _push_host_viewport();
 
     // Adapter that turns SsInternalPlayer event callbacks into Node-level
     // emit_signal calls. Lifetime tied to the Node; lives in the cpp file.
