@@ -104,6 +104,79 @@ This feature allows you to build an efficient avatar system without needing to p
 
 ---
 
+## Part Tracking (Following a Specified Part)
+
+A feature that makes a user-provided node (weapon, effect, hit detection, etc.) follow a specified part every frame. The player neither creates nor frees nodes; it only writes the pose (constraint style), and you own the target's lifecycle.
+
+Tracking is done with the dedicated **`SpriteStudioPartAttachment2D`** node. Place it as a child of `SpriteStudioPlayer2D` and set `part_name` to the part you want to follow. Anything you hang under that node — a weapon, an effect — follows along through scene-tree inheritance.
+
+> **The properties follow Godot's own `RemoteTransform2D`**, plus `follow_path` / `part_name` to say which player and which part to read.
+
+| Property | Description |
+|---|---|
+| **Part Name** (`part_name`) | The name of the part to follow (the PartData name in the `.ssab`). The inspector offers a dropdown populated from the asset's part names (still typable, for when the player cannot be resolved) |
+| **Follow Path** (`follow_path`) | The `SpriteStudioPlayer2D` to read from. Empty (default) uses the **nearest ancestor** player |
+| **Remote Path** (`remote_path`) | The `Node2D` to drive. Empty (default) drives this node itself, and its children follow through scene-tree inheritance. Set it to push the pose to an external node instead (for assets that live outside the player's subtree) |
+| **Use Global Coordinates** (`use_global_coordinates`) | ON (default) writes the pose in global coordinates, OFF in the target's local coordinates |
+| **Update Position / Update Rotation** (`update_position` / `update_rotation`) | Reflect position / rotation (both ON by default) |
+| **Update Scale** (`update_scale`) | Reflect scale (OFF by default) |
+| **On Part Hidden** (`on_part_hidden`) | Behavior on frames where the part is hidden. `Follow Always` (keep following; default) / `Hide Target` (hide the target) |
+
+### Querying from a Script
+
+Instead of placing a node, you can also ask the player for a part's pose directly.
+
+```gdscript
+@onready var ss_player = $SpriteStudioPlayer2D
+@onready var muzzle = $Muzzle
+
+func _ready():
+    print(ss_player.get_part_names())    # -> ["root", "body", "hand_R", ...]
+
+    # Emitted every time the frame's part poses are finalized
+    ss_player.frame_updated.connect(_on_frame_updated)
+
+func _on_frame_updated(frame_no: float):
+    # get_part_transform() is player-local; multiply by the player's transform for global
+    muzzle.global_transform = ss_player.global_transform * ss_player.get_part_transform("hand_R")
+```
+
+| API | Description |
+|---|---|
+| `get_part_names()` | Every part name in the asset (`.ssab`) |
+| `get_part_index(part_name)` | Part index, or `-1` if the part is not in the asset |
+| `get_part_transform(part_name)` | The part's transform for the current frame (a `Transform2D`, player-local, with `flip_h` / `flip_v` / `offset` already applied). Identity if the part is unknown |
+| `is_part_hidden(part_name)` | Whether the part is hidden on the current frame. `false` if the part is unknown |
+| signal `frame_updated(frame_no: float)` | Emitted right after the frame's part poses are finalized |
+
+> When you only need the pose at a single moment (a projectile spawn point, for example) rather than continuous following, calling `get_part_transform()` directly is simpler than placing a `SpriteStudioPartAttachment2D`.
+
+### Timing and Accuracy
+
+Tracking is driven by the `frame_updated` signal the player emits right after finishing its own update. That is after the part transforms are finalized and before the render phase, so the target updates **within the same frame**. Which process it fires in follows the player's `animation_process_mode` (`Idle` (default) / `Physics`).
+
+Godot's `Transform2D` holds a full 2x3 affine transform, so when `update_position` / `update_rotation` / `update_scale` are **all ON** the transform is assigned whole. That matches the part **exactly, including skew and negative scale**, whether the target sits under the player or in a separate hierarchy.
+
+Turning any of them OFF writes only the enabled components individually, like `RemoteTransform2D`, and skew is not preserved. Only `update_scale` is OFF by default, so **position and rotation alone are reflected out of the box**.
+
+> **A target in a separate hierarchy can lag by one frame.** The pose is written using the player's `global_transform` as sampled at drive time, so if you move the player afterwards, the target does not follow until the next frame. A `SpriteStudioPartAttachment2D` (and its children) placed under the player always follows, through hierarchy inheritance.
+
+> **Do not track with a `RigidBody2D`.** Overwriting its transform every frame reads as a teleport to the solver and breaks the physics. If you need to push other bodies — a moving platform, say — target Godot's `AnimatableBody2D` (with `sync_to_physics` ON) and set the player's `animation_process_mode` to `Physics` so tracking is driven on the physics frame. To merely carry a hit box, `Area2D` / `StaticBody2D` is enough.
+
+### Notes
+
+- **The attachment controls the target's `visible`.** It is hidden automatically in the two cases below, and shown again automatically once the condition clears, so a visibility state you set yourself may be overwritten.
+    - The part name does not exist in the asset (always hidden, regardless of the `On Part Hidden` setting)
+    - The part is hidden on this frame and `On Part Hidden` is `Hide Target`
+- Part names resolve against the parts of the `.ssab` the player itself has loaded. **Parts inside an Instance part (the child animation) cannot be specified** (the Instance part itself can).
+- Part names resolve per asset (`.ssab`), independent of the animation. Swapping the `.ssab` re-resolves them automatically, so nothing has to be set up again.
+- If several parts share a name, the first one found is used.
+- Only the **spatial transform** is tracked. Draw order (Z order) is not, so a tracked node is never slotted automatically *between* SpriteStudio parts. Use `z_index` or similar when you need a specific ordering.
+- Targets must be `Node2D`-based nodes. `Control` (UI) is laid out by anchors and rects and cannot be targeted.
+- In the editor, tracking is applied as well whenever the player updates — during preview playback or while scrubbing frames.
+
+---
+
 ## Part Overrides (Color / Cell / Visibility)
 
 Per-part runtime overrides let a script say "make this part this color / this cell / hidden **now**". An override wins over both the keyframe and any animation blending, so it does not have to fight the animation.

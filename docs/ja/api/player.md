@@ -55,10 +55,12 @@ func _ready() -> void:
 
 ## パーツの参照
 
-* `get_part_names() -> PackedStringArray`: 現在のアニメーションに含まれる全パーツ名。
+* `get_part_names() -> PackedStringArray`: アセット（`.ssab`）に含まれる全パーツ名。パーツはアニメーションに依存しないため、同じアセット内のどのアニメーションでも同じ一覧になります。
 * `get_part_index(part_name: String) -> int`: パーツ名をパーツインデックスへ解決します。存在しない場合は `-1`。
 * `get_part_transform(part_name: String) -> Transform2D`: 現在のフレームでのパーツの `Transform2D`（プレイヤーノードのローカル空間。`flip_h` / `flip_v` / `offset` を含みます）。パーツが不明な場合は単位行列を返します。
 * `is_part_hidden(part_name: String) -> bool`: 現在のフレームでそのパーツが非表示かどうか。
+
+指定したパーツにノードを追従させる `SpriteStudioPartAttachment2D` については [スクリプト制御とイベント駆動 → パーツトラッキング](../workflow/usage_scripting.md) を参照してください。
 
 ## パーツオーバーライド
 
@@ -99,6 +101,7 @@ func _ready() -> void:
 | `animation_changed` | `anim_name: String` | アニメーションが切り替わった時 |
 | `animation_finished` | `anim_name: String` | 指定したループ回数をすべて再生し終えた時。無限ループでは発火しない |
 | `animation_looped` | `anim_name: String` | 1周して先頭に戻った時。最終周では発火せず `animation_finished` になる |
+| `frame_updated` | `frame_no: float` | そのフレームのパーツ姿勢が確定した直後（プレーヤの更新直後、描画の前）。発火するプロセスは `animation_process_mode` に従う |
 | `user_data` | `payload: Dictionary` | タイムライン上の「ユーザーデータ」キーに到達した時 |
 | `signal_emitted` | `command: String, value: Dictionary` | タイムライン上の「シグナル」キーに到達した時 |
 | `audio` | `payload: Dictionary` | タイムライン上の「オーディオ」キーに到達した時 |
