@@ -5,6 +5,14 @@ Constraints and platform-specific caveats to be aware of when shipping with the 
 > [!NOTE]
 > This is a living document. Items are added as they are confirmed; wording and coverage may change as the plugin evolves.
 
+## Not Yet Implemented
+
+> [!WARNING]
+> - **Text parts** — not drawn. The runtime reserves the part's slot in the draw plan but supplies no glyphs (glyph layout and rasterization are the player's job), and the plugin has no Godot text pass yet.
+> - **9-slice parts** — not drawn. The runtime builds the whole grid into its dedicated `Nines` buffers, but the plugin does not read them yet, so the part renders as nothing rather than as a stretched cell.
+
+Both part types still occupy their place in the draw order, so an animation that uses them plays with those parts missing rather than failing. If you ship one, replace it with an ordinary part at authoring time.
+
 ## Platforms & Export
 
 The plugin ships in two build variants — **GDExtension** and **custom module** — and both can be exported to every Godot target. Build and execution are actively verified on **Windows / macOS**; the other targets are supported but less frequently exercised. See [Build Guide](setup/build.md) for the export flow of each.
