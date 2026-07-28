@@ -41,7 +41,7 @@ using namespace godot;
 #include "ss_clickable_label.h"
 #include "ss_import_dock.h"
 #include "ss_importer.h"
-#include "ssconverter.hpp"
+#include "ssconverter.h"
 
 // Plugin version, stamped at build time from VERSION.txt + git hash.
 // Generated into ss_player/gen/ by generate_version_header() (ss_player/sources.py).

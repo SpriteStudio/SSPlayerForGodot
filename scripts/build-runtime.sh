@@ -127,11 +127,12 @@ popd > /dev/null
 echo "Collecting artifacts from $SRC_DIR..."
 RUNTIME_DIR=${ROOTDIR}/ss_player/runtime
 
-# Headers
+# Headers. The plain-C headers carry `extern "C"` guards (cbindgen cpp_compat),
+# so they are what this C++ code includes; the SDK's .hpp variants are not used.
 mkdir -p ${RUNTIME_DIR}/include
-cp ${SDK_DIR}/libs/ssruntime/target/ssruntime.hpp ${RUNTIME_DIR}/include/
+cp ${SDK_DIR}/libs/ssruntime/target/ssruntime.h ${RUNTIME_DIR}/include/
 if [[ "$PLATFORM" == "macos" || "$PLATFORM" == "windows" || "$PLATFORM" == "linux" ]]; then
-    cp ${SDK_DIR}/libs/ssconverter/target/ssconverter.hpp ${RUNTIME_DIR}/include/
+    cp ${SDK_DIR}/libs/ssconverter/target/ssconverter.h ${RUNTIME_DIR}/include/
 fi
 
 # Licenses

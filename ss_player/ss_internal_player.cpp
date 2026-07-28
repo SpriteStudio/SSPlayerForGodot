@@ -1,7 +1,7 @@
 #include "ss_internal_player.h"
 #include "format/ssab.h"
 #include "format/effect_draw_plan.h"
-#include "ssruntime.hpp"
+#include "ssruntime.h"
 #include "format/framedata.h"
 #include <mutex>
 #include <cstring>
