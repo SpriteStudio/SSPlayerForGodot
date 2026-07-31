@@ -76,12 +76,6 @@ SSPlayerForGodot leverages Godot's `CanvasItem` API and `Node2D` paradigms. Feat
 - **Blocked on**: SDK Phase 3 **Instance Lifecycle → Animation Instancing** (Shared evaluation context).
 - **Task**: Once `ssruntime` supports computing `FrameData` once and rendering it N times, create a node (e.g. `SpriteStudioReplicate2D`) that binds to an original player's context and simply submits the evaluated batches with a different root `Transform2D`, saving Godot CPU time.
 
-### 🕒 Animation blending / Crossfade (⛔ SDK Phase 3)
-
-- **Goal**: Blend multiple animations or crossfade between them.
-- **Blocked on**: SDK Phase 3 **Animation Mixing/Blending** and **State machine implementation**.
-- **Task**: Surface the blending/crossfade FFI capabilities to `SpriteStudioPlayer2D`, allowing users to smoothly transition between animations or manage layered blending.
-
 ### 🕒 Dynamic instance swap (⛔ SDK Phase 3)
 
 - **Goal**: Replace the animation mounted on an Instance part at runtime (e.g., for equipment or character variations).
