@@ -72,6 +72,33 @@
 				Overrides the texture used for the named cell map. Pass an invalid texture to clear the override.
 			</description>
 		</method>
+		<method name="get_cellmap_names" qualifiers="const">
+			<return type="PackedStringArray" />
+			<description>
+				Names of the cell maps in the assigned [SSABResource] (without the [code].ssce[/code] extension), or an empty array when no resource is assigned. Pass one of these to [method get_cell_names] or [method set_part_cell_override].
+			</description>
+		</method>
+		<method name="get_cell_names" qualifiers="const">
+			<return type="PackedStringArray" />
+			<param index="0" name="cellmap_name" type="String" />
+			<description>
+				Names of the cells inside [param cellmap_name], or an empty array when no resource is assigned or the cell map is unknown.
+			</description>
+		</method>
+		<method name="set_part_color_override_corners">
+			<return type="bool" />
+			<param index="0" name="part_name" type="String" />
+			<param index="1" name="left_top" type="Color" />
+			<param index="2" name="right_top" type="Color" />
+			<param index="3" name="left_bottom" type="Color" />
+			<param index="4" name="right_bottom" type="Color" />
+			<param index="5" name="blend_op" type="int" default="0" />
+			<param index="6" name="priority" type="int" default="1" />
+			<description>
+				Overrides a part's color with a distinct color per corner, producing a gradient across the part. [param blend_op] is [code]0[/code] = Mix, [code]1[/code] = Mul, [code]2[/code] = Add, [code]3[/code] = Sub; [param priority] is [code]0[/code] = until the animation updates the attribute, [code]1[/code] = until the next animation is set up, [code]2[/code] = permanent.
+				Shares one override slot with [method set_part_color_override], so the last call wins and [method clear_part_color_override] clears either kind. Returns [code]false[/code] when the part is unknown or the runtime rejects the call.
+			</description>
+		</method>
 	</methods>
 	<members>
 		<member name="ssab" type="SSABResource">

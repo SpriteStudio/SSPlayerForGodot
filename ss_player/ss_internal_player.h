@@ -223,6 +223,13 @@ public:
     bool set_part_visibility_override(int p_part_index, bool p_force_hidden, bool p_cascade);
     bool clear_part_visibility_override(int p_part_index);
     bool set_part_color_override(int p_part_index, const Color& p_color, int p_blend_op, int p_priority);
+    // Four-corner (per-vertex) variant of the color override. Corners are named
+    // in the runtime's own order: left-top, right-top, left-bottom, right-bottom.
+    // Shares the single color-override slot with set_part_color_override, so
+    // clear_part_color_override clears either kind.
+    bool set_part_color_override_corners(int p_part_index, const Color& p_left_top, const Color& p_right_top,
+                                         const Color& p_left_bottom, const Color& p_right_bottom,
+                                         int p_blend_op, int p_priority);
     bool clear_part_color_override(int p_part_index);
     bool set_part_cell_override(int p_part_index, const String& p_cellmap_name, const String& p_cell_name, int p_priority);
     bool clear_part_cell_override(int p_part_index);

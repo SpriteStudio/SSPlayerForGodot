@@ -188,6 +188,10 @@ func _ready():
     # Tint a part red (multiply). Applies to normal (image) parts.
     ss_player.set_part_color_override("body", Color.RED, 1)  # 1 = Mul
 
+    # Or give each of the four corners its own color, for a gradient.
+    ss_player.set_part_color_override_corners(
+        "body", Color.RED, Color.RED, Color.BLUE, Color.BLUE, 0)
+
     # Make a part draw a different cell (cell map name is written without ".ssce").
     ss_player.set_part_cell_override("body", "Ringo", "effect3")
 
@@ -203,21 +207,23 @@ func _ready():
 |---|---|
 | `get_part_index(part_name)` | Part index, or `-1` if the part is not in the asset |
 | `set_part_color_override(part_name, color, blend_op = 0, priority = 1)` | Color override (single color) |
+| `set_part_color_override_corners(part_name, left_top, right_top, left_bottom, right_bottom, blend_op = 0, priority = 1)` | Color override with a distinct color per corner (gradient) |
 | `set_part_cell_override(part_name, cellmap_name, cell_name, priority = 1)` | Draw a different cell |
 | `set_part_visibility_override(part_name, force_hidden, cascade = false)` | Force-hide (`force_hidden = false` reverts to the animation) |
 | `clear_part_color_override` / `clear_part_cell_override` / `clear_part_visibility_override` | Clear one override on one part |
 | `clear_all_part_overrides()` | Clear every override on the player |
 | `*_by_index(part_index, ...)` | Part-index variant of each method above (skips the name lookup) |
 
-Every method returns `false` when the part is unknown or the runtime rejects the call.
+Every method returns `false` when the part is unknown or the runtime rejects the call. A single color and a four-corner color share one override slot per part, so the last call wins and `clear_part_color_override()` clears either kind.
 
-The cell map / cell names you can pass to a cell override are enumerated from the resource:
+The cell map / cell names you can pass to a cell override are enumerated from the player:
 
 ```gdscript
-var ssab := ss_player.get_ssab_resource()
-print(ssab.get_cellmap_names())        # -> ["Ringo", ...]
-print(ssab.get_cell_names("Ringo"))    # -> ["effect3", ...]
+print(ss_player.get_cellmap_names())        # -> ["Ringo", ...]
+print(ss_player.get_cell_names("Ringo"))    # -> ["effect3", ...]
 ```
+
+Both read the bound `SSABResource` and return an empty array when none is assigned. The same two methods are also available on the resource itself (`ss_player.get_ssab_resource().get_cellmap_names()`), which is the way to enumerate an `.ssab` you have not put on a player yet.
 
 > **On choosing between a texture swap and a cell override**: `set_cellmap_texture()` in the previous section replaces a **whole cell map (texture)** at once, affecting every part that uses it. This feature instead replaces the cell that a **single part** draws. Pick whichever matches your intent.
 

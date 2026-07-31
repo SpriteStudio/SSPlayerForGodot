@@ -43,6 +43,7 @@ func _ready() -> void:
 * `set_frame_skip_enabled(enabled: bool)` / `is_frame_skip_enabled() -> bool` (デフォルト: `true`)
 * `set_sub_frame_enabled(enabled: bool)` / `is_sub_frame_enabled() -> bool` (デフォルト: `false`)
 * `set_cellmap_texture(cellmap_name: String, texture: Texture2D)` / `get_cellmap_texture(cellmap_name: String) -> Texture2D`
+* `get_cellmap_names() -> PackedStringArray` / `get_cell_names(cellmap_name: String) -> PackedStringArray`: 割り当て済みの `SSABResource` から読んだ名前一覧（未割り当てなら空）。`set_part_cell_override()` に渡す名前を調べる用途です。まだプレーヤに載せていない `.ssab` を調べたい場合は [`SSABResource`](resource.md) 自身にも同じメソッドがあります。
 
 ### `set_playback_direction` の引数
 
@@ -67,6 +68,7 @@ func _ready() -> void:
 パーツ単位で、カラー / セル / 表示指定をキーフレームより優先して上書きします。各メソッドは成功時に `true`、パーツが不明な場合やランタイムが受け付けなかった場合に `false` を返します。詳細と注意点は [スクリプト制御とイベント → パーツオーバーライド](../workflow/usage_scripting.md) を参照してください。
 
 * `set_part_color_override(part_name: String, color: Color, blend_op: int = 0, priority: int = 1) -> bool`
+* `set_part_color_override_corners(part_name: String, left_top: Color, right_top: Color, left_bottom: Color, right_bottom: Color, blend_op: int = 0, priority: int = 1) -> bool`: 4 頂点それぞれに色を指定して、パーツ内をグラデーションにします。`set_part_color_override` と同じオーバーライド枠を共有するので、後から呼んだ方が有効になり、`clear_part_color_override` はどちらも解除します。
 * `set_part_cell_override(part_name: String, cellmap_name: String, cell_name: String, priority: int = 1) -> bool`
 * `set_part_visibility_override(part_name: String, force_hidden: bool, cascade: bool = false) -> bool`
 * `clear_part_color_override(part_name: String) -> bool` / `clear_part_cell_override(part_name: String) -> bool` / `clear_part_visibility_override(part_name: String) -> bool`

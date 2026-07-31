@@ -405,13 +405,30 @@ bool SsInternalPlayer::clear_part_visibility_override(int p_part_index) {
     return ss_runtime_clear_part_visibility_override(runtime_ctx, (uint32_t)p_part_index);
 }
 
+// Godot Color (gamma/sRGB 0..1 under Compatibility 2D) -> packed 0xRRGGBBAA,
+// the same 8-bit sRGB space the runtime does its color math in.
+static uint32_t pack_color_rgba(const Color& p_color) {
+    auto to_u8 = [](float v) -> uint32_t { return (uint32_t)(int)(CLAMP(v, 0.0f, 1.0f) * 255.0f + 0.5f); };
+    return (to_u8(p_color.r) << 24) | (to_u8(p_color.g) << 16) | (to_u8(p_color.b) << 8) | to_u8(p_color.a);
+}
+
 bool SsInternalPlayer::set_part_color_override(int p_part_index, const Color& p_color, int p_blend_op, int p_priority) {
     if (p_part_index < 0 || runtime_ctx == nullptr) return false;
-    // Godot Color (gamma/sRGB 0..1 under Compatibility 2D) -> packed 0xRRGGBBAA,
-    // the same 8-bit sRGB space the runtime does its color math in.
-    auto to_u8 = [](float v) -> uint32_t { return (uint32_t)(int)(CLAMP(v, 0.0f, 1.0f) * 255.0f + 0.5f); };
-    uint32_t rgba = (to_u8(p_color.r) << 24) | (to_u8(p_color.g) << 16) | (to_u8(p_color.b) << 8) | to_u8(p_color.a);
-    return ss_runtime_set_part_color_override(runtime_ctx, (uint32_t)p_part_index, (unsigned char)p_blend_op, rgba, (unsigned char)p_priority);
+    return ss_runtime_set_part_color_override(runtime_ctx, (uint32_t)p_part_index, (unsigned char)p_blend_op, pack_color_rgba(p_color), (unsigned char)p_priority);
+}
+
+bool SsInternalPlayer::set_part_color_override_corners(int p_part_index, const Color& p_left_top, const Color& p_right_top,
+                                                       const Color& p_left_bottom, const Color& p_right_bottom,
+                                                       int p_blend_op, int p_priority) {
+    if (p_part_index < 0 || runtime_ctx == nullptr) return false;
+    // ssruntime expects the four corners in `lt, rt, lb, rb` order.
+    const uint32_t rgba[4] = {
+        pack_color_rgba(p_left_top),
+        pack_color_rgba(p_right_top),
+        pack_color_rgba(p_left_bottom),
+        pack_color_rgba(p_right_bottom),
+    };
+    return ss_runtime_set_part_color_override_corners(runtime_ctx, (uint32_t)p_part_index, (unsigned char)p_blend_op, rgba, (unsigned char)p_priority);
 }
 
 bool SsInternalPlayer::clear_part_color_override(int p_part_index) {
