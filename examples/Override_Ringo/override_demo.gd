@@ -7,11 +7,12 @@ extends SpriteStudioPlayer2D
 ##
 ## API used (all on SpriteStudioPlayer2D):
 ##   set_part_color_override(part, color, blend_op=0, priority=1)
+##   set_part_color_override_corners(part, lt, rt, lb, rb, blend_op=0, priority=1)
 ##   set_part_visibility_override(part, force_hidden, cascade=false)
 ##   set_part_cell_override(part, cellmap, cell, priority=1)
 ##   clear_all_part_overrides()
-## Cell names can be discovered from the resource:
-##   ssab.get_cellmap_names() / ssab.get_cell_names(cellmap)
+## Cell names can be discovered from the player (or from the resource):
+##   get_cellmap_names() / get_cell_names(cellmap)
 
 var _label: Label
 
@@ -47,9 +48,9 @@ func _step(text: String, secs: float) -> void:
 func _run_demo() -> void:
 	# Discover what the loaded SSAB offers (also handy as a reference in Output).
 #	print("parts:    ", get_part_names())
-	var cellmap: String = ssab.get_cellmap_names()[0] # "Ringo"
+	var cellmap: String = get_cellmap_names()[0] # "Ringo"
 #	print("cellmap:  ", cellmap)
-#	print("cells:    ", ssab.get_cell_names(cellmap))
+#	print("cells:    ", get_cell_names(cellmap))
 
 	# Since the same part is accessed repeatedly, identify it by part-ID
 	# rather than its name (accessing by ID is slightly faster).
@@ -66,19 +67,27 @@ func _run_demo() -> void:
 		set_part_color_override_by_index(part_id, Color(0.0, 0.2, 1.0, 0.75))	# Access by id.
 		await _step("1) Color override:  body -> red", 2.0)
 
-		# 2) Visibility — force-hide the 'apple' and cascade to its children (the whole face).
+		# 2) Color (4 corners) — one colour per vertex gives a gradient across the part.
+		#    Corner order is left-top, right-top, left-bottom, right-bottom. This shares
+		#    the single colour-override slot, so it replaces step 1's flat tint.
+		set_part_color_override_corners_by_index(part_id,
+			Color(1.0, 0.1, 0.1, 1.0), Color(1.0, 0.1, 0.1, 1.0),
+			Color(0.1, 0.3, 1.0, 1.0), Color(0.1, 0.3, 1.0, 1.0))
+		await _step("2) Corner colour override:  body -> red-to-blue gradient", 2.0)
+
+		# 3) Visibility — force-hide the 'apple' and cascade to its children (the whole face).
 		clear_all_part_overrides()
 #		set_part_visibility_override("apple", true, true)			# Access by name.
 		set_part_visibility_override_by_index(part_id, true, false)	# Access by id.
 		set_part_visibility_override("heta", true, false)
-		await _step("2) Visibility override:  hide 'apple' with cascade ('heta' disappears)", 2.0)
+		await _step("3) Visibility override:  hide 'apple' with cascade ('heta' disappears)", 2.0)
 
-		# 3) Cell — swap the 'apple' sprite to the 'effect3' cell in the Ringo cellmap.
+		# 4) Cell — swap the 'apple' sprite to the 'effect3' cell in the Ringo cellmap.
 		clear_all_part_overrides()
 #		set_part_cell_override("apple", cellmap, "effect3")				# Access by name.
 		set_part_cell_override_by_index(part_id, cellmap, "effect3")	# Access by id.
 		set_part_visibility_override("heta", true, false)
-		await _step("3) Cell override:  body sprite -> 'effect3' cell", 2.0)
+		await _step("4) Cell override:  body sprite -> 'effect3' cell", 2.0)
 
 		clear_all_part_overrides()
-		await _step("4) No override (Restored)", 2.0)
+		await _step("5) No override (Restored)", 2.0)

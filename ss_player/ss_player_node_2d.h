@@ -95,6 +95,11 @@ public:
     void set_cellmap_texture(const String &cellmap_name, const Ref<Texture2D> &texture);
     Ref<Texture2D> get_cellmap_texture(const String &cellmap_name) const;
 
+    // Cellmap / cell names from the bound SSABResource — the discovery half of
+    // set_part_cell_override(). Empty when no resource is bound.
+    PackedStringArray get_cellmap_names() const;
+    PackedStringArray get_cell_names(const String &cellmap_name) const;
+
     // ---- Audio -------------------------------------------------------------
     // Built-in audio playback for the animation's audio events. Toggle off to
     // handle audio yourself via the "audio" signal.
@@ -128,6 +133,12 @@ public:
     bool set_part_visibility_override(const String& part_name, bool force_hidden, bool cascade);
     bool clear_part_visibility_override(const String& part_name);
     bool set_part_color_override(const String& part_name, const Color& color, int blend_op, int priority);
+    // Four-corner (per-vertex) color override. Corners follow the runtime's
+    // order: left-top, right-top, left-bottom, right-bottom. Shares one slot
+    // with set_part_color_override — clear_part_color_override clears either.
+    bool set_part_color_override_corners(const String& part_name, const Color& left_top, const Color& right_top,
+                                         const Color& left_bottom, const Color& right_bottom,
+                                         int blend_op, int priority);
     bool clear_part_color_override(const String& part_name);
     bool set_part_cell_override(const String& part_name, const String& cellmap_name, const String& cell_name, int priority);
     bool clear_part_cell_override(const String& part_name);
@@ -136,6 +147,9 @@ public:
     bool set_part_visibility_override_by_index(int part_index, bool force_hidden, bool cascade);
     bool clear_part_visibility_override_by_index(int part_index);
     bool set_part_color_override_by_index(int part_index, const Color& color, int blend_op, int priority);
+    bool set_part_color_override_corners_by_index(int part_index, const Color& left_top, const Color& right_top,
+                                                  const Color& left_bottom, const Color& right_bottom,
+                                                  int blend_op, int priority);
     bool clear_part_color_override_by_index(int part_index);
     bool set_part_cell_override_by_index(int part_index, const String& cellmap_name, const String& cell_name, int priority);
     bool clear_part_cell_override_by_index(int part_index);

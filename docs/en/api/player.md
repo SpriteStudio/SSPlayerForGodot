@@ -43,6 +43,7 @@ func _ready() -> void:
 * `set_frame_skip_enabled(enabled: bool)` / `is_frame_skip_enabled() -> bool` (default: `true`)
 * `set_sub_frame_enabled(enabled: bool)` / `is_sub_frame_enabled() -> bool` (default: `false`)
 * `set_cellmap_texture(cellmap_name: String, texture: Texture2D)` / `get_cellmap_texture(cellmap_name: String) -> Texture2D`
+* `get_cellmap_names() -> PackedStringArray` / `get_cell_names(cellmap_name: String) -> PackedStringArray`: Names read from the assigned `SSABResource` (empty when none is assigned) — the discovery half of `set_part_cell_override()`. Also available on [`SSABResource`](resource.md) itself for an `.ssab` that is not on a player.
 
 ### Arguments for `set_playback_direction`
 
@@ -67,6 +68,7 @@ See [Scripting and Event-Driven Control → Part Tracking](../workflow/usage_scr
 Override a single part's color / cell / visibility so that it wins over the keyframes. Every method returns `true` on success, or `false` when the part is unknown or the runtime rejects the call. See [Scripting and Event-Driven Control → Part Overrides](../workflow/usage_scripting.md) for the details and caveats.
 
 * `set_part_color_override(part_name: String, color: Color, blend_op: int = 0, priority: int = 1) -> bool`
+* `set_part_color_override_corners(part_name: String, left_top: Color, right_top: Color, left_bottom: Color, right_bottom: Color, blend_op: int = 0, priority: int = 1) -> bool`: Four-corner (per-vertex) colour, for a gradient across the part. Shares one override slot with `set_part_color_override` — the last call wins, and `clear_part_color_override` clears either kind.
 * `set_part_cell_override(part_name: String, cellmap_name: String, cell_name: String, priority: int = 1) -> bool`
 * `set_part_visibility_override(part_name: String, force_hidden: bool, cascade: bool = false) -> bool`
 * `clear_part_color_override(part_name: String) -> bool` / `clear_part_cell_override(part_name: String) -> bool` / `clear_part_visibility_override(part_name: String) -> bool`

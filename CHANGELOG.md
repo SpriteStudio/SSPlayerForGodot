@@ -22,10 +22,11 @@ converted binaries (`.ssab`) instead of parsing `.sspj` at runtime. See the
   same conversion for CI/CD.
 - **Resource classes**: `SSABResource` (animation binary) and `SSQBResource` (sequence
   binary). `.ssab` is loaded zero-copy, so playback starts without a parse step.
-- **Per-part Override Layer API**: override a part's color, cell and visibility at runtime,
-  addressed by part name or part index, each with a matching `clear_*` call.
+- **Per-part Override Layer API**: override a part's color (single or per-corner gradient),
+  cell and visibility at runtime, addressed by part name or part index, each with a matching
+  `clear_*` call.
 - **CellMap overrides**: swap an animation's textures at runtime for equipment changes and
-  color variants.
+  color variants. Cell map / cell names are enumerable from the player and the resource.
 - **`SpriteStudioPartAttachment2D` node**: mirrors one part's pose onto a `Node2D` so Godot
   content can be pinned to a part. Modeled on `RemoteTransform2D`.
 - **Signals**: timeline `user_data` and `signal_emitted` events, audio events, animation

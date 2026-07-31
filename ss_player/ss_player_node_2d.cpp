@@ -131,6 +131,42 @@ Ref<Texture2D> SpriteStudioPlayer2D::get_cellmap_texture(const String &cellmap_n
     return Ref<Texture2D>();
 }
 
+// Structural names live in the .ssab, not the runtime, so these forward to the
+// bound SSABResource — the same source the inspector's cellmap list reads. They
+// are the discovery half of set_part_cell_override(); having them on the node
+// saves the caller a round-trip through get_ssab_resource(). Empty when no
+// resource is bound (or the cellmap is unknown).
+
+PackedStringArray SpriteStudioPlayer2D::get_cellmap_names() const {
+    PackedStringArray names;
+    Ref<SSABResource> res = _internal->getSSABResource();
+    if (res.is_null()) return names;
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+    names = res->get_cellmap_names();
+#else
+    Vector<String> src = res->get_cellmap_names();
+    for (int i = 0; i < src.size(); i++) {
+        names.push_back(src[i]);
+    }
+#endif
+    return names;
+}
+
+PackedStringArray SpriteStudioPlayer2D::get_cell_names(const String& cellmap_name) const {
+    PackedStringArray names;
+    Ref<SSABResource> res = _internal->getSSABResource();
+    if (res.is_null()) return names;
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+    names = res->get_cell_names(cellmap_name);
+#else
+    Vector<String> src = res->get_cell_names(cellmap_name);
+    for (int i = 0; i < src.size(); i++) {
+        names.push_back(src[i]);
+    }
+#endif
+    return names;
+}
+
 int SpriteStudioPlayer2D::get_part_index(const String& part_name) const {
     return _internal->resolve_part_index(part_name);
 }
@@ -183,6 +219,12 @@ bool SpriteStudioPlayer2D::set_part_color_override_by_index(int part_index, cons
     return _internal->set_part_color_override(part_index, color, blend_op, priority);
 }
 
+bool SpriteStudioPlayer2D::set_part_color_override_corners_by_index(int part_index, const Color& left_top, const Color& right_top,
+                                                                    const Color& left_bottom, const Color& right_bottom,
+                                                                    int blend_op, int priority) {
+    return _internal->set_part_color_override_corners(part_index, left_top, right_top, left_bottom, right_bottom, blend_op, priority);
+}
+
 bool SpriteStudioPlayer2D::clear_part_color_override_by_index(int part_index) {
     return _internal->clear_part_color_override(part_index);
 }
@@ -208,6 +250,12 @@ bool SpriteStudioPlayer2D::clear_part_visibility_override(const String& part_nam
 
 bool SpriteStudioPlayer2D::set_part_color_override(const String& part_name, const Color& color, int blend_op, int priority) {
     return set_part_color_override_by_index(_internal->resolve_part_index(part_name), color, blend_op, priority);
+}
+
+bool SpriteStudioPlayer2D::set_part_color_override_corners(const String& part_name, const Color& left_top, const Color& right_top,
+                                                           const Color& left_bottom, const Color& right_bottom,
+                                                           int blend_op, int priority) {
+    return set_part_color_override_corners_by_index(_internal->resolve_part_index(part_name), left_top, right_top, left_bottom, right_bottom, blend_op, priority);
 }
 
 bool SpriteStudioPlayer2D::clear_part_color_override(const String& part_name) {
@@ -437,6 +485,9 @@ void SpriteStudioPlayer2D::_bind_methods() {
     ClassDB::bind_method( D_METHOD( "set_cellmap_texture", "cellmap_name", "texture" ), &SpriteStudioPlayer2D::set_cellmap_texture );
     ClassDB::bind_method( D_METHOD( "get_cellmap_texture", "cellmap_name" ), &SpriteStudioPlayer2D::get_cellmap_texture );
 
+    ClassDB::bind_method( D_METHOD( "get_cellmap_names" ), &SpriteStudioPlayer2D::get_cellmap_names );
+    ClassDB::bind_method( D_METHOD( "get_cell_names", "cellmap_name" ), &SpriteStudioPlayer2D::get_cell_names );
+
     ClassDB::bind_method( D_METHOD( "set_play_audio", "enabled" ), &SpriteStudioPlayer2D::set_play_audio );
     ClassDB::bind_method( D_METHOD( "is_play_audio" ), &SpriteStudioPlayer2D::is_play_audio );
     ClassDB::bind_method( D_METHOD( "set_audio_volume", "volume" ), &SpriteStudioPlayer2D::set_audio_volume );
@@ -467,6 +518,7 @@ void SpriteStudioPlayer2D::_bind_methods() {
     ClassDB::bind_method( D_METHOD( "set_part_visibility_override", "part_name", "force_hidden", "cascade" ), &SpriteStudioPlayer2D::set_part_visibility_override, DEFVAL(false) );
     ClassDB::bind_method( D_METHOD( "clear_part_visibility_override", "part_name" ), &SpriteStudioPlayer2D::clear_part_visibility_override );
     ClassDB::bind_method( D_METHOD( "set_part_color_override", "part_name", "color", "blend_op", "priority" ), &SpriteStudioPlayer2D::set_part_color_override, DEFVAL(0), DEFVAL(1) );
+    ClassDB::bind_method( D_METHOD( "set_part_color_override_corners", "part_name", "left_top", "right_top", "left_bottom", "right_bottom", "blend_op", "priority" ), &SpriteStudioPlayer2D::set_part_color_override_corners, DEFVAL(0), DEFVAL(1) );
     ClassDB::bind_method( D_METHOD( "clear_part_color_override", "part_name" ), &SpriteStudioPlayer2D::clear_part_color_override );
     ClassDB::bind_method( D_METHOD( "set_part_cell_override", "part_name", "cellmap_name", "cell_name", "priority" ), &SpriteStudioPlayer2D::set_part_cell_override, DEFVAL(1) );
     ClassDB::bind_method( D_METHOD( "clear_part_cell_override", "part_name" ), &SpriteStudioPlayer2D::clear_part_cell_override );
@@ -476,6 +528,7 @@ void SpriteStudioPlayer2D::_bind_methods() {
     ClassDB::bind_method( D_METHOD( "set_part_visibility_override_by_index", "part_index", "force_hidden", "cascade" ), &SpriteStudioPlayer2D::set_part_visibility_override_by_index, DEFVAL(false) );
     ClassDB::bind_method( D_METHOD( "clear_part_visibility_override_by_index", "part_index" ), &SpriteStudioPlayer2D::clear_part_visibility_override_by_index );
     ClassDB::bind_method( D_METHOD( "set_part_color_override_by_index", "part_index", "color", "blend_op", "priority" ), &SpriteStudioPlayer2D::set_part_color_override_by_index, DEFVAL(0), DEFVAL(1) );
+    ClassDB::bind_method( D_METHOD( "set_part_color_override_corners_by_index", "part_index", "left_top", "right_top", "left_bottom", "right_bottom", "blend_op", "priority" ), &SpriteStudioPlayer2D::set_part_color_override_corners_by_index, DEFVAL(0), DEFVAL(1) );
     ClassDB::bind_method( D_METHOD( "clear_part_color_override_by_index", "part_index" ), &SpriteStudioPlayer2D::clear_part_color_override_by_index );
     ClassDB::bind_method( D_METHOD( "set_part_cell_override_by_index", "part_index", "cellmap_name", "cell_name", "priority" ), &SpriteStudioPlayer2D::set_part_cell_override_by_index, DEFVAL(1) );
     ClassDB::bind_method( D_METHOD( "clear_part_cell_override_by_index", "part_index" ), &SpriteStudioPlayer2D::clear_part_cell_override_by_index );

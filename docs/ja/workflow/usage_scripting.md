@@ -188,6 +188,10 @@ func _ready():
     # パーツを赤く着色（乗算）。通常（画像）パーツに適用されます。
     ss_player.set_part_color_override("body", Color.RED, 1)  # 1 = Mul
 
+    # 4 頂点それぞれに色を指定してグラデーションにすることもできます。
+    ss_player.set_part_color_override_corners(
+        "body", Color.RED, Color.RED, Color.BLUE, Color.BLUE, 0)
+
     # 別のセルを描画させる（セルマップ名は ".ssce" を付けずに指定）。
     ss_player.set_part_cell_override("body", "Ringo", "effect3")
 
@@ -203,21 +207,23 @@ func _ready():
 |---|---|
 | `get_part_index(part_name)` | パーツインデックス。アセットに無ければ `-1` |
 | `set_part_color_override(part_name, color, blend_op = 0, priority = 1)` | パーツカラーオーバーライド（単色） |
+| `set_part_color_override_corners(part_name, left_top, right_top, left_bottom, right_bottom, blend_op = 0, priority = 1)` | パーツカラーオーバーライド（4 頂点それぞれに色を指定＝グラデーション） |
 | `set_part_cell_override(part_name, cellmap_name, cell_name, priority = 1)` | 別のセルで描画する |
 | `set_part_visibility_override(part_name, force_hidden, cascade = false)` | 強制非表示（`force_hidden = false` でアニメーションに戻す） |
 | `clear_part_color_override` / `clear_part_cell_override` / `clear_part_visibility_override` | 1 パーツの 1 オーバーライドを解除 |
 | `clear_all_part_overrides()` | そのプレーヤの全オーバーライドを解除 |
 | `*_by_index(part_index, ...)` | 上記各メソッドのパーツインデックス指定版（パーツ名の解決を省略） |
 
-各メソッドは、パーツが不明な場合やランタイムが受け付けなかった場合に `false` を返します。
+各メソッドは、パーツが不明な場合やランタイムが受け付けなかった場合に `false` を返します。なお単色と 4 頂点色は 1 パーツにつき同じオーバーライド枠を共有するので、後から呼んだ方が有効になり、`clear_part_color_override()` はどちらも解除します。
 
-セルオーバーライドに指定できるセルマップ名 / セル名は、リソース側から列挙できます。
+セルオーバーライドに指定できるセルマップ名 / セル名は、プレーヤから列挙できます。
 
 ```gdscript
-var ssab := ss_player.get_ssab_resource()
-print(ssab.get_cellmap_names())        # → ["Ringo", ...]
-print(ssab.get_cell_names("Ringo"))    # → ["effect3", ...]
+print(ss_player.get_cellmap_names())        # → ["Ringo", ...]
+print(ss_player.get_cell_names("Ringo"))    # → ["effect3", ...]
 ```
+
+どちらも割り当て済みの `SSABResource` を読むので、未割り当てなら空の配列を返します。同じ 2 つのメソッドはリソース自身にもあり（`ss_player.get_ssab_resource().get_cellmap_names()`）、まだプレーヤに載せていない `.ssab` を列挙したい場合はそちらを使います。
 
 > **テクスチャとセルの差し替えの使い分けについて**: 前節の `set_cellmap_texture()` は**セルマップ（テクスチャ）まるごと**の差し替えで、そのセルマップを使う全パーツにまとめて効きます。こちらは**パーツ 1 つ単位**で、描画するセルそのものを差し替える機能です。目的に応じて使い分けてください。
 
