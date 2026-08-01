@@ -620,9 +620,65 @@ private:
     bool _is_pure_mask_part(int p_idx) const;
     void _apply_mask_uniforms(Ref<ShaderMaterial> mat, uint16_t rank, bool visible_inside);
     void _set_mask_uv_uniform(Ref<ShaderMaterial> mat, const Transform2D& local_to_uv);
+
+    // ---- Instance-hierarchy mask composition (SDK masking guide 2-6) --------
+    // A mask reaching an instance part applies to the whole sub-animation, but
+    // the calling part's settings do NOT replace the callee's: they compose.
+    // `mask_influence` chains with AND, `visible_inside_mask` with OR. The
+    // identity is (influence = true, visible_inside = false), so a top-level
+    // animation resolves to each part's own flags. `mask_write` stays out of the
+    // composition — writing a mask is a local fact, not something descendants
+    // inherit.
+    struct InheritedMaskContext {
+        bool active = false;         // an ancestor's coverage reaches this player
+        bool influence = true;       // AND-chain of mask_influence
+        bool visible_inside = false; // OR-chain of visible_inside_mask
+        bool operator==(const InheritedMaskContext& o) const {
+            return active == o.active && influence == o.influence && visible_inside == o.visible_inside;
+        }
+    };
+    InheritedMaskContext _inherited_mask;
+    // Set when `_inherited_mask` changed since the last build, so a child whose
+    // frame did not advance still rebuilds against the new context.
+    bool _inherited_mask_dirty = false;
+    void _set_inherited_mask_context(const InheritedMaskContext& ctx);
+    // Compose `_inherited_mask` with the part's own flags. Used for the parts of
+    // an instance child, and (via the identity) for a top-level player's own.
+    InheritedMaskContext _compose_mask_context(const ss::format::PartData* pd) const;
+    // True when the part tree holds any mask writer. Static per resource (the
+    // part tree is pack-level, so selecting another animation cannot change it),
+    // so it is computed once and reset in `setSSABResource`.
+    bool _has_mask_capable_parts() const;
+    mutable int8_t _static_mask_capable = -1; // -1 unknown, 0 no, 1 yes
+
+    // The resolved per-part outcome for one frame.
+    struct PartMaskDecision {
+        bool masked = false;         // run the mask test for this part
+        bool visible_inside = false; // polarity, after composition
+    };
+    // Single seam for "is this part masked, and with which polarity" — the emit
+    // paths all go through here so composition (and any future caching or
+    // shared-material fast path) lives in one place.
+    PartMaskDecision _resolve_part_mask(const DrawFrame& f, int p_idx, uint16_t rank) const;
+    // Write the decision onto the part's material, and enrol it in the inherited
+    // walk when an ancestor owns the coverage.
+    void _stamp_part_mask(const Ref<ShaderMaterial>& mat, uint16_t rank, const PartMaskDecision& md);
+
+    // Materials this player handed to parts that an ancestor's mask covers.
+    // Filled while building (which is when the composed polarity is known) and
+    // consumed by the coverage owner in `_apply_inherited_mask`, which is the
+    // only point where this frame's coverage texture exists. Instance children
+    // covered by the same ancestor are recorded alongside so one walk from the
+    // owner reaches the whole sub-tree.
+    Vector<Ref<ShaderMaterial>> _inherited_mask_materials;
+    struct InheritedMaskChild {
+        SsInternalPlayer* player = nullptr;
+        Transform2D slot_xf;
+    };
+    Vector<InheritedMaskChild> _inherited_mask_children;
     void _apply_inherited_mask(bool active, RID coverage_tex, const Array& meta,
                                int count, const Transform2D& local_to_uv,
-                               float rank, bool visible_inside);
+                               float rank);
 
     void _reconfigure();
     void _loadTextures(const Ref<SSABResource>& res);
