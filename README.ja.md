@@ -25,8 +25,10 @@
 
 詳細な使い方は `docs/` フォルダ内のドキュメントを参照してください。
 
+- [**ドキュメントサイト (ホスト版)**](https://cri-middleware.github.io/SSPlayerForGodot/) — 🚧 初回リリース後に公開
 - [**ドキュメント (日本語)**](./docs/ja/index.md)
 - [**Documentation (English)**](./docs/en/index.md)
+- [**SpriteStudio Docs（ポータル）**](https://cri-middleware.github.io/SpriteStudio-Docs/) — SDK と全公式 Player の入口 — 🚧 初回リリース後に公開
 
 ### クイックリンク (日本語)
 - [インストール](./docs/ja/setup/install.md)
