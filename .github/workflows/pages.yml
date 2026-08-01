@@ -3,16 +3,13 @@ name: Publish docs via GitHub Pages
 # Build the MkDocs site and deploy it to GitHub Pages via the artifact method
 # (no gh-pages branch) — matching SSPlayerForWeb / SSPlayerForRenPy.
 #
-# Triggers stay on the docs hot path: push to main and manual dispatch deploy,
-# while PRs only build with --strict to catch broken links / nav gaps.
+# The published site is tied to releases, not to merges: a published release and a
+# manual dispatch deploy, while PRs only build with --strict to catch broken links /
+# nav gaps. This keeps the docs site in step with the release the portal links to,
+# rather than running ahead of it on every merge.
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'docs/**'
-      - 'mkdocs.yml'
-      - '.github/workflows/pages.yml'
+  release:
+    types: [published]
   pull_request:
     paths:
       - 'docs/**'
