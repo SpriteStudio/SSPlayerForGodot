@@ -3,18 +3,13 @@ name: Publish docs via GitHub Pages
 # Build the MkDocs site and deploy it to GitHub Pages via the artifact method
 # (no gh-pages branch) — matching SSPlayerForWeb / SSPlayerForRenPy.
 #
-# The published site is tied to releases, not to merges: a published release and a
-# manual dispatch deploy, while PRs only build with --strict to catch broken links /
-# nav gaps. This keeps the docs site in step with the release the portal links to,
-# rather than running ahead of it on every merge.
+# The published site is tied to releases, not to merges: a published release or a
+# manual dispatch deploys, and nothing else does. This keeps the docs site in step
+# with the release the SpriteStudio Docs portal links to, rather than running ahead
+# of it on every merge. Every sibling player repository uses this same trigger pair.
 on:
   release:
     types: [published]
-  pull_request:
-    paths:
-      - 'docs/**'
-      - 'mkdocs.yml'
-      - '.github/workflows/pages.yml'
   workflow_dispatch:
 
 # Permissions required by the artifact-based Pages deploy. No contents:write —
@@ -24,10 +19,11 @@ permissions:
   pages: write
   id-token: write
 
-# Serialize deploys per ref; cancel only superseded PR builds, never a main deploy.
+# Never run two deploys at once; let an in-progress deploy finish rather than
+# cancelling it.
 concurrency:
-  group: docs-pages-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  group: pages
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -53,19 +49,17 @@ jobs:
       - name: Install dependencies
         run: pip install -r docs/requirements.txt
 
-      # Fail the build on broken links / missing nav entries so PRs catch it before merge.
+      # --strict fails the build on broken links / missing nav entries.
       - name: Build docs (strict validation)
         run: mkdocs build --strict
 
       # Only the MkDocs output (site/) is served — no examples/demos to bundle.
       - name: Upload Pages artifact
-        if: github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@v5
         with:
           path: site
 
   deploy:
-    if: github.event_name != 'pull_request'
     needs: build
     runs-on: ubuntu-latest
     environment:
