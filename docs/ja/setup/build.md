@@ -493,6 +493,24 @@ SpriteStudio-SDK の `.fbs` を変更した場合は、以下で `ss_player/form
 .\scripts\generate-runtime-code.ps1
 ```
 
+### サンプルプロジェクトのアセット生成
+
+`examples/` 配下のサンプルは SpriteStudio-SDK のテストプロジェクトから変換した `.ssab` を読み込みます。`ssab_generated/` が無い場合や SDK のバージョンを更新した場合は再生成してください。各サンプルには変換元 `.sspj` を指す `.ssplayer_sources.cfg` があるため Godot エディタで開けばインポートドックが再生成しますが、以下のスクリプトはそれをエディタなしで実行します。
+
+**macOS / Linux**
+
+```sh
+./scripts/deploy-examples.sh
+```
+
+**Windows (PowerShell)**
+
+```powershell
+.\scripts\deploy-examples.ps1
+```
+
+> `examples/dev_*` は対象外です。開発者用のプロジェクトのため sources 設定と `ssab_generated/` の双方が gitignore されており、エディタ上で手動設定する運用です。
+
 ### SpriteStudio-SDK 内部ドキュメント
 
 サブモジュール初期化済みであれば、ランタイムの内部仕様や移植時の注意点は以下を参照できます。

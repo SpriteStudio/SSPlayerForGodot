@@ -498,6 +498,24 @@ When `.fbs` files in SpriteStudio-SDK have changed, regenerate the headers under
 .\scripts\generate-runtime-code.ps1
 ```
 
+### Deploying the sample project assets
+
+The sample projects under `examples/` load `.ssab` assets converted from the SpriteStudio-SDK test projects. Regenerate them whenever an `ssab_generated/` directory is missing or the SDK version has changed. Each sample carries a `.ssplayer_sources.cfg` pointing at the source `.sspj`, so opening it in the Godot Editor regenerates the assets through the import dock; the script below does the same thing headlessly.
+
+**macOS / Linux**
+
+```sh
+./scripts/deploy-examples.sh
+```
+
+**Windows (PowerShell)**
+
+```powershell
+.\scripts\deploy-examples.ps1
+```
+
+> The `examples/dev_*` projects are excluded: they are developer-only scratch projects, so both their sources config and `ssab_generated/` are gitignored and set up by hand in the editor.
+
 ### SpriteStudio-SDK internal documentation
 
 Once the submodule is initialized, internal runtime specifications and porting notes are available at:
