@@ -66,7 +66,16 @@ bool ss_mask_passes() {
     int byte1 = int(cov.g * 255.0 + 0.5);
     int byte2 = int(cov.b * 255.0 + 0.5);
     int byte3 = int(cov.a * 255.0 + 0.5);
-    int stencil = 0;
+    // `Invert` (mask_influence == 1) and `IncrementWrap` (mask_influence == 0)
+    // are each their own inverse alone, but they do NOT commute, so replaying
+    // both into one accumulator makes coverage depend on the order the writers
+    // happen to be emitted in: `incr then invert` lands on 254 (covered) where
+    // `invert then incr` wraps back to 0 (not covered). A stencil buffer keeps
+    // them apart by giving each op its own WriteMask (SDK masking guide 3-1-4);
+    // replaying in a shader, separate accumulators do the same job with no bit
+    // budget to divide — so the counter has no overlap limit here.
+    int parity = 0; // mask_influence == 1: covered where an odd number overlap
+    int count = 0;  // mask_influence == 0: covered where any overlap
     for (int i = 0; i < ss_mask_count; i++) {
         vec4 m = ss_mask_meta[i];
         bool is_clipping = m.w > 0.5;
@@ -80,12 +89,14 @@ bool ss_mask_passes() {
         int byte_val = chan == 0 ? byte0 : (chan == 1 ? byte1 : (chan == 2 ? byte2 : byte3));
         if (((byte_val >> b) & 1) == 0) { continue; }
         if (m.z > 0.5) {
-            stencil = (~stencil) & 0xFF; // invert (8-bit bitwise NOT)
+            parity ^= 1; // invert (parity plane)
         } else {
-            stencil = (stencil + 1) & 0xFF; // increment (wrap)
+            count += 1; // increment (counter plane)
         }
     }
-    bool masked = stencil != 0;
+    // The union of the two planes — what SpriteStudio specifies where writers of
+    // differing mask_influence overlap.
+    bool masked = (parity != 0) || (count != 0);
     return masked == (ss_mask_visible_inside > 0.5);
 }
 

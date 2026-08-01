@@ -307,6 +307,8 @@ void SsInternalPlayer::setSSABResource(const Ref<SSABResource>& ssabRes) {
     // A different resource — or the same one reloaded from disk, which may have
     // moved its buffer — invalidates the borrow the runtime holds.
     _res_rebind_pending = true;
+    // Derived from the new resource's part tree on next use.
+    _static_mask_capable = -1;
 
     if (!_ssabRes.is_null()) {
         if (!_ssabRes->is_valid()) {
@@ -1259,34 +1261,103 @@ void SsInternalPlayer::_apply_mask_uniforms(Ref<ShaderMaterial> mat, uint16_t ra
     }
 }
 
+void SsInternalPlayer::_stamp_part_mask(const Ref<ShaderMaterial>& mat, uint16_t rank,
+                                        const PartMaskDecision& md) {
+    if (mat.is_null()) return;
+    if (!md.masked) {
+        // Reuse of a pooled material — make sure masking is off.
+        mat->set_shader_parameter("ss_mask_enabled", false);
+        return;
+    }
+    if (_mask_coverage_valid) {
+        _apply_mask_uniforms(mat, rank, md.visible_inside);
+    } else {
+        // Inherited only: this frame's coverage belongs to an ancestor and has
+        // not been rasterized yet. Bake the composed polarity now — the owner's
+        // walk turns the test on and binds the rest, or leaves it off if its
+        // scope turns out not to reach here.
+        mat->set_shader_parameter("ss_mask_enabled", false);
+        mat->set_shader_parameter("ss_mask_visible_inside", md.visible_inside ? 1.0f : 0.0f);
+    }
+    if (_inherited_mask.active) {
+        _inherited_mask_materials.push_back(mat);
+    }
+}
+
+void SsInternalPlayer::_set_inherited_mask_context(const InheritedMaskContext& ctx) {
+    if (_inherited_mask == ctx) return;
+    _inherited_mask = ctx;
+    // The composed values are baked into per-part materials while building, so a
+    // child whose frame did not advance would otherwise keep the old polarity.
+    _inherited_mask_dirty = true;
+}
+
+SsInternalPlayer::InheritedMaskContext
+SsInternalPlayer::_compose_mask_context(const ss::format::PartData* pd) const {
+    InheritedMaskContext c = _inherited_mask;
+    if (!pd) return c;
+    c.influence = c.influence && pd->mask_influence();
+    c.visible_inside = c.visible_inside || pd->visible_inside_mask();
+    return c;
+}
+
+SsInternalPlayer::PartMaskDecision
+SsInternalPlayer::_resolve_part_mask(const DrawFrame& f, int p_idx, uint16_t rank) const {
+    PartMaskDecision d;
+    // Either this player rasterized its own coverage this frame, or an ancestor's
+    // mask reaches it through an instance part. The second test is what lets a
+    // sub-animation with no mask parts of its own still be masked — gating on the
+    // own-coverage flag alone silently drops every inherited target.
+    if (!_mask_coverage_valid && !_inherited_mask.active) return d;
+
+    const auto* pm = f.binary ? f.binary->parts() : nullptr;
+    const ss::format::PartData* pd =
+        (pm && p_idx >= 0 && p_idx < (int)pm->size()) ? pm->Get(p_idx) : nullptr;
+    const InheritedMaskContext c = _compose_mask_context(pd);
+    // A part opts out with mask_influence == 0, which the AND-chain has already
+    // folded in. A clipping writer stays a target regardless (its mask_influence
+    // encodes the write op, and mask_write does not compose).
+    if (!c.influence && !(pd && pd->mask_write())) return d;
+
+    d.visible_inside = c.visible_inside;
+    // Scope: for an inherited mask the instance part's rank already settled it,
+    // so every part of the sub-animation is in scope. visible_inside parts draw
+    // only inside a mask, so they run the test even out of scope.
+    d.masked = _inherited_mask.active || _part_in_mask_scope(rank) || c.visible_inside;
+    return d;
+}
+
 void SsInternalPlayer::_apply_inherited_mask(bool active, RID coverage_tex, const Array& meta,
                                              int count, const Transform2D& local_to_uv,
-                                             float rank, bool visible_inside) {
+                                             float rank) {
     RenderingServer* rs = RenderingServer::get_singleton();
-    auto stamp = [&](const Ref<ShaderMaterial>& mat) {
-        if (mat.is_null()) return;
+    for (int i = 0; i < _inherited_mask_materials.size(); i++) {
+        const Ref<ShaderMaterial>& mat = _inherited_mask_materials[i];
+        if (mat.is_null()) continue;
         if (!active) {
             mat->set_shader_parameter("ss_mask_enabled", false);
-            return;
+            continue;
         }
         mat->set_shader_parameter("ss_mask_enabled", true);
         _set_mask_uv_uniform(mat, local_to_uv);
         mat->set_shader_parameter("ss_mask_count", count);
         mat->set_shader_parameter("ss_mask_meta", meta);
         mat->set_shader_parameter("ss_mask_rank", rank);
-        mat->set_shader_parameter("ss_mask_visible_inside", visible_inside ? 1.0f : 0.0f);
+        // `ss_mask_visible_inside` was stamped per part while building, with the
+        // composed polarity — flattening it here is exactly the bug this walk
+        // exists to avoid.
         if (coverage_tex.is_valid()) {
             rs->material_set_param(mat->get_rid(), "ss_mask_coverage", coverage_tex);
         }
-    };
-    for (KeyValue<uint64_t, Ref<ShaderMaterial>>& kv : _partcolor_materials) {
-        stamp(kv.value);
     }
-    for (KeyValue<uint64_t, PerPartMaterialPool>& kv : _per_part_material_pools) {
-        PerPartMaterialPool& pool = kv.value;
-        for (int i = 0; i < pool.in_use; i++) {
-            stamp(pool.materials[i]);
-        }
+    // Nested instances: this frame's coverage only exists at its owner, so the
+    // walk continues down. Each level folds in its slot placement; the rank stays
+    // the one the owner's scope was decided with.
+    for (int i = 0; i < _inherited_mask_children.size(); i++) {
+        const InheritedMaskChild& c = _inherited_mask_children[i];
+        if (!c.player) continue;
+        c.player->_apply_inherited_mask(active, coverage_tex, meta, count,
+                                        local_to_uv * c.slot_xf, rank);
     }
 }
 
@@ -1304,6 +1375,11 @@ void SsInternalPlayer::_drawAnimation(float frame_no, float delta_seconds, bool 
     // each pool rather than growing them. No-op when no per-part variants
     // are dispatched (pools stay empty).
     _reset_per_part_pools();
+    // Rebuilt below as parts resolve their composed mask decision; the coverage
+    // owner walks these once its coverage exists.
+    _inherited_mask_materials.clear();
+    _inherited_mask_children.clear();
+    _inherited_mask_dirty = false;
 
     DrawFrame f = {};
     f.rs = RenderingServer::get_singleton();
@@ -1517,6 +1593,8 @@ void SsInternalPlayer::_clear_instance_children() {
         }
     }
     _instance_children.clear();
+    // These borrow the child pointers just freed; the next draw refills them.
+    _inherited_mask_children.clear();
 }
 
 void SsInternalPlayer::_setup_instance_children() {
@@ -1637,14 +1715,49 @@ void SsInternalPlayer::_update_instance_children(float parent_frame_no, float de
         return;
     }
 
+    const auto* binary = _ssabRes.is_null() ? nullptr : _ssabRes->get_ss_anime_binary();
+    const auto* parts_meta = binary ? binary->parts() : nullptr;
+    // Whether this frame's mask actually covers a given instance part is only
+    // known once the coverage is rasterized, which happens after the children
+    // build. Predict from static data instead — does the part tree hold a writer
+    // at all. Over-predicting only costs a per-part material that then gets
+    // disabled; under-predicting would drop the inherited mask outright.
+    const bool may_mask = _has_mask_capable_parts() || _inherited_mask.active;
+
     for (uint32_t p_idx = 0; p_idx < _instance_children.size(); p_idx++) {
         InstanceChildState& state = _instance_children[p_idx];
         SsInternalPlayer* child = state.player;
         if (!child || !state.instance_slot) continue;
 
+        // Compose before the child builds: it bakes the polarity into its own
+        // per-part materials, which is what keeps the callee's settings in play
+        // instead of the instance part's overwriting them.
+        const ss::format::PartData* pd =
+            (parts_meta && p_idx < parts_meta->size()) ? parts_meta->Get(p_idx) : nullptr;
+        InheritedMaskContext ctx = _compose_mask_context(pd);
+        ctx.active = may_mask && (ctx.influence || (pd && pd->mask_write()));
+        child->_set_inherited_mask_context(ctx);
+
         const ss_event_instance_info info = ss_runtime_get_active_event_instance(runtime_ctx, p_idx);
         _drive_instance_slot(state, child, info, parent_frame_no, delta_seconds, parent_looped);
     }
+}
+
+bool SsInternalPlayer::_has_mask_capable_parts() const {
+    if (_static_mask_capable >= 0) return _static_mask_capable != 0;
+    bool found = false;
+    const auto* binary = _ssabRes.is_null() ? nullptr : _ssabRes->get_ss_anime_binary();
+    const auto* parts_meta = binary ? binary->parts() : nullptr;
+    if (parts_meta) {
+        for (uint32_t i = 0; i < parts_meta->size() && !found; i++) {
+            const auto* pd = parts_meta->Get(i);
+            if (!pd) continue;
+            found = pd->part_type_type() == ss::format::PartType_PartTypeMask
+                    || pd->draw_as_mask() || pd->mask_write();
+        }
+    }
+    _static_mask_capable = found ? 1 : 0;
+    return found;
 }
 
 void SsInternalPlayer::_drive_instance_slot(InstanceChildState& state,
@@ -1678,7 +1791,10 @@ void SsInternalPlayer::_drive_instance_slot(InstanceChildState& state,
 
 void SsInternalPlayer::_redraw_child_if_frame_changed(SsInternalPlayer* child, float frame_no, float delta_seconds, bool parent_looped) {
     const float draw_frame = child->_sub_frame_enabled ? frame_no : floorf(frame_no);
-    if (child->previous_frame_no == draw_frame && !child->_needs_continuous_update()) return;
+    // A changed inherited mask context has to rebuild even on a held frame: the
+    // composed polarity is baked into the child's per-part materials.
+    if (child->previous_frame_no == draw_frame && !child->_needs_continuous_update()
+        && !child->_inherited_mask_dirty) return;
     child->previous_frame_no = draw_frame;
     child->_drawAnimation(draw_frame, delta_seconds, parent_looped);
 }
@@ -1706,24 +1822,24 @@ void SsInternalPlayer::_emit_instance_slot(const DrawFrame& f, RID ci, int p_idx
     const float part_alpha = _parts_by_idx[p_idx] ? _parts_by_idx[p_idx]->alpha() : 1.0f;
     f.rs->canvas_item_set_modulate(ci, Color(1, 1, 1, part_alpha));
 
-    bool vis_inside = false;
-    bool mask_target = false;
-    if (_mask_coverage_valid && f.binary && f.binary->parts()
-        && p_idx < (int)f.binary->parts()->size()) {
-        const auto* pdv = f.binary->parts()->Get(p_idx);
-        if (pdv) {
-            vis_inside = pdv->visible_inside_mask();
-            mask_target = pdv->mask_influence() || pdv->mask_write();
-        }
-    }
-    const bool mask_on = _mask_coverage_valid && mask_target
-                         && (_part_in_mask_scope(rank) || vis_inside);
-    if (mask_on) {
+    // Whether the mask reaches this sub-animation at all is decided here, on the
+    // instance part. What it then means for each part *inside* the sub-animation
+    // was composed when the child built (see `_update_instance_children`).
+    const PartMaskDecision md = _resolve_part_mask(f, p_idx, rank);
+    if (md.masked && _mask_coverage_valid) {
+        // This player owns the coverage, so it can bind the child's sub-tree now.
         child->_apply_inherited_mask(true, _mask_coverage_tex, _mask_meta_array,
                                      (int)_mask_writers.size(),
-                                     _mask_local_to_uv * slot_xf, (float)rank, vis_inside);
+                                     _mask_local_to_uv * slot_xf, (float)rank);
+    } else if (md.masked && _inherited_mask.active) {
+        // An ancestor owns it and has not reached this depth yet; hand it the
+        // child so its own walk continues through here.
+        InheritedMaskChild rec;
+        rec.player = child;
+        rec.slot_xf = slot_xf;
+        _inherited_mask_children.push_back(rec);
     } else {
-        child->_apply_inherited_mask(false, RID(), Array(), 0, Transform2D(), 0.0f, false);
+        child->_apply_inherited_mask(false, RID(), Array(), 0, Transform2D(), 0.0f);
     }
 }
 
@@ -2366,8 +2482,6 @@ void SsInternalPlayer::_emit_normal_batch(const DrawFrame& f, RID ci,
         _per_part_normal_indices.resize(INDICES_COUNT_PENTAGON);
     }
 
-    const bool masking_active = _mask_coverage_valid;
-
     // Flush the run of contiguous default (shared-shader) parts accumulated so
     // far onto a canvas_item, giving it a draw_index at the CURRENT rank
     // position. This is what keeps default and per-part parts interleaved in
@@ -2440,19 +2554,8 @@ void SsInternalPlayer::_emit_normal_batch(const DrawFrame& f, RID ci,
         // mask_influence=0 (SS "not affected by mask"); write_mask clipping parts
         // are always treated as affected (their mask_influence encodes the op).
         const uint16_t rank = (uint16_t)(batch->start_rank() + k);
-        bool vis_inside = false;
-        bool mask_target = false;
-        if (masking_active) {
-            auto pm = f.binary ? f.binary->parts() : nullptr;
-            if (pm && p_idx >= 0 && p_idx < (int)pm->size()) {
-                const auto* pdv = pm->Get(p_idx);
-                if (pdv) {
-                    vis_inside = pdv->visible_inside_mask();
-                    mask_target = pdv->mask_influence() || pdv->mask_write();
-                }
-            }
-        }
-        const bool masked = masking_active && mask_target && (_part_in_mask_scope(rank) || vis_inside);
+        const PartMaskDecision md = _resolve_part_mask(f, p_idx, rank);
+        const bool masked = md.masked;
 
         PartShaderInfo psi = _resolve_part_shader_info(f, part);
         if (psi.is_per_part || masked) {
@@ -2490,12 +2593,7 @@ void SsInternalPlayer::_emit_normal_batch(const DrawFrame& f, RID ci,
             Ref<ShaderMaterial> mat = _acquire_per_part_material(psi.id_hash, ssab_blend);
             const Vector4 cell_rect = _resolve_cell_rect_uv(f, p_idx, inv_tex_size);
             _apply_per_part_uniforms(mat, psi.params, psi.map0, psi.map1, cell_rect);
-            if (masked) {
-                _apply_mask_uniforms(mat, rank, vis_inside);
-            } else {
-                // Reuse of a pooled material — make sure masking is off.
-                mat->set_shader_parameter("ss_mask_enabled", false);
-            }
+            _stamp_part_mask(mat, rank, md);
             rs->canvas_item_set_material(part_ci, mat->get_rid());
             rs->canvas_item_set_transform(part_ci, Transform2D());
             _emit_partcolor_mesh(rs, part_ci,
@@ -2553,8 +2651,6 @@ void SsInternalPlayer::_emit_shape_batch(const DrawFrame& f, RID ci,
     // shape pipeline now shares the PartColor shader with Normal/Mesh, so
     // the GPU framebuffer blend is selected via _apply_partcolor_material.
     const auto ssab_blend = (ss::format::BlendType)batch->blend_type();
-    const bool masking_active = _mask_coverage_valid;
-
     // Default (shared-shader) parts of a batch must interleave with its per-part
     // parts by rank, not all sink behind them onto the single batch CI (whose
     // draw_index is fixed before any part is processed). Emit each contiguous run
@@ -2599,19 +2695,8 @@ void SsInternalPlayer::_emit_shape_batch(const DrawFrame& f, RID ci,
         // needs per-part uniforms (rank / polarity) — so force the per-part path
         // for it. See _emit_normal_batch for the flag semantics.
         const uint16_t rank = (uint16_t)(batch->start_rank() + k);
-        bool vis_inside = false;
-        bool mask_target = false;
-        if (masking_active) {
-            auto pm = f.binary ? f.binary->parts() : nullptr;
-            if (pm && p_idx >= 0 && p_idx < (int)pm->size()) {
-                const auto* pdv = pm->Get(p_idx);
-                if (pdv) {
-                    vis_inside = pdv->visible_inside_mask();
-                    mask_target = pdv->mask_influence() || pdv->mask_write();
-                }
-            }
-        }
-        const bool masked = masking_active && mask_target && (_part_in_mask_scope(rank) || vis_inside);
+        const PartMaskDecision md = _resolve_part_mask(f, p_idx, rank);
+        const bool masked = md.masked;
 
         PartShaderInfo psi = _resolve_part_shader_info(f, part);
         if (psi.is_per_part || masked) {
@@ -2622,12 +2707,7 @@ void SsInternalPlayer::_emit_shape_batch(const DrawFrame& f, RID ci,
             // cell_rect (degenerates ss-circle / ss-spot to discard, which
             // is the safest fallback when the variant is misapplied to a Shape).
             _apply_per_part_uniforms(mat, psi.params, psi.map0, psi.map1, Vector4(0, 0, 0, 0));
-            if (masked) {
-                _apply_mask_uniforms(mat, rank, vis_inside);
-            } else {
-                // Reuse of a pooled material — make sure masking is off.
-                mat->set_shader_parameter("ss_mask_enabled", false);
-            }
+            _stamp_part_mask(mat, rank, md);
             f.rs->canvas_item_set_material(part_ci, mat->get_rid());
             _emit_partcolor_mesh(f.rs, part_ci, _shape_buf.indices, _shape_buf.verts,
                                  _shape_buf.colors, _shape_buf.uvs, _shape_buf.custom0,
@@ -2666,8 +2746,6 @@ void SsInternalPlayer::_emit_mesh_batch(const DrawFrame& f, RID ci,
     // BlendType by raw u8 value (same convention as _emit_normal_batch).
     const auto ssab_blend = (ss::format::BlendType)batch->blend_type();
     const RID tex_rid = tex->get_rid();
-    const bool masking_active = _mask_coverage_valid;
-
     // Interleave default (shared-shader) parts with per-part parts by rank —
     // emit each contiguous default run onto its own rank-indexed canvas item
     // (first run reuses the batch CI, later runs take pooled CIs) instead of
@@ -2702,19 +2780,8 @@ void SsInternalPlayer::_emit_mesh_batch(const DrawFrame& f, RID ci,
         // CBP masking: a masked target must run the mask test. A part opts out
         // with mask_influence=0; write_mask clipping parts are always affected.
         const uint16_t rank = (uint16_t)(batch->start_rank() + k);
-        bool vis_inside = false;
-        bool mask_target = false;
-        if (masking_active) {
-            auto pm = f.binary ? f.binary->parts() : nullptr;
-            if (pm && p_idx >= 0 && p_idx < (int)pm->size()) {
-                const auto* pdv = pm->Get(p_idx);
-                if (pdv) {
-                    vis_inside = pdv->visible_inside_mask();
-                    mask_target = pdv->mask_influence() || pdv->mask_write();
-                }
-            }
-        }
-        const bool masked = masking_active && mask_target && (_part_in_mask_scope(rank) || vis_inside);
+        const PartMaskDecision md = _resolve_part_mask(f, p_idx, rank);
+        const bool masked = md.masked;
 
         PartShaderInfo psi = _resolve_part_shader_info(f, part);
         if (psi.is_per_part || masked) {
@@ -2723,11 +2790,7 @@ void SsInternalPlayer::_emit_mesh_batch(const DrawFrame& f, RID ci,
             Ref<ShaderMaterial> mat = _acquire_per_part_material(psi.id_hash, ssab_blend);
             const Vector4 cell_rect = _resolve_cell_rect_uv(f, p_idx, inv_tex_size);
             _apply_per_part_uniforms(mat, psi.params, psi.map0, psi.map1, cell_rect);
-            if (masked) {
-                _apply_mask_uniforms(mat, rank, vis_inside);
-            } else {
-                mat->set_shader_parameter("ss_mask_enabled", false);
-            }
+            _stamp_part_mask(mat, rank, md);
             f.rs->canvas_item_set_material(part_ci, mat->get_rid());
             _emit_partcolor_mesh(f.rs, part_ci, _mesh_buf.indices, _mesh_buf.verts,
                                  _mesh_buf.colors, _mesh_buf.uvs, _mesh_buf.custom0,
