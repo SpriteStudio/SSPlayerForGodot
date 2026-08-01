@@ -38,6 +38,7 @@ A Godot Engine integration for SpriteStudio 7, providing a C++ `SpriteStudioPlay
 | Build Custom Module | `./scripts/build.sh` (POSIX) / `.\scripts\build.ps1` (Win) |
 | Setup (Source SDK) | `./scripts/build-runtime.sh` (POSIX) / `.\scripts\build-runtime.ps1` (Win) |
 | Setup (Prebuilt SDK) | `./scripts/download-sdk.sh` (POSIX) / `.\scripts\download-sdk.ps1` (Win) |
+| Deploy Example Assets | `./scripts/deploy-examples.sh` (POSIX) / `.\scripts\deploy-examples.ps1` (Win) |
 | Format C++ Code | `clang-format -i ss_player/*.{cpp,h}` (if available) |
 
 *Note: Setup (Source SDK) is recommended for developers using the submodule. Setup (Prebuilt SDK) is intended for CI or release-only environments.*
