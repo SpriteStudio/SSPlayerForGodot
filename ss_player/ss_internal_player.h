@@ -355,6 +355,10 @@ private:
     // within the same SSAB must NOT re-bind: binding drops every part override,
     // including the Permanent-priority ones documented to survive it.
     bool _res_rebind_pending = true;
+    // `_ssabRes` generation at the time `runtime_res` borrowed its buffer. A
+    // mismatch means the resource reloaded in place and the borrow (plus
+    // `_currentAnimationData`, which points into it) dangles.
+    uint32_t _borrowed_generation = 0;
     float previous_frame_no = -1.0f;
     float _speed_rate = 1.0f;
     bool _sub_frame_enabled = false;
@@ -791,6 +795,9 @@ private:
 
     void _load_external_ssabs();
     Ref<SSABResource> _resolve_ssab_by_hash(uint32_t pack_hash, uint32_t name_hash) const;
+    // True when this player, or any Instance child below it, borrows a buffer
+    // its resource has since replaced.
+    bool _subtree_borrow_stale() const;
 
     void _apply_blend_material(RenderingServer* rs, RID ci, ss::format::BlendType blend_type);
     // ShaderMaterial variant for Normal and Mesh batches. PartColor is handled

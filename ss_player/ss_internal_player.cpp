@@ -751,6 +751,11 @@ void SsInternalPlayer::update(float delta_seconds) {
     // `_update_instance_children`; they must not run their own controller
     // tick (would race the parent's deterministic seek).
     if (_parent_driven) return;
+    // A re-import frees the buffer the runtime borrowed. Checked ahead of the
+    // is_playing early-return, since a stopped player still redraws.
+    if (_subtree_borrow_stale()) {
+        onSSABReloaded();
+    }
     if (!ss_runtime_is_playing(runtime_ctx)) return;
 
     auto d = delta_seconds * 1000.0f;
@@ -1563,6 +1568,23 @@ void SsInternalPlayer::_load_external_ssabs() {
     }
 }
 
+bool SsInternalPlayer::_subtree_borrow_stale() const {
+    if (!_ssabRes.is_null() && runtime_res != nullptr &&
+        _ssabRes->get_generation() != _borrowed_generation) {
+        return true;
+    }
+    // Children borrow external .ssab files, which nothing watches for
+    // "changed". Walking them is what catches a re-import of those. Terminates:
+    // it visits children that exist, not the reference graph behind them.
+    for (uint32_t i = 0; i < _instance_children.size(); i++) {
+        const SsInternalPlayer* child = _instance_children[i].player;
+        if (child && child->_subtree_borrow_stale()) {
+            return true;
+        }
+    }
+    return false;
+}
+
 Ref<SSABResource> SsInternalPlayer::_resolve_ssab_by_hash(uint32_t pack_hash, uint32_t name_hash) const {
     if (pack_hash != 0) {
         if (auto* ext_ptr = _external_ssabs_by_pack_hash.getptr(pack_hash)) {
@@ -1800,6 +1822,12 @@ void SsInternalPlayer::_redraw_child_if_frame_changed(SsInternalPlayer* child, f
 }
 
 void SsInternalPlayer::_seek_and_redraw(float frame_no, float delta_seconds, bool parent_looped) {
+    // Seeking draws without going through `update`, so it needs the same check.
+    // Children are covered by their parent's walk. Falls through afterwards so
+    // the frame the caller asked for is the one drawn.
+    if (!_parent_driven && _subtree_borrow_stale()) {
+        onSSABReloaded();
+    }
     const float draw_frame = _sub_frame_enabled ? frame_no : floorf(frame_no);
     previous_frame_no = draw_frame;
     _update_instance_children(draw_frame, delta_seconds, parent_looped);
@@ -2951,6 +2979,8 @@ void SsInternalPlayer::_fetchAnimation() {
             return;
         }
         _res_rebind_pending = false;
+        // Which incarnation of the buffer this borrow refers to.
+        _borrowed_generation = _ssabRes->get_generation();
     }
 
     // Per-batch canvas_item pool grows on demand inside _drawAnimation via
