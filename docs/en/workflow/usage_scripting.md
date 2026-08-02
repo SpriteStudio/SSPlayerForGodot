@@ -159,6 +159,10 @@ Godot's `Transform2D` holds a full 2x3 affine transform, so when `update_positio
 
 Turning any of them OFF writes only the enabled components individually, like `RemoteTransform2D`, and skew is not preserved. Only `update_scale` is OFF by default, so **position and rotation alone are reflected out of the box**.
 
+> **Turn all three ON when you use `flip_h` / `flip_v`.** A flipped part's pose is a **mirror**, and a mirror can only be expressed as a negative scale. With `update_scale` OFF (the default) the mirror never reaches the target, and **`flip_h` (horizontal) additionally leaves a 180-degree difference in orientation** (`flip_v` does not). The two differ because `Transform2D` decomposes a mirror into a rotation plus a negative scale with the sign placed on the Y axis: a horizontal mirror needs an extra 180-degree rotation to fit that form, and it is the rotation that keeps it. `flip_h` / `flip_v` are not the only source — a part or one of its parents carrying a negative scale in SpriteStudio mirrors the pose the same way.
+>
+> **`get_part_transform()` itself stays exact when flipped.** `Transform2D` can hold the mirror as-is, so `get_rotation()` and `get_scale()` match the part exactly **as a pair** (the Y component of `get_scale()` goes negative when mirrored). Reading only one of them drifts, for the reason above.
+
 > **A target in a separate hierarchy can lag by one frame.** The pose is written using the player's `global_transform` as sampled at drive time, so if you move the player afterwards, the target does not follow until the next frame. A `SpriteStudioPartAttachment2D` (and its children) placed under the player always follows, through hierarchy inheritance.
 
 > **Do not track with a `RigidBody2D`.** Overwriting its transform every frame reads as a teleport to the solver and breaks the physics. If you need to push other bodies — a moving platform, say — target Godot's `AnimatableBody2D` (with `sync_to_physics` ON) and set the player's `animation_process_mode` to `Physics` so tracking is driven on the physics frame. To merely carry a hit box, `Area2D` / `StaticBody2D` is enough.
