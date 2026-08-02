@@ -68,7 +68,7 @@ if (Test-Path "$targetDir/runtime") {
 Expand-Archive -Path $zipFile -DestinationPath "$targetDir/runtime" -Force
 
 # Godot Custom Module compatibility (Windows x86_64)
-$winLibDir = "$targetDir/runtime/libs/windows/x86_64"
+$winLibDir = "$targetDir/runtime/libs/windows/x64"
 if (Test-Path $winLibDir) {
     Write-Host "Creating library copies for Godot Custom Module..."
     $targets = "editor", "template_release", "template_debug"
