@@ -1,35 +1,3 @@
 [gd_scene format=3 uid="uid://crm5d340adlbm"]
 
-[ext_resource type="SSABResource" uid="uid://ytqkeiphrsoe" path="res://ssab_generated/spr_00_00/00_spr_03_action_01_level3.ssab" id="1_wtcfe"]
-
 [node name="Node2D" type="Node2D" unique_id=1299694310]
-
-[node name="00_spr_03_action_01_level3" type="SpriteStudioPlayer2D" parent="." unique_id=484315326]
-position = Vector2(145, 333)
-ssab = ExtResource("1_wtcfe")
-animation = "00_action_01_left"
-autoplay = true
-sub_frame_enabled = true
-animation_section_end = 373
-cellmaps/spr_00_00_1 = null
-cellmaps/spr_00_00_0 = null
-
-[node name="00_spr_03_action_01_level4" type="SpriteStudioPlayer2D" parent="." unique_id=1636878478]
-position = Vector2(365, 337)
-ssab = ExtResource("1_wtcfe")
-animation = "00_action_01_left"
-autoplay = true
-sub_frame_enabled = true
-animation_section_end = 373
-cellmaps/spr_00_00_1 = null
-cellmaps/spr_00_00_0 = null
-
-[node name="00_spr_03_action_01_level5" type="SpriteStudioPlayer2D" parent="." unique_id=379754707]
-position = Vector2(605, 350)
-ssab = ExtResource("1_wtcfe")
-animation = "00_action_01_left"
-autoplay = true
-sub_frame_enabled = true
-animation_section_end = 373
-cellmaps/spr_00_00_1 = null
-cellmaps/spr_00_00_0 = null
