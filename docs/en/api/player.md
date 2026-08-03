@@ -28,7 +28,7 @@ func _ready() -> void:
 * `set_offset(offset: Vector2)` / `get_offset() -> Vector2`: Shifts the drawing position without moving the Node2D's origin.
 * `set_flip_h(flip: bool)` / `is_flipped_h() -> bool`: Flips the animation horizontally.
 * `set_flip_v(flip: bool)` / `is_flipped_v() -> bool`: Flips the animation vertically.
-* `set_animation_process_mode(mode: int)` / `get_animation_process_mode() -> int`: Sets whether to sync with `_physics_process` (`0` / Physics) or `_process` (`1` / Idle).
+* `set_animation_process_mode(mode: AnimationProcessMode)` / `get_animation_process_mode() -> AnimationProcessMode`: Sets whether to sync with `_physics_process` (`ANIMATION_PROCESS_PHYSICS` / `0`) or `_process` (`ANIMATION_PROCESS_IDLE` / `1`).
 * **In-editor preview**: Select the node and use the **SpriteStudio** bottom panel (play / pause / stop / frame scrubber) to preview without running the game. *(The former `editor_playing` inspector toggle has been replaced by this panel.)*
 * `play(start_frame: float = -1.0)`: Starts playback. If `start_frame` is `-1.0`, it plays from the current frame or the start of the section.
 * `pause()`: Pauses playback while retaining the current frame.
@@ -38,7 +38,8 @@ func _ready() -> void:
 * `set_speed_scale(speed_scale: float)` / `get_speed_scale() -> float`
 * `set_frame_rate(fps: int)` / `get_frame_rate() -> int`
 * `set_animation_section(start: int, end: int)`: Limits the playback to a specific frame range.
-* `set_playback_direction(direction: int, style: int)`: Sets the playback direction and style. See the table below for values.
+* `set_animation_section_start(start: int)` / `get_animation_section_start() -> int` / `set_animation_section_end(end: int)` / `get_animation_section_end() -> int`: Moves one endpoint of the section while keeping the other. These back the `animation_section_start` / `animation_section_end` inspector properties.
+* `set_playback_direction(direction: PlaybackDirection, style: PlaybackStyle)`: Sets the playback direction and style. See the table below for values.
 * `set_loop_count(count: int)` / `get_loop_count() -> int`: `n` plays `n` cycles then stops (`1` plays once). `-1` means infinite loop (`0` is an alias for infinite).
 * `set_frame_skip_enabled(enabled: bool)` / `is_frame_skip_enabled() -> bool` (default: `true`)
 * `set_sub_frame_enabled(enabled: bool)` / `is_sub_frame_enabled() -> bool` (default: `false`)
@@ -47,12 +48,12 @@ func _ready() -> void:
 
 ### Arguments for `set_playback_direction`
 
-| Argument | Value | Meaning |
-| --- | --- | --- |
-| `direction` | `0` | Forward |
-| `direction` | `1` | Backward |
-| `style` | `0` | Normal / One-way |
-| `style` | `1` | PingPong (Round-trip) |
+| Argument | Constant | Value | Meaning |
+| --- | --- | --- | --- |
+| `direction` | `PLAYBACK_DIRECTION_FORWARD` | `0` | Forward |
+| `direction` | `PLAYBACK_DIRECTION_BACKWARD` | `1` | Backward |
+| `style` | `PLAYBACK_STYLE_NORMAL` | `0` | Normal / One-way |
+| `style` | `PLAYBACK_STYLE_PING_PONG` | `1` | PingPong (Round-trip) |
 
 ## Part queries
 
@@ -67,9 +68,9 @@ See [Scripting and Event-Driven Control → Part Tracking](../workflow/usage_scr
 
 Override a single part's color / cell / visibility so that it wins over the keyframes. Every method returns `true` on success, or `false` when the part is unknown or the runtime rejects the call. See [Scripting and Event-Driven Control → Part Overrides](../workflow/usage_scripting.md) for the details and caveats.
 
-* `set_part_color_override(part_name: String, color: Color, blend_op: int = 0, priority: int = 1) -> bool`
-* `set_part_color_override_corners(part_name: String, left_top: Color, right_top: Color, left_bottom: Color, right_bottom: Color, blend_op: int = 0, priority: int = 1) -> bool`: Four-corner (per-vertex) colour, for a gradient across the part. Shares one override slot with `set_part_color_override` — the last call wins, and `clear_part_color_override` clears either kind.
-* `set_part_cell_override(part_name: String, cellmap_name: String, cell_name: String, priority: int = 1) -> bool`
+* `set_part_color_override(part_name: String, color: Color, blend_op: ColorBlendOperation = COLOR_BLEND_MIX, priority: OverridePriority = OVERRIDE_PRIORITY_UNTIL_ANIMATION_CHANGE) -> bool`
+* `set_part_color_override_corners(part_name: String, left_top: Color, right_top: Color, left_bottom: Color, right_bottom: Color, blend_op: ColorBlendOperation = COLOR_BLEND_MIX, priority: OverridePriority = OVERRIDE_PRIORITY_UNTIL_ANIMATION_CHANGE) -> bool`: Four-corner (per-vertex) colour, for a gradient across the part. Shares one override slot with `set_part_color_override` — the last call wins, and `clear_part_color_override` clears either kind.
+* `set_part_cell_override(part_name: String, cellmap_name: String, cell_name: String, priority: OverridePriority = OVERRIDE_PRIORITY_UNTIL_ANIMATION_CHANGE) -> bool`
 * `set_part_visibility_override(part_name: String, force_hidden: bool, cascade: bool = false) -> bool`
 * `clear_part_color_override(part_name: String) -> bool` / `clear_part_cell_override(part_name: String) -> bool` / `clear_part_visibility_override(part_name: String) -> bool`
 * `clear_all_part_overrides() -> bool`
@@ -77,20 +78,20 @@ Override a single part's color / cell / visibility so that it wins over the keyf
 
 ### Values for `blend_op`
 
-| Value | Blend operation |
-| --- | --- |
-| `0` | Mix (default) |
-| `1` | Mul (multiply) |
-| `2` | Add |
-| `3` | Sub (subtract) |
+| Constant | Value | Blend operation |
+| --- | --- | --- |
+| `COLOR_BLEND_MIX` | `0` | Mix (default) |
+| `COLOR_BLEND_MUL` | `1` | Mul (multiply) |
+| `COLOR_BLEND_ADD` | `2` | Add |
+| `COLOR_BLEND_SUB` | `3` | Sub (subtract) |
 
 ### Values for `priority`
 
-| Value | Priority mode | Meaning |
+| Constant | Value | Meaning |
 | --- | --- | --- |
-| `0` | OverwriteOnNextKeyframe | Applies until the animation updates that attribute |
-| `1` | HoldUntilNextAnimation (default) | Applies for the current animation; cleared when a new animation is set up |
-| `2` | Permanent | Applies for as long as the same `.ssab` is playing, surviving animation changes |
+| `OVERRIDE_PRIORITY_NEXT_KEYFRAME` | `0` | Applies until the animation updates that attribute |
+| `OVERRIDE_PRIORITY_UNTIL_ANIMATION_CHANGE` | `1` | Applies for the current animation; cleared when a new animation is set up (default) |
+| `OVERRIDE_PRIORITY_PERMANENT` | `2` | Applies for as long as the same `.ssab` is playing, surviving animation changes |
 
 > [!NOTE]
 > `set_part_visibility_override` has no `priority`. It always wins over the keyframes and is always cleared when a new animation is set up.

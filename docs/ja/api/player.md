@@ -28,7 +28,7 @@ func _ready() -> void:
 * `set_offset(offset: Vector2)` / `get_offset() -> Vector2`: Node2D の原点を動かさずに描画位置だけをずらします。
 * `set_flip_h(flip: bool)` / `is_flipped_h() -> bool`: 水平反転。
 * `set_flip_v(flip: bool)` / `is_flipped_v() -> bool`: 垂直反転。
-* `set_animation_process_mode(mode: int)` / `get_animation_process_mode() -> int`: `0` で Physics (`_physics_process`) 同期、`1` で Idle (`_process`) 同期。
+* `set_animation_process_mode(mode: AnimationProcessMode)` / `get_animation_process_mode() -> AnimationProcessMode`: `ANIMATION_PROCESS_PHYSICS`（`0`）で Physics (`_physics_process`) 同期、`ANIMATION_PROCESS_IDLE`（`1`）で Idle (`_process`) 同期。
 * **エディタ内プレビュー**: ノードを選択すると表示される **SpriteStudio** ボトムパネル（再生 / 一時停止 / 停止 / フレームスクラバ）でゲームを実行せずにプレビューできます。*(旧 `editor_playing` インスペクタトグルはこのパネルに置き換えられました。)*
 * `play(start_frame: float = -1.0)`: 再生を開始します。`-1.0` を指定した場合は、現在のフレームまたは区間の先頭から再生します。
 * `pause()`: 再生を一時停止します。
@@ -38,7 +38,8 @@ func _ready() -> void:
 * `set_speed_scale(speed_scale: float)` / `get_speed_scale() -> float`
 * `set_frame_rate(fps: int)` / `get_frame_rate() -> int`
 * `set_animation_section(start: int, end: int)`: 再生するフレーム区間を限定します。
-* `set_playback_direction(direction: int, style: int)`: 再生方向と再生スタイルを指定します。値の意味は下表を参照してください。
+* `set_animation_section_start(start: int)` / `get_animation_section_start() -> int` / `set_animation_section_end(end: int)` / `get_animation_section_end() -> int`: 片方の端点だけを移動します（もう一方は維持）。インスペクタの `animation_section_start` / `animation_section_end` プロパティの実体です。
+* `set_playback_direction(direction: PlaybackDirection, style: PlaybackStyle)`: 再生方向と再生スタイルを指定します。値の意味は下表を参照してください。
 * `set_loop_count(count: int)` / `get_loop_count() -> int`: `n` で `n` 回再生して停止（`1` なら1回のみ）。`-1` で無限ループ（`0` も無限ループの別名）。
 * `set_frame_skip_enabled(enabled: bool)` / `is_frame_skip_enabled() -> bool` (デフォルト: `true`)
 * `set_sub_frame_enabled(enabled: bool)` / `is_sub_frame_enabled() -> bool` (デフォルト: `false`)
@@ -47,12 +48,12 @@ func _ready() -> void:
 
 ### `set_playback_direction` の引数
 
-| 引数 | 値 | 意味 |
-| --- | --- | --- |
-| `direction` | `0` | 順再生 (Forward) |
-| `direction` | `1` | 逆再生 (Backward) |
-| `style` | `0` | 通常 / 片道 (Normal) |
-| `style` | `1` | 往復再生 (PingPong) |
+| 引数 | 定数 | 値 | 意味 |
+| --- | --- | --- | --- |
+| `direction` | `PLAYBACK_DIRECTION_FORWARD` | `0` | 順再生 (Forward) |
+| `direction` | `PLAYBACK_DIRECTION_BACKWARD` | `1` | 逆再生 (Backward) |
+| `style` | `PLAYBACK_STYLE_NORMAL` | `0` | 通常 / 片道 (Normal) |
+| `style` | `PLAYBACK_STYLE_PING_PONG` | `1` | 往復再生 (PingPong) |
 
 ## パーツの参照
 
@@ -67,9 +68,9 @@ func _ready() -> void:
 
 パーツ単位で、カラー / セル / 表示指定をキーフレームより優先して上書きします。各メソッドは成功時に `true`、パーツが不明な場合やランタイムが受け付けなかった場合に `false` を返します。詳細と注意点は [スクリプト制御とイベント → パーツオーバーライド](../workflow/usage_scripting.md) を参照してください。
 
-* `set_part_color_override(part_name: String, color: Color, blend_op: int = 0, priority: int = 1) -> bool`
-* `set_part_color_override_corners(part_name: String, left_top: Color, right_top: Color, left_bottom: Color, right_bottom: Color, blend_op: int = 0, priority: int = 1) -> bool`: 4 頂点それぞれに色を指定して、パーツ内をグラデーションにします。`set_part_color_override` と同じオーバーライド枠を共有するので、後から呼んだ方が有効になり、`clear_part_color_override` はどちらも解除します。
-* `set_part_cell_override(part_name: String, cellmap_name: String, cell_name: String, priority: int = 1) -> bool`
+* `set_part_color_override(part_name: String, color: Color, blend_op: ColorBlendOperation = COLOR_BLEND_MIX, priority: OverridePriority = OVERRIDE_PRIORITY_UNTIL_ANIMATION_CHANGE) -> bool`
+* `set_part_color_override_corners(part_name: String, left_top: Color, right_top: Color, left_bottom: Color, right_bottom: Color, blend_op: ColorBlendOperation = COLOR_BLEND_MIX, priority: OverridePriority = OVERRIDE_PRIORITY_UNTIL_ANIMATION_CHANGE) -> bool`: 4 頂点それぞれに色を指定して、パーツ内をグラデーションにします。`set_part_color_override` と同じオーバーライド枠を共有するので、後から呼んだ方が有効になり、`clear_part_color_override` はどちらも解除します。
+* `set_part_cell_override(part_name: String, cellmap_name: String, cell_name: String, priority: OverridePriority = OVERRIDE_PRIORITY_UNTIL_ANIMATION_CHANGE) -> bool`
 * `set_part_visibility_override(part_name: String, force_hidden: bool, cascade: bool = false) -> bool`
 * `clear_part_color_override(part_name: String) -> bool` / `clear_part_cell_override(part_name: String) -> bool` / `clear_part_visibility_override(part_name: String) -> bool`
 * `clear_all_part_overrides() -> bool`
@@ -77,20 +78,20 @@ func _ready() -> void:
 
 ### `blend_op` の値
 
-| 値 | 合成モード |
-| --- | --- |
-| `0` | Mix（既定） |
-| `1` | Mul（乗算） |
-| `2` | Add（加算） |
-| `3` | Sub（減算） |
+| 定数 | 値 | 合成モード |
+| --- | --- | --- |
+| `COLOR_BLEND_MIX` | `0` | Mix（既定） |
+| `COLOR_BLEND_MUL` | `1` | Mul（乗算） |
+| `COLOR_BLEND_ADD` | `2` | Add（加算） |
+| `COLOR_BLEND_SUB` | `3` | Sub（減算） |
 
 ### `priority` の値
 
-| 値 | 優先モード | 意味 |
+| 定数 | 値 | 意味 |
 | --- | --- | --- |
-| `0` | OverwriteOnNextKeyframe | アニメーションが当該アトリビュートを更新するまで適用 |
-| `1` | HoldUntilNextAnimation（既定） | 現在のアニメーション中は適用され、アニメーション変更で解除 |
-| `2` | Permanent | 同じ `.ssab` を再生している間は適用（アニメーション変更をまたいで持続） |
+| `OVERRIDE_PRIORITY_NEXT_KEYFRAME` | `0` | アニメーションが当該アトリビュートを更新するまで適用 |
+| `OVERRIDE_PRIORITY_UNTIL_ANIMATION_CHANGE` | `1` | 現在のアニメーション中は適用され、アニメーション変更で解除（既定） |
+| `OVERRIDE_PRIORITY_PERMANENT` | `2` | 同じ `.ssab` を再生している間は適用（アニメーション変更をまたいで持続） |
 
 > [!NOTE]
 > 表示指定（`set_part_visibility_override`）に `priority` はありません。常にキーフレームに勝ち、アニメーションを設定し直すと必ずクリアされます。

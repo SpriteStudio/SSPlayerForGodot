@@ -210,9 +210,9 @@ func _ready():
 | メソッド | 説明 |
 |---|---|
 | `get_part_index(part_name)` | パーツインデックス。アセットに無ければ `-1` |
-| `set_part_color_override(part_name, color, blend_op = 0, priority = 1)` | パーツカラーオーバーライド（単色） |
-| `set_part_color_override_corners(part_name, left_top, right_top, left_bottom, right_bottom, blend_op = 0, priority = 1)` | パーツカラーオーバーライド（4 頂点それぞれに色を指定＝グラデーション） |
-| `set_part_cell_override(part_name, cellmap_name, cell_name, priority = 1)` | 別のセルで描画する |
+| `set_part_color_override(part_name, color, blend_op = COLOR_BLEND_MIX, priority = OVERRIDE_PRIORITY_UNTIL_ANIMATION_CHANGE)` | パーツカラーオーバーライド（単色） |
+| `set_part_color_override_corners(part_name, left_top, right_top, left_bottom, right_bottom, blend_op = COLOR_BLEND_MIX, priority = OVERRIDE_PRIORITY_UNTIL_ANIMATION_CHANGE)` | パーツカラーオーバーライド（4 頂点それぞれに色を指定＝グラデーション） |
+| `set_part_cell_override(part_name, cellmap_name, cell_name, priority = OVERRIDE_PRIORITY_UNTIL_ANIMATION_CHANGE)` | 別のセルで描画する |
 | `set_part_visibility_override(part_name, force_hidden, cascade = false)` | 強制非表示（`force_hidden = false` でアニメーションに戻す） |
 | `clear_part_color_override` / `clear_part_cell_override` / `clear_part_visibility_override` | 1 パーツの 1 オーバーライドを解除 |
 | `clear_all_part_overrides()` | そのプレーヤの全オーバーライドを解除 |
@@ -237,12 +237,12 @@ print(ss_player.get_cell_names("Ringo"))    # → ["effect3", ...]
 
 `set_part_color_override()` の `blend_op` は、キーフレームのパーツカラーと同じ 4 種です。
 
-| 値 | 合成モード |
-|---|---|
-| `0` | Mix（既定） |
-| `1` | Mul（乗算） |
-| `2` | Add（加算） |
-| `3` | Sub（減算） |
+| 定数 | 値 | 合成モード |
+|---|---|---|
+| `COLOR_BLEND_MIX` | `0` | Mix（既定） |
+| `COLOR_BLEND_MUL` | `1` | Mul（乗算） |
+| `COLOR_BLEND_ADD` | `2` | Add（加算） |
+| `COLOR_BLEND_SUB` | `3` | Sub（減算） |
 
 範囲外の値を渡した場合は設定に失敗し、`false` を返します。
 
@@ -250,11 +250,11 @@ print(ss_player.get_cell_names("Ringo"))    # → ["effect3", ...]
 
 パーツカラーとセルのオーバーライドはアニメーションと競合するため、`priority` を取ります（表示指定にはありません。単なる強制非表示フラグで、アニメーションを設定し直すと必ずクリアされます）。
 
-| 値 | 優先モード | 挙動 |
+| 定数 | 値 | 挙動 |
 |---|---|---|
-| `0` | OverwriteOnNextKeyframe | アニメーションデータが当該アトリビュートを更新するまで、オーバーライドが適用される |
-| `1` | HoldUntilNextAnimation（既定） | 現在のアニメーション中は勝ち続け、新しいアニメーションを設定するとオーバーライドが解除される |
-| `2` | Permanent | 同じアニメーションデータ（`.ssab`）である間、オーバーライドが適用される（アニメーション変更をまたいでも持続） |
+| `OVERRIDE_PRIORITY_NEXT_KEYFRAME` | `0` | アニメーションデータが当該アトリビュートを更新するまで、オーバーライドが適用される |
+| `OVERRIDE_PRIORITY_UNTIL_ANIMATION_CHANGE` | `1` | 現在のアニメーション中は勝ち続け、新しいアニメーションを設定するとオーバーライドが解除される（既定） |
+| `OVERRIDE_PRIORITY_PERMANENT` | `2` | 同じアニメーションデータ（`.ssab`）である間、オーバーライドが適用される（アニメーション変更をまたいでも持続） |
 
 ### 注意点
 

@@ -210,9 +210,9 @@ func _ready():
 | Method | Description |
 |---|---|
 | `get_part_index(part_name)` | Part index, or `-1` if the part is not in the asset |
-| `set_part_color_override(part_name, color, blend_op = 0, priority = 1)` | Color override (single color) |
-| `set_part_color_override_corners(part_name, left_top, right_top, left_bottom, right_bottom, blend_op = 0, priority = 1)` | Color override with a distinct color per corner (gradient) |
-| `set_part_cell_override(part_name, cellmap_name, cell_name, priority = 1)` | Draw a different cell |
+| `set_part_color_override(part_name, color, blend_op = COLOR_BLEND_MIX, priority = OVERRIDE_PRIORITY_UNTIL_ANIMATION_CHANGE)` | Color override (single color) |
+| `set_part_color_override_corners(part_name, left_top, right_top, left_bottom, right_bottom, blend_op = COLOR_BLEND_MIX, priority = OVERRIDE_PRIORITY_UNTIL_ANIMATION_CHANGE)` | Color override with a distinct color per corner (gradient) |
+| `set_part_cell_override(part_name, cellmap_name, cell_name, priority = OVERRIDE_PRIORITY_UNTIL_ANIMATION_CHANGE)` | Draw a different cell |
 | `set_part_visibility_override(part_name, force_hidden, cascade = false)` | Force-hide (`force_hidden = false` reverts to the animation) |
 | `clear_part_color_override` / `clear_part_cell_override` / `clear_part_visibility_override` | Clear one override on one part |
 | `clear_all_part_overrides()` | Clear every override on the player |
@@ -237,12 +237,12 @@ Both read the bound `SSABResource` and return an empty array when none is assign
 
 The `blend_op` of `set_part_color_override()` offers the same four operations as the keyframed Part Color.
 
-| Value | Blend operation |
-|---|---|
-| `0` | Mix (default) |
-| `1` | Mul (multiply) |
-| `2` | Add |
-| `3` | Sub (subtract) |
+| Constant | Value | Blend operation |
+|---|---|---|
+| `COLOR_BLEND_MIX` | `0` | Mix (default) |
+| `COLOR_BLEND_MUL` | `1` | Mul (multiply) |
+| `COLOR_BLEND_ADD` | `2` | Add |
+| `COLOR_BLEND_SUB` | `3` | Sub (subtract) |
 
 An out-of-range value fails the call and returns `false`.
 
@@ -250,11 +250,11 @@ An out-of-range value fails the call and returns `false`.
 
 Color and cell overrides conflict with the animation, so they take a `priority` (visibility does not — it is a plain force-hide flag, and any new animation clears it):
 
-| Value | Priority mode | Behavior |
+| Constant | Value | Behavior |
 |---|---|---|
-| `0` | OverwriteOnNextKeyframe | The override applies until the animation data updates that attribute |
-| `1` | HoldUntilNextAnimation (default) | The override wins for the current animation and is cleared when a new animation is set up |
-| `2` | Permanent | The override applies for as long as the same animation data (`.ssab`) is playing, surviving animation changes |
+| `OVERRIDE_PRIORITY_NEXT_KEYFRAME` | `0` | The override applies until the animation data updates that attribute |
+| `OVERRIDE_PRIORITY_UNTIL_ANIMATION_CHANGE` | `1` | The override wins for the current animation and is cleared when a new animation is set up (default) |
+| `OVERRIDE_PRIORITY_PERMANENT` | `2` | The override applies for as long as the same animation data (`.ssab`) is playing, surviving animation changes |
 
 ### Notes
 

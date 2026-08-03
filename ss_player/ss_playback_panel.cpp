@@ -308,7 +308,7 @@ void SSPlaybackPanel::_on_play_start_pressed() {
     if (!_player) {
         return;
     }
-    _player->setPlaybackDirection(0, _player->getPlaybackStyle());
+    _player->setPlaybackDirection(SpriteStudioPlayer2D::PLAYBACK_DIRECTION_FORWARD, _player->getPlaybackStyle());
     _player->play(0.0f);
 }
 

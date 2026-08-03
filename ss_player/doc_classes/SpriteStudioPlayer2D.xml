@@ -58,10 +58,10 @@
 		</method>
 		<method name="set_playback_direction">
 			<return type="void" />
-			<param index="0" name="direction" type="int" />
-			<param index="1" name="style" type="int" />
+			<param index="0" name="direction" type="int" enum="SpriteStudioPlayer2D.PlaybackDirection" />
+			<param index="1" name="style" type="int" enum="SpriteStudioPlayer2D.PlaybackStyle" />
 			<description>
-				Sets the playback direction ([code]0[/code] = forward, non-zero = backward) and style ([code]0[/code] = normal, [code]1[/code] = ping-pong).
+				Sets the playback direction and style.
 			</description>
 		</method>
 		<method name="set_cellmap_texture">
@@ -92,10 +92,10 @@
 			<param index="2" name="right_top" type="Color" />
 			<param index="3" name="left_bottom" type="Color" />
 			<param index="4" name="right_bottom" type="Color" />
-			<param index="5" name="blend_op" type="int" default="0" />
-			<param index="6" name="priority" type="int" default="1" />
+			<param index="5" name="blend_op" type="int" enum="SpriteStudioPlayer2D.ColorBlendOperation" default="0" />
+			<param index="6" name="priority" type="int" enum="SpriteStudioPlayer2D.OverridePriority" default="1" />
 			<description>
-				Overrides a part's color with a distinct color per corner, producing a gradient across the part. [param blend_op] is [code]0[/code] = Mix, [code]1[/code] = Mul, [code]2[/code] = Add, [code]3[/code] = Sub; [param priority] is [code]0[/code] = until the animation updates the attribute, [code]1[/code] = until the next animation is set up, [code]2[/code] = permanent.
+				Overrides a part's color with a distinct color per corner, producing a gradient across the part. See [enum ColorBlendOperation] and [enum OverridePriority] for [param blend_op] and [param priority].
 				Shares one override slot with [method set_part_color_override], so the last call wins and [method clear_part_color_override] clears either kind. Returns [code]false[/code] when the part is unknown or the runtime rejects the call.
 			</description>
 		</method>
@@ -120,7 +120,13 @@
 			If [code]true[/code], the animation is flipped vertically.
 		</member>
 		<member name="animation_process_mode" type="int" enum="SpriteStudioPlayer2D.AnimationProcessMode" default="1">
-			Determines whether to advance the animation in [code]_physics_process[/code] ([code]0[/code] / Physics) or [code]_process[/code] ([code]1[/code] / Idle). Use Physics if the parent node moves using the physics engine to avoid jitter.
+			Determines whether to advance the animation in [code]_physics_process[/code] ([constant ANIMATION_PROCESS_PHYSICS]) or [code]_process[/code] ([constant ANIMATION_PROCESS_IDLE]). Use Physics if the parent node moves using the physics engine to avoid jitter.
+		</member>
+		<member name="animation_section_start" type="int">
+			First frame of the played section, inclusive. Setting it keeps [member animation_section_end]; use [method set_animation_section] to move both endpoints at once.
+		</member>
+		<member name="animation_section_end" type="int">
+			Last frame of the played section, inclusive. Setting it keeps [member animation_section_start]; use [method set_animation_section] to move both endpoints at once.
 		</member>
 		<member name="frame" type="float">
 			Current playback frame (editor-only display). Can be keyframed from an [AnimationPlayer] to drive playback from a timeline.
@@ -207,6 +213,39 @@
 		</constant>
 		<constant name="ANIMATION_PROCESS_IDLE" value="1" enum="AnimationProcessMode">
 			Syncs animation to [code]_process[/code] frame.
+		</constant>
+		<constant name="PLAYBACK_DIRECTION_FORWARD" value="0" enum="PlaybackDirection">
+			Plays the animation from the section start towards its end.
+		</constant>
+		<constant name="PLAYBACK_DIRECTION_BACKWARD" value="1" enum="PlaybackDirection">
+			Plays the animation from the section end towards its start. Audio parts do not fire while playing backwards.
+		</constant>
+		<constant name="PLAYBACK_STYLE_NORMAL" value="0" enum="PlaybackStyle">
+			Each loop restarts from the same end of the section.
+		</constant>
+		<constant name="PLAYBACK_STYLE_PING_PONG" value="1" enum="PlaybackStyle">
+			Playback reverses at each end of the section instead of restarting.
+		</constant>
+		<constant name="COLOR_BLEND_MIX" value="0" enum="ColorBlendOperation">
+			Blends the override color over the part's color.
+		</constant>
+		<constant name="COLOR_BLEND_MUL" value="1" enum="ColorBlendOperation">
+			Multiplies the part's color by the override color.
+		</constant>
+		<constant name="COLOR_BLEND_ADD" value="2" enum="ColorBlendOperation">
+			Adds the override color to the part's color.
+		</constant>
+		<constant name="COLOR_BLEND_SUB" value="3" enum="ColorBlendOperation">
+			Subtracts the override color from the part's color.
+		</constant>
+		<constant name="OVERRIDE_PRIORITY_NEXT_KEYFRAME" value="0" enum="OverridePriority">
+			The override is dropped as soon as the animation next keys the attribute.
+		</constant>
+		<constant name="OVERRIDE_PRIORITY_UNTIL_ANIMATION_CHANGE" value="1" enum="OverridePriority">
+			The override is held until another animation is set up. This is the default.
+		</constant>
+		<constant name="OVERRIDE_PRIORITY_PERMANENT" value="2" enum="OverridePriority">
+			The override survives animation changes and is only removed by an explicit clear.
 		</constant>
 	</constants>
 </class>
