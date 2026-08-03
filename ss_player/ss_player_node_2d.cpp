@@ -215,22 +215,22 @@ bool SpriteStudioPlayer2D::clear_part_visibility_override_by_index(int part_inde
     return _internal->clear_part_visibility_override(part_index);
 }
 
-bool SpriteStudioPlayer2D::set_part_color_override_by_index(int part_index, const Color& color, int blend_op, int priority) {
-    return _internal->set_part_color_override(part_index, color, blend_op, priority);
+bool SpriteStudioPlayer2D::set_part_color_override_by_index(int part_index, const Color& color, ColorBlendOperation blend_op, OverridePriority priority) {
+    return _internal->set_part_color_override(part_index, color, (int)blend_op, (int)priority);
 }
 
 bool SpriteStudioPlayer2D::set_part_color_override_corners_by_index(int part_index, const Color& left_top, const Color& right_top,
                                                                     const Color& left_bottom, const Color& right_bottom,
-                                                                    int blend_op, int priority) {
-    return _internal->set_part_color_override_corners(part_index, left_top, right_top, left_bottom, right_bottom, blend_op, priority);
+                                                                    ColorBlendOperation blend_op, OverridePriority priority) {
+    return _internal->set_part_color_override_corners(part_index, left_top, right_top, left_bottom, right_bottom, (int)blend_op, (int)priority);
 }
 
 bool SpriteStudioPlayer2D::clear_part_color_override_by_index(int part_index) {
     return _internal->clear_part_color_override(part_index);
 }
 
-bool SpriteStudioPlayer2D::set_part_cell_override_by_index(int part_index, const String& cellmap_name, const String& cell_name, int priority) {
-    return _internal->set_part_cell_override(part_index, cellmap_name, cell_name, priority);
+bool SpriteStudioPlayer2D::set_part_cell_override_by_index(int part_index, const String& cellmap_name, const String& cell_name, OverridePriority priority) {
+    return _internal->set_part_cell_override(part_index, cellmap_name, cell_name, (int)priority);
 }
 
 bool SpriteStudioPlayer2D::clear_part_cell_override_by_index(int part_index) {
@@ -248,13 +248,13 @@ bool SpriteStudioPlayer2D::clear_part_visibility_override(const String& part_nam
     return clear_part_visibility_override_by_index(_internal->resolve_part_index(part_name));
 }
 
-bool SpriteStudioPlayer2D::set_part_color_override(const String& part_name, const Color& color, int blend_op, int priority) {
+bool SpriteStudioPlayer2D::set_part_color_override(const String& part_name, const Color& color, ColorBlendOperation blend_op, OverridePriority priority) {
     return set_part_color_override_by_index(_internal->resolve_part_index(part_name), color, blend_op, priority);
 }
 
 bool SpriteStudioPlayer2D::set_part_color_override_corners(const String& part_name, const Color& left_top, const Color& right_top,
                                                            const Color& left_bottom, const Color& right_bottom,
-                                                           int blend_op, int priority) {
+                                                           ColorBlendOperation blend_op, OverridePriority priority) {
     return set_part_color_override_corners_by_index(_internal->resolve_part_index(part_name), left_top, right_top, left_bottom, right_bottom, blend_op, priority);
 }
 
@@ -262,7 +262,7 @@ bool SpriteStudioPlayer2D::clear_part_color_override(const String& part_name) {
     return clear_part_color_override_by_index(_internal->resolve_part_index(part_name));
 }
 
-bool SpriteStudioPlayer2D::set_part_cell_override(const String& part_name, const String& cellmap_name, const String& cell_name, int priority) {
+bool SpriteStudioPlayer2D::set_part_cell_override(const String& part_name, const String& cellmap_name, const String& cell_name, OverridePriority priority) {
     return set_part_cell_override_by_index(_internal->resolve_part_index(part_name), cellmap_name, cell_name, priority);
 }
 
@@ -380,10 +380,10 @@ void SpriteStudioPlayer2D::_push_host_viewport() {
     _internal->setHostViewport(vp ? vp->get_viewport_rid() : RID());
 }
 
-void SpriteStudioPlayer2D::set_animation_process_mode(int p_mode) {
-    AnimationProcessMode mode = (AnimationProcessMode)p_mode;
+void SpriteStudioPlayer2D::set_animation_process_mode(AnimationProcessMode p_mode) {
+    AnimationProcessMode mode = p_mode;
     if (_process_mode == mode) return;
-    
+
     bool active = is_inside_tree();
     if (active) {
         if (_process_mode == ANIMATION_PROCESS_IDLE) {
@@ -404,7 +404,7 @@ void SpriteStudioPlayer2D::set_animation_process_mode(int p_mode) {
     }
 }
 
-int SpriteStudioPlayer2D::get_animation_process_mode() const { return (int)_process_mode; }
+SpriteStudioPlayer2D::AnimationProcessMode SpriteStudioPlayer2D::get_animation_process_mode() const { return _process_mode; }
 
 void SpriteStudioPlayer2D::setSpeedScale(float p_speed) { _internal->setSpeed(p_speed); }
 float SpriteStudioPlayer2D::getSpeedScale() const { return _internal->getSpeed(); }
@@ -421,12 +421,14 @@ int SpriteStudioPlayer2D::getStartFrame() const { return _internal->getAnimation
 int SpriteStudioPlayer2D::getEndFrame() const { return _internal->getAnimationSectionEnd(); }
 
 void SpriteStudioPlayer2D::setAnimationSection(int p_start, int p_end) { _internal->setAnimationSection(p_start, p_end); }
+void SpriteStudioPlayer2D::setAnimationSectionStart(int p_start) { setAnimationSection(p_start, getAnimationSectionEnd()); }
+void SpriteStudioPlayer2D::setAnimationSectionEnd(int p_end) { setAnimationSection(getAnimationSectionStart(), p_end); }
 int SpriteStudioPlayer2D::getAnimationSectionStart() const { return _internal->getAnimationSectionStart(); }
 int SpriteStudioPlayer2D::getAnimationSectionEnd() const { return _internal->getAnimationSectionEnd(); }
 
-void SpriteStudioPlayer2D::setPlaybackDirection(int p_direction, int p_style) { _internal->setPlaybackDirection(p_direction, p_style); }
-int SpriteStudioPlayer2D::getPlaybackDirection() const { return _internal->getPlaybackDirection(); }
-int SpriteStudioPlayer2D::getPlaybackStyle() const { return _internal->getPlaybackStyle(); }
+void SpriteStudioPlayer2D::setPlaybackDirection(PlaybackDirection p_direction, PlaybackStyle p_style) { _internal->setPlaybackDirection((int)p_direction, (int)p_style); }
+SpriteStudioPlayer2D::PlaybackDirection SpriteStudioPlayer2D::getPlaybackDirection() const { return (PlaybackDirection)_internal->getPlaybackDirection(); }
+SpriteStudioPlayer2D::PlaybackStyle SpriteStudioPlayer2D::getPlaybackStyle() const { return (PlaybackStyle)_internal->getPlaybackStyle(); }
 
 void SpriteStudioPlayer2D::setLoopCount(int p_count) { _internal->setLoop(p_count); }
 int SpriteStudioPlayer2D::getLoopCount() const { return _internal->getLoop(); }
@@ -466,6 +468,8 @@ void SpriteStudioPlayer2D::_bind_methods() {
     ClassDB::bind_method( D_METHOD( "get_frame_rate" ), &SpriteStudioPlayer2D::getFrameRate );
 
     ClassDB::bind_method( D_METHOD( "set_animation_section", "start", "end" ), &SpriteStudioPlayer2D::setAnimationSection );
+    ClassDB::bind_method( D_METHOD( "set_animation_section_start", "start" ), &SpriteStudioPlayer2D::setAnimationSectionStart );
+    ClassDB::bind_method( D_METHOD( "set_animation_section_end", "end" ), &SpriteStudioPlayer2D::setAnimationSectionEnd );
     ClassDB::bind_method( D_METHOD( "get_animation_section_start" ), &SpriteStudioPlayer2D::getAnimationSectionStart );
     ClassDB::bind_method( D_METHOD( "get_animation_section_end" ), &SpriteStudioPlayer2D::getAnimationSectionEnd );
 
@@ -498,9 +502,6 @@ void SpriteStudioPlayer2D::_bind_methods() {
     ClassDB::bind_method( D_METHOD( "set_offset", "offset" ), &SpriteStudioPlayer2D::set_offset );
     ClassDB::bind_method( D_METHOD( "get_offset" ), &SpriteStudioPlayer2D::get_offset );
 
-    BIND_CONSTANT( ANIMATION_PROCESS_PHYSICS );
-    BIND_CONSTANT( ANIMATION_PROCESS_IDLE );
-    
     ClassDB::bind_method( D_METHOD( "set_animation_process_mode", "mode" ), &SpriteStudioPlayer2D::set_animation_process_mode );
     ClassDB::bind_method( D_METHOD( "get_animation_process_mode" ), &SpriteStudioPlayer2D::get_animation_process_mode );
 
@@ -517,20 +518,20 @@ void SpriteStudioPlayer2D::_bind_methods() {
     // ---- Override Layer (Phase 2): per-part runtime overrides -------------
     ClassDB::bind_method( D_METHOD( "set_part_visibility_override", "part_name", "force_hidden", "cascade" ), &SpriteStudioPlayer2D::set_part_visibility_override, DEFVAL(false) );
     ClassDB::bind_method( D_METHOD( "clear_part_visibility_override", "part_name" ), &SpriteStudioPlayer2D::clear_part_visibility_override );
-    ClassDB::bind_method( D_METHOD( "set_part_color_override", "part_name", "color", "blend_op", "priority" ), &SpriteStudioPlayer2D::set_part_color_override, DEFVAL(0), DEFVAL(1) );
-    ClassDB::bind_method( D_METHOD( "set_part_color_override_corners", "part_name", "left_top", "right_top", "left_bottom", "right_bottom", "blend_op", "priority" ), &SpriteStudioPlayer2D::set_part_color_override_corners, DEFVAL(0), DEFVAL(1) );
+    ClassDB::bind_method( D_METHOD( "set_part_color_override", "part_name", "color", "blend_op", "priority" ), &SpriteStudioPlayer2D::set_part_color_override, DEFVAL(COLOR_BLEND_MIX), DEFVAL(OVERRIDE_PRIORITY_UNTIL_ANIMATION_CHANGE) );
+    ClassDB::bind_method( D_METHOD( "set_part_color_override_corners", "part_name", "left_top", "right_top", "left_bottom", "right_bottom", "blend_op", "priority" ), &SpriteStudioPlayer2D::set_part_color_override_corners, DEFVAL(COLOR_BLEND_MIX), DEFVAL(OVERRIDE_PRIORITY_UNTIL_ANIMATION_CHANGE) );
     ClassDB::bind_method( D_METHOD( "clear_part_color_override", "part_name" ), &SpriteStudioPlayer2D::clear_part_color_override );
-    ClassDB::bind_method( D_METHOD( "set_part_cell_override", "part_name", "cellmap_name", "cell_name", "priority" ), &SpriteStudioPlayer2D::set_part_cell_override, DEFVAL(1) );
+    ClassDB::bind_method( D_METHOD( "set_part_cell_override", "part_name", "cellmap_name", "cell_name", "priority" ), &SpriteStudioPlayer2D::set_part_cell_override, DEFVAL(OVERRIDE_PRIORITY_UNTIL_ANIMATION_CHANGE) );
     ClassDB::bind_method( D_METHOD( "clear_part_cell_override", "part_name" ), &SpriteStudioPlayer2D::clear_part_cell_override );
     ClassDB::bind_method( D_METHOD( "clear_all_part_overrides" ), &SpriteStudioPlayer2D::clear_all_part_overrides );
 
     // By-index variants
     ClassDB::bind_method( D_METHOD( "set_part_visibility_override_by_index", "part_index", "force_hidden", "cascade" ), &SpriteStudioPlayer2D::set_part_visibility_override_by_index, DEFVAL(false) );
     ClassDB::bind_method( D_METHOD( "clear_part_visibility_override_by_index", "part_index" ), &SpriteStudioPlayer2D::clear_part_visibility_override_by_index );
-    ClassDB::bind_method( D_METHOD( "set_part_color_override_by_index", "part_index", "color", "blend_op", "priority" ), &SpriteStudioPlayer2D::set_part_color_override_by_index, DEFVAL(0), DEFVAL(1) );
-    ClassDB::bind_method( D_METHOD( "set_part_color_override_corners_by_index", "part_index", "left_top", "right_top", "left_bottom", "right_bottom", "blend_op", "priority" ), &SpriteStudioPlayer2D::set_part_color_override_corners_by_index, DEFVAL(0), DEFVAL(1) );
+    ClassDB::bind_method( D_METHOD( "set_part_color_override_by_index", "part_index", "color", "blend_op", "priority" ), &SpriteStudioPlayer2D::set_part_color_override_by_index, DEFVAL(COLOR_BLEND_MIX), DEFVAL(OVERRIDE_PRIORITY_UNTIL_ANIMATION_CHANGE) );
+    ClassDB::bind_method( D_METHOD( "set_part_color_override_corners_by_index", "part_index", "left_top", "right_top", "left_bottom", "right_bottom", "blend_op", "priority" ), &SpriteStudioPlayer2D::set_part_color_override_corners_by_index, DEFVAL(COLOR_BLEND_MIX), DEFVAL(OVERRIDE_PRIORITY_UNTIL_ANIMATION_CHANGE) );
     ClassDB::bind_method( D_METHOD( "clear_part_color_override_by_index", "part_index" ), &SpriteStudioPlayer2D::clear_part_color_override_by_index );
-    ClassDB::bind_method( D_METHOD( "set_part_cell_override_by_index", "part_index", "cellmap_name", "cell_name", "priority" ), &SpriteStudioPlayer2D::set_part_cell_override_by_index, DEFVAL(1) );
+    ClassDB::bind_method( D_METHOD( "set_part_cell_override_by_index", "part_index", "cellmap_name", "cell_name", "priority" ), &SpriteStudioPlayer2D::set_part_cell_override_by_index, DEFVAL(OVERRIDE_PRIORITY_UNTIL_ANIMATION_CHANGE) );
     ClassDB::bind_method( D_METHOD( "clear_part_cell_override_by_index", "part_index" ), &SpriteStudioPlayer2D::clear_part_cell_override_by_index );
 
     ADD_SIGNAL(
@@ -563,71 +564,77 @@ void SpriteStudioPlayer2D::_bind_methods() {
     // mirror a part's pose in the same frame it is rendered.
     ADD_SIGNAL(MethodInfo("frame_updated", PropertyInfo(Variant::FLOAT, "frame_no")));
 
+    // Properties are registered statically so they land in ClassDB (visible to
+    // class_get_property_list and to binding generators). The hints that depend
+    // on the bound resource — the `animation` name list and the frame / section
+    // ranges — are injected per-instance by _validate_property. The order here
+    // is the inspector order; `cellmaps/*` still comes from _get_property_list
+    // because its entries depend on the resource's cell maps.
     ADD_PROPERTY(
         PropertyInfo(Variant::OBJECT, "ssab", PROPERTY_HINT_RESOURCE_TYPE, "SSABResource"),
         "set_ssab_resource",
         "get_ssab_resource"
     );
+    ADD_PROPERTY(PropertyInfo(Variant::STRING, "animation", PROPERTY_HINT_ENUM, ""), "set_animation", "get_animation");
+    ADD_PROPERTY(PropertyInfo(Variant::BOOL, "autoplay"), "set_autoplay", "is_autoplay");
+    // Editor-only (never stored): the playhead is runtime state, but it stays in
+    // the property list so an AnimationPlayer can keyframe it.
+    ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "frame", PROPERTY_HINT_RANGE, "0,0,0.01", PROPERTY_USAGE_EDITOR), "set_frame", "get_frame");
+    ADD_PROPERTY(PropertyInfo(Variant::INT, "loop_count", PROPERTY_HINT_RANGE, "-1,9999,1,or_greater"), "set_loop_count", "get_loop_count");
+    ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "speed_scale", PROPERTY_HINT_RANGE, "0,4,0.01,or_greater"), "set_speed_scale", "get_speed_scale");
+
+    ADD_GROUP("Playback Options", "");
+    ADD_PROPERTY(PropertyInfo(Variant::BOOL, "frame_skip_enabled"), "set_frame_skip_enabled", "is_frame_skip_enabled");
+    ADD_PROPERTY(PropertyInfo(Variant::BOOL, "sub_frame_enabled"), "set_sub_frame_enabled", "is_sub_frame_enabled");
+    ADD_PROPERTY(PropertyInfo(Variant::INT, "animation_process_mode", PROPERTY_HINT_ENUM, "Physics,Idle"), "set_animation_process_mode", "get_animation_process_mode");
+
+    ADD_GROUP("Section", "");
+    ADD_PROPERTY(PropertyInfo(Variant::INT, "animation_section_start", PROPERTY_HINT_RANGE, "0,0,1"), "set_animation_section_start", "get_animation_section_start");
+    ADD_PROPERTY(PropertyInfo(Variant::INT, "animation_section_end", PROPERTY_HINT_RANGE, "0,0,1"), "set_animation_section_end", "get_animation_section_end");
+
+    ADD_GROUP("Offset", "");
+    ADD_PROPERTY(PropertyInfo(Variant::VECTOR2, "offset"), "set_offset", "get_offset");
+    ADD_PROPERTY(PropertyInfo(Variant::BOOL, "flip_h"), "set_flip_h", "is_flipped_h");
+    ADD_PROPERTY(PropertyInfo(Variant::BOOL, "flip_v"), "set_flip_v", "is_flipped_v");
+
+    ADD_GROUP("Audio", "");
+    ADD_PROPERTY(PropertyInfo(Variant::BOOL, "play_audio"), "set_play_audio", "is_play_audio");
+    ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "audio_volume", PROPERTY_HINT_RANGE, "0,1,0.01"), "set_audio_volume", "get_audio_volume");
+    ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "audio_backend", PROPERTY_HINT_RESOURCE_TYPE, "SpriteStudioAudioBackend"), "set_audio_backend", "get_audio_backend");
+
+    BIND_ENUM_CONSTANT(ANIMATION_PROCESS_PHYSICS);
+    BIND_ENUM_CONSTANT(ANIMATION_PROCESS_IDLE);
+
+    BIND_ENUM_CONSTANT(PLAYBACK_DIRECTION_FORWARD);
+    BIND_ENUM_CONSTANT(PLAYBACK_DIRECTION_BACKWARD);
+
+    BIND_ENUM_CONSTANT(PLAYBACK_STYLE_NORMAL);
+    BIND_ENUM_CONSTANT(PLAYBACK_STYLE_PING_PONG);
+
+    BIND_ENUM_CONSTANT(COLOR_BLEND_MIX);
+    BIND_ENUM_CONSTANT(COLOR_BLEND_MUL);
+    BIND_ENUM_CONSTANT(COLOR_BLEND_ADD);
+    BIND_ENUM_CONSTANT(COLOR_BLEND_SUB);
+
+    BIND_ENUM_CONSTANT(OVERRIDE_PRIORITY_NEXT_KEYFRAME);
+    BIND_ENUM_CONSTANT(OVERRIDE_PRIORITY_UNTIL_ANIMATION_CHANGE);
+    BIND_ENUM_CONSTANT(OVERRIDE_PRIORITY_PERMANENT);
 }
 
+// Runtime-only properties. They stay reachable by name (`player.frame_rate = 30`)
+// but are deliberately absent from the property list, so they are neither shown
+// in the inspector nor stored in the scene. Everything the inspector does show
+// is registered statically in _bind_methods.
 bool SpriteStudioPlayer2D::_set(const StringName& p_name, const Variant& p_property) {
     String name = p_name;
-    if (name == "animation") {
-        setAnimation(p_property);
-        return true;
-    } else if (name == "autoplay") {
-        setAutoplay(p_property);
-        return true;
-    } else if (name == "animation_process_mode") {
-        set_animation_process_mode((int)p_property);
-        return true;
-    } else if (name == "frame") {
-        setFrame(p_property);
-        return true;
-    } else if (name == "loop_count") {
-        setLoopCount(p_property);
-        return true;
-    } else if (name == "speed_scale") {
-        setSpeedScale(p_property);
-        return true;
-    } else if (name == "frame_skip_enabled") {
-        setFrameSkipEnabled(p_property);
-        return true;
-    } else if (name == "sub_frame_enabled") {
-        setSubFrameEnabled(p_property);
-        return true;
-    } else if (name == "playback_direction") {
-        setPlaybackDirection((int)p_property, getPlaybackStyle());
-        return true;
-    } else if (name == "playback_style") {
-        setPlaybackDirection(getPlaybackDirection(), (int)p_property);
-        return true;
-    } else if (name == "offset") {
-        set_offset(p_property);
-        return true;
-    } else if (name == "flip_h") {
-        set_flip_h(p_property);
-        return true;
-    } else if (name == "flip_v") {
-        set_flip_v(p_property);
-        return true;
-    } else if (name == "frame_rate") {
+    if (name == "frame_rate") {
         setFrameRate(p_property);
         return true;
-    } else if (name == "animation_section_start") {
-        setAnimationSection((int)p_property, getAnimationSectionEnd());
+    } else if (name == "playback_direction") {
+        setPlaybackDirection((PlaybackDirection)(int)p_property, getPlaybackStyle());
         return true;
-    } else if (name == "animation_section_end") {
-        setAnimationSection(getAnimationSectionStart(), (int)p_property);
-        return true;
-    } else if (name == "play_audio") {
-        set_play_audio(p_property);
-        return true;
-    } else if (name == "audio_volume") {
-        set_audio_volume(p_property);
-        return true;
-    } else if (name == "audio_backend") {
-        set_audio_backend(p_property);
+    } else if (name == "playback_style") {
+        setPlaybackDirection(getPlaybackDirection(), (PlaybackStyle)(int)p_property);
         return true;
     }
 
@@ -642,62 +649,14 @@ bool SpriteStudioPlayer2D::_set(const StringName& p_name, const Variant& p_prope
 
 bool SpriteStudioPlayer2D::_get(const StringName& p_name, Variant& r_property) const {
     String name = p_name;
-    if (name == "animation") {
-        r_property = getAnimation();
-        return true;
-    } else if (name == "autoplay") {
-        r_property = isAutoplay();
-        return true;
-    } else if (name == "animation_process_mode") {
-        r_property = get_animation_process_mode();
-        return true;
-    } else if (name == "frame") {
-        r_property = getFrame();
-        return true;
-    } else if (name == "loop_count") {
-        r_property = getLoopCount();
-        return true;
-    } else if (name == "speed_scale") {
-        r_property = getSpeedScale();
-        return true;
-    } else if (name == "frame_skip_enabled") {
-        r_property = isFrameSkipEnabled();
-        return true;
-    } else if (name == "sub_frame_enabled") {
-        r_property = isSubFrameEnabled();
+    if (name == "frame_rate") {
+        r_property = getFrameRate();
         return true;
     } else if (name == "playback_direction") {
         r_property = getPlaybackDirection();
         return true;
     } else if (name == "playback_style") {
         r_property = getPlaybackStyle();
-        return true;
-    } else if (name == "offset") {
-        r_property = get_offset();
-        return true;
-    } else if (name == "flip_h") {
-        r_property = is_flipped_h();
-        return true;
-    } else if (name == "flip_v") {
-        r_property = is_flipped_v();
-        return true;
-    } else if (name == "frame_rate") {
-        r_property = getFrameRate();
-        return true;
-    } else if (name == "animation_section_start") {
-        r_property = getAnimationSectionStart();
-        return true;
-    } else if (name == "animation_section_end") {
-        r_property = getAnimationSectionEnd();
-        return true;
-    } else if (name == "play_audio") {
-        r_property = is_play_audio();
-        return true;
-    } else if (name == "audio_volume") {
-        r_property = get_audio_volume();
-        return true;
-    } else if (name == "audio_backend") {
-        r_property = get_audio_backend();
         return true;
     }
 
@@ -711,60 +670,54 @@ bool SpriteStudioPlayer2D::_get(const StringName& p_name, Variant& r_property) c
 }
 
 void SpriteStudioPlayer2D::_get_property_list(List<PropertyInfo>* p_list) const {
+    // One entry per cell map in the bound resource. Unlike the rest of the
+    // inspector these cannot be registered statically, because both their count
+    // and their names come from the resource.
     Ref<SSABResource> res = _internal->getSSABResource();
-    bool has_res = !res.is_null();
-
-    if (has_res) {
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
-        PackedStringArray anim_names = res->get_animation_names();
-#else
-        Vector<String> anim_names = res->get_animation_names();
-#endif
-        p_list->push_back(PropertyInfo(Variant::STRING, "animation", PROPERTY_HINT_ENUM, String(",").join(anim_names)));
-    } else {
-        p_list->push_back(PropertyInfo(Variant::STRING, "animation", PROPERTY_HINT_ENUM, ""));
+    if (res.is_null()) {
+        return;
     }
 
-    int total = getTotalFrames();
-    int max_frame = total > 0 ? total - 1 : 0;
-    p_list->push_back(PropertyInfo(Variant::BOOL, "autoplay"));
-    p_list->push_back(PropertyInfo(Variant::FLOAT, "frame", PROPERTY_HINT_RANGE, "0," + String::num(max_frame) + ",0.01", PROPERTY_USAGE_EDITOR));
-
-    p_list->push_back(PropertyInfo(Variant::INT, "loop_count", PROPERTY_HINT_RANGE, "-1,9999,1,or_greater"));
-    p_list->push_back(PropertyInfo(Variant::FLOAT, "speed_scale", PROPERTY_HINT_RANGE, "0,4,0.01,or_greater"));
-
-    p_list->push_back(PropertyInfo(Variant::NIL, "Playback Options", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_GROUP));
-    p_list->push_back(PropertyInfo(Variant::BOOL, "frame_skip_enabled"));
-    p_list->push_back(PropertyInfo(Variant::BOOL, "sub_frame_enabled"));
-    p_list->push_back(PropertyInfo(Variant::INT, "animation_process_mode", PROPERTY_HINT_ENUM, "Physics,Idle"));
-
-    String section_range = "0," + String::num(max_frame) + ",1";
-    p_list->push_back(PropertyInfo(Variant::NIL, "Section", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_GROUP));
-    p_list->push_back(PropertyInfo(Variant::INT, "animation_section_start", PROPERTY_HINT_RANGE, section_range));
-    p_list->push_back(PropertyInfo(Variant::INT, "animation_section_end", PROPERTY_HINT_RANGE, section_range));
-
-    p_list->push_back(PropertyInfo(Variant::NIL, "Offset", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_GROUP));
-    p_list->push_back(PropertyInfo(Variant::VECTOR2, "offset"));
-    p_list->push_back(PropertyInfo(Variant::BOOL, "flip_h"));
-    p_list->push_back(PropertyInfo(Variant::BOOL, "flip_v"));
-
-    p_list->push_back(PropertyInfo(Variant::NIL, "Audio", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_GROUP));
-    p_list->push_back(PropertyInfo(Variant::BOOL, "play_audio"));
-    p_list->push_back(PropertyInfo(Variant::FLOAT, "audio_volume", PROPERTY_HINT_RANGE, "0,1,0.01"));
-    p_list->push_back(PropertyInfo(Variant::OBJECT, "audio_backend", PROPERTY_HINT_RESOURCE_TYPE, "SpriteStudioAudioBackend"));
-
-    if (has_res) {
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
-        PackedStringArray cellmap_names = res->get_cellmap_names();
+    PackedStringArray cellmap_names = res->get_cellmap_names();
 #else
-        Vector<String> cellmap_names = res->get_cellmap_names();
+    Vector<String> cellmap_names = res->get_cellmap_names();
 #endif
-        if (cellmap_names.size() > 0) {
-            p_list->push_back(PropertyInfo(Variant::NIL, "CellMap Overrides", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_GROUP));
-            for (int i = 0; i < cellmap_names.size(); i++) {
-                p_list->push_back(PropertyInfo(Variant::OBJECT, "cellmaps/" + cellmap_names[i], PROPERTY_HINT_RESOURCE_TYPE, "Texture2D"));
-            }
+    if (cellmap_names.size() == 0) {
+        return;
+    }
+
+    p_list->push_back(PropertyInfo(Variant::NIL, "CellMap Overrides", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_GROUP));
+    for (int i = 0; i < cellmap_names.size(); i++) {
+        p_list->push_back(PropertyInfo(Variant::OBJECT, "cellmaps/" + cellmap_names[i], PROPERTY_HINT_RESOURCE_TYPE, "Texture2D"));
+    }
+}
+
+void SpriteStudioPlayer2D::_validate_property(PropertyInfo& p_property) const {
+    if (p_property.name == StringName("animation")) {
+        // Turn the statically registered enum hint into the animation names of
+        // the bound resource. Left empty when no resource is assigned.
+        Ref<SSABResource> res = _internal->getSSABResource();
+        if (res.is_valid()) {
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+            PackedStringArray anim_names = res->get_animation_names();
+#else
+            Vector<String> anim_names = res->get_animation_names();
+#endif
+            p_property.hint_string = String(",").join(anim_names);
         }
+        return;
+    }
+
+    // The playhead and the section endpoints are bounded by the current
+    // animation's length, which only the instance knows.
+    bool is_frame = p_property.name == StringName("frame");
+    bool is_section = p_property.name == StringName("animation_section_start") ||
+                      p_property.name == StringName("animation_section_end");
+    if (is_frame || is_section) {
+        int total = getTotalFrames();
+        int max_frame = total > 0 ? total - 1 : 0;
+        p_property.hint_string = "0," + String::num(max_frame) + (is_frame ? ",0.01" : ",1");
     }
 }
 

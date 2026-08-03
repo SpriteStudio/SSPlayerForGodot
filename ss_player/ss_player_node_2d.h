@@ -2,9 +2,11 @@
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
 #include <godot_cpp/classes/node2d.hpp>
+#include <godot_cpp/core/binder_common.hpp>
 using namespace godot;
 #else
 #include "scene/2d/node_2d.h"
+#include "core/variant/binder_common.h"
 #endif
 
 #include "ss_audio_backend.h"
@@ -21,6 +23,36 @@ public:
         ANIMATION_PROCESS_IDLE,
     };
 
+    // Playback direction / style. The values mirror the runtime's FFI encoding
+    // (which normalizes to 0/1 on both sides of the boundary) — they are NOT
+    // the Rust PlaybackDirection discriminants (Forward=1, Backward=-1).
+    enum PlaybackDirection {
+        PLAYBACK_DIRECTION_FORWARD,
+        PLAYBACK_DIRECTION_BACKWARD,
+    };
+
+    enum PlaybackStyle {
+        PLAYBACK_STYLE_NORMAL,
+        PLAYBACK_STYLE_PING_PONG,
+    };
+
+    // Blend operation applied by the part color overrides. Mirrors the
+    // runtime's `blend_op` encoding.
+    enum ColorBlendOperation {
+        COLOR_BLEND_MIX,
+        COLOR_BLEND_MUL,
+        COLOR_BLEND_ADD,
+        COLOR_BLEND_SUB,
+    };
+
+    // How long a part override outlives the keyframes it overrides. Mirrors
+    // the runtime's `priority_mode` encoding.
+    enum OverridePriority {
+        OVERRIDE_PRIORITY_NEXT_KEYFRAME,          // dropped when the animation next keys the attribute
+        OVERRIDE_PRIORITY_UNTIL_ANIMATION_CHANGE, // held until another animation is set up
+        OVERRIDE_PRIORITY_PERMANENT,              // survives animation changes
+    };
+
 private:
     void _notification( int p_notification );
     SpriteStudioPlayer2D();
@@ -29,6 +61,10 @@ private:
     bool _set( const StringName& p_name, const Variant& p_property );
     bool _get( const StringName& p_name, Variant& r_property ) const;
     void _get_property_list( List<PropertyInfo>* p_list ) const;
+    // Injects the hints that depend on the bound resource / current animation
+    // (the `animation` name list, and the frame + section ranges) into the
+    // statically registered properties. Same signature in module + godot-cpp.
+    void _validate_property( PropertyInfo& p_property ) const;
 
 public:
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
@@ -59,8 +95,8 @@ public:
     void set_offset( const Vector2& p_offset );
     Vector2 get_offset() const;
 
-    void set_animation_process_mode(int p_mode);
-    int get_animation_process_mode() const;
+    void set_animation_process_mode(AnimationProcessMode p_mode);
+    AnimationProcessMode get_animation_process_mode() const;
 
     void setSpeedScale( float p_speed );
     float getSpeedScale() const;
@@ -76,12 +112,16 @@ public:
     int getFrameRate() const;
 
     void setAnimationSection( int p_start, int p_end );
+    // Single-endpoint setters backing the `animation_section_start` /
+    // `animation_section_end` properties; each keeps the other endpoint.
+    void setAnimationSectionStart( int p_start );
+    void setAnimationSectionEnd( int p_end );
     int getAnimationSectionStart() const;
     int getAnimationSectionEnd() const;
 
-    void setPlaybackDirection( int p_direction, int p_style );
-    int getPlaybackDirection() const;
-    int getPlaybackStyle() const;
+    void setPlaybackDirection( PlaybackDirection p_direction, PlaybackStyle p_style );
+    PlaybackDirection getPlaybackDirection() const;
+    PlaybackStyle getPlaybackStyle() const;
 
     void setLoopCount( int p_count );
     int getLoopCount() const;
@@ -127,31 +167,30 @@ public:
     // ---- Override Layer (Phase 2): per-part runtime overrides -------------
     // Overrides win over both keyframes and blend for the named part. Return
     // false when the part name is unknown / no animation is bound.
-    // priority: 0=on next keyframe (NON), 1=until next animation (default),
-    // 2=permanent (survives animation changes). blend_op: 0=Mix 1=Mul 2=Add
-    // 3=Sub. Color parts: Normal only; Cell parts: Normal + Mask.
+    // See OverridePriority and ColorBlendOperation for the enum values.
+    // Color parts: Normal only; Cell parts: Normal + Mask.
     bool set_part_visibility_override(const String& part_name, bool force_hidden, bool cascade);
     bool clear_part_visibility_override(const String& part_name);
-    bool set_part_color_override(const String& part_name, const Color& color, int blend_op, int priority);
+    bool set_part_color_override(const String& part_name, const Color& color, ColorBlendOperation blend_op, OverridePriority priority);
     // Four-corner (per-vertex) color override. Corners follow the runtime's
     // order: left-top, right-top, left-bottom, right-bottom. Shares one slot
     // with set_part_color_override — clear_part_color_override clears either.
     bool set_part_color_override_corners(const String& part_name, const Color& left_top, const Color& right_top,
                                          const Color& left_bottom, const Color& right_bottom,
-                                         int blend_op, int priority);
+                                         ColorBlendOperation blend_op, OverridePriority priority);
     bool clear_part_color_override(const String& part_name);
-    bool set_part_cell_override(const String& part_name, const String& cellmap_name, const String& cell_name, int priority);
+    bool set_part_cell_override(const String& part_name, const String& cellmap_name, const String& cell_name, OverridePriority priority);
     bool clear_part_cell_override(const String& part_name);
     bool clear_all_part_overrides();
     // By-index variants (part_index from get_part_index): skip the name lookup.
     bool set_part_visibility_override_by_index(int part_index, bool force_hidden, bool cascade);
     bool clear_part_visibility_override_by_index(int part_index);
-    bool set_part_color_override_by_index(int part_index, const Color& color, int blend_op, int priority);
+    bool set_part_color_override_by_index(int part_index, const Color& color, ColorBlendOperation blend_op, OverridePriority priority);
     bool set_part_color_override_corners_by_index(int part_index, const Color& left_top, const Color& right_top,
                                                   const Color& left_bottom, const Color& right_bottom,
-                                                  int blend_op, int priority);
+                                                  ColorBlendOperation blend_op, OverridePriority priority);
     bool clear_part_color_override_by_index(int part_index);
-    bool set_part_cell_override_by_index(int part_index, const String& cellmap_name, const String& cell_name, int priority);
+    bool set_part_cell_override_by_index(int part_index, const String& cellmap_name, const String& cell_name, OverridePriority priority);
     bool clear_part_cell_override_by_index(int part_index);
 
 private:
@@ -193,3 +232,9 @@ private:
 
     void _on_ssab_changed();
 };
+
+VARIANT_ENUM_CAST(SpriteStudioPlayer2D::AnimationProcessMode);
+VARIANT_ENUM_CAST(SpriteStudioPlayer2D::PlaybackDirection);
+VARIANT_ENUM_CAST(SpriteStudioPlayer2D::PlaybackStyle);
+VARIANT_ENUM_CAST(SpriteStudioPlayer2D::ColorBlendOperation);
+VARIANT_ENUM_CAST(SpriteStudioPlayer2D::OverridePriority);
