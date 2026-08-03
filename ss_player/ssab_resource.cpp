@@ -71,7 +71,10 @@ Error SSABResource::load_from_file(const String &path) {
   Error error = OK;
   _parent_dir = path.get_base_dir();
   // New buffer: drop the cached verification verdict before touching `binary`.
+  // The generation is bumped up-front so the failure paths below, which leave
+  // `binary` reassigned or cleared, invalidate outstanding borrows too.
   _valid_cache = -1;
+  _generation++;
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
   binary = FileAccess::get_file_as_bytes(path);
   if (binary.size() == 0) {
@@ -348,6 +351,9 @@ Error SSABResource::copy_from(const Ref<Resource> &p_resource) {
       static_cast<const Ref<SSABResource> &>(p_resource);
   this->binary = ssabFile->binary;
   _valid_cache = -1;
+  // This path emits no "changed", so the generation is the only signal a
+  // borrower gets that its buffer was replaced.
+  _generation++;
   return OK;
 }
 #endif

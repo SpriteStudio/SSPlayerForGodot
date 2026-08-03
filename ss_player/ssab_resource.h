@@ -56,6 +56,10 @@ public:
   const ss::format::SsAnimeBinary *get_ss_anime_binary();
   const uint8_t *get_data_ptr();
   int64_t get_data_size();
+  // Bumped every time `binary` is replaced. Holders of a zero-copy borrow of
+  // get_data_ptr() compare it to spot an in-place reload; the pointer alone
+  // won't do, since a same-sized buffer often re-allocates at the same address.
+  uint32_t get_generation() const { return _generation; }
   ss::format::AnimationData *find_animation(const String &name);
   ss::format::AnimationData *find_animation_by_hash(uint32_t name_hash);
   String get_parent_dir() const;
@@ -84,6 +88,8 @@ private:
     // is_valid(): -1 = not verified yet, 0 = invalid, 1 = valid. Reset to -1
     // wherever `binary` is replaced (load_from_file / copy_from).
     mutable int8_t _valid_cache = -1;
+    // Bumped alongside `_valid_cache`; see get_generation().
+    uint32_t _generation = 0;
     // The actual verification; is_valid() is the cached front-end.
     bool _verify_binary() const;
     // (sound_list_name_hash << 32 | sound_name_hash) -> loaded AudioStream.
