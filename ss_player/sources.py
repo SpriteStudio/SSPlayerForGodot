@@ -1,19 +1,15 @@
 import os
 import subprocess
 
-def get_fb_sources(base_dir=""):
-    fb_src_dir = os.path.join(base_dir, "flatbuffers/src")
-    fb_sources = [
-        "idl_parser.cpp",
-        "idl_gen_text.cpp",
-        "reflection.cpp",
-        "util.cpp",
-    ]
-    return [os.path.join(fb_src_dir, f) for f in fb_sources]
+# FlatBuffers is used header-only here: the generated format/*.h headers pull in
+# flatbuffers/flatbuffers.h, whose whole reachable set (buffer/table/vector/
+# verifier/builder, 16 headers) is inline. Nothing links against the flatc-side
+# translation units (idl_parser.cpp, idl_gen_text.cpp, reflection.cpp,
+# util.cpp) -- schema compilation is libssconverter's job on the Rust side -- so
+# they are not built, and flatbuffers/src is not on the include path.
 
 def get_include_paths(base_dir=""):
     return [
-        os.path.join(base_dir, "flatbuffers/src"),
         os.path.join(base_dir, "flatbuffers/include"),
         os.path.join(base_dir, "format"),
         os.path.join(base_dir, "runtime/include"),
