@@ -93,6 +93,7 @@ Sample projects based on SDK test projects are available under the `examples/` f
 
 ## Related Repositories
 
+- [SpriteStudio Docs](https://cri-middleware.github.io/SpriteStudio-Docs/) — the documentation portal for the SDK and its official players
 - [SpriteStudio-SDK](https://github.com/cri-middleware/SpriteStudio-SDK) — The SDK itself, providing `libssruntime` / `libssconverter`
 
 ## Migration

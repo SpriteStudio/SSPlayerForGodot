@@ -93,6 +93,7 @@ Windows / macOS でのビルドおよび実行を確認しています。
 
 ## 関連リポジトリ
 
+- [SpriteStudio Docs](https://cri-middleware.github.io/SpriteStudio-Docs/) — SDK と公式 Player のドキュメントポータル
 - [SpriteStudio-SDK](https://github.com/cri-middleware/SpriteStudio-SDK) — `libssruntime` / `libssconverter` を提供する SDK 本体
 
 ## マイグレーション
