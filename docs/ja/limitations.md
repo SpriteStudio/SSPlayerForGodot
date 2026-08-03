@@ -1,4 +1,4 @@
-# 仕様と制約事項 (Limitations & Scope)
+# ⚠️ 仕様と制約事項 (Limitations & Scope)
 
 現在の SpriteStudio Player for Godot でアプリを配信する際に把握しておくべき制約と、プラットフォーム固有の注意点をまとめています。サポートしている機能については [主な機能](index.md#key-features) および各ワークフローガイドを参照してください。
 

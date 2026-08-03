@@ -1,4 +1,4 @@
-# Performance Tuning and Advanced Settings
+# ⚡ Performance Tuning and Advanced Settings
 
 This section introduces settings and tips to extract maximum performance from SpriteStudioPlayerForGodot and perform advanced playback control.
 

@@ -1,4 +1,4 @@
-# Installation
+# 📥 Installation
 
 Steps for getting started with SpriteStudioPlayer for Godot.
 

@@ -1,4 +1,4 @@
-# インストール
+# 📥 インストール
 
 SpriteStudioPlayer for Godot を使い始めるための手順です。
 

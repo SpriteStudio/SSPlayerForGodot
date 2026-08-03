@@ -1,4 +1,4 @@
-# Asset Import and Editor Integration
+# 🗂️ Asset Import and Editor Integration
 
 This page explains **how to bring your `.sspj` into a Godot project (the initial conversion)** and the workflows for iterating quickly between SpriteStudio and Godot afterwards.
 

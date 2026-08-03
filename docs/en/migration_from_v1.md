@@ -1,4 +1,4 @@
-# Migration from v1.x
+# 🔄 Migration from v1.x
 
 When migrating from v1.x to the current version, please note the following major changes:
 

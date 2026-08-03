@@ -5,6 +5,8 @@ site_url: "https://cri-middleware.github.io/SSPlayerForGodot/"
 repo_name: "cri-middleware/SSPlayerForGodot"
 repo_url: "https://github.com/cri-middleware/SSPlayerForGodot"
 edit_uri: "edit/main/docs/"
+# Rendered in the site footer. Deliberately year-less so it never goes stale.
+copyright: "Copyright &copy; CRI Middleware Co., Ltd."
 
 theme:
   name: material
@@ -43,26 +45,56 @@ plugins:
         - locale: ja
           name: 日本語
           build: true
+          extra:
+            # Footer icon labels (title / aria-label). Mirrors the `extra.social` list below.
+            social:
+              - icon: fontawesome/brands/github
+                link: https://github.com/cri-middleware
+                name: GitHub の cri-middleware
+              - icon: material/web
+                link: https://www.webtech.co.jp/spritestudio/
+                name: OPTPiX SpriteStudio
+          # Japanese nav labels. Keys must match the `nav:` titles below *exactly*,
+          # emoji included - a mismatched key silently leaves the English label.
+          nav_translations:
+            🏠 Home: 🏠 ホーム
+            🚀 Setup: 🚀 セットアップ
+            Installation: インストール
+            Build Guide: ビルドガイド
+            🎬 Workflow: 🎬 ワークフロー
+            Basic Usage: 基本的な使い方
+            Asset Import & Editor Integration: アセットのインポートとエディタ連携
+            Scripting & Events: スクリプト制御とイベント
+            AnimationPlayer Integration: AnimationPlayer 連携
+            Exporting Your Project: プロジェクトのエクスポート
+            ⚙️ Advanced Topics: ⚙️ 高度なトピック
+            CLI Conversion & CI/CD: CLI コンバートと CI/CD
+            Performance Tuning & Advanced Settings: パフォーマンスチューニングと高度な設定
+            📖 API Reference: 📖 API リファレンス
+            SpriteStudioPlayer2D: SpriteStudioPlayer2D
+            Resource Classes: リソース管理クラス
+            ⚠️ Limitations & Scope: ⚠️ 仕様と制約事項
+            🔄 Migration Guide: 🔄 マイグレーションガイド
 
 nav:
-  - Home: index.md
-  - Setup:
+  - 🏠 Home: index.md
+  - 🚀 Setup:
       - Installation: setup/install.md
       - Build Guide: setup/build.md
-  - Workflow:
+  - 🎬 Workflow:
       - Basic Usage: workflow/usage_basic.md
       - Asset Import & Editor Integration: workflow/usage_asset_pipeline.md
       - Scripting & Events: workflow/usage_scripting.md
       - AnimationPlayer Integration: workflow/animation_player.md
       - Exporting Your Project: workflow/export.md
-  - Advanced Topics:
+  - ⚙️ Advanced Topics:
       - CLI Conversion & CI/CD: workflow/import.md
       - Performance Tuning & Advanced Settings: workflow/tips.md
-  - API Reference:
+  - 📖 API Reference:
       - SpriteStudioPlayer2D: api/player.md
       - Resource Classes: api/resource.md
-  - Limitations & Scope: limitations.md
-  - Migration Guide: migration_from_v1.md
+  - ⚠️ Limitations & Scope: limitations.md
+  - 🔄 Migration Guide: migration_from_v1.md
 
 markdown_extensions:
   - admonition
@@ -80,6 +112,14 @@ markdown_extensions:
   - pymdownx.snippets
 
 extra:
+  # Footer icons. Keep to destinations that outlive any single release.
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/cri-middleware
+      name: cri-middleware on GitHub
+    - icon: material/web
+      link: https://www.webtech.co.jp/spritestudio/
+      name: OPTPiX SpriteStudio
   alternate:
     - name: English
       link: ./

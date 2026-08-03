@@ -1,4 +1,4 @@
-# Limitations & Scope
+# ⚠️ Limitations & Scope
 
 Constraints and platform-specific caveats to be aware of when shipping with the current SpriteStudio Player for Godot. For the list of what *is* supported, see the [Key Features](index.md#key-features) and workflow guides.
 

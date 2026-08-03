@@ -1,4 +1,4 @@
-# Resource classes
+# 🗃️ Resource classes
 
 These extend Godot's built-in `Resource`. When multiple `SpriteStudioPlayer2D` nodes share the same resource, set the **Local To Scene** flag to `True` to give each node its own state.
 

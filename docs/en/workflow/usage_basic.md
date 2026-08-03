@@ -1,4 +1,4 @@
-# Basic Usage
+# ▶️ Basic Usage
 
 This page explains the basic workflow for placing and playing SpriteStudio animations in your Godot scene.
 
