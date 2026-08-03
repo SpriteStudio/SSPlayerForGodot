@@ -1,4 +1,4 @@
-# Building / Developing
+# 🛠️ Building / Developing
 
 If you want to build the GDExtension or a custom-module Godot Engine yourself, or to develop the plugin in parallel with SpriteStudio-SDK, follow these steps.
 

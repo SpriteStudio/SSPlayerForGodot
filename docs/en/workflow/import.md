@@ -1,4 +1,4 @@
-# CLI Conversion and Automation
+# 🤖 CLI Conversion and Automation
 
 For the intuitive import method using the Godot editor's "SS Import Dock", please refer to [Asset Import and Editor Integration](usage_asset_pipeline.md).
 

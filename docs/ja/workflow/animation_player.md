@@ -1,4 +1,4 @@
-# AnimationPlayer との連携 (シネマティクスとステートマシン)
+# 🎞️ AnimationPlayer との連携 (シネマティクスとステートマシン)
 
 Godot 標準の `AnimationPlayer` と組み合わせることで、SSPlayer のアニメーション再生を Godot の強力なタイムライン機能やステートマシン機能と連携させることができます。
 

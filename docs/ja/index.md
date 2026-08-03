@@ -1,4 +1,4 @@
-# SpriteStudioPlayer for Godot
+# 🕹️ SpriteStudioPlayer for Godot
 
 本developブランチは現在開発中のバージョンです。  
 安定版は [mainブランチ](https://github.com/cri-middleware/SSPlayerForGodot/tree/main) または、[Releases](https://github.com/cri-middleware/SSPlayerForGodot/releases)から取得してください。  

@@ -1,4 +1,4 @@
-# SpriteStudioPlayer2D
+# 🧩 SpriteStudioPlayer2D
 
 A playback node extending `Node2D`.
 Specify a resource and an animation, then start playback.

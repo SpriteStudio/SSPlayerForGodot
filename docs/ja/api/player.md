@@ -1,4 +1,4 @@
-# SpriteStudioPlayer2D
+# 🧩 SpriteStudioPlayer2D
 
 `Node2D` を継承する再生用ノードです。
 リソースとアニメーションを指定して再生を行います。

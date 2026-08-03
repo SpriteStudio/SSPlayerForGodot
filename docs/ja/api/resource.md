@@ -1,4 +1,4 @@
-# リソース管理クラス
+# 🗃️ リソース管理クラス
 
 Godot の `Resource` を継承しているため、複数の `SpriteStudioPlayer2D` から同じリソースを参照する場合は **Local To Scene** フラグを `True` に設定すると個別に状態を持たせられます。
 

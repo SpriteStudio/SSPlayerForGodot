@@ -1,4 +1,4 @@
-# Integration with AnimationPlayer (Cinematics and State Machines)
+# 🎞️ Integration with AnimationPlayer (Cinematics and State Machines)
 
 By combining SSPlayer with Godot's standard `AnimationPlayer`, you can integrate SpriteStudio animation playback with Godot's powerful timeline and state machine features.
 

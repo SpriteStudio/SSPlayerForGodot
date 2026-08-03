@@ -1,4 +1,4 @@
-# Scripting and Event-Driven Control
+# 📝 Scripting and Event-Driven Control
 
 This page explains how to control `SpriteStudioPlayer2D` using Godot's GDScript.
 The intuitive API aligns with Godot's design philosophy (nodes and signals), making it very easy to integrate into your game logic.
