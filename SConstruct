@@ -89,8 +89,7 @@ env = SConscript("godot-cpp/SConstruct", {"env": env, "customs": customs})
 # Extension sources
 sources_list = Glob("ss_player/*.cpp")
 
-# FlatBuffers sources
-sources_list.extend(sources.get_fb_sources("ss_player"))
+# FlatBuffers is header-only here -- see the note in ss_player/sources.py.
 
 # Version header: stamp VERSION.txt + git hash into ss_player/gen/ss_version.gen.h
 # (gitignored). Shared with the custom module build via ss_player/sources.py.
