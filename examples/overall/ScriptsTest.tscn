@@ -9,7 +9,7 @@
 [ext_resource type="Script" uid="uid://c7lt4qxuuay1c" path="res://scripts/user_data.gd" id="7_user"]
 [ext_resource type="SSABResource" uid="uid://cmqfm636n7lch" path="res://ssab_generated/overall/UserData.ssab" id="8_userdata"]
 [ext_resource type="SSABResource" uid="uid://kaap3uc6euco" path="res://ssab_generated/overall/Signal.ssab" id="9_signal"]
-[ext_resource type="SSABResource" uid="uid://mvq02brmhnjx" path="res://ssab_generated/overall/TextureChange.ssab" id="10_texchange"]
+[ext_resource type="SSABResource" uid="uid://cjfaekesrc4ma" path="res://ssab_generated/overall/TextureChange.ssab" id="10_texchange"]
 
 [node name="ScriptsTest" type="Node2D" unique_id=1565974729]
 
@@ -40,6 +40,8 @@ autoplay = true
 animation_section_end = 10
 cellmaps/common = null
 cellmaps/common_2.png = null
+cellmaps/common.png = null
+cellmaps/box_00_00.png = null
 
 [node name="SignalTest" type="SpriteStudioPlayer2D" parent="." unique_id=1881612194]
 position = Vector2(758, 526)

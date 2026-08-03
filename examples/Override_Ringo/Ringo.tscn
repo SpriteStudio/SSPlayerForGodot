@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://dxr71lkltwqb6"]
 
-[ext_resource type="SSABResource" uid="uid://byvaven5ktfst" path="res://ssab_generated/Ringo/Ringo.ssab" id="1_w6qk1"]
+[ext_resource type="SSABResource" uid="uid://cn34tmdgey7cs" path="res://ssab_generated/Ringo/Ringo.ssab" id="1_w6qk1"]
 [ext_resource type="Script" uid="uid://duigvcl5b1o1b" path="res://override_demo.gd" id="2_demo"]
 
 [node name="Node2D" type="Node2D" unique_id=107841525]
