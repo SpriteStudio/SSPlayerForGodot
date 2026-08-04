@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{#-
+  Open Graph / Twitter Card metadata.
+
+  Material emits none of this on its own, so a link shared into Slack, X, or Discord
+  previews as a bare URL. The title/description logic mirrors Material's own <title> logic
+  in base.html so the card and the tab always agree.
+
+  `config.site_name` / `config.site_description` are already per-locale here: the i18n
+  plugin swaps in the `languages.ja.site_description` override before rendering, so the ja
+  build gets Japanese cards without a second template.
+
+  No og:image yet - there is no SpriteStudio artwork in this repository to point at. Adding
+  one means dropping the file into docs/assets/ (not under en/ and ja/: the `url` filter
+  resolves against the site root from every page in both locales) and un-commenting the tag
+  below. Until then `summary` is the correct card type; `summary_large_image` without an
+  image renders as nothing.
+
+  Keep this template in sync with the copies in SpriteStudio-Docs and the sibling player
+  repos - it is deliberately generic, reading everything from config. Anything
+  player-specific belongs in mkdocs.yml, not here.
+-#}
+{% block extrahead %}
+  {%- if page.meta and page.meta.title -%}
+    {%- set og_title = page.meta.title ~ (" - " ~ config.site_name if not page.is_homepage else "") -%}
+  {%- elif page.title and not page.is_homepage -%}
+    {%- set og_title = page.title | striptags ~ " - " ~ config.site_name -%}
+  {%- else -%}
+    {%- set og_title = config.site_name -%}
+  {%- endif -%}
+  {%- set og_description = page.meta.description if page.meta and page.meta.description else config.site_description -%}
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="{{ config.site_name }}">
+  <meta property="og:title" content="{{ og_title }}">
+  <meta property="og:description" content="{{ og_description }}">
+  <meta property="og:url" content="{{ page.canonical_url }}">
+  <meta property="og:locale" content="{{ 'ja_JP' if config.theme.language == 'ja' else 'en_US' }}">
+  {#- <meta property="og:image" content="{{ 'assets/og-image.png' | url }}"> -#}
+  <meta name="twitter:card" content="summary">
+  {#- Attributes the card to the account linked from the footer; keep in sync with extra.social. -#}
+  <meta name="twitter:site" content="@spritestudio">
+  <meta name="twitter:title" content="{{ og_title }}">
+  <meta name="twitter:description" content="{{ og_description }}">
+{% endblock %}
