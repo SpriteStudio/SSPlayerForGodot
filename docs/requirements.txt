@@ -1,5 +1,8 @@
-# Documentation toolchain (MkDocs). Pinned for reproducible CI builds.
-# Bump deliberately; keep in sync with the plugins declared in mkdocs.yml.
-mkdocs-material==9.7.6
-mkdocs-static-i18n==1.3.1
-mkdocs-callouts==1.16.1
+# Documentation toolchain (Zensical). Pinned for reproducible CI builds; bump deliberately.
+#
+# Migrated off MkDocs + Material for MkDocs, which the same team put into maintenance mode
+# after shipping Zensical. SpriteStudio-Docs moved first; the remaining player repos follow.
+#
+# `mkdocs-static-i18n` is replaced by building each locale from its own config, and
+# `mkdocs-callouts` by Zensical's native `> [!NOTE]` parsing (`pymdownx.quotes`).
+zensical==0.0.53

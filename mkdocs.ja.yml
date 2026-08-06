@@ -1,0 +1,63 @@
+# Japanese site. Built with `zensical build -f mkdocs.ja.yml`, and always *after* the
+# English build: `site_dir` is nested inside it, and a build wipes its own output directory.
+#
+# Everything not listed here comes from mkdocs.base.yml. Before adding anything, read the
+# note there about sequences: `nav` and `extra.social` are defined in this file and in
+# mkdocs.yml, and must never also appear in the base.
+INHERIT: ./mkdocs.base.yml
+
+docs_dir: docs/ja
+site_dir: site/ja
+# Must carry the `ja/` suffix: this is what `page.canonical_url` and therefore the `og:url`
+# tag are built from. Inheriting the English `site_url` would advertise every Japanese page
+# under its English address.
+site_url: "https://cri-middleware.github.io/SSPlayerForGodot/ja/"
+# Feeds <meta name="description"> and the Open Graph tags on every ja page. Without it they
+# would inherit the English `site_description`.
+site_description: "SpriteStudio 7 のアニメーションを Godot Engine で再生するプラグイン"
+
+theme:
+  # Drives the UI string translations, the `html lang` attribute, and -- because the search
+  # engine segments CJK text per locale -- Japanese word splitting in the search index.
+  language: ja
+
+extra:
+  # This locale builds into site/ja, so the root of the whole multi-locale site is one level
+  # up. The language selector prepends this to its target; see
+  # overrides/partials/alternate.html.
+  site_root_prefix: "../"
+  # Footer icon labels (title / aria-label). Mirrors `extra.social` in mkdocs.yml.
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/cri-middleware
+      name: GitHub の cri-middleware
+    - icon: material/web
+      link: https://www.webtech.co.jp/spritestudio/
+      name: OPTPiX SpriteStudio
+    - icon: fontawesome/brands/x-twitter
+      link: https://x.com/spritestudio
+      name: X の SpriteStudio
+
+# The Japanese counterpart of the `nav` in mkdocs.yml -- same paths, translated labels.
+# This replaces the old `nav_translations` map: labels are written where they are used
+# instead of being looked up by their English string, so a renamed English title can no
+# longer silently leave the Japanese label untranslated.
+nav:
+  - 🏠 ホーム: index.md
+  - 🚀 セットアップ:
+      - インストール: setup/install.md
+      - ビルドガイド: setup/build.md
+  - 🎬 ワークフロー:
+      - 基本的な使い方: workflow/usage_basic.md
+      - アセットのインポートとエディタ連携: workflow/usage_asset_pipeline.md
+      - スクリプト制御とイベント: workflow/usage_scripting.md
+      - AnimationPlayer 連携: workflow/animation_player.md
+      - プロジェクトのエクスポート: workflow/export.md
+  - ⚙️ 高度なトピック:
+      - CLI コンバートと CI/CD: workflow/import.md
+      - パフォーマンスチューニングと高度な設定: workflow/tips.md
+  - 📖 API リファレンス:
+      - SpriteStudioPlayer2D: api/player.md
+      - リソース管理クラス: api/resource.md
+  - ⚠️ 仕様と制約事項: limitations.md
+  - 🔄 マイグレーションガイド: migration_from_v1.md

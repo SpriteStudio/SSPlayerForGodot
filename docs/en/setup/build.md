@@ -180,6 +180,7 @@ To verify and debug whether the custom module or GDExtension works correctly in 
 
 > [!IMPORTANT]
 > Common export pitfalls (all platforms):
+>
 > - **Build the exact `target` you export with.** An `editor` build alone is not enough — `--export-debug` needs the `template_debug` library and `--export-release` needs `template_release`. If those were never built, the export still "succeeds" but ships an empty/missing extension library (on macOS this surfaces as a `CodeSign: Invalid binary format` error on the embedded framework).
 > - **The extension architecture is bounded by the runtime slices you have.** The GDExtension links `libssruntime` from `ss_player/runtime/libs/<platform>/`; you can only build the architectures present there. For example, with an `arm64`-only macOS runtime you cannot produce a `universal` / `x86_64` extension — set the preset's `binary_format/architecture` to match (e.g. `arm64`). The engine template can still be `universal`; a single-arch extension just won't load on the missing arch.
 > - **Enable ETC2/ASTC for `universal` / `arm64` / mobile exports.** Set `rendering/textures/vram_compression/import_etc2_astc=true` in the project (`project.godot` → `[rendering]`), otherwise the export aborts with *"Cannot export … with the ETC2/ASTC texture format disabled."*

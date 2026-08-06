@@ -180,6 +180,7 @@ $env:PYTHONUTF8=1
 
 > [!IMPORTANT]
 > エクスポート時の共通の注意点（全プラットフォーム）:
+>
 > - **エクスポートする `target` を実際にビルドしておく。** `editor` ビルドだけでは不十分です。`--export-debug` は `template_debug` ライブラリを、`--export-release` は `template_release` を必要とします。これらを未ビルドのままだとエクスポートは「成功」しても、拡張ライブラリが空／欠落した状態で書き出されます（macOS では同梱 framework に対する `CodeSign: Invalid binary format` エラーとして表面化します）。
 > - **拡張のアーキテクチャは手元の runtime スライスに依存する。** GDExtension は `ss_player/runtime/libs/<platform>/` の `libssruntime` をリンクするため、そこに存在するアーキテクチャしかビルドできません。例えば macOS の runtime が `arm64` のみの場合、`universal` / `x86_64` の拡張は作れません。プリセットの `binary_format/architecture` を合わせてください（例: `arm64`）。エンジンテンプレートは `universal` のままで構いません（単一アーキの拡張が、欠けているアーキでロードされないだけです）。
 > - **`universal` / `arm64` / モバイル向けは ETC2/ASTC を有効化する。** プロジェクトに `rendering/textures/vram_compression/import_etc2_astc=true` を設定してください（`project.godot` の `[rendering]`）。未設定だと *「ETC2/ASTC テクスチャフォーマットが無効なため … エクスポートできません」* でエクスポートが中断します。

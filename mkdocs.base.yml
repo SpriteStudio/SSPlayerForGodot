@@ -1,0 +1,111 @@
+# Settings shared by every locale. `mkdocs.yml` (English) and `mkdocs.ja.yml` both start
+# with `INHERIT: ./mkdocs.base.yml` and add only what differs between them.
+#
+# This file is never built directly -- it has no `docs_dir` and no `nav`. It is named
+# `mkdocs.base.yml` rather than `mkdocs.yml` precisely so that a bare `zensical build`
+# picks up the English locale config instead of this one.
+#
+# IMPORTANT -- the rule that shapes this split: **every YAML sequence must be defined in
+# exactly one of the three files.** Zensical's `INHERIT` *concatenates* sequences from
+# parent and child, where MkDocs replaces them. Put `nav` here as well as in a locale file
+# and the Japanese site renders the English navigation followed by the Japanese one; do the
+# same with `extra.social` and the footer grows six icons. Mappings deep-merge in both
+# tools, so scalars like `theme.language` are safe to override.
+
+site_name: SpriteStudioPlayer for Godot
+site_author: "CRI Middleware Co., Ltd."
+repo_name: "cri-middleware/SSPlayerForGodot"
+repo_url: "https://github.com/cri-middleware/SSPlayerForGodot"
+# No `edit_uri`, so no "edit this page" button renders. The value is a branch name that
+# nothing validates -- strict mode does not look at it -- and it was already wrong in three
+# of the five player repos (this one's default branch is `develop`). The footer repo link
+# and CONTRIBUTING.md already route corrections. Deleted rather than left inert.
+# Rendered in the site footer. Deliberately year-less so it never goes stale.
+copyright: "Copyright &copy; CRI Middleware Co., Ltd."
+
+# Nothing builds the docs on a pull request - pages.yml runs on `release: published` and
+# dispatch, and pr.yml builds the extension, not the docs - so the local build is the only
+# gate, and a plain `build` should fail on a broken link rather than depend on remembering
+# `--strict`.
+strict: true
+
+theme:
+  name: material
+  # Only overrides/main.html lives here: it appends the Open Graph / Twitter Card metadata
+  # that the theme does not emit on its own, and repairs the page title.
+  custom_dir: overrides
+  # Matches this player's card on the SpriteStudio-Docs landing page. A bundled icon, so it
+  # needs no image file; there is no SpriteStudio artwork for a favicon yet.
+  icon:
+    logo: simple/godotengine
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: blue grey
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: blue grey
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - navigation.tracking
+    # Previous / next links in the footer, so the guides can be read in order.
+    - navigation.footer
+    - toc.follow
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+
+plugins:
+  # Search language follows `theme.language`, which each locale config sets, so there is no
+  # per-language list to keep in sync here. Each locale gets its own index, and the Japanese
+  # one is segmented into words rather than indexed as unbroken runs of characters.
+  - search
+
+# Restores the one thing `mkdocs-callouts` did for the pages here: rendering the
+# `> [!NOTE]` blockquote syntax as admonitions. Zensical parses it natively, so the plugin
+# is gone. See docs/*/stylesheets/extra.css for the one type it maps differently.
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.quotes:
+      callouts: true
+
+# The file itself is duplicated, as docs/en/stylesheets/extra.css and
+# docs/ja/stylesheets/extra.css -- a path here resolves inside each locale's `docs_dir`.
+extra_css:
+  - stylesheets/extra.css
+
+extra:
+  # The header language selector. `link` is each locale's subpath under the site root, NOT
+  # a full URL -- overrides/partials/alternate.html rebuilds the href from it plus the
+  # current page, so switching language keeps the reader on the same page. `site_root_prefix`
+  # is the other half of that calculation and lives in the locale configs.
+  alternate:
+    - name: English
+      link: ""
+      lang: en
+    - name: 日本語
+      link: ja/
+      lang: ja

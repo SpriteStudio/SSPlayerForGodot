@@ -1,38 +1,60 @@
 {% extends "base.html" %}
 
 {#-
+  `page.is_homepage` is never set by Zensical - it is undefined on every page, including
+  the home page. The theme's own base.html branches on it to decide whether to append the
+  site name to the title, so without a workaround the landing page renders as
+  "SpriteStudioPlayer for Godot - SpriteStudioPlayer for Godot" in the browser tab and in
+  every link preview.
+
+  `page.url` is populated, and is the empty string on the home page, so derive it from
+  there. `page.is_homepage` is still consulted first: it is correct under MkDocs, and this
+  picks the fix up automatically if Zensical starts setting it. `"."` covers MkDocs, which
+  spells the home page URL that way rather than as an empty string.
+-#}
+{%- set page_url = page.url | default("") -%}
+{%- set is_homepage = page.is_homepage or page_url == "" or page_url == "." -%}
+
+{#-
+  A single title, used for the tab, the Open Graph card, and the Twitter card, so the three
+  can never disagree. Mirrors the theme's own logic in base.html, minus the broken flag.
+-#}
+{%- if page.meta and page.meta.title -%}
+  {%- set doc_title = page.meta.title ~ (" - " ~ config.site_name if not is_homepage else "") -%}
+{%- elif page.title and not is_homepage -%}
+  {%- set doc_title = page.title | striptags ~ " - " ~ config.site_name -%}
+{%- else -%}
+  {%- set doc_title = config.site_name -%}
+{%- endif -%}
+
+{% block htmltitle %}
+  <title>{{ doc_title }}</title>
+{% endblock %}
+
+{#-
   Open Graph / Twitter Card metadata.
 
-  Material emits none of this on its own, so a link shared into Slack, X, or Discord
-  previews as a bare URL. The title/description logic mirrors Material's own <title> logic
-  in base.html so the card and the tab always agree.
+  The theme emits none of this on its own, so a link shared into Slack, X, or Discord
+  previews as a bare URL.
 
-  `config.site_name` / `config.site_description` are already per-locale here: the i18n
-  plugin swaps in the `languages.ja.site_description` override before rendering, so the ja
-  build gets Japanese cards without a second template.
+  One template serves both locales: `config.site_name`, `config.site_description` and
+  `config.theme.language` all come from whichever locale config is being built, so the ja
+  build gets Japanese cards without a second copy of this file.
 
   No og:image yet - there is no SpriteStudio artwork in this repository to point at. Adding
-  one means dropping the file into docs/assets/ (not under en/ and ja/: the `url` filter
-  resolves against the site root from every page in both locales) and un-commenting the tag
-  below. Until then `summary` is the correct card type; `summary_large_image` without an
-  image renders as nothing.
+  one means dropping the file into docs/en/assets/ and docs/ja/assets/ - each locale has
+  its own assets directory - and un-commenting the tag below. Until then `summary` is the
+  correct card type; `summary_large_image` without an image renders as nothing.
 
   Keep this template in sync with the copies in SpriteStudio-Docs and the sibling player
   repos - it is deliberately generic, reading everything from config. Anything
-  player-specific belongs in mkdocs.yml, not here.
+  player-specific belongs in the locale configs, not here.
 -#}
 {% block extrahead %}
-  {%- if page.meta and page.meta.title -%}
-    {%- set og_title = page.meta.title ~ (" - " ~ config.site_name if not page.is_homepage else "") -%}
-  {%- elif page.title and not page.is_homepage -%}
-    {%- set og_title = page.title | striptags ~ " - " ~ config.site_name -%}
-  {%- else -%}
-    {%- set og_title = config.site_name -%}
-  {%- endif -%}
   {%- set og_description = page.meta.description if page.meta and page.meta.description else config.site_description -%}
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="{{ config.site_name }}">
-  <meta property="og:title" content="{{ og_title }}">
+  <meta property="og:title" content="{{ doc_title }}">
   <meta property="og:description" content="{{ og_description }}">
   <meta property="og:url" content="{{ page.canonical_url }}">
   <meta property="og:locale" content="{{ 'ja_JP' if config.theme.language == 'ja' else 'en_US' }}">
@@ -40,6 +62,6 @@
   <meta name="twitter:card" content="summary">
   {#- Attributes the card to the account linked from the footer; keep in sync with extra.social. -#}
   <meta name="twitter:site" content="@spritestudio">
-  <meta name="twitter:title" content="{{ og_title }}">
+  <meta name="twitter:title" content="{{ doc_title }}">
   <meta name="twitter:description" content="{{ og_description }}">
 {% endblock %}

@@ -60,7 +60,7 @@ func _on_animation_finished(anim_name: String):
 ```
 
 > [!NOTE]
-> ![Signal connection screen](../../assets/6-connect_signals_node_tab.png)
+> ![Signal connection screen](../assets/6-connect_signals_node_tab.png)
 
 ### Example: Triggering Events using User Data
 This is an example of receiving user data configured in SpriteStudio (such as playing footsteps or generating attack hitboxes) and processing it in the game.
@@ -99,8 +99,8 @@ func change_costume():
 This feature allows you to build an efficient avatar system without needing to prepare multiple animation variations for each part.
 
 > [!TIP]
-> ![Before outfit change](../../assets/7-cellmap_override_before.png)
-> ![After outfit change](../../assets/7-cellmap_override_after.png)
+> ![Before outfit change](../assets/7-cellmap_override_before.png)
+> ![After outfit change](../assets/7-cellmap_override_after.png)
 
 ---
 

@@ -20,9 +20,9 @@ Drag and drop the generated `.ssab` file into the 2D viewport to place a `Sprite
 > [!TIP]
 > 
 > <video autoplay loop muted playsinline width="100%">
->   <source src="../../assets/1-sspj_import.webm" type="video/webm">
+>   <source src="../assets/1-sspj_import.webm" type="video/webm">
 > </video>
-> <img src="../../assets/1-sspj_import.webp" width="100%" style="display: none;">
+> <img src="../assets/1-sspj_import.webp" width="100%" style="display: none;">
 
 ---
 
@@ -36,7 +36,7 @@ When working in Godot and feeling the need to tweak an animation, you don't have
 This action automatically launches SpriteStudio and opens the underlying `.sspj` file, allowing you to start editing immediately.
 
 > [!NOTE]
-> ![Opening SSPJ from the Inspector](../../assets/5-open_sspj_from_inspector.png)
+> ![Opening SSPJ from the Inspector](../assets/5-open_sspj_from_inspector.png)
 
 ---
 
@@ -55,9 +55,9 @@ With just the following steps, your changes will instantly reflect in the game (
 > [!TIP]
 > 
 > <video autoplay loop muted playsinline width="100%">
->   <source src="../../assets/2-fast_iteration_inspector.webm" type="video/webm">
+>   <source src="../assets/2-fast_iteration_inspector.webm" type="video/webm">
 > </video>
-> <img src="../../assets/2-fast_iteration_inspector.webp" width="100%" style="display: none;">
+> <img src="../assets/2-fast_iteration_inspector.webp" width="100%" style="display: none;">
 
 ---
 

@@ -20,9 +20,9 @@ SpriteStudioPlayerForGodot は単にアニメーションを再生するだけ�
 > [!TIP]
 > 
 > <video autoplay loop muted playsinline width="100%">
->   <source src="../../../assets/1-sspj_import.webm" type="video/webm">
+>   <source src="../assets/1-sspj_import.webm" type="video/webm">
 > </video>
-> <img src="../../assets/1-sspj_import.webp" width="100%" style="display: none;">
+> <img src="../assets/1-sspj_import.webp" width="100%" style="display: none;">
 
 ---
 
@@ -36,7 +36,7 @@ Godot で作業中に「もう少しアニメーションを微調整したい�
 この操作により、SpriteStudio が起動して元となる `.sspj` ファイルが開き、すぐに編集作業に入ることができます。
 
 > [!NOTE]
-> ![インスペクタからSSPJを開く画像](../../assets/5-open_sspj_from_inspector.png)
+> ![インスペクタからSSPJを開く画像](../assets/5-open_sspj_from_inspector.png)
 
 ---
 
@@ -55,9 +55,9 @@ SpriteStudio 側でアニメーションを修正して保存したら、Godot �
 > [!TIP]
 > 
 > <video autoplay loop muted playsinline width="100%">
->   <source src="../../../assets/2-fast_iteration_inspector.webm" type="video/webm">
+>   <source src="../assets/2-fast_iteration_inspector.webm" type="video/webm">
 > </video>
-> <img src="../../assets/2-fast_iteration_inspector.webp" width="100%" style="display: none;">
+> <img src="../assets/2-fast_iteration_inspector.webp" width="100%" style="display: none;">
 
 ---
 
