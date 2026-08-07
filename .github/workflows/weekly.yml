@@ -9,7 +9,6 @@ env:
   LANG: en_US.UTF-8
   LC_ALL: en_US.UTF-8
   PYTHONIOENCODING: utf8
-  KEYCHAIN_PATH: app-signing.keychain-db
   SCONS_CACHE: ~/.scons_cache
 
 permissions:
@@ -132,60 +131,22 @@ jobs:
         shell: pwsh
         run: ./scripts/build-runtime.ps1 platform=windows build=release
 
-      # Import the Developer ID Application certificate into an ephemeral keychain
-      # so codesign (run inside the release scripts) can resolve the signing
-      # identity. No-ops when the certificate secret is absent, leaving the
-      # artifacts unsigned.
-      - name: Set up signing keychain
-        if: matrix.platform == 'macos' || matrix.platform == 'ios'
-        continue-on-error: true # Weeklyでは署名できなくても通す
-        env:
-          APPLE_DEV_ID_APP_CERT: ${{ secrets.APPLE_DEV_ID_APP_CERT }}
-          APPLE_DEV_ID_APP_CERT_PASS: ${{ secrets.APPLE_DEV_ID_APP_CERT_PASS }}
-        run: |
-          if [ -z "$APPLE_DEV_ID_APP_CERT" ]; then
-            echo "APPLE_DEV_ID_APP_CERT not set — skipping keychain setup (artifacts will be unsigned)."
-            exit 0
-          fi
-
-          CERTIFICATE_PATH="$RUNNER_TEMP/build_certificate.p12"
-          # Random per-run password for the throwaway keychain; never persisted.
-          # (The org also holds a TMP_KC_PASS secret, deliberately unused here —
-          # generating the password per run is strictly better than sharing one.)
-          KEYCHAIN_PASSWORD="$(openssl rand -base64 24)"
-
-          echo -n "$APPLE_DEV_ID_APP_CERT" | base64 --decode > "$CERTIFICATE_PATH"
-
-          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
-          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
-          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
-
-          security import "$CERTIFICATE_PATH" -P "$APPLE_DEV_ID_APP_CERT_PASS" -f pkcs12 -k "$KEYCHAIN_PATH" -T /usr/bin/codesign
-          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
-
-          security list-keychain -d user -s "$KEYCHAIN_PATH" login.keychain-db
-
-          rm -f "$CERTIFICATE_PATH"
-
       - name: build Linux
         if: matrix.platform == 'linux'
         run: ./scripts/release-gdextension-linux.sh
 
-      # release-gdextension-macos.sh signs the frameworks when APPLE_SIGNING_IDENTITY
-      # is present; no-op (unsigned) otherwise, so weekly stays green without secrets.
+      # Weekly artifacts are deliberately NOT code-signed: this is a continuous
+      # build for our own verification, not something we distribute, so it has no
+      # business handling the Developer ID certificate. Signing belongs to
+      # release.yml alone. The scripts no-op on signing without
+      # APPLE_SIGNING_IDENTITY, so nothing else has to change here.
       - name: build macOS
         if: matrix.platform == 'macos'
-        env:
-          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_DEV_ID_APP_NAME }}
         run: |
           ./scripts/release-gdextension-macos.sh
 
-      # release-gdextension-ios.sh signs the XCFrameworks when APPLE_SIGNING_IDENTITY
-      # is present; no-op (unsigned) otherwise.
       - name: build iOS
         if: matrix.platform == 'ios'
-        env:
-          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_DEV_ID_APP_NAME }}
         run: |
           ./scripts/release-gdextension-ios.sh
 
