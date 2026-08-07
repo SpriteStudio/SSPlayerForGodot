@@ -44,7 +44,7 @@ popd > /dev/null # ${BINDIR}
 
 # --- Code signing (opt-in via env) ------------------------------------------
 # Signs the XCFrameworks inside-out when APPLE_SIGNING_IDENTITY is set (maps to the
-# SS_APPLE_SIGNING_IDENTITY secret set by CI).
+# APPLE_DEV_ID_APP_NAME secret set by CI).
 # iOS is NOT notarized and does NOT use the macOS hardened runtime (--options runtime)
 # nor --deep: sign each embedded .framework first, then the .xcframework wrapper. The
 # consuming app re-signs the embedded framework with its own identity at build time;

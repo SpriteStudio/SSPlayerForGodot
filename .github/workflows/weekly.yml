@@ -140,25 +140,27 @@ jobs:
         if: matrix.platform == 'macos' || matrix.platform == 'ios'
         continue-on-error: true # Weeklyでは署名できなくても通す
         env:
-          SS_APPLE_CERTIFICATE: ${{ secrets.SS_APPLE_CERTIFICATE }}
-          SS_APPLE_CERTIFICATE_PASSWORD: ${{ secrets.SS_APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_DEV_ID_APP_CERT: ${{ secrets.APPLE_DEV_ID_APP_CERT }}
+          APPLE_DEV_ID_APP_CERT_PASS: ${{ secrets.APPLE_DEV_ID_APP_CERT_PASS }}
         run: |
-          if [ -z "$SS_APPLE_CERTIFICATE" ]; then
-            echo "SS_APPLE_CERTIFICATE not set — skipping keychain setup (artifacts will be unsigned)."
+          if [ -z "$APPLE_DEV_ID_APP_CERT" ]; then
+            echo "APPLE_DEV_ID_APP_CERT not set — skipping keychain setup (artifacts will be unsigned)."
             exit 0
           fi
 
           CERTIFICATE_PATH="$RUNNER_TEMP/build_certificate.p12"
           # Random per-run password for the throwaway keychain; never persisted.
+          # (The org also holds a TMP_KC_PASS secret, deliberately unused here —
+          # generating the password per run is strictly better than sharing one.)
           KEYCHAIN_PASSWORD="$(openssl rand -base64 24)"
 
-          echo -n "$SS_APPLE_CERTIFICATE" | base64 --decode > "$CERTIFICATE_PATH"
+          echo -n "$APPLE_DEV_ID_APP_CERT" | base64 --decode > "$CERTIFICATE_PATH"
 
           security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
           security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
           security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
 
-          security import "$CERTIFICATE_PATH" -P "$SS_APPLE_CERTIFICATE_PASSWORD" -f pkcs12 -k "$KEYCHAIN_PATH" -T /usr/bin/codesign
+          security import "$CERTIFICATE_PATH" -P "$APPLE_DEV_ID_APP_CERT_PASS" -f pkcs12 -k "$KEYCHAIN_PATH" -T /usr/bin/codesign
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
 
           security list-keychain -d user -s "$KEYCHAIN_PATH" login.keychain-db
@@ -174,7 +176,7 @@ jobs:
       - name: build macOS
         if: matrix.platform == 'macos'
         env:
-          APPLE_SIGNING_IDENTITY: ${{ secrets.SS_APPLE_SIGNING_IDENTITY }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_DEV_ID_APP_NAME }}
         run: |
           ./scripts/release-gdextension-macos.sh
 
@@ -183,7 +185,7 @@ jobs:
       - name: build iOS
         if: matrix.platform == 'ios'
         env:
-          APPLE_SIGNING_IDENTITY: ${{ secrets.SS_APPLE_SIGNING_IDENTITY }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_DEV_ID_APP_NAME }}
         run: |
           ./scripts/release-gdextension-ios.sh
 
