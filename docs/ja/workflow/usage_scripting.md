@@ -60,7 +60,7 @@ func _on_animation_finished(anim_name: String):
 ```
 
 > [!NOTE]
-> ![シグナル接続画面の画像](../../assets/6-connect_signals_node_tab.png)
+> ![シグナル接続画面の画像](../assets/6-connect_signals_node_tab.png)
 
 ### 実装例: ユーザーデータを使ったイベント発火
 SpriteStudio 上で設定したユーザーデータ（足音の再生、攻撃判定の発生など）を受け取り、ゲーム側で処理を行う実装例です。
@@ -99,8 +99,8 @@ func change_costume():
 この機能により、アニメーションデータをパーツごとに何パターンも用意することなく、効率的なアバターシステムを構築できます。
 
 > [!TIP]
-> ![着せ替え前](../../assets/7-cellmap_override_before.png)
-> ![着せ替え後](../../assets/7-cellmap_override_after.png)
+> ![着せ替え前](../assets/7-cellmap_override_before.png)
+> ![着せ替え後](../assets/7-cellmap_override_after.png)
 
 ---
 

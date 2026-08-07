@@ -830,8 +830,10 @@ venv.bak/
 # Rope project settings
 .ropeproject
 
-# mkdocs documentation
+# Documentation build output (both locales; the ja build writes into site/ja)
 /site
+# Scratch dir for previewing the built site under its published path prefix
+/.preview/
 
 # mypy
 .mypy_cache/

@@ -1,0 +1,32 @@
+/*
+ * `> [!IMPORTANT]` callouts.
+ *
+ * The pages here use four GitHub callout types. Three of them - NOTE, TIP and WARNING -
+ * map onto built-in admonition types and are styled by the theme. IMPORTANT is not a
+ * built-in type, so it would render with the generic fallback styling.
+ *
+ * `mkdocs-callouts`, which used to convert these blockquotes before Zensical learned to
+ * parse them natively, mapped IMPORTANT onto `tip`. These rules reproduce that appearance
+ * so the migration does not restyle content that nobody asked to restyle. They mirror the
+ * theme's own three rules for `.tip`, teal included.
+ *
+ * Keep this file in sync with docs/en/stylesheets/extra.css - `extra_css` paths resolve
+ * inside each locale's docs directory, so the file has to exist under both.
+ */
+
+.md-typeset .admonition.important,
+.md-typeset details.important {
+  background-color: #00bfa51a;
+}
+
+.md-typeset .important > .admonition-title::before,
+.md-typeset .important > summary::before {
+  background-color: #00bfa5;
+  -webkit-mask-image: var(--md-admonition-icon--tip);
+          mask-image: var(--md-admonition-icon--tip);
+}
+
+.md-typeset .important > .admonition-title::after,
+.md-typeset .important > summary::after {
+  color: #00bfa5;
+}

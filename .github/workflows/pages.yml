@@ -41,17 +41,24 @@ jobs:
 
       - uses: actions/cache@v5
         with:
-          key: mkdocs-material-${{ env.cache_id }}
+          key: zensical-${{ env.cache_id }}
           path: .cache
           restore-keys: |
-            mkdocs-material-
+            zensical-
 
       - name: Install dependencies
         run: pip install -r docs/requirements.txt
 
-      # --strict fails the build on broken links / missing nav entries.
-      - name: Build docs (strict validation)
-        run: mkdocs build --strict
+      # One build per locale - there is no plugin producing both from a single run any
+      # more. --strict fails the build on broken links / missing nav entries.
+      #
+      # Order matters: the ja build writes into site/ja, and the English build wipes site/
+      # on the way in. Swapping these two steps publishes a site with no Japanese pages.
+      - name: Build docs, English (strict validation)
+        run: zensical build --strict
+
+      - name: Build docs, Japanese (strict validation)
+        run: zensical build -f mkdocs.ja.yml --strict
 
       # Only the MkDocs output (site/) is served — no examples/demos to bundle.
       - name: Upload Pages artifact
