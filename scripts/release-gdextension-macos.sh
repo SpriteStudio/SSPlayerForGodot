@@ -17,14 +17,14 @@ done
 
 # --- Code signing & notarization (opt-in via env) ----------------------------
 # Signs the GDExtension frameworks with a Developer ID Application identity when
-# APPLE_SIGNING_IDENTITY is set (maps to the SS_APPLE_SIGNING_IDENTITY secret; the
+# APPLE_SIGNING_IDENTITY is set (maps to the APPLE_DEV_ID_APP_NAME secret; the
 # CI sets it in .github/workflows/release.yml). Hardened runtime (--options
 # runtime) + a secure timestamp. Notarization of the frameworks additionally
 # needs an App Store Connect API key:
 #   APPLE_API_KEY_PATH — path to the .p8 private key file
 #   APPLE_API_KEY      — the key ID
 #   APPLE_API_ISSUER   — the issuer ID
-# These map to the SS_APPLE_* GitHub secrets — see .github/workflows/release.yml
+# These map to the ASC_API_* GitHub secrets — see .github/workflows/release.yml
 # for the CI wiring. No-op (unsigned) when the identity is absent, so local
 # builds without a certificate still succeed.
 if [ -n "${APPLE_SIGNING_IDENTITY:-}" ]; then
