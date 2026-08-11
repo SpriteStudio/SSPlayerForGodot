@@ -49,9 +49,11 @@ Things that do **not** follow the "everything twice" rule, or that changed with 
 `mkdocs.base.yml` sets `strict: true`, so a plain `build` fails on a broken link. `serve` validates nothing — `zensical serve --strict` is accepted and currently does nothing. Nothing builds the docs on a pull request either (`pages.yml` runs on `release: published` and dispatch; `pr.yml` builds the extension, not the docs), so the local build is the only gate, and **both locales have to be built** — English first, because it clears `site/`, which contains `site/ja`:
 
 ```bash
-.venv/bin/zensical build --strict
-.venv/bin/zensical build -f mkdocs.ja.yml --strict
+scripts/prepare-docs.sh          # once: .venv + the pins in docs/requirements.txt
+scripts/build-docs.sh            # the gate: English then Japanese, both --strict
 ```
+
+`scripts/*.ps1` are the PowerShell twins, and both take `key=value` options and `--help` like the other scripts here (`build-docs.sh locale=ja`, `prepare-docs.sh force=yes`). `build-docs.sh` is what `pages.yml` runs too, so CI and the local gate cannot drift; it wraps nothing more than `pip install -r docs/requirements.txt` and the two `zensical build` runs, in the order that works — `zensical` straight out of `.venv` still does the same thing. Every repository in the family spells this pair the same way, and the `-docs` suffix keeps it apart from the scripts that build the code.
 
 Building only English is the easy mistake: it leaves a stale `site/ja` behind, so a Japanese page you just broke still looks fine.
 
