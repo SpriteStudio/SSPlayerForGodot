@@ -52,12 +52,21 @@ jobs:
       # is spelled out, the better.
       #
       # prepare-docs.sh creates .venv and installs the pins from docs/requirements.txt;
-      # build-docs.sh then finds zensical there. (It falls back to PATH when there is no
+      # build-pages.sh then finds zensical there. (It falls back to PATH when there is no
       # venv, so a plain `pip install -r docs/requirements.txt` step would still work
-      # here — but then CI and the README would be running different things.)
+      # here — but then CI and the README would be running different things.) It stays a
+      # step of its own so a dependency failure is legible as one in the run summary,
+      # which is also why build-pages.sh is invoked below with prepare=no.
       - name: Install dependencies
         run: ./scripts/prepare-docs.sh
 
+      # scripts/build-pages.sh is the tree this job uploads. Here that is the two locale
+      # builds and nothing else — the site carries no demo and no examples — so it runs
+      # build-docs.sh and adds only what a working tree needs on top (the toolchain, and
+      # a server to look at the result). Running it here is what keeps CI and the local
+      # build from drifting apart, and it is the same command in every repository in the
+      # family, whatever else that repository's site carries.
+      #
       # One build per locale - there is no plugin producing both from a single run any
       # more - English first, because the English build wipes site/ and the Japanese site
       # lives inside it at site/ja. build-docs.sh owns that order; the reason it exists is
@@ -65,8 +74,11 @@ jobs:
       #
       # --strict fails the build on broken links / missing nav entries, so a publish
       # aborts rather than deploying a site with a dead link.
-      - name: Build docs, both locales (strict validation)
-        run: ./scripts/build-docs.sh
+      #
+      # Every option is spelled out rather than left to the script's defaults: they are
+      # chosen for a working tree, and a publish should not change because one of them did.
+      - name: Build the Pages tree (docs, both locales, strict validation)
+        run: ./scripts/build-pages.sh prepare=no serve=no
 
       # Only the MkDocs output (site/) is served — no examples/demos to bundle.
       - name: Upload Pages artifact
