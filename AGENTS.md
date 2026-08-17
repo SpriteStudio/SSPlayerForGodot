@@ -74,9 +74,23 @@ Callouts (`> [!NOTE]`) are parsed natively — `mkdocs-callouts` is gone. Two co
 | Setup (Source SDK) | `./scripts/build-runtime.sh` (POSIX) / `.\scripts\build-runtime.ps1` (Win) |
 | Setup (Prebuilt SDK) | `./scripts/download-sdk.sh` (POSIX) / `.\scripts\download-sdk.ps1` (Win) |
 | Deploy Example Assets | `./scripts/deploy-examples.sh` (POSIX) / `.\scripts\deploy-examples.ps1` (Win) |
+| Build the release | `./scripts/build-release.sh` (POSIX) / `.\scripts\build-release.ps1` (Win) — the addon zip, from a downloaded matrix build |
 | Format C++ Code | `clang-format -i ss_player/*.{cpp,h}` (if available) |
 
 *Note: Setup (Source SDK) is recommended for developers using the submodule. Setup (Prebuilt SDK) is intended for CI or release-only environments.*
+
+## Releases
+
+A release is a tag, pushed first and built second: push `v<version>`, then dispatch **release gdextension** from that tag with `upload_release=true`. The tag names the Release; `upload_release=true` from anything else fails the run rather than silently producing none. The default dispatch (`upload_release=false`, off a `release/X.Y` branch) is a build for QA and creates no Release. Drafts are always created as drafts — a human reviews the assets and the generated notes, then publishes from the UI, choosing pre-release / latest there.
+
+`scripts/build-release.sh` is the package: the `addons/spritestudio/` folder a user drops into a project — the descriptor, the icons it points at, every licence the shipped binaries carry, and `bin/<platform>/` for all six — then the zip and `SHA256SUMS`. `release.yml`'s package job **is** this script (`in=artifacts out=release-dist api_version=… verify=yes clean=yes`, every option spelled out so a release cannot change because a default did), so CI and a local run cannot drift. It builds nothing: six platforms need Linux, Windows and macOS between them, so it takes the matrix's output and does the part that never needed a matrix.
+
+```bash
+gh run download <run-id> -D artifacts
+scripts/build-release.sh
+```
+
+Its check is the one nothing else in the pipeline does. `misc/spritestudio.gdextension` names a file per platform and build target — nineteen paths — plus three icons, and **Godot resolves them at load time**. A name that does not match what actually shipped fails no build and no zip; the extension simply does not load, on that one platform, for whoever downloaded it. Every path in the descriptor is looked up inside the finished archive.
 
 ## Workspace conventions
 
