@@ -64,7 +64,7 @@ if ($BUILD_MODE -eq "release") { $CARGO_FLAGS = @("--release") }
 if ($IS_HOST_BUILD) {
     # Windows host: invoke cargo directly so artifacts land in target/$BUILD_MODE/
     & cargo build @CARGO_FLAGS
-    & cargo build @CARGO_FLAGS -p ssruntime --features libc_alloc,panic-handler
+    & cargo build @CARGO_FLAGS -p ssruntime-ffi --features libc_alloc,panic-handler
 } else {
     # Cross-compilation: dispatch to SDK release scripts
     if ($PLATFORM -eq "windows") {
