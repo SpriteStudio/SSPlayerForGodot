@@ -73,12 +73,12 @@ CARGO_FLAGS=""
 if [[ "$IS_HOST_BUILD" == "true" ]]; then
     if [[ "$PLATFORM" == "macos" ]]; then
         cargo build $CARGO_FLAGS
-        cargo build $CARGO_FLAGS -p ssruntime --features libc_alloc,panic-handler
+        cargo build $CARGO_FLAGS -p ssruntime-ffi --features libc_alloc,panic-handler
     elif [[ "$PLATFORM" == "linux" ]]; then
         ./scripts/release-linux.sh $BUILD_MODE
     elif [[ "$PLATFORM" == "windows" ]]; then
         cargo build $CARGO_FLAGS
-        cargo build $CARGO_FLAGS -p ssruntime --features libc_alloc,panic-handler
+        cargo build $CARGO_FLAGS -p ssruntime-ffi --features libc_alloc,panic-handler
     fi
     SRC_DIR="target/$BUILD_MODE"
 else
