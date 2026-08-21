@@ -5,4 +5,4 @@
 #
 # `mkdocs-static-i18n` is replaced by building each locale from its own config, and
 # `mkdocs-callouts` by Zensical's native `> [!NOTE]` parsing (`pymdownx.quotes`).
-zensical==0.0.54
+zensical==0.0.56
