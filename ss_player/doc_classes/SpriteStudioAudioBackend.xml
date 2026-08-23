@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="SpriteStudioAudioBackend" inherits="Resource" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+	<brief_description>
+		Routes a [SpriteStudioPlayer2D]'s audio events to something other than the built-in player.
+	</brief_description>
+	<description>
+		By default [SpriteStudioPlayer2D] plays the sounds authored on audio parts through its own pooled [AudioStreamPlayer] voices. Assign a subclass of this resource to [member SpriteStudioPlayer2D.audio_backend] to take that over - for audio middleware, for a bus/attenuation setup of your own, or to keep every sound under one mixer.
+		Assigning a backend always suppresses the built-in playback, including [member SpriteStudioPlayer2D.audio_volume], so the backend fully owns voice lifecycle and play counts. It is invoked only while playback runs forward: reverse playback fires no audio at all, which is a runtime-wide limitation rather than a backend one.
+		Subclass it in GDScript (or C++) and override [method play_audio]:
+		[codeblock]
+		# res://audio/my_backend.gd
+		extends SpriteStudioAudioBackend
+
+		func play_audio(payload: Dictionary, ssab: SSABResource, player: Node) -&gt; void:
+		    var info := ssab.get_sound_info(payload["sound_list_name_hash"], payload["sound_name_hash"])
+		    if info.is_empty():
+		        return
+		    # Hand info["path"] and payload["loop_num"] to your own audio stack.
+		    MyMiddleware.play(info["path"], payload["loop_num"])
+		[/codeblock]
+		Save the script as a resource ([code].tres[/code], or a [code].gd[/code] assigned in the inspector) and drop it on the player's [b]Audio Backend[/b] property. One backend resource can be shared by any number of players - the originating node arrives as the [code]player[/code] argument.
+	</description>
+	<tutorials>
+	</tutorials>
+	<methods>
+		<method name="play_audio">
+			<return type="void" />
+			<param index="0" name="payload" type="Dictionary" />
+			<param index="1" name="ssab" type="SSABResource" />
+			<param index="2" name="player" type="Node" />
+			<description>
+				Called once per audio event the player passes while playing forward. [param payload] is the same dictionary [signal SpriteStudioPlayer2D.audio] carries ([code]part_index[/code], [code]part_name[/code], [code]frame_no[/code], [code]sound_list_name_hash[/code], [code]sound_name_hash[/code], [code]sound_name[/code], [code]loop_num[/code]). [param ssab] is the resource the sound was authored in - use [method SSABResource.get_sound_info] or [method SSABResource.get_sound_stream] to resolve it - and [param player] is the [SpriteStudioPlayer2D] that fired it.
+				The default implementation does nothing, so a backend that only wants to observe some events still silences the rest.
+			</description>
+		</method>
+	</methods>
+</class>

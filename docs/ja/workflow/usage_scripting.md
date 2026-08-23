@@ -43,6 +43,11 @@ Godot ユーザーにとって最も強力な機能の一つが「シグナル (
 * `animation_finished(anim_name)`: 指定したループ回数をすべて再生し終えた時（無限ループでは発火しません）
 * `animation_looped(anim_name)`  : アニメーションが1周して先頭に戻った時
 * `user_data(payload)`           : アニメーションに設定されたユーザーデータ（イベント）のフレームに到達した時
+* `signal_emitted(command, value, info)` : タイムライン上の「シグナル」キーに到達した時
+* `audio(payload)`               : オーディオキーに到達した時。観測用で、明示的に止めない限りプレーヤ側でも再生されます（[サウンド再生](audio.md) 参照）
+* `frame_updated(frame_no)`      : そのフレームのパーツ姿勢が確定した直後（後述の「パーツトラッキング」を参照）
+
+タイムライン系の 3 イベント（`user_data` / `signal_emitted` / `audio`）は、いずれも同じ発生元フィールド（`part_index` / `part_name` / `frame_no`）を持ちます。そのため、どのパーツが発火したかを判定するために自前の対応表を持つ必要はありません。`user_data` と `audio` では payload に、`signal_emitted` では別引数の `info` に入ります。`value` のキーは作者が設定したパラメータ ID であり、固定キーを混ぜると衝突しうるためです。
 
 ### 実装例: アニメーションの連続再生
 「攻撃」アニメーションが終了したら、自動的に「待機」アニメーションへ遷移させる実装例です。
@@ -79,6 +84,21 @@ func _on_user_data(payload):
         # 整数値(integer)を使ってダメージ量などを渡す例
         var damage = payload.get("integer", 0)
         spawn_hitbox(damage)
+```
+
+### 実装例: シグナルキーへの反応
+「シグナル」キーは名前付きコマンドと型付きパラメータを運ぶため、単なる文字列よりもゲーム側への指示（エフェクトの発生、扉を開く等）に向いています。
+
+```gdscript
+func _ready():
+    ss_player.signal_emitted.connect(_on_signal_emitted)
+
+func _on_signal_emitted(command: String, value: Dictionary, info: Dictionary):
+    # `value` のキーは SpriteStudio 上で設定したパラメータ ID。
+    # `info` は発生元（part_index / part_name / frame_no）。
+    if command == "spawn_effect":
+        var effect_name: String = value.get("name", "")
+        spawn_effect_at(effect_name, ss_player.get_part_transform(info["part_name"]))
 ```
 
 ---

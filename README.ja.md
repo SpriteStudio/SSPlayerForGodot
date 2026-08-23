@@ -35,9 +35,11 @@
 - [基本的な使い方](./docs/ja/workflow/usage_basic.md)
 - [アセットのインポートとエディタ連携](./docs/ja/workflow/usage_asset_pipeline.md)
 - [スクリプト制御とイベント](./docs/ja/workflow/usage_scripting.md)
+- [サウンド再生](./docs/ja/workflow/audio.md)
 - [CLI コンバートと自動化](./docs/ja/workflow/import.md)
 - [パフォーマンスチューニングと高度な設定](./docs/ja/workflow/tips.md)
 - [ビルドガイド](./docs/ja/setup/build.md)
+- [トラブルシューティング](./docs/ja/troubleshooting.md)
 - [v1.x からのマイグレーション](./docs/ja/migration_from_v1.md)
 
 ## 🚀 GDExtension を用いたクイックスタート

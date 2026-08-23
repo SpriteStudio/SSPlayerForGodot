@@ -71,8 +71,12 @@ public:
     virtual void onAnimationChanged(const String& anim_name) {}
     virtual void onAnimationFinished(const String& anim_name) {}
     virtual void onAnimationLooped(const String& anim_name) {}
+    // `payload` / `info` carry the event's origin — `part_index`, `part_name`
+    // and `frame_no` — alongside the authored values. Signals keep theirs in a
+    // separate `info` dictionary because `value` is keyed by author-defined
+    // parameter ids, which a fixed key could collide with.
     virtual void onUserData(const Dictionary& payload) {}
-    virtual void onSignal(const String& command, const Dictionary& value) {}
+    virtual void onSignal(const String& command, const Dictionary& value, const Dictionary& info) {}
     virtual void onAudio(const Dictionary& payload) {}
 };
 

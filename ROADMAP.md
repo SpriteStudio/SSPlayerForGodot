@@ -14,6 +14,7 @@ SSPlayerForGodot leverages Godot's `CanvasItem` API and `Node2D` paradigms. Feat
 
 ## Status legend
 
+- ☑ **Shipped** — implemented and documented; kept here for the record
 - ☐ **Ready** — Player-only, no SDK dependency; can start now
 - ⛔ **Blocked on SDK** — needs an `SpriteStudio-SDK/ROADMAP.md` phase first
 - 🕒 **Deferred ("あとで")** — intentionally postponed; detailed here so it can be picked up later
@@ -30,23 +31,24 @@ SSPlayerForGodot leverages Godot's `CanvasItem` API and `Node2D` paradigms. Feat
   3. `SpriteStudioPlayer2D`: Add `bool play_by_index(int index)` to resolve `index` to a name and call `play()`.
 - **Done when**: A sample project triggers label-based playback via GDScript and stays within the loop range.
 
-## ☐ Tier 5 — Manual update / Custom delta (Player-only)
+## ☑ Tier 5 — Manual update / Custom delta (Player-only)
 
-- **Goal**: Allow fine-grained control over playback updates from GDScript (e.g. for custom pause-groups, slow-mo, or custom stepping).
-- **Steps**:
-  1. Add a generic `advance(float delta)` method to `SpriteStudioPlayer2D` and an `ANIMATION_PROCESS_MANUAL` to `AnimationProcessMode`.
-  2. When set to `MANUAL`, the node skips its internal `_notification` delta update and relies entirely on the user calling `advance()`.
+- **Shipped.** `ANIMATION_PROCESS_MANUAL` stops the node advancing itself, and `advance(delta)` steps
+  playback and emits `frame_updated` exactly as an automatic tick does — so part attachments stay in
+  step. The node keeps its idle notification under `MANUAL` because fire-and-forget audio voices and
+  the mask coverage scale still need a per-frame tick.
 - **Note on Hierarchical Color**: SS6's `AdditionalColor` is natively covered by Godot's `CanvasItem::set_modulate()` and `self_modulate`. No custom work is needed here unless per-vertex multiplier logic specifically requires it.
-- **Done when**: A script manually steps the animation in `_process` and playback correctly evaluates at the custom delta.
+- **Documented in**: [Performance Tuning → Driving Playback Yourself](./docs/en/workflow/tips.md).
 
-## ⛔ Tier 2 — Per-part runtime overrides (color / cell / visibility) (SDK Phase 2)
+## ☑ Tier 2 — Per-part runtime overrides (color / cell / visibility) (SDK Phase 2)
 
-- **Blocked on**: `SpriteStudio-SDK/ROADMAP.md` Phase 2 **Override Layer API**.
-- **Goal**: Override color, cell reference, and visibility of specific parts programmatically.
-- **Steps (after SDK FFI exists)**:
-  1. Wrap the new FFI in `SsInternalPlayer` (using `resolve_part_index`).
-  2. Expose `set_part_color_override(part_name, color, blend_op)`, `set_part_cell_override(part_name, map_name, cell_name)`, etc. to GDScript.
-- **Done when**: A GDScript changes a part's color or swaps its cell at runtime.
+- **Shipped.** The SDK's Override Layer API landed and the player wraps it: `set_part_color_override()`
+  (single colour and four-corner gradient), `set_part_cell_override()`, `set_part_visibility_override()`,
+  the matching `clear_*` calls, `clear_all_part_overrides()`, and a `*_by_index()` variant of each that
+  skips the name lookup. Priority modes (`NEXT_KEYFRAME` / `UNTIL_ANIMATION_CHANGE` / `PERMANENT`) are
+  exposed as constants.
+- **Documented in**: [Scripting & Events → Part Overrides](./docs/en/workflow/usage_scripting.md) and
+  [SpriteStudioPlayer2D](./docs/en/api/player.md).
 
 ## ☐/⛔ Tier 3 — Runtime material swap
 

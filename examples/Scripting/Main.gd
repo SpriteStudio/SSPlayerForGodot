@@ -59,8 +59,10 @@ func _on_animation_finished(anim_name: String) -> void:
 func _on_animation_looped(anim_name: String) -> void:
 	print("Animation looped: ", anim_name)
 
-func _on_signal_emitted(command: String, value: Dictionary) -> void:
-	print("Signal emitted: ", command, " value: ", value)
+func _on_signal_emitted(command: String, value: Dictionary, info: Dictionary) -> void:
+	# `value` is keyed by the parameter ids authored on the Signal key; `info`
+	# says which part fired it and on which frame.
+	print("Signal emitted: ", command, " value: ", value, " from part: ", info["part_name"])
 
 func _on_user_data(payload: Dictionary) -> void:
 	print("User data: ", payload)

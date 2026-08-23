@@ -79,7 +79,10 @@ Once the node is selected, you can adjust various settings from Godot's Inspecto
 | `Playback Style`           | int      | Playback style (e.g., One-way, Ping-pong)                           |
 | `Frame Skip Enabled`       | bool     | Whether to skip frames when the draw interval exceeds the frame interval |
 | `Sub Frame Enabled`        | bool     | Whether to enable sub-frame interpolation                           |
-| `Animation Process Mode`   | int      | Whether to sync with `_physics_process` (Physics) or `_process` (Idle) |
+| `Animation Process Mode`   | int      | Whether to sync with `_physics_process` (Physics) or `_process` (Idle), or to leave stepping to `advance()` (Manual) |
+| `Play Audio`               | bool     | Whether the built-in player sounds the animation's audio parts (see [Audio Playback](audio.md)) |
+| `Audio Volume`             | float    | Linear volume `[0, 1]` for the built-in audio playback |
+| `Audio Backend`            | Resource | Optional `SpriteStudioAudioBackend` that replaces the built-in audio playback |
 
 ---
 

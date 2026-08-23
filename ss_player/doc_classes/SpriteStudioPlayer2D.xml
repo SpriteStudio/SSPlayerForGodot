@@ -11,6 +11,19 @@
 	<tutorials>
 	</tutorials>
 	<methods>
+		<method name="advance">
+			<return type="void" />
+			<param index="0" name="delta" type="float" />
+			<description>
+				Steps playback by [param delta] seconds and emits [signal frame_updated], exactly as an automatic tick would - so part attachments and anything else driven by that signal stay in step.
+				Meant for [constant ANIMATION_PROCESS_MANUAL], which is the mode that stops the node ticking itself. Calling it under the other two modes advances the animation [i]on top of[/i] the node's own tick rather than instead of it.
+				[codeblock]
+				func _process(delta: float) -&gt; void:
+				    # A slow-motion group the engine's own time scale must not touch.
+				    $SpriteStudioPlayer2D.advance(delta * slowmo_factor)
+				[/codeblock]
+			</description>
+		</method>
 		<method name="play">
 			<return type="void" />
 			<param index="0" name="start_frame" type="float" default="-1.0" />
@@ -120,7 +133,7 @@
 			If [code]true[/code], the animation is flipped vertically.
 		</member>
 		<member name="animation_process_mode" type="int" enum="SpriteStudioPlayer2D.AnimationProcessMode" default="1">
-			Determines whether to advance the animation in [code]_physics_process[/code] ([constant ANIMATION_PROCESS_PHYSICS]) or [code]_process[/code] ([constant ANIMATION_PROCESS_IDLE]). Use Physics if the parent node moves using the physics engine to avoid jitter.
+			Determines whether to advance the animation in [code]_physics_process[/code] ([constant ANIMATION_PROCESS_PHYSICS]) or [code]_process[/code] ([constant ANIMATION_PROCESS_IDLE]). Use Physics if the parent node moves using the physics engine to avoid jitter. [constant ANIMATION_PROCESS_MANUAL] stops the node advancing itself, leaving playback to [method advance].
 		</member>
 		<member name="animation_section_start" type="int">
 			First frame of the played section, inclusive. Setting it keeps [member animation_section_end]; use [method set_animation_section] to move both endpoints at once.
@@ -184,20 +197,21 @@
 		<signal name="user_data">
 			<param index="0" name="payload" type="Dictionary" />
 			<description>
-				Emitted when a user-data key on the timeline is reached. [param payload] carries the user-data values for that frame.
+				Emitted when a user-data key on the timeline is reached. [param payload] always carries the event's origin - [code]part_index[/code], [code]part_name[/code] and [code]frame_no[/code] (the frame the key sits on, not necessarily the frame it was noticed on) - plus whichever of [code]integer[/code], [code]point[/code], [code]rect[/code] and [code]string[/code] the animator filled in. A value left unset is absent from the dictionary rather than zero.
 			</description>
 		</signal>
 		<signal name="signal_emitted">
 			<param index="0" name="command" type="String" />
 			<param index="1" name="value" type="Dictionary" />
+			<param index="2" name="info" type="Dictionary" />
 			<description>
-				Emitted when a signal attribute on the timeline fires. [param command] is the command id; [param value] holds its parameters.
+				Emitted when a signal attribute on the timeline fires. [param command] is the command id and [param value] holds its parameters, keyed by the parameter ids authored in SpriteStudio. [param info] is kept separate precisely because those keys are author-defined: it carries [code]part_index[/code], [code]part_name[/code] and [code]frame_no[/code].
 			</description>
 		</signal>
 		<signal name="audio">
 			<param index="0" name="payload" type="Dictionary" />
 			<description>
-				Emitted when an audio part fires an audio event. [param payload] carries [code]part_index[/code], [code]sound_list_name_hash[/code], [code]sound_name_hash[/code], [code]sound_name[/code] and [code]loop_num[/code] (the play count). This is an observation channel and fires in every playback direction (and in the editor), independently of [member play_audio].
+				Emitted when an audio part fires an audio event. [param payload] carries [code]part_index[/code], [code]part_name[/code], [code]frame_no[/code], [code]sound_list_name_hash[/code], [code]sound_name_hash[/code], [code]sound_name[/code] and [code]loop_num[/code] (the play count). This is an observation channel and fires in every playback direction (and in the editor), independently of [member play_audio].
 			</description>
 		</signal>
 		<signal name="frame_updated">
@@ -213,6 +227,9 @@
 		</constant>
 		<constant name="ANIMATION_PROCESS_IDLE" value="1" enum="AnimationProcessMode">
 			Syncs animation to [code]_process[/code] frame.
+		</constant>
+		<constant name="ANIMATION_PROCESS_MANUAL" value="2" enum="AnimationProcessMode">
+			The node does not advance the animation on its own; call [method advance] to step it. Audio voices already sounding still tick, since they are fire-and-forget and outlive the frame that started them.
 		</constant>
 		<constant name="PLAYBACK_DIRECTION_FORWARD" value="0" enum="PlaybackDirection">
 			Plays the animation from the section start towards its end.

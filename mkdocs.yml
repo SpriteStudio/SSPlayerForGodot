@@ -45,6 +45,7 @@ nav:
       - Basic Usage: workflow/usage_basic.md
       - Asset Import & Editor Integration: workflow/usage_asset_pipeline.md
       - Scripting & Events: workflow/usage_scripting.md
+      - Audio Playback: workflow/audio.md
       - AnimationPlayer Integration: workflow/animation_player.md
       - Exporting Your Project: workflow/export.md
   - ⚙️ Advanced Topics:
@@ -53,5 +54,9 @@ nav:
   - 📖 API Reference:
       - SpriteStudioPlayer2D: api/player.md
       - Resource Classes: api/resource.md
+  - 🩺 Troubleshooting: troubleshooting.md
   - ⚠️ Limitations & Scope: limitations.md
   - 🔄 Migration Guide: migration_from_v1.md
+  - ⚖️ License:
+      - License: license.md
+      - Third-Party Notices: third_party_notices.md

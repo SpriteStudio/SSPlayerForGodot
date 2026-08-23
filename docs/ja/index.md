@@ -18,6 +18,7 @@
     - [AnimationPlayer との連携](workflow/animation_player.md)
     - [アセットのインポートとエディタ連携](workflow/usage_asset_pipeline.md)（初回の `.sspj` インポートはこちら）
     - [スクリプト制御とイベント](workflow/usage_scripting.md)
+    - [サウンド再生](workflow/audio.md)
     - [プロジェクトのエクスポート](workflow/export.md)
 - **応用**
     - [CLI コンバートと自動化](workflow/import.md)
@@ -25,8 +26,12 @@
 - **API リファレンス**
     - [SpriteStudioPlayer2D](api/player.md)
     - [リソース管理クラス](api/resource.md)
+- [トラブルシューティング](troubleshooting.md)
 - [仕様と制約事項](limitations.md)
 - [v1.x からのマイグレーション](migration_from_v1.md)
+- **ライセンス**
+    - [ライセンス](license.md)
+    - [サードパーティライセンス](third_party_notices.md)
 
 ## 主な機能 (Key Features)
 
@@ -35,7 +40,9 @@
 *   **完全な機能サポート:** ボーン階層、メッシュ＆デフォーム、パーティクルエフェクトなど、SpriteStudio 7 の全機能を標準でサポートします。
 *   **シームレスな統合と強力なアセットパイプライン:** Godot のエディタ内に統合された「SS Import Dock」による簡単なインポートに加え、インスペクタから直接 SpriteStudio を開いて再コンバートできる、**SpriteStudio と Godot をシームレスに行き来できる強力なアセットパイプライン**を提供します。詳しくは [アセットのインポートとエディタ連携](workflow/usage_asset_pipeline.md) をご覧ください。
 *   **動的な着せ替え (CellMap Overrides):** 実行時にテクスチャ（セルマップ）を差し替えることで、キャラクターのカラーバリエーションや装備変更を簡単に実装できます。
-*   **シグナルとイベント:** タイムライン上に設定した「ユーザーデータ」や「シグナル」を Godot のシグナルとして受け取り、足音の再生やスクリプトのトリガーを正確なタイミングで行えます。
+*   **シグナルとイベント:** タイムライン上に設定した「ユーザーデータ」や「シグナル」を Godot のシグナルとして受け取り、ゲームロジックのトリガーを正確なタイミングで行えます。どのパーツが発火したかも各イベントが持っています。
+*   **そのまま鳴るサウンド:** サウンドパートは設定なしで Godot 上から鳴ります（エディタプレビュー中も同様）。音量を調整する、`audio` シグナルで自前処理に切り替える、[バックエンドリソース](workflow/audio.md) で全サウンドをオーディオミドルウェアへ流す、といった対応が可能です。
+*   **パーツ単位のエフェクト:** SpriteStudio のアドオンシェーダ 13 種（セピア / 輪郭線 / HSB / ブラー / モザイク / ウェーブ / ノイズ ほか）をネイティブに再現します。SpriteStudio 側で設定するだけで、Godot 側の作業はありません。
 *   **滑らかなスローモーション:** サブフレーム補間（Sub-frame interpolation）をサポートし、高リフレッシュレートのモニターやスローモーション演出でもカクつかない滑らかな再生が可能です。
 *   **超高速・省メモリ:** バックエンドの `libssruntime` による SIMD 最適化と、パース不要なバイナリ形式（`.ssab`）により、モバイルなどのリソースが限られた環境でも多数のキャラクターを高速に描画します。
 
@@ -103,8 +110,8 @@ v1.x 以前のバージョンからの移行手順については、[マイグ�
 
 ## ライセンス
 
-[LICENSE.md](https://github.com/cri-middleware/SSPlayerForGodot/blob/main/LICENSE.md) を参照してください。
+[ライセンス](license.md) を参照してください。
 
-サードパーティライブラリ（FlatBuffers, SpriteStudio-SDK の依存クレートなど）のライセンスについては、[THIRD_PARTY_NOTICES.md](https://github.com/cri-middleware/SSPlayerForGodot/blob/main/THIRD_PARTY_NOTICES.md) を参照してください。
+サードパーティライブラリ（FlatBuffers, SpriteStudio-SDK の依存クレートなど）のライセンスについては、[サードパーティライセンス](third_party_notices.md) を参照してください。
 
 
