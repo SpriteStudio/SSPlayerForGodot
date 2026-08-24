@@ -88,7 +88,15 @@ markdown_extensions:
       line_spans: __span
       pygments_lang_class: true
   - pymdownx.inlinehilite
-  - pymdownx.snippets
+  # `base_path` is resolved against this file's directory, which is the repository root for
+  # all three configs -- which is what lets docs/*/license.md and docs/*/third_party_notices.md
+  # pull in LICENSE.md and THIRD_PARTY_NOTICES.md from there instead of keeping a second copy
+  # per locale. `check_paths` turns a stale include into a build failure rather than a page
+  # that silently renders the raw `--8<--` line.
+  - pymdownx.snippets:
+      base_path:
+        - .
+      check_paths: true
   - pymdownx.quotes:
       callouts: true
 

@@ -28,23 +28,27 @@ func _ready() -> void:
 * `set_offset(offset: Vector2)` / `get_offset() -> Vector2`: Node2D の原点を動かさずに描画位置だけをずらします。
 * `set_flip_h(flip: bool)` / `is_flipped_h() -> bool`: 水平反転。
 * `set_flip_v(flip: bool)` / `is_flipped_v() -> bool`: 垂直反転。
-* `set_animation_process_mode(mode: AnimationProcessMode)` / `get_animation_process_mode() -> AnimationProcessMode`: `ANIMATION_PROCESS_PHYSICS`（`0`）で Physics (`_physics_process`) 同期、`ANIMATION_PROCESS_IDLE`（`1`）で Idle (`_process`) 同期。
+* `set_animation_process_mode(mode: AnimationProcessMode)` / `get_animation_process_mode() -> AnimationProcessMode`: `ANIMATION_PROCESS_PHYSICS`（`0`）で Physics (`_physics_process`) 同期、`ANIMATION_PROCESS_IDLE`（`1`）で Idle (`_process`) 同期、`ANIMATION_PROCESS_MANUAL`（`2`）でノード自身による更新を停止します。
+* `advance(delta: float)`: 再生を `delta` 秒ぶん進め、自動更新と同じように `frame_updated` を発行します。`ANIMATION_PROCESS_MANUAL` 向けの API です。他のモードで呼ぶと、ノード自身の更新に *加えて* アニメーションが進みます。
 * **エディタ内プレビュー**: ノードを選択すると表示される **SpriteStudio** ボトムパネル（再生 / 一時停止 / 停止 / フレームスクラバ）でゲームを実行せずにプレビューできます。*(旧 `editor_playing` インスペクタトグルはこのパネルに置き換えられました。)*
 * `play(start_frame: float = -1.0)`: 再生を開始します。`-1.0` を指定した場合は、現在のフレームまたは区間の先頭から再生します。
 * `pause()`: 再生を一時停止します。
 * `stop()`: 再生を停止します。
 * `is_playing() -> bool` / `is_pausing() -> bool`
 * `set_frame(frame: float)` / `get_frame() -> float` / `get_total_frames() -> int`
+* `get_start_frame() -> int` / `get_end_frame() -> int`: アニメーション自体の先頭 / 末尾フレーム。上に設定した再生区間とは独立した値です。
 * `set_speed_scale(speed_scale: float)` / `get_speed_scale() -> float`
 * `set_frame_rate(fps: int)` / `get_frame_rate() -> int`
 * `set_animation_section(start: int, end: int)`: 再生するフレーム区間を限定します。
 * `set_animation_section_start(start: int)` / `get_animation_section_start() -> int` / `set_animation_section_end(end: int)` / `get_animation_section_end() -> int`: 片方の端点だけを移動します（もう一方は維持）。インスペクタの `animation_section_start` / `animation_section_end` プロパティの実体です。
 * `set_playback_direction(direction: PlaybackDirection, style: PlaybackStyle)`: 再生方向と再生スタイルを指定します。値の意味は下表を参照してください。
+* `get_playback_direction() -> PlaybackDirection` / `get_playback_style() -> PlaybackStyle`: セッターで指定した 2 つの値をそれぞれ読み出します。
 * `set_loop_count(count: int)` / `get_loop_count() -> int`: `n` で `n` 回再生して停止（`1` なら1回のみ）。`-1` で無限ループ（`0` も無限ループの別名）。
 * `set_frame_skip_enabled(enabled: bool)` / `is_frame_skip_enabled() -> bool` (デフォルト: `true`)
 * `set_sub_frame_enabled(enabled: bool)` / `is_sub_frame_enabled() -> bool` (デフォルト: `false`)
 * `set_cellmap_texture(cellmap_name: String, texture: Texture2D)` / `get_cellmap_texture(cellmap_name: String) -> Texture2D`
 * `get_cellmap_names() -> PackedStringArray` / `get_cell_names(cellmap_name: String) -> PackedStringArray`: 割り当て済みの `SSABResource` から読んだ名前一覧（未割り当てなら空）。`set_part_cell_override()` に渡す名前を調べる用途です。まだプレーヤに載せていない `.ssab` を調べたい場合は [`SSABResource`](resource.md) 自身にも同じメソッドがあります。
+* `set_play_audio(enabled: bool)` / `is_play_audio() -> bool` (デフォルト: `true`)、`set_audio_volume(volume: float)` / `get_audio_volume() -> float`、`set_audio_backend(backend: SpriteStudioAudioBackend)` / `get_audio_backend() -> SpriteStudioAudioBackend`: 内蔵のサウンド再生。詳細は後述の [サウンド](#audio) を参照してください。
 
 ### `set_playback_direction` の引数
 
@@ -106,38 +110,78 @@ func _ready() -> void:
 | `animation_looped` | `anim_name: String` | 1周して先頭に戻った時。最終周では発火せず `animation_finished` になる |
 | `frame_updated` | `frame_no: float` | そのフレームのパーツ姿勢が確定した直後（プレーヤの更新直後、描画の前）。発火するプロセスは `animation_process_mode` に従う |
 | `user_data` | `payload: Dictionary` | タイムライン上の「ユーザーデータ」キーに到達した時 |
-| `signal_emitted` | `command: String, value: Dictionary` | タイムライン上の「シグナル」キーに到達した時 |
+| `signal_emitted` | `command: String, value: Dictionary, info: Dictionary` | タイムライン上の「シグナル」キーに到達した時 |
 | `audio` | `payload: Dictionary` | タイムライン上の「オーディオ」キーに到達した時 |
 
 ### `user_data` の `payload` フィールド
 
-SpriteStudio 上でユーザーデータに設定した値が `Dictionary` として渡されます。**設定された項目のみ** キーが含まれます（未設定の項目はキーごと存在しません）。
+SpriteStudio 上でユーザーデータに設定した値が `Dictionary` として渡されます。発生元を示す 3 つのキーは **常に** 含まれます。値の 4 キーは **設定された項目のみ** 含まれます（未設定の項目はキーごと存在しません。`0` も作者が意図し得る値であるため、既定値で埋めることはしません）。
 
 | キー | 型 | 内容 |
 | --- | --- | --- |
+| `part_index` | `int` | キーが置かれているパーツのインデックス |
+| `part_name` | `String` | そのパート名 |
+| `frame_no` | `int` | キーが置かれているフレーム。1 ティックで複数フレームをまたぐことがあるため、検出されたフレームとは限りません |
 | `integer` | `int` | 整数値 |
 | `point` | `Vector2` | 座標値 |
 | `rect` | `Rect2` | 矩形値（`x`, `y`, `width`, `height`） |
 | `string` | `String` | 文字列値 |
 
-### `signal_emitted` の `value` フィールド
+### `signal_emitted` の `value` / `info` フィールド
 
-タイムライン上の「シグナル」に設定したパラメータが `Dictionary` として渡されます。パラメータ ID をキーに、各値（`bool` / `int` / `float` / `String` 等）が格納されます。`command` 引数にはシグナル名（`command_id`）が入ります。
+タイムライン上の「シグナル」に設定したパラメータが `value` として渡されます。パラメータ ID をキーに、各値（`bool` / `int` / `float` / `String` 等）が格納されます。`command` 引数にはシグナル名（`command_id`）が入ります。
+
+発生元は `value` に混ぜず、**別の `info` 辞書**として渡されます。`value` のキーは作者が自由に決めるものであり、固定キーを混ぜると衝突しうるためです。
+
+| `info` のキー | 型 | 内容 |
+| --- | --- | --- |
+| `part_index` | `int` | キーが置かれているパーツのインデックス |
+| `part_name` | `String` | そのパート名 |
+| `frame_no` | `int` | キーが置かれているフレーム |
 
 ### `audio` の `payload` フィールド
 
-タイムライン上のオーディオキーに設定された情報が `Dictionary` として渡されます。再生はプレーヤ側では行わないため、ゲーム側で `AudioStreamPlayer` 等に橋渡ししてください。
+タイムライン上のオーディオキーに設定された情報が `Dictionary` として渡されます。このシグナルは **観測用のチャンネル**で、再生方向を問わず、エディタ上でも、内蔵再生 (`play_audio`) のオン / オフに関わらず発火します。サウンドに反応したい場合や、再生そのものを置き換えたい場合に接続してください（後述の [サウンド](#audio) を参照）。
 
 | キー | 型 | 内容 |
 | --- | --- | --- |
 | `part_index` | `int` | 発火したパーツのインデックス |
+| `part_name` | `String` | そのパート名 |
+| `frame_no` | `int` | キーが置かれているフレーム |
 | `sound_list_name_hash` | `int` | サウンドリスト名のハッシュ |
 | `sound_name_hash` | `int` | サウンド名のハッシュ |
 | `sound_name` | `String` | サウンド名（設定時のみ） |
-| `loop_num` | `int` | ループ回数 |
+| `loop_num` | `int` | 再生回数（`1` で 1 回。SpriteStudio に無限ループのサウンドはありません） |
 
 > [!NOTE]
 > 引数の正確な型・最新の取り得る値は実装 `ss_player/ss_player_node_2d.h` / `ss_player/ss_internal_player.cpp` を併せて参照してください。
+
+## サウンド (Audio)
+
+サウンドパートは何もしなくても Godot 上で鳴ります。ノードは `AudioStreamPlayer` のボイスをプール管理し、**順再生中に**再生ヘッドがオーディオキーを通過するたびに 1 本開始します。挙動の詳細（撃ちっぱなし、シーク時に再同期しない、再発火で重なる）は [サウンド再生](../workflow/audio.md) にまとめてあります。ここでは API だけを示します。
+
+| メンバー | 型 | 既定値 | 説明 |
+| --- | --- | --- | --- |
+| `play_audio` | `bool` | `true` | 内蔵プレイヤーが音を鳴らすかどうか。`set_play_audio(false)` は再生中の内蔵ボイスも停止します |
+| `audio_volume` | `float` | `1.0` | 内蔵ボイスのリニア音量 (`[0, 1]`)。`audio_backend` を割り当てている間は無視されます |
+| `audio_backend` | `SpriteStudioAudioBackend` | *(なし)* | 内蔵プレイヤーを完全に置き換えます |
+
+### `SpriteStudioAudioBackend`
+
+オーバーライド可能なメソッドを 1 つだけ持つ `Resource` のサブクラスです。`audio_backend` に割り当てると **内蔵再生は抑制されます**（`audio_volume` も含む）。ボイスのライフサイクルと再生回数の管理はバックエンド側の責務になります。
+
+* `play_audio(payload: Dictionary, ssab: SSABResource, player: Node) -> void`: オーディオイベントごとに 1 回呼ばれます。`payload` は `audio` シグナルと同じ内容です。既定の実装は何もしません。
+
+```gdscript
+extends SpriteStudioAudioBackend
+
+func play_audio(payload: Dictionary, ssab: SSABResource, player: Node) -> void:
+    var info := ssab.get_sound_info(payload["sound_list_name_hash"], payload["sound_name_hash"])
+    if not info.is_empty():
+        MyMiddleware.play(info["path"], payload["loop_num"])
+```
+
+`payload` からサウンドを解決するには [`SSABResource`](resource.md#ssabresource) の `get_sound_stream()` / `get_sound_info()` を使います。
 
 ## AnimationPlayer から駆動する
 

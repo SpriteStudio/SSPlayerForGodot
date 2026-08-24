@@ -28,23 +28,27 @@ func _ready() -> void:
 * `set_offset(offset: Vector2)` / `get_offset() -> Vector2`: Shifts the drawing position without moving the Node2D's origin.
 * `set_flip_h(flip: bool)` / `is_flipped_h() -> bool`: Flips the animation horizontally.
 * `set_flip_v(flip: bool)` / `is_flipped_v() -> bool`: Flips the animation vertically.
-* `set_animation_process_mode(mode: AnimationProcessMode)` / `get_animation_process_mode() -> AnimationProcessMode`: Sets whether to sync with `_physics_process` (`ANIMATION_PROCESS_PHYSICS` / `0`) or `_process` (`ANIMATION_PROCESS_IDLE` / `1`).
+* `set_animation_process_mode(mode: AnimationProcessMode)` / `get_animation_process_mode() -> AnimationProcessMode`: Sets whether to sync with `_physics_process` (`ANIMATION_PROCESS_PHYSICS` / `0`) or `_process` (`ANIMATION_PROCESS_IDLE` / `1`), or to stop ticking on its own (`ANIMATION_PROCESS_MANUAL` / `2`).
+* `advance(delta: float)`: Steps playback by `delta` seconds and emits `frame_updated`, exactly as an automatic tick would. Meant for `ANIMATION_PROCESS_MANUAL` — under the other modes it advances the animation *on top of* the node's own tick.
 * **In-editor preview**: Select the node and use the **SpriteStudio** bottom panel (play / pause / stop / frame scrubber) to preview without running the game. *(The former `editor_playing` inspector toggle has been replaced by this panel.)*
 * `play(start_frame: float = -1.0)`: Starts playback. If `start_frame` is `-1.0`, it plays from the current frame or the start of the section.
 * `pause()`: Pauses playback while retaining the current frame.
 * `stop()`: Stops playback and typically resets the state.
 * `is_playing() -> bool` / `is_pausing() -> bool`
 * `set_frame(frame: float)` / `get_frame() -> float` / `get_total_frames() -> int`
+* `get_start_frame() -> int` / `get_end_frame() -> int`: The first and last frame of the animation itself, independently of any playback section set on top of it.
 * `set_speed_scale(speed_scale: float)` / `get_speed_scale() -> float`
 * `set_frame_rate(fps: int)` / `get_frame_rate() -> int`
 * `set_animation_section(start: int, end: int)`: Limits the playback to a specific frame range.
 * `set_animation_section_start(start: int)` / `get_animation_section_start() -> int` / `set_animation_section_end(end: int)` / `get_animation_section_end() -> int`: Moves one endpoint of the section while keeping the other. These back the `animation_section_start` / `animation_section_end` inspector properties.
 * `set_playback_direction(direction: PlaybackDirection, style: PlaybackStyle)`: Sets the playback direction and style. See the table below for values.
+* `get_playback_direction() -> PlaybackDirection` / `get_playback_style() -> PlaybackStyle`: Reads back the two halves of the setter individually.
 * `set_loop_count(count: int)` / `get_loop_count() -> int`: `n` plays `n` cycles then stops (`1` plays once). `-1` means infinite loop (`0` is an alias for infinite).
 * `set_frame_skip_enabled(enabled: bool)` / `is_frame_skip_enabled() -> bool` (default: `true`)
 * `set_sub_frame_enabled(enabled: bool)` / `is_sub_frame_enabled() -> bool` (default: `false`)
 * `set_cellmap_texture(cellmap_name: String, texture: Texture2D)` / `get_cellmap_texture(cellmap_name: String) -> Texture2D`
 * `get_cellmap_names() -> PackedStringArray` / `get_cell_names(cellmap_name: String) -> PackedStringArray`: Names read from the assigned `SSABResource` (empty when none is assigned) — the discovery half of `set_part_cell_override()`. Also available on [`SSABResource`](resource.md) itself for an `.ssab` that is not on a player.
+* `set_play_audio(enabled: bool)` / `is_play_audio() -> bool` (default: `true`), `set_audio_volume(volume: float)` / `get_audio_volume() -> float`, `set_audio_backend(backend: SpriteStudioAudioBackend)` / `get_audio_backend() -> SpriteStudioAudioBackend`: Built-in audio playback. See [Audio](#audio) below.
 
 ### Arguments for `set_playback_direction`
 
@@ -106,38 +110,78 @@ Override a single part's color / cell / visibility so that it wins over the keyf
 | `animation_looped` | `anim_name: String` | The animation looped back to the start. Not emitted on the final cycle, which emits `animation_finished` instead |
 | `frame_updated` | `frame_no: float` | The frame's part poses have just been finalized (right after the player's update, before the render phase). Which process it fires in follows `animation_process_mode` |
 | `user_data` | `payload: Dictionary` | A "User Data" keyframe on the timeline is hit |
-| `signal_emitted` | `command: String, value: Dictionary` | A "Signal" keyframe on the timeline is hit |
+| `signal_emitted` | `command: String, value: Dictionary, info: Dictionary` | A "Signal" keyframe on the timeline is hit |
 | `audio` | `payload: Dictionary` | An "Audio" keyframe on the timeline is hit |
 
 ### `user_data` payload fields
 
-The User Data values configured in SpriteStudio are delivered as a `Dictionary`. **Only the keys that were set are present** — unset fields are omitted entirely.
+The User Data values configured in SpriteStudio are delivered as a `Dictionary`. The three origin keys are **always** present; of the four value keys, **only the ones that were set are present** — an unset field is omitted entirely rather than defaulted, because `0` is a value an author can mean.
 
 | Key | Type | Meaning |
 | --- | --- | --- |
+| `part_index` | `int` | Index of the part the key sits on |
+| `part_name` | `String` | Name of that part |
+| `frame_no` | `int` | The frame the key sits on. Not necessarily the frame it was noticed on — one tick can step across several |
 | `integer` | `int` | Integer value |
 | `point` | `Vector2` | Point value |
 | `rect` | `Rect2` | Rectangle value (`x`, `y`, `width`, `height`) |
 | `string` | `String` | String value |
 
-### `signal_emitted` value fields
+### `signal_emitted` value and info fields
 
-The parameters configured on the timeline "Signal" keyframe are delivered as a `Dictionary` keyed by parameter ID, with each value as `bool` / `int` / `float` / `String`, etc. The `command` argument receives the signal name (`command_id`).
+The parameters configured on the timeline "Signal" keyframe are delivered as `value`, a `Dictionary` keyed by parameter ID, with each value as `bool` / `int` / `float` / `String`, etc. The `command` argument receives the signal name (`command_id`).
+
+The event's origin arrives as a **separate** `info` dictionary rather than as more keys in `value`, precisely because `value`'s keys are author-defined and a fixed key could shadow one of them.
+
+| `info` key | Type | Meaning |
+| --- | --- | --- |
+| `part_index` | `int` | Index of the part the key sits on |
+| `part_name` | `String` | Name of that part |
+| `frame_no` | `int` | The frame the key sits on |
 
 ### `audio` payload fields
 
-The information configured on the timeline audio keyframe is delivered as a `Dictionary`. The player does not play sound itself, so bridge it to an `AudioStreamPlayer` (or similar) on the game side.
+The information configured on the timeline audio keyframe is delivered as a `Dictionary`. This signal is an **observation channel**: it fires in every playback direction and in the editor, independently of whether the built-in playback (`play_audio`) is on. Connect to it to react to a sound, or to replace playback entirely — see [Audio](#audio).
 
 | Key | Type | Meaning |
 | --- | --- | --- |
 | `part_index` | `int` | Index of the part that fired |
+| `part_name` | `String` | Name of that part |
+| `frame_no` | `int` | The frame the key sits on |
 | `sound_list_name_hash` | `int` | Hash of the sound list name |
 | `sound_name_hash` | `int` | Hash of the sound name |
 | `sound_name` | `String` | Sound name (present only when set) |
-| `loop_num` | `int` | Loop count |
+| `loop_num` | `int` | Play count (`1` plays once; SpriteStudio has no infinite audio loop) |
 
 > [!NOTE]
 > For the exact types and the latest set of accepted values, also refer to the implementation files `ss_player/ss_player_node_2d.h` and `ss_player/ss_internal_player.cpp`.
+
+## Audio
+
+Audio parts play through Godot out of the box — the node owns a pooled set of `AudioStreamPlayer` voices and starts one whenever the playhead crosses an audio key while playing **forward**. [Audio Playback](../workflow/audio.md) covers the semantics (fire-and-forget, no seek re-sync, overlap on re-fire); this is the API surface.
+
+| Member | Type | Default | Description |
+| --- | --- | --- | --- |
+| `play_audio` | `bool` | `true` | Whether the built-in player makes sound. `set_play_audio(false)` also stops any in-flight built-in voices |
+| `audio_volume` | `float` | `1.0` | Linear volume in `[0, 1]` for the built-in voices. Ignored while `audio_backend` is assigned |
+| `audio_backend` | `SpriteStudioAudioBackend` | *(none)* | Replaces the built-in player entirely |
+
+### `SpriteStudioAudioBackend`
+
+A `Resource` subclass with a single overridable method. Assigning one to `audio_backend` **suppresses the built-in playback**, `audio_volume` included, so the backend owns voice lifecycle and play counts.
+
+* `play_audio(payload: Dictionary, ssab: SSABResource, player: Node) -> void`: Called once per audio event, with the same `payload` the `audio` signal carries. The default implementation does nothing.
+
+```gdscript
+extends SpriteStudioAudioBackend
+
+func play_audio(payload: Dictionary, ssab: SSABResource, player: Node) -> void:
+    var info := ssab.get_sound_info(payload["sound_list_name_hash"], payload["sound_name_hash"])
+    if not info.is_empty():
+        MyMiddleware.play(info["path"], payload["loop_num"])
+```
+
+Resolving a sound from the payload is done on [`SSABResource`](resource.md#ssabresource), via `get_sound_stream()` or `get_sound_info()`.
 
 ## Driving from an AnimationPlayer
 

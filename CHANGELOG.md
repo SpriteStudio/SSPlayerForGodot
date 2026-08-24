@@ -31,12 +31,21 @@ converted binaries (`.ssab`) instead of parsing `.sspj` at runtime. See the
   content can be pinned to a part. Modeled on `RemoteTransform2D`.
 - **Signals**: timeline `user_data` and `signal_emitted` events, audio events, animation
   lifecycle (`animation_started` / `_changed` / `_finished` / `_looped`), and `frame_updated`.
+  Every timeline event carries where it came from — `part_index`, `part_name` and `frame_no` —
+  in its payload, or as `signal_emitted`'s separate `info` argument.
 - **AnimationPlayer integration**: drive playback from Godot's own animation tooling.
-- **Audio playback**: audio parts play through Godot, with volume and backend selection.
+- **Manual playback**: `ANIMATION_PROCESS_MANUAL` plus `advance(delta)`, for custom pause groups,
+  a time scale of your own, or deterministic stepping.
+- **Audio playback**: audio parts play through Godot with no setup, in the editor preview as
+  well, with volume control and a `SpriteStudioAudioBackend` resource for routing every sound to
+  a custom audio stack.
+- **Part add-on shaders**: the thirteen SpriteStudio add-on effects (sepia, outline, bmask, HSB,
+  step, move, wave, noise, blur, pixelate, scatter, circle, spot) render natively, assigned in
+  SpriteStudio with nothing to wire up in Godot.
 - **Builds**: GDExtension and custom module, for Windows, macOS, Linux, Android, iOS and
   Web, targeting Godot 4.7.
-- **Documentation**: bilingual (EN/JA) documentation site, class reference and contribution
-  guidelines.
+- **Documentation**: bilingual (EN/JA) documentation site, in-editor class reference and
+  contribution guidelines.
 
 ### Known Limitations
 - Text / bitmap font rendering is not yet validated.

@@ -21,6 +21,10 @@ public:
     enum AnimationProcessMode {
         ANIMATION_PROCESS_PHYSICS,
         ANIMATION_PROCESS_IDLE,
+        // The node stops advancing itself; the caller drives playback with
+        // advance(). Audio voices still tick, because they are fire-and-forget
+        // and outlive the frame that started them.
+        ANIMATION_PROCESS_MANUAL,
     };
 
     // Playback direction / style. The values mirror the runtime's FFI encoding
@@ -97,6 +101,11 @@ public:
 
     void set_animation_process_mode(AnimationProcessMode p_mode);
     AnimationProcessMode get_animation_process_mode() const;
+
+    // Steps playback by p_delta seconds and emits frame_updated, exactly as an
+    // automatic tick would. Meant for ANIMATION_PROCESS_MANUAL; calling it in
+    // the other modes advances the animation on top of the node's own tick.
+    void advance(double p_delta);
 
     void setSpeedScale( float p_speed );
     float getSpeedScale() const;

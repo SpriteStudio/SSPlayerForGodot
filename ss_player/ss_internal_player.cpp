@@ -795,13 +795,22 @@ void SsInternalPlayer::update(float delta_seconds) {
             auto events_per_frame = events->Get((uint32_t)event_idx);
             if (!events_per_frame) continue;
 
+            // The frame the keys were authored on, which is not necessarily the
+            // frame they were noticed on: one tick can step across several.
+            const int frame_no = (int)events_per_frame->frame_index();
+
             if (auto users = events_per_frame->users()) {
                 for (uint32_t j = 0; j < users->size(); j++) {
                     auto user = users->Get(j);
                     if (!user || !user->value()) continue;
                     auto val = user->value();
 
+                    const int part_index = (int)user->part_index();
+
                     Dictionary payload;
+                    payload["part_index"] = part_index;
+                    payload["part_name"] = get_part_name(part_index);
+                    payload["frame_no"] = frame_no;
                     if (auto i = val->integer()) payload["integer"] = i->value();
                     if (auto r = val->rect())    payload["rect"]    = Rect2(r->x1(), r->y1(), r->x2() - r->x1(), r->y2() - r->y1());
                     if (auto p = val->point())   payload["point"]   = Vector2(p->v1(), p->v2());
@@ -819,6 +828,16 @@ void SsInternalPlayer::update(float delta_seconds) {
                     if (!val->active() || !val->command_id()) continue;
 
                     String command = String::utf8(val->command_id()->c_str());
+                    const int part_index = (int)sig_event->part_index();
+
+                    // Kept apart from `value_dict`, whose keys are the parameter
+                    // ids the animator authored — a fixed key placed in there
+                    // could shadow one of them.
+                    Dictionary info;
+                    info["part_index"] = part_index;
+                    info["part_name"] = get_part_name(part_index);
+                    info["frame_no"] = frame_no;
+
                     Dictionary value_dict;
 
                     if (auto params = val->params()) {
@@ -856,7 +875,7 @@ void SsInternalPlayer::update(float delta_seconds) {
                         }
                     }
 
-                    if (_event_sink) _event_sink->onSignal(command, value_dict);
+                    if (_event_sink) _event_sink->onSignal(command, value_dict, info);
                 }
             }
 
@@ -866,8 +885,12 @@ void SsInternalPlayer::update(float delta_seconds) {
                     if (!audio_event || !audio_event->value()) continue;
                     auto val = audio_event->value();
 
+                    const int part_index = (int)audio_event->part_index();
+
                     Dictionary payload;
-                    payload["part_index"] = audio_event->part_index();
+                    payload["part_index"] = part_index;
+                    payload["part_name"] = get_part_name(part_index);
+                    payload["frame_no"] = frame_no;
                     payload["sound_list_name_hash"] = (int64_t)val->sound_list_name_hash();
                     payload["sound_name_hash"] = (int64_t)val->sound_name_hash();
                     if (val->sound_name()) payload["sound_name"] = String::utf8(val->sound_name()->c_str());

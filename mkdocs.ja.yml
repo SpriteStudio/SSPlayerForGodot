@@ -51,6 +51,7 @@ nav:
       - 基本的な使い方: workflow/usage_basic.md
       - アセットのインポートとエディタ連携: workflow/usage_asset_pipeline.md
       - スクリプト制御とイベント: workflow/usage_scripting.md
+      - サウンド再生: workflow/audio.md
       - AnimationPlayer 連携: workflow/animation_player.md
       - プロジェクトのエクスポート: workflow/export.md
   - ⚙️ 高度なトピック:
@@ -59,5 +60,9 @@ nav:
   - 📖 API リファレンス:
       - SpriteStudioPlayer2D: api/player.md
       - リソース管理クラス: api/resource.md
+  - 🩺 トラブルシューティング: troubleshooting.md
   - ⚠️ 仕様と制約事項: limitations.md
   - 🔄 マイグレーションガイド: migration_from_v1.md
+  - ⚖️ ライセンス:
+      - ライセンス: license.md
+      - サードパーティライセンス: third_party_notices.md

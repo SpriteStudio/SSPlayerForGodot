@@ -27,8 +27,8 @@ public:
     void onUserData(const Dictionary& payload) override {
         _owner->emit_signal(SNAME("user_data"), payload);
     }
-    void onSignal(const String& command, const Dictionary& value) override {
-        _owner->emit_signal(SNAME("signal_emitted"), command, value);
+    void onSignal(const String& command, const Dictionary& value, const Dictionary& info) override {
+        _owner->emit_signal(SNAME("signal_emitted"), command, value, info);
     }
     void onAudio(const Dictionary& payload) override {
         // Observation channel: always fires (any direction, even in the editor).
@@ -386,25 +386,36 @@ void SpriteStudioPlayer2D::set_animation_process_mode(AnimationProcessMode p_mod
 
     bool active = is_inside_tree();
     if (active) {
-        if (_process_mode == ANIMATION_PROCESS_IDLE) {
-            set_process_internal(false);
-        } else {
+        if (_process_mode == ANIMATION_PROCESS_PHYSICS) {
             set_physics_process_internal(false);
+        } else {
+            set_process_internal(false);
         }
     }
     
     _process_mode = mode;
     
+    // MANUAL keeps the idle notification: the animation is not advanced there,
+    // but the audio controller still needs a per-frame tick, and the node has
+    // to keep reporting its on-screen scale for the mask coverage pass.
     if (active) {
-        if (_process_mode == ANIMATION_PROCESS_IDLE) {
-            set_process_internal(true);
-        } else {
+        if (_process_mode == ANIMATION_PROCESS_PHYSICS) {
             set_physics_process_internal(true);
+        } else {
+            set_process_internal(true);
         }
     }
 }
 
 SpriteStudioPlayer2D::AnimationProcessMode SpriteStudioPlayer2D::get_animation_process_mode() const { return _process_mode; }
+
+void SpriteStudioPlayer2D::advance(double p_delta) {
+    _push_coverage_screen_scale();
+    _internal->update(p_delta);
+    // Same post-update contract as an automatic tick: world matrices are final,
+    // so part attachments mirror their parts before anything draws.
+    emit_signal(SNAME("frame_updated"), _internal->getFrame());
+}
 
 void SpriteStudioPlayer2D::setSpeedScale(float p_speed) { _internal->setSpeed(p_speed); }
 float SpriteStudioPlayer2D::getSpeedScale() const { return _internal->getSpeed(); }
@@ -504,6 +515,7 @@ void SpriteStudioPlayer2D::_bind_methods() {
 
     ClassDB::bind_method( D_METHOD( "set_animation_process_mode", "mode" ), &SpriteStudioPlayer2D::set_animation_process_mode );
     ClassDB::bind_method( D_METHOD( "get_animation_process_mode" ), &SpriteStudioPlayer2D::get_animation_process_mode );
+    ClassDB::bind_method( D_METHOD( "advance", "delta" ), &SpriteStudioPlayer2D::advance );
 
     ClassDB::bind_method( D_METHOD( "set_flip_h", "flip_h" ), &SpriteStudioPlayer2D::set_flip_h );
     ClassDB::bind_method( D_METHOD( "is_flipped_h" ), &SpriteStudioPlayer2D::is_flipped_h );
@@ -544,7 +556,8 @@ void SpriteStudioPlayer2D::_bind_methods() {
         MethodInfo(
             "signal_emitted",
             PropertyInfo(Variant::STRING, "command"),
-            PropertyInfo(Variant::DICTIONARY, "value")
+            PropertyInfo(Variant::DICTIONARY, "value"),
+            PropertyInfo(Variant::DICTIONARY, "info")
         )
     );
     ADD_SIGNAL(
@@ -586,7 +599,7 @@ void SpriteStudioPlayer2D::_bind_methods() {
     ADD_GROUP("Playback Options", "");
     ADD_PROPERTY(PropertyInfo(Variant::BOOL, "frame_skip_enabled"), "set_frame_skip_enabled", "is_frame_skip_enabled");
     ADD_PROPERTY(PropertyInfo(Variant::BOOL, "sub_frame_enabled"), "set_sub_frame_enabled", "is_sub_frame_enabled");
-    ADD_PROPERTY(PropertyInfo(Variant::INT, "animation_process_mode", PROPERTY_HINT_ENUM, "Physics,Idle"), "set_animation_process_mode", "get_animation_process_mode");
+    ADD_PROPERTY(PropertyInfo(Variant::INT, "animation_process_mode", PROPERTY_HINT_ENUM, "Physics,Idle,Manual"), "set_animation_process_mode", "get_animation_process_mode");
 
     ADD_GROUP("Section", "");
     ADD_PROPERTY(PropertyInfo(Variant::INT, "animation_section_start", PROPERTY_HINT_RANGE, "0,0,1"), "set_animation_section_start", "get_animation_section_start");
@@ -604,6 +617,7 @@ void SpriteStudioPlayer2D::_bind_methods() {
 
     BIND_ENUM_CONSTANT(ANIMATION_PROCESS_PHYSICS);
     BIND_ENUM_CONSTANT(ANIMATION_PROCESS_IDLE);
+    BIND_ENUM_CONSTANT(ANIMATION_PROCESS_MANUAL);
 
     BIND_ENUM_CONSTANT(PLAYBACK_DIRECTION_FORWARD);
     BIND_ENUM_CONSTANT(PLAYBACK_DIRECTION_BACKWARD);
@@ -752,10 +766,10 @@ void SpriteStudioPlayer2D::_notification(int p_notification) {
             // don't leave the InternalPlayer floating.
             _internal->setParentCanvasItem(get_canvas_item());
             _push_host_viewport();
-            if (_process_mode == ANIMATION_PROCESS_IDLE) {
-                set_process_internal(true);
-            } else {
+            if (_process_mode == ANIMATION_PROCESS_PHYSICS) {
                 set_physics_process_internal(true);
+            } else {
+                set_process_internal(true);
             }
             break;
         case NOTIFICATION_EXIT_TREE:

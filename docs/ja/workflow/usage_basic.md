@@ -79,7 +79,10 @@ Godot エディタの強力な機能を活かし、最短の手順でアニメ�
 | `Playback Style`           | int    | 再生スタイル (片道/往復 等)                                         |
 | `Frame Skip Enabled`       | bool   | 描画間隔がフレーム間隔を超えた際にフレームを飛ばすか                |
 | `Sub Frame Enabled`        | bool   | サブフレーム補間を有効化するか                                      |
-| `Animation Process Mode`   | int    | `_physics_process` (Physics) か `_process` (Idle) かの同期設定      |
+| `Animation Process Mode`   | int    | `_physics_process` (Physics) / `_process` (Idle) の同期設定、または `advance()` に委ねる (Manual) |
+| `Play Audio`               | bool   | アニメーションのサウンドパートを内蔵プレイヤーで鳴らすか（[サウンド再生](audio.md) 参照） |
+| `Audio Volume`             | float  | 内蔵サウンド再生のリニア音量 `[0, 1]`                               |
+| `Audio Backend`            | Resource | 内蔵サウンド再生を置き換える `SpriteStudioAudioBackend`（任意）    |
 
 ---
 

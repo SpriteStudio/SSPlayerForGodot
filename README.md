@@ -35,9 +35,11 @@ Comprehensive documentation is available in the `docs/` folder:
 - [Basic Usage](./docs/en/workflow/usage_basic.md)
 - [Asset Import and Editor Integration](./docs/en/workflow/usage_asset_pipeline.md)
 - [Scripting and Events](./docs/en/workflow/usage_scripting.md)
+- [Audio Playback](./docs/en/workflow/audio.md)
 - [CLI Conversion and Automation](./docs/en/workflow/import.md)
 - [Performance Tuning and Advanced Settings](./docs/en/workflow/tips.md)
 - [Build Guide](./docs/en/setup/build.md)
+- [Troubleshooting](./docs/en/troubleshooting.md)
 - [Migration from v1.x](./docs/en/migration_from_v1.md)
 
 ## 🚀 Quick Start with GDExtension

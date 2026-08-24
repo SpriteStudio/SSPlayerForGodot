@@ -43,6 +43,11 @@ One of the most powerful features for Godot users is event linkage using "Signal
 * `animation_finished(anim_name)`: Emitted once every configured loop has been played (never under an infinite loop).
 * `animation_looped(anim_name)`: Emitted when the animation loops and returns to the beginning.
 * `user_data(payload)`: Emitted when reaching a frame containing user data (events) configured in the animation.
+* `signal_emitted(command, value, info)`: Emitted when reaching a "Signal" key on the timeline.
+* `audio(payload)`: Emitted when reaching an audio key. Observation only — the player sounds it as well unless you turn that off. See [Audio Playback](audio.md).
+* `frame_updated(frame_no)`: Emitted right after the frame's part poses are finalized. See [Part Tracking](#part-tracking-following-a-specified-part).
+
+All three timeline events (`user_data`, `signal_emitted`, `audio`) carry the same origin fields — `part_index`, `part_name` and `frame_no` — so a handler can tell *which* part fired without keeping a table of its own. On `user_data` and `audio` they sit in the payload; on `signal_emitted` they arrive as the separate `info` argument, because `value`'s keys are the parameter ids the animator authored and a fixed key could shadow one.
 
 ### Example: Sequential Animation Playback
 Here is an example where an "idle" animation automatically plays after an "attack" animation finishes.
@@ -79,6 +84,21 @@ func _on_user_data(payload):
         # Example of passing the damage amount using an integer value
         var damage = payload.get("integer", 0)
         spawn_hitbox(damage)
+```
+
+### Example: Reacting to a Signal Key
+"Signal" keys carry a named command plus typed parameters, which suits commands aimed at the game (spawn an effect, open a gate) better than a bare string.
+
+```gdscript
+func _ready():
+    ss_player.signal_emitted.connect(_on_signal_emitted)
+
+func _on_signal_emitted(command: String, value: Dictionary, info: Dictionary):
+    # `value` is keyed by the parameter ids authored in SpriteStudio.
+    # `info` says where the key came from: part_index / part_name / frame_no.
+    if command == "spawn_effect":
+        var effect_name: String = value.get("name", "")
+        spawn_effect_at(effect_name, ss_player.get_part_transform(info["part_name"]))
 ```
 
 ---

@@ -18,6 +18,7 @@ Animation playback uses `libssruntime` provided by [SpriteStudio-SDK](https://gi
     - [Integration with AnimationPlayer](workflow/animation_player.md)
     - [Asset Import and Editor Integration](workflow/usage_asset_pipeline.md) (start here for the initial `.sspj` import)
     - [Scripting and Events](workflow/usage_scripting.md)
+    - [Audio Playback](workflow/audio.md)
     - [Exporting Your Project](workflow/export.md)
 - **Advanced Topics**
     - [CLI Conversion and Automation](workflow/import.md)
@@ -25,8 +26,12 @@ Animation playback uses `libssruntime` provided by [SpriteStudio-SDK](https://gi
 - **API Reference**
     - [SpriteStudioPlayer2D](api/player.md)
     - [Resource Classes](api/resource.md)
+- [Troubleshooting](troubleshooting.md)
 - [Limitations & Scope](limitations.md)
 - [Migration from v1.x](migration_from_v1.md)
+- **License**
+    - [License](license.md)
+    - [Third-Party Notices](third_party_notices.md)
 
 ## Key Features
 
@@ -35,7 +40,9 @@ This plugin is designed to bring the full expressive power of SpriteStudio 7 to 
 *   **Full Feature Support:** Fully supports SpriteStudio 7 features including bone hierarchies, mesh & deformations, and high-performance particle effects.
 *   **Seamless Integration and a Powerful Asset Pipeline:** In addition to easy drag-and-drop importing via the built-in "SS Import Dock", you can open SpriteStudio directly from the Inspector and reconvert with a single click, providing a **powerful asset pipeline that allows you to seamlessly transition between SpriteStudio and Godot**. For details, see [Asset Import and Editor Integration](workflow/usage_asset_pipeline.md).
 *   **Dynamic Customization (CellMap Overrides):** Easily swap textures at runtime to implement character equipment changes or color variations.
-*   **Signals & Events:** Receive "User Data" and "Signals" from your animation timeline directly as Godot Signals, allowing frame-perfect triggers for audio or logic.
+*   **Signals & Events:** Receive "User Data" and "Signals" from your animation timeline directly as Godot Signals, allowing frame-perfect triggers for game logic. Every event says which part fired it.
+*   **Audio That Just Plays:** Audio parts sound through Godot with no setup — in the editor preview too. Adjust the volume, take it over through the `audio` signal, or route every sound to your own audio middleware with a [backend resource](workflow/audio.md).
+*   **Per-Part Effects:** The thirteen SpriteStudio add-on shaders (sepia, outline, HSB, blur, pixelate, wave, noise and more) are reproduced natively — assigned in SpriteStudio, nothing to wire up in Godot.
 *   **Smooth Slow-Motion:** Built-in sub-frame interpolation ensures buttery-smooth playback even on high-refresh-rate displays or during slow-motion effects.
 *   **High Performance & Low Memory:** Backed by `libssruntime`'s SIMD optimizations and zero-parse overhead binary formats (`.ssab`), it renders massive amounts of characters efficiently, even on mobile targets.
 
@@ -103,8 +110,8 @@ For instructions on migrating from versions prior to v1.x, please refer to the [
 
 ## License
 
-See [LICENSE.md](https://github.com/cri-middleware/SSPlayerForGodot/blob/main/LICENSE.md).
+See [License](license.md).
 
-For third-party library licenses (such as FlatBuffers and SpriteStudio-SDK dependencies), see [THIRD_PARTY_NOTICES.md](https://github.com/cri-middleware/SSPlayerForGodot/blob/main/THIRD_PARTY_NOTICES.md).
+For third-party library licenses (such as FlatBuffers and SpriteStudio-SDK dependencies), see [Third-Party Notices](third_party_notices.md).
 
 
