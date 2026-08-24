@@ -75,6 +75,7 @@ void SpriteStudioPlayer2D::setSSABResource(const Ref<SSABResource>& ssabRes) {
     }
 
     _internal->setSSABResource(ssabRes);
+    _apply_transport_settings();
 
     NOTIFY_PROPERTY_LIST_CHANGED();
     update_configuration_warnings();
@@ -276,6 +277,7 @@ bool SpriteStudioPlayer2D::clear_all_part_overrides() {
 
 void SpriteStudioPlayer2D::setAnimation(const String& strName) {
     _internal->setAnimation(strName);
+    _apply_transport_settings();
     NOTIFY_PROPERTY_LIST_CHANGED();
     update_configuration_warnings();
 }
@@ -442,8 +444,17 @@ void SpriteStudioPlayer2D::setPlaybackDirection(PlaybackDirection p_direction, P
 SpriteStudioPlayer2D::PlaybackDirection SpriteStudioPlayer2D::getPlaybackDirection() const { return (PlaybackDirection)_internal->getPlaybackDirection(); }
 SpriteStudioPlayer2D::PlaybackStyle SpriteStudioPlayer2D::getPlaybackStyle() const { return (PlaybackStyle)_internal->getPlaybackStyle(); }
 
-void SpriteStudioPlayer2D::setLoopCount(int p_count) { _internal->setLoop(p_count); }
+void SpriteStudioPlayer2D::setLoopCount(int p_count) {
+    _loop_count = p_count;
+    _internal->setLoop(p_count);
+}
+// Reads the runtime rather than the field: the two agree, because every path
+// that re-runs `setup_animation` pushes the field back afterwards.
 int SpriteStudioPlayer2D::getLoopCount() const { return _internal->getLoop(); }
+
+void SpriteStudioPlayer2D::_apply_transport_settings() {
+    _internal->setLoop(_loop_count);
+}
 
 void SpriteStudioPlayer2D::setFrameSkipEnabled(bool p_skip) { _internal->setSkipFrames(p_skip); }
 bool SpriteStudioPlayer2D::isFrameSkipEnabled() const { return _internal->isSkipFrames(); }

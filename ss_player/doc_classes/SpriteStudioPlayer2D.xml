@@ -335,8 +335,9 @@
 		<member name="speed_scale" type="float" default="1.0">
 			Playback speed multiplier. [code]1.0[/code] is normal speed.
 		</member>
-		<member name="loop_count" type="int" default="0">
-			Number of loops. [code]-1[/code] loops forever, [code]0[/code] plays once, [code]n[/code] repeats [code]n[/code] times.
+		<member name="loop_count" type="int" default="-1">
+			How many times to play the animation. [code]n[/code] plays [code]n[/code] cycles and stops, so [code]1[/code] plays it once; [code]-1[/code] loops forever, and [code]0[/code] is an alias for that rather than "no cycles" - the runtime normalizes everything at or below zero to [code]-1[/code].
+			Kept across [member animation] changes, because it is the node's own configuration. The playback direction and style are not: [method set_playback_direction] has to be called again after setting up a new animation.
 		</member>
 		<member name="frame_rate" type="int">
 			Playback frame rate (FPS).

@@ -75,14 +75,15 @@ Once the node is selected, you can adjust various settings from Godot's Inspecto
 | `Loop Count`               | int      | Number of loops (`-1` for infinite loop)                            |
 | `Animation Section Start`  | int      | Start frame for partial playback                                    |
 | `Animation Section End`    | int      | End frame for partial playback                                      |
-| `Playback Direction`       | int      | Playback direction                                                  |
-| `Playback Style`           | int      | Playback style (e.g., One-way, Ping-pong)                           |
 | `Frame Skip Enabled`       | bool     | Whether to skip frames when the draw interval exceeds the frame interval |
 | `Sub Frame Enabled`        | bool     | Whether to enable sub-frame interpolation                           |
 | `Animation Process Mode`   | int      | Whether to sync with `_physics_process` (Physics) or `_process` (Idle), or to leave stepping to `advance()` (Manual) |
 | `Play Audio`               | bool     | Whether the built-in player sounds the animation's audio parts (see [Audio Playback](audio.md)) |
 | `Audio Volume`             | float    | Linear volume `[0, 1]` for the built-in audio playback |
 | `Audio Backend`            | Resource | Optional `SpriteStudioAudioBackend` that replaces the built-in audio playback |
+
+> [!NOTE]
+> **What an animation change keeps.** `Loop Count`, `Speed Scale`, `Frame Skip Enabled` and `Sub Frame Enabled` are the node's own configuration and survive `set_animation()`. The playback **direction and style**, and a `frame_rate` override, are per-transition: the runtime returns them to Forward / Normal / the clip's authored rate every time an animation is set up, so set them after `set_animation()`. They are deliberately absent from the inspector for that reason — they are reachable from a script (`player.playback_direction`, `player.frame_rate`) but are neither shown nor saved with the scene.
 
 ---
 
