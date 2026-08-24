@@ -27,6 +27,15 @@ func _input(event: InputEvent) -> void:
 	# Flip horizontally on Right Arrow
 	elif event.is_action_pressed("ui_right"):
 		player.scale.x *= -1
+
+	# Pause / resume on Left Arrow. pause() only holds the animation; resume() is
+	# what lifts the hold. play() would rewind to the start instead of carrying on.
+	elif event.is_action_pressed("ui_left"):
+		if player.is_pausing():
+			player.resume()
+		else:
+			player.pause()
+		update_label()
 		
 	# Adjust playback speed on Up/Down Arrows
 	elif event.is_action_pressed("ui_up"):
@@ -46,9 +55,11 @@ func update_label() -> void:
 		label.text = "--- SpriteStudioPlayer2D GDScript Example ---\n\n"
 		label.text += "Click or Press Enter/Space: Change Animation\n"
 		label.text += "Up/Down Arrows: Change Speed\n"
-		label.text += "Right Arrow: Flip Horizontal\n\n"
+		label.text += "Right Arrow: Flip Horizontal\n"
+		label.text += "Left Arrow: Pause / Resume\n\n"
 		label.text += "Current Animation: " + player.animation + "\n"
 		label.text += "Speed Scale: " + str(player.speed_scale) + "\n"
+		label.text += "State: " + ("Paused" if player.is_pausing() else "Playing") + "\n"
 
 func _on_animation_started(anim_name: String) -> void:
 	print("Animation started: ", anim_name)
