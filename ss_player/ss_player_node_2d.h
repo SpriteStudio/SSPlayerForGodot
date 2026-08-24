@@ -101,6 +101,13 @@ public:
     Vector2 get_offset() const;
 
     void set_animation_process_mode(AnimationProcessMode p_mode);
+
+private:
+    // Pushes the node's own transport configuration back onto the runtime after
+    // anything that runs `setup_animation` underneath us.
+    void _apply_transport_settings();
+
+public:
     AnimationProcessMode get_animation_process_mode() const;
 
     // Steps playback by p_delta seconds and emits frame_updated, exactly as an
@@ -222,6 +229,13 @@ private:
 
     HashMap<String, Ref<Texture2D>> _cellmap_overrides;
     bool _autoplay = false;
+    // The loop count as configured on the node — an inspector property, so it is
+    // the node's own state and has to outlive an animation change. The runtime
+    // resets its own count on every `setup_animation` (the transition is meant to
+    // state it), so this is pushed back afterwards by _apply_transport_settings.
+    // Speed, frame skip and the frame-rate override need no such handling: the
+    // runtime carries those across a setup itself.
+    int _loop_count = -1;
     bool _flip_h = false;
     bool _flip_v = false;
     Vector2 _offset;
