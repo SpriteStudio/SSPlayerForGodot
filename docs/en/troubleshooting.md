@@ -68,7 +68,7 @@ Seeking fires only the destination frame's events. This is a [shared runtime con
 
 ### An Instance or Effect part looks wrong when reversing
 
-`independent=true` parts evaluate correctly under **forward playback only**. Reverse, ping-pong return legs and negative speeds are not supported for them.
+`independent=true` parts evaluate correctly under **forward playback only**. A reverse direction and ping-pong return legs are not supported for them. (A negative `speed_scale` is not a third case — it stops the playhead rather than reversing it.)
 
 ---
 

@@ -38,7 +38,7 @@ func _ready() -> void:
 
 Audio is **fire-and-forget**: a sound starts at the moment its frame is passed, and from then on it is an ordinary `AudioStreamPlayer` voice that runs to completion. That has consequences worth knowing before you build timing-critical audio on it.
 
-- **Forward playback only.** Nothing sounds while the effective direction is backward — a reversed direction, the return leg of ping-pong, or a negative speed scale. This is a [shared limitation](../limitations.md#playback-feature-constraints), not a Godot one.
+- **Forward playback only.** Nothing sounds while the effective direction is backward — a reversed direction, or the return leg of ping-pong. This is a [shared limitation](../limitations.md#playback-feature-constraints), not a Godot one. A negative `speed_scale` is not one of those cases: it stops the playhead rather than reversing it, and a stopped playhead crosses no audio keys either.
 - **Seeking does not replay what it skipped.** Jumping the playhead fires only the destination frame's events, and a sound already playing is not re-synced to the new position.
 - **Pausing the animation does not pause the sound.** `pause()` and `stop()` stop the *animation*; voices already sounding play out. Turning `play_audio` off does stop them, as does the node leaving the tree.
 - **Re-firing overlaps rather than cuts.** A sound triggered again while a previous instance is still audible — across a loop boundary, typically — starts a second voice. Nothing cuts the first one off.
