@@ -99,7 +99,7 @@ Track `.ssplayer_sources.cfg` in version control so the whole team gets working 
 
 ### The preview does not animate in the editor
 
-Select the node and use the **SpriteStudio** bottom panel (play / pause / stop / frame scrubber). Playback in the editor is driven from there, not from `Autoplay`.
+Select the node and use the **SpriteStudio** bottom panel — play from start / play from current / stop, plus a frame scrubber and loop and speed controls. Playback in the editor is driven from there, not from `Autoplay`.
 
 ---
 

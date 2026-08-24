@@ -79,7 +79,9 @@
 
 ## 🔗 関連リポジトリ
 
+- [SpriteStudio Docs](https://cri-middleware.github.io/SpriteStudio-Docs/) — SDK と公式 Player のドキュメントポータル
 - [SpriteStudio-SDK](https://github.com/cri-middleware/SpriteStudio-SDK) — `libssruntime` / `libssconverter` を提供する SDK 本体
+- [SSConverterGUI](https://github.com/cri-middleware/SSConverterGUI) — Player なしで `.sspj` を変換できるデスクトップ GUI
 
 ## 📄 ライセンス
 

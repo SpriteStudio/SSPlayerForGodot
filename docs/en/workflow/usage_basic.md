@@ -48,7 +48,7 @@ Once the node is selected, you can adjust various settings from Godot's Inspecto
 > <img src="../assets/4-inspector_preview-1.webp" width="100%" style="display: none;">
 
 2. **In-Editor Preview**
-   With the node selected, the **SpriteStudio** bottom panel appears. Use its transport controls (play from start / play from current / stop and the frame scrubber) to **play the animation directly in the editor without running the game**. Keyboard shortcuts mirror the AnimationPlayer editor: **D** play from current, **Shift+D** play from start, **S** stop (active while the panel is visible).
+   With the node selected, the **SpriteStudio** bottom panel appears. Use its transport controls (play from start / play from current / stop, the frame scrubber, and the **Loop** and **Speed** controls next to them) to **play the animation directly in the editor without running the game**. Keyboard shortcuts mirror the AnimationPlayer editor: **D** play from current, **Shift+D** play from start, **S** stop (active while the panel is visible).
    Changes to parameters like `Frame`, `Speed`, and `Loop Count` are reflected in the preview in real-time, enabling quick adjustments.
 
 > [!TIP]
