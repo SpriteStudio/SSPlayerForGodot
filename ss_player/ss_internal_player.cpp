@@ -508,8 +508,8 @@ bool SsInternalPlayer::isPlayingForward() const {
 }
 
 void SsInternalPlayer::play(float p_start_frame) {
-    // play() always heads out (rewinds to a start frame); "resume" is pause()'s
-    // toggle, not play(). So a fresh play must clear each slot's "last started
+    // play() always heads out (rewinds to a start frame); resuming a hold is
+    // resume(), not play(). So a fresh play must clear each slot's "last started
     // key" memory, otherwise a re-played animation would debounce an already-
     // fired independent effect/instance as the same key and never re-fire it.
     _reset_slots_playback_state();
@@ -527,6 +527,10 @@ bool SsInternalPlayer::isPausing() const {
 
 void SsInternalPlayer::pause() {
     ss_runtime_pause(runtime_ctx);
+}
+
+void SsInternalPlayer::resume() {
+    ss_runtime_resume(runtime_ctx);
 }
 
 void SsInternalPlayer::stop() {

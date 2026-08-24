@@ -23,16 +23,19 @@ func _ready():
 func _process(delta):
     # スペースキーで一時停止 / 再開
     if Input.is_action_just_pressed("ui_accept"):
-        if ss_player.is_playing():
-            # pause() はトグルなので、一時停止と再開の両方を兼ねます。
+        if ss_player.is_pausing():
+            ss_player.resume()
+        elif ss_player.is_playing():
             ss_player.pause()
         else:
-            # 停止済みのときだけ通ります。play() は区間の先頭から再生し直します。
+            # 停止済み。play() は区間の先頭から再生し直します。
             ss_player.play()
 ```
 
 > [!IMPORTANT]
-> **`is_playing()` は一時停止中も `true` のまま**で、`pause()` は片道スイッチではなくトグルです。両者を区別するのは `is_pausing()` です。また `play()` は「再開」ではありません。区間の先頭に巻き戻してループ回数を再設定するため、一時停止からの再開は `pause()`、停止位置からの続きは `play(get_frame())` を使ってください。
+> 状態は 2 つではなく 3 つです。**`is_playing()` は一時停止中も `true` のまま**であり（一時停止は「保持」であって「停止」ではありません）、保持中かどうかを区別するのが `is_pausing()` です。初回の `play()` の前と `stop()` の後は、どちらも `false` になります。
+>
+> **`play()` は「再開」ではありません。** 区間の先頭へ巻き戻し、ループ回数を再設定します。保持の解除は `resume()`、停止位置からの続きは `play(get_frame())` を使ってください。
 
 ---
 

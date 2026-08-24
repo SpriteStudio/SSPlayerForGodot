@@ -32,9 +32,10 @@ func _ready() -> void:
 * `advance(delta: float)`: 再生を `delta` 秒ぶん進め、自動更新と同じように `frame_updated` を発行します。`ANIMATION_PROCESS_MANUAL` 向けの API です。他のモードで呼ぶと、ノード自身の更新に *加えて* アニメーションが進みます。
 * **エディタ内プレビュー**: ノードを選択すると表示される **SpriteStudio** ボトムパネル（先頭から再生 / 現在位置から再生 / 停止、フレームスクラバ、ループと速度）で、ゲームを実行せずにプレビューできます。ショートカットは AnimationPlayer エディタと同じです（**D** 現在位置から再生 / **Shift+D** 先頭から再生 / **S** 停止）。*(旧 `editor_playing` インスペクタトグルはこのパネルに置き換えられました。)*
 * `play(start_frame: float = -1.0)`: 再生を開始します。既定値の `-1.0` は、現在の再生ヘッド位置から続きを再生するのではなく、**区間の先頭に巻き戻します**（逆再生方向なら区間の末尾）。現在位置から再生したい場合は `get_frame()` を渡してください。
-* `pause()`: 一時停止状態を **トグル** します（現在のフレームは保持）。もう一度呼ぶと再開します。`play()` は一時停止の再開ではなく、再生のやり直しです。
+* `pause()`: 現在のフレームを保持したまま、その場で再生を止めます。**冪等**です（2 回呼んでも一時停止のままで、再開はしません）。
+* `resume()`: 保持を解除し、同じフレームから再開します。**冪等**で、一時停止ではなく停止している場合は何もしません（停止からの開始は `play()` で、こちらは巻き戻ります）。
 * `stop()`: 再生を停止します。再生ヘッドは **その場に留まる** ため、停止したフレームを表示し続けます。
-* `is_playing() -> bool`: 再生中に `true`。**一時停止中も `true` です。** / `is_pausing() -> bool`: 一時停止中のみ `true`。両者を区別する必要がある場合は `is_pausing()` を見てください。
+* `is_playing() -> bool`: 再生中に `true`。**一時停止中も `true` です**（一時停止は「保持」であって「停止」ではありません）。 / `is_pausing() -> bool`: 保持中のみ `true`。一度も再生していないアニメーションと `stop()` 後は、どちらも `false` です。
 * `set_frame(frame: float)` / `get_frame() -> float` / `get_total_frames() -> int`
 * `get_start_frame() -> int` / `get_end_frame() -> int`: 実際に再生される先頭 / 末尾フレーム、すなわち現在の再生区間です。`get_animation_section_start()` / `get_animation_section_end()` と同じ値を返します（`set_animation_section()` で狭めるまではアニメーション全体）。
 * `set_speed_scale(speed_scale: float)` / `get_speed_scale() -> float`
