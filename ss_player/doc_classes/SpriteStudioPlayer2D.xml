@@ -94,6 +94,7 @@
 			<param index="1" name="style" type="int" enum="SpriteStudioPlayer2D.PlaybackStyle" />
 			<description>
 				Sets the playback direction and style.
+				Both are kept across [member animation] changes - "play this backwards" describes the playback rather than the clip that happens to be loaded. What does not carry is the heading within a [constant PLAYBACK_STYLE_PING_PONG] cycle: a new animation always starts on the outward leg.
 			</description>
 		</method>
 		<method name="get_playback_direction" qualifiers="const">
@@ -337,10 +338,11 @@
 		</member>
 		<member name="loop_count" type="int" default="-1">
 			How many times to play the animation. [code]n[/code] plays [code]n[/code] cycles and stops, so [code]1[/code] plays it once; [code]-1[/code] loops forever, and [code]0[/code] is an alias for that rather than "no cycles" - the runtime normalizes everything at or below zero to [code]-1[/code].
-			Kept across [member animation] changes, because it is the node's own configuration. The playback direction and style are not: [method set_playback_direction] has to be called again after setting up a new animation.
+			Kept across [member animation] changes, because it is the node's own configuration - as are [member speed_scale], [member frame_skip_enabled], [member frame_rate] and the playback direction and style. Only the playback section is per-transition: frame indices mean nothing against a different clip.
 		</member>
 		<member name="frame_rate" type="int">
-			Playback frame rate (FPS).
+			Playback frame rate (FPS). Setting one overrides whatever the animation was authored at, and the override is kept across [member animation] changes; set it to [code]0[/code] to clear it and hand playback back to each clip's authored rate.
+			This is an [i]absolute[/i] rate where [member speed_scale] is a multiplier, so its effect depends on the clip: 60 against a 30fps animation is double speed, and against a 60fps one is none.
 		</member>
 		<member name="frame_skip_enabled" type="bool" default="true">
 			If [code]true[/code], frames may be skipped to keep real-time playback under load.

@@ -83,7 +83,9 @@ Godot エディタの強力な機能を活かし、最短の手順でアニメ�
 | `Audio Backend`            | Resource | 内蔵サウンド再生を置き換える `SpriteStudioAudioBackend`（任意）    |
 
 > [!NOTE]
-> **アニメーション切り替えで残るもの。** `Loop Count` / `Speed Scale` / `Frame Skip Enabled` / `Sub Frame Enabled` はノード自身の設定なので、`set_animation()` を跨いで保持されます。再生**方向とスタイル**、および `frame_rate` の上書きは遷移ごとの指定で、アニメーションのセットアップのたびにランタイムが Forward / Normal / クリップの authored 値へ戻します。そのため `set_animation()` の後に設定してください。これらがインスペクタに出ていないのも同じ理由です（スクリプトからは `player.playback_direction` / `player.frame_rate` で触れますが、表示も保存もされません）。
+> **アニメーション切り替えで残るもの。** 設定したものはすべて残ります。`Loop Count` / `Speed Scale` / `Frame Skip Enabled` / `Sub Frame Enabled`、`frame_rate` の上書き、再生**方向とスタイル** はいずれも `set_animation()` を跨いで保持されます。これらはたまたま読み込まれているクリップではなく、再生そのものを記述するものだからです。遷移ごとにリセットされるのは **再生区間** だけで、フレーム番号は別のアニメーションに対して意味を持たないため、新しいクリップ自身の範囲に戻ります。
+>
+> 方向・スタイル・`frame_rate` はスクリプトから触れますが（`player.playback_direction` / `player.frame_rate`）、意図的にインスペクタには出していないため、表示も保存もされません。
 
 ---
 
