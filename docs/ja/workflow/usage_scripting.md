@@ -24,10 +24,15 @@ func _process(delta):
     # スペースキーで一時停止 / 再開
     if Input.is_action_just_pressed("ui_accept"):
         if ss_player.is_playing():
+            # pause() はトグルなので、一時停止と再開の両方を兼ねます。
             ss_player.pause()
         else:
+            # 停止済みのときだけ通ります。play() は区間の先頭から再生し直します。
             ss_player.play()
 ```
+
+> [!IMPORTANT]
+> **`is_playing()` は一時停止中も `true` のまま**で、`pause()` は片道スイッチではなくトグルです。両者を区別するのは `is_pausing()` です。また `play()` は「再開」ではありません。区間の先頭に巻き戻してループ回数を再設定するため、一時停止からの再開は `pause()`、停止位置からの続きは `play(get_frame())` を使ってください。
 
 ---
 
@@ -140,7 +145,7 @@ func change_costume():
 | **Use Global Coordinates** (`use_global_coordinates`) | ON（既定）でグローバル座標として、OFF で対象のローカル座標として書き込みます |
 | **Update Position / Update Rotation** (`update_position` / `update_rotation`) | 位置 / 回転を反映します（ともに既定 ON） |
 | **Update Scale** (`update_scale`) | スケールを反映します（既定 OFF） |
-| **On Part Hidden** (`on_part_hidden`) | パーツが hide のフレームでの挙動。`Follow Always`（追従を継続。既定）/ `Hide Target`（対象を非表示） |
+| **On Part Hidden** (`on_part_hidden`) | パーツが hide のフレームでの挙動。`Follow Always`（追従を継続。既定）/ `Hide Target`（対象を非表示）。スクリプトからは `SpriteStudioPartAttachment2D.FOLLOW_ALWAYS` / `.HIDE_TARGET` |
 
 ### スクリプトからの参照
 

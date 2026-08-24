@@ -28,7 +28,8 @@
 			<return type="void" />
 			<param index="0" name="start_frame" type="float" default="-1.0" />
 			<description>
-				Starts playback. If [param start_frame] is [code]-1.0[/code], plays from the current frame (or the start of the section); otherwise jumps to [param start_frame] first.
+				Starts playback. [param start_frame] of [code]-1.0[/code] (the default) [b]rewinds to the start of the playback section[/b] - its end when [method set_playback_direction] is set to [constant PLAYBACK_DIRECTION_BACKWARD] - rather than continuing from where the playhead is. Pass [method get_frame] to play on from the current position.
+				This is a fresh start, not a resume: it re-arms the loop counter and clears the paused state. Resuming a pause is [method pause]'s own toggle.
 			</description>
 		</method>
 		<method name="pause">
@@ -40,7 +41,7 @@
 		<method name="stop">
 			<return type="void" />
 			<description>
-				Stops playback and resets the playback state.
+				Stops playback. The playhead [b]stays where it was[/b], so the node keeps drawing the frame it stopped on; seek with [member frame] or start over with [method play] if you want it elsewhere.
 			</description>
 		</method>
 		<method name="is_playing" qualifiers="const">
@@ -61,6 +62,18 @@
 				Returns the total number of frames in the current animation.
 			</description>
 		</method>
+		<method name="get_start_frame" qualifiers="const">
+			<return type="int" />
+			<description>
+				Returns the first frame that plays - the start of the current playback section, which is frame [code]0[/code] until [method set_animation_section] narrows it. Same value as [member animation_section_start].
+			</description>
+		</method>
+		<method name="get_end_frame" qualifiers="const">
+			<return type="int" />
+			<description>
+				Returns the last frame that plays - the end of the current playback section, which is the animation's last frame until [method set_animation_section] narrows it. Same value as [member animation_section_end].
+			</description>
+		</method>
 		<method name="set_animation_section">
 			<return type="void" />
 			<param index="0" name="start" type="int" />
@@ -77,12 +90,31 @@
 				Sets the playback direction and style.
 			</description>
 		</method>
+		<method name="get_playback_direction" qualifiers="const">
+			<return type="int" enum="SpriteStudioPlayer2D.PlaybackDirection" />
+			<description>
+				Returns the direction half of [method set_playback_direction].
+			</description>
+		</method>
+		<method name="get_playback_style" qualifiers="const">
+			<return type="int" enum="SpriteStudioPlayer2D.PlaybackStyle" />
+			<description>
+				Returns the style half of [method set_playback_direction].
+			</description>
+		</method>
 		<method name="set_cellmap_texture">
 			<return type="void" />
 			<param index="0" name="cellmap_name" type="String" />
 			<param index="1" name="texture" type="Texture2D" />
 			<description>
 				Overrides the texture used for the named cell map. Pass an invalid texture to clear the override.
+			</description>
+		</method>
+		<method name="get_cellmap_texture" qualifiers="const">
+			<return type="Texture2D" />
+			<param index="0" name="cellmap_name" type="String" />
+			<description>
+				Returns the texture currently bound to [param cellmap_name] - the override set by [method set_cellmap_texture] when there is one, otherwise the texture loaded from the [code].ssab[/code]. Returns [code]null[/code] when the cell map is unknown.
 			</description>
 		</method>
 		<method name="get_cellmap_names" qualifiers="const">
@@ -96,6 +128,156 @@
 			<param index="0" name="cellmap_name" type="String" />
 			<description>
 				Names of the cells inside [param cellmap_name], or an empty array when no resource is assigned or the cell map is unknown.
+			</description>
+		</method>
+		<method name="get_part_names" qualifiers="const">
+			<return type="PackedStringArray" />
+			<description>
+				Returns every part name in the bound [member ssab]. Parts belong to the asset rather than to one animation, so the list is the same whichever animation is selected. Empty when no resource is assigned.
+			</description>
+		</method>
+		<method name="get_part_index" qualifiers="const">
+			<return type="int" />
+			<param index="0" name="part_name" type="String" />
+			<description>
+				Resolves a part name to its index, or [code]-1[/code] when the asset has no such part. Indices are stable within one [code].ssab[/code], so code that sets overrides often should resolve once here and use the [code]_by_index[/code] methods afterwards.
+			</description>
+		</method>
+		<method name="get_part_transform" qualifiers="const">
+			<return type="Transform2D" />
+			<param index="0" name="part_name" type="String" />
+			<description>
+				Returns the part's transform on the current frame, in this node's local space with [member flip_h], [member flip_v] and [member offset] already applied. Multiply by [code]global_transform[/code] for world space. Returns the identity when the part is unknown.
+				Parts nested inside an Instance part cannot be addressed - the child animation runs as a separate player - though the Instance part itself can. For continuous following, [SpriteStudioPartAttachment2D] does this every frame.
+			</description>
+		</method>
+		<method name="is_part_hidden" qualifiers="const">
+			<return type="bool" />
+			<param index="0" name="part_name" type="String" />
+			<description>
+				Returns [code]true[/code] when the part is hidden on the current frame, by the animation or by [method set_part_visibility_override]. Returns [code]false[/code] when the part is unknown.
+			</description>
+		</method>
+		<method name="set_part_color_override">
+			<return type="bool" />
+			<param index="0" name="part_name" type="String" />
+			<param index="1" name="color" type="Color" />
+			<param index="2" name="blend_op" type="int" enum="SpriteStudioPlayer2D.ColorBlendOperation" default="0" />
+			<param index="3" name="priority" type="int" enum="SpriteStudioPlayer2D.OverridePriority" default="1" />
+			<description>
+				Tints one part with a single color, winning over both the keyframes and any animation blending. Applies to normal (image) parts; other part types ignore it silently and the call still returns [code]true[/code].
+				Colors are read in the same 8-bit sRGB space as the authored Part Color and the runtime pre-multiplies alpha, so pass the color as authored. Returns [code]false[/code] when the part is unknown or the runtime rejects the call. See [enum ColorBlendOperation] and [enum OverridePriority].
+			</description>
+		</method>
+		<method name="set_part_cell_override">
+			<return type="bool" />
+			<param index="0" name="part_name" type="String" />
+			<param index="1" name="cellmap_name" type="String" />
+			<param index="2" name="cell_name" type="String" />
+			<param index="3" name="priority" type="int" enum="SpriteStudioPlayer2D.OverridePriority" default="1" />
+			<description>
+				Makes one part draw a different cell. [param cellmap_name] is written without the [code].ssce[/code] suffix; [method get_cellmap_names] and [method get_cell_names] enumerate what can be passed. The lookup happens now, so an unknown cell map or cell fails immediately and returns [code]false[/code].
+				Where [method set_cellmap_texture] swaps a whole texture for every part that samples it, this changes what a single part draws.
+			</description>
+		</method>
+		<method name="set_part_visibility_override">
+			<return type="bool" />
+			<param index="0" name="part_name" type="String" />
+			<param index="1" name="force_hidden" type="bool" />
+			<param index="2" name="cascade" type="bool" default="false" />
+			<description>
+				Force-hides a part regardless of the keyframes; [param force_hidden] of [code]false[/code] hands visibility back to the animation. With [param cascade] the part's descendants are hidden too.
+				Unlike the color and cell overrides this takes no priority: it always wins, and it is always dropped when a new animation is set up. Hiding an Instance part also stops its contents from drawing.
+			</description>
+		</method>
+		<method name="clear_part_color_override">
+			<return type="bool" />
+			<param index="0" name="part_name" type="String" />
+			<description>
+				Drops the part's color override, whether it was set by [method set_part_color_override] or [method set_part_color_override_corners] - the two share one slot.
+			</description>
+		</method>
+		<method name="clear_part_cell_override">
+			<return type="bool" />
+			<param index="0" name="part_name" type="String" />
+			<description>
+				Drops the part's cell override, so it draws the cell the animation keys again.
+			</description>
+		</method>
+		<method name="clear_part_visibility_override">
+			<return type="bool" />
+			<param index="0" name="part_name" type="String" />
+			<description>
+				Drops the part's visibility override, so the animation decides again whether it draws.
+			</description>
+		</method>
+		<method name="clear_all_part_overrides">
+			<return type="bool" />
+			<description>
+				Drops every override on every part of this player. Assigning a different [member ssab] does this on its own, because part identity is lost with the asset.
+			</description>
+		</method>
+		<method name="set_part_color_override_by_index">
+			<return type="bool" />
+			<param index="0" name="part_index" type="int" />
+			<param index="1" name="color" type="Color" />
+			<param index="2" name="blend_op" type="int" enum="SpriteStudioPlayer2D.ColorBlendOperation" default="0" />
+			<param index="3" name="priority" type="int" enum="SpriteStudioPlayer2D.OverridePriority" default="1" />
+			<description>
+				[method set_part_color_override] addressed by the index from [method get_part_index], skipping the name lookup.
+			</description>
+		</method>
+		<method name="set_part_color_override_corners_by_index">
+			<return type="bool" />
+			<param index="0" name="part_index" type="int" />
+			<param index="1" name="left_top" type="Color" />
+			<param index="2" name="right_top" type="Color" />
+			<param index="3" name="left_bottom" type="Color" />
+			<param index="4" name="right_bottom" type="Color" />
+			<param index="5" name="blend_op" type="int" enum="SpriteStudioPlayer2D.ColorBlendOperation" default="0" />
+			<param index="6" name="priority" type="int" enum="SpriteStudioPlayer2D.OverridePriority" default="1" />
+			<description>
+				[method set_part_color_override_corners] addressed by the index from [method get_part_index], skipping the name lookup.
+			</description>
+		</method>
+		<method name="set_part_cell_override_by_index">
+			<return type="bool" />
+			<param index="0" name="part_index" type="int" />
+			<param index="1" name="cellmap_name" type="String" />
+			<param index="2" name="cell_name" type="String" />
+			<param index="3" name="priority" type="int" enum="SpriteStudioPlayer2D.OverridePriority" default="1" />
+			<description>
+				[method set_part_cell_override] addressed by the index from [method get_part_index], skipping the name lookup.
+			</description>
+		</method>
+		<method name="set_part_visibility_override_by_index">
+			<return type="bool" />
+			<param index="0" name="part_index" type="int" />
+			<param index="1" name="force_hidden" type="bool" />
+			<param index="2" name="cascade" type="bool" default="false" />
+			<description>
+				[method set_part_visibility_override] addressed by the index from [method get_part_index], skipping the name lookup.
+			</description>
+		</method>
+		<method name="clear_part_color_override_by_index">
+			<return type="bool" />
+			<param index="0" name="part_index" type="int" />
+			<description>
+				[method clear_part_color_override] addressed by the index from [method get_part_index].
+			</description>
+		</method>
+		<method name="clear_part_cell_override_by_index">
+			<return type="bool" />
+			<param index="0" name="part_index" type="int" />
+			<description>
+				[method clear_part_cell_override] addressed by the index from [method get_part_index].
+			</description>
+		</method>
+		<method name="clear_part_visibility_override_by_index">
+			<return type="bool" />
+			<param index="0" name="part_index" type="int" />
+			<description>
+				[method clear_part_visibility_override] addressed by the index from [method get_part_index].
 			</description>
 		</method>
 		<method name="set_part_color_override_corners">

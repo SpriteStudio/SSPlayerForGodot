@@ -79,7 +79,9 @@ Sample projects based on SDK test projects are available under the [examples fol
 
 ## 🔗 Related Repositories
 
+- [SpriteStudio Docs](https://cri-middleware.github.io/SpriteStudio-Docs/) — the documentation portal for the SDK and every official player
 - [SpriteStudio-SDK](https://github.com/cri-middleware/SpriteStudio-SDK) — The SDK itself, providing `libssruntime` / `libssconverter`
+- [SSConverterGUI](https://github.com/cri-middleware/SSConverterGUI) — a standalone desktop GUI for converting `.sspj` without a player
 
 ## 📄 License
 

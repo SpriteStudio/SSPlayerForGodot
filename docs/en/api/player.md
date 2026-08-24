@@ -30,13 +30,13 @@ func _ready() -> void:
 * `set_flip_v(flip: bool)` / `is_flipped_v() -> bool`: Flips the animation vertically.
 * `set_animation_process_mode(mode: AnimationProcessMode)` / `get_animation_process_mode() -> AnimationProcessMode`: Sets whether to sync with `_physics_process` (`ANIMATION_PROCESS_PHYSICS` / `0`) or `_process` (`ANIMATION_PROCESS_IDLE` / `1`), or to stop ticking on its own (`ANIMATION_PROCESS_MANUAL` / `2`).
 * `advance(delta: float)`: Steps playback by `delta` seconds and emits `frame_updated`, exactly as an automatic tick would. Meant for `ANIMATION_PROCESS_MANUAL` — under the other modes it advances the animation *on top of* the node's own tick.
-* **In-editor preview**: Select the node and use the **SpriteStudio** bottom panel (play / pause / stop / frame scrubber) to preview without running the game. *(The former `editor_playing` inspector toggle has been replaced by this panel.)*
-* `play(start_frame: float = -1.0)`: Starts playback. If `start_frame` is `-1.0`, it plays from the current frame or the start of the section.
-* `pause()`: Pauses playback while retaining the current frame.
-* `stop()`: Stops playback and typically resets the state.
-* `is_playing() -> bool` / `is_pausing() -> bool`
+* **In-editor preview**: Select the node and use the **SpriteStudio** bottom panel — play from start / play from current / stop, a frame scrubber, and loop and speed controls — to preview without running the game. Shortcuts mirror the AnimationPlayer editor (**D** play from current, **Shift+D** play from start, **S** stop). *(The former `editor_playing` inspector toggle has been replaced by this panel.)*
+* `play(start_frame: float = -1.0)`: Starts playback. `-1.0` (the default) **rewinds to the start of the section** — its end when the direction is backward — rather than continuing from where the playhead is. Pass `get_frame()` to play on from the current position.
+* `pause()`: **Toggles** the paused state, keeping the current frame — calling it again resumes. `play()` does not resume a pause; it restarts.
+* `stop()`: Stops playback. The playhead **stays where it was**, so the node keeps drawing the frame it stopped on.
+* `is_playing() -> bool`: `true` while playing, **including while paused**. / `is_pausing() -> bool`: `true` only while paused. Check `is_pausing()` when you need to tell the two states apart.
 * `set_frame(frame: float)` / `get_frame() -> float` / `get_total_frames() -> int`
-* `get_start_frame() -> int` / `get_end_frame() -> int`: The first and last frame of the animation itself, independently of any playback section set on top of it.
+* `get_start_frame() -> int` / `get_end_frame() -> int`: The first and last frame that actually plays — the current playback section. They return the same values as `get_animation_section_start()` / `get_animation_section_end()`, which is the whole animation until `set_animation_section()` narrows it.
 * `set_speed_scale(speed_scale: float)` / `get_speed_scale() -> float`
 * `set_frame_rate(fps: int)` / `get_frame_rate() -> int`
 * `set_animation_section(start: int, end: int)`: Limits the playback to a specific frame range.

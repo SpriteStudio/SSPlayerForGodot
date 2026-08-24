@@ -21,13 +21,18 @@ func _ready():
     ss_player.play()
 
 func _process(delta):
-    # Pause/Resume with the Space key
+    # Pause / resume with the Space key
     if Input.is_action_just_pressed("ui_accept"):
         if ss_player.is_playing():
+            # pause() toggles, so this both pauses and resumes.
             ss_player.pause()
         else:
+            # Only reached once stopped — play() starts over from the section start.
             ss_player.play()
 ```
+
+> [!IMPORTANT]
+> **`is_playing()` stays `true` while paused**, and `pause()` is a toggle rather than a one-way switch. `is_pausing()` is what tells the two states apart. `play()` is not a resume either: it rewinds to the start of the section and re-arms the loop counter, so resume a pause with `pause()` and continue from a stop with `play(get_frame())`.
 
 ---
 
@@ -140,7 +145,7 @@ Tracking is done with the dedicated **`SpriteStudioPartAttachment2D`** node. Pla
 | **Use Global Coordinates** (`use_global_coordinates`) | ON (default) writes the pose in global coordinates, OFF in the target's local coordinates |
 | **Update Position / Update Rotation** (`update_position` / `update_rotation`) | Reflect position / rotation (both ON by default) |
 | **Update Scale** (`update_scale`) | Reflect scale (OFF by default) |
-| **On Part Hidden** (`on_part_hidden`) | Behavior on frames where the part is hidden. `Follow Always` (keep following; default) / `Hide Target` (hide the target) |
+| **On Part Hidden** (`on_part_hidden`) | Behavior on frames where the part is hidden. `Follow Always` (keep following; default) / `Hide Target` (hide the target). From a script: `SpriteStudioPartAttachment2D.FOLLOW_ALWAYS` / `.HIDE_TARGET` |
 
 ### Querying from a Script
 
