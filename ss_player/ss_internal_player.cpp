@@ -538,12 +538,14 @@ void SsInternalPlayer::stop() {
 }
 
 void SsInternalPlayer::setSpeed(float p_speed) {
-    _speed_rate = p_speed;
     ss_runtime_set_animation_speed(runtime_ctx, p_speed);
 }
 
 float SsInternalPlayer::getSpeed() const {
-    return _speed_rate;
+    // The runtime, not a copy of what was last set: it clamps a zero or negative
+    // rate to a stop, so a cache would report the -1.0 that was asked for while
+    // playback is actually held at 0.0.
+    return ss_runtime_get_animation_speed(runtime_ctx);
 }
 
 void SsInternalPlayer::setFrame(float p_frame) {

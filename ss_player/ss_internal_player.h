@@ -365,7 +365,6 @@ private:
     // `_currentAnimationData`, which points into it) dangles.
     uint32_t _borrowed_generation = 0;
     float previous_frame_no = -1.0f;
-    float _speed_rate = 1.0f;
     bool _sub_frame_enabled = false;
     bool _parent_driven = false;
 
