@@ -23,16 +23,19 @@ func _ready():
 func _process(delta):
     # Pause / resume with the Space key
     if Input.is_action_just_pressed("ui_accept"):
-        if ss_player.is_playing():
-            # pause() toggles, so this both pauses and resumes.
+        if ss_player.is_pausing():
+            ss_player.resume()
+        elif ss_player.is_playing():
             ss_player.pause()
         else:
-            # Only reached once stopped — play() starts over from the section start.
+            # Stopped — play() starts over from the section start.
             ss_player.play()
 ```
 
 > [!IMPORTANT]
-> **`is_playing()` stays `true` while paused**, and `pause()` is a toggle rather than a one-way switch. `is_pausing()` is what tells the two states apart. `play()` is not a resume either: it rewinds to the start of the section and re-arms the loop counter, so resume a pause with `pause()` and continue from a stop with `play(get_frame())`.
+> There are three states, not two. **`is_playing()` stays `true` while paused** — a pause is a hold, not a stop — so `is_pausing()` is what tells a held animation from a running one, and both are `false` before the first `play()` and after `stop()`.
+>
+> **`play()` is not a resume.** It rewinds to the start of the section and re-arms the loop counter. Lift a hold with `resume()`, and carry on from a stop with `play(get_frame())`.
 
 ---
 

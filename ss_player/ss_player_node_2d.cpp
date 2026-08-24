@@ -298,6 +298,7 @@ bool SpriteStudioPlayer2D::isPausing() const { return _internal->isPausing(); }
 // Per the Player porting doc, built-in audio is fired-and-forgotten: it is not
 // coupled to animation pause or stop. Sounds already playing run to completion.
 void SpriteStudioPlayer2D::pause() { _internal->pause(); }
+void SpriteStudioPlayer2D::resume() { _internal->resume(); }
 void SpriteStudioPlayer2D::stop() { _internal->stop(); }
 
 void SpriteStudioPlayer2D::_handle_audio(const Dictionary& payload) {
@@ -464,6 +465,7 @@ void SpriteStudioPlayer2D::_bind_methods() {
     ClassDB::bind_method( D_METHOD( "play", "start_frame" ), &SpriteStudioPlayer2D::play, DEFVAL(-1.0f) );
     ClassDB::bind_method( D_METHOD( "is_pausing" ), &SpriteStudioPlayer2D::isPausing );
     ClassDB::bind_method( D_METHOD( "pause" ), &SpriteStudioPlayer2D::pause );
+    ClassDB::bind_method( D_METHOD( "resume" ), &SpriteStudioPlayer2D::resume );
     ClassDB::bind_method( D_METHOD( "stop" ), &SpriteStudioPlayer2D::stop );
 
     ClassDB::bind_method( D_METHOD( "set_speed_scale", "speed_scale" ), &SpriteStudioPlayer2D::setSpeedScale );

@@ -32,9 +32,10 @@ func _ready() -> void:
 * `advance(delta: float)`: Steps playback by `delta` seconds and emits `frame_updated`, exactly as an automatic tick would. Meant for `ANIMATION_PROCESS_MANUAL` — under the other modes it advances the animation *on top of* the node's own tick.
 * **In-editor preview**: Select the node and use the **SpriteStudio** bottom panel — play from start / play from current / stop, a frame scrubber, and loop and speed controls — to preview without running the game. Shortcuts mirror the AnimationPlayer editor (**D** play from current, **Shift+D** play from start, **S** stop). *(The former `editor_playing` inspector toggle has been replaced by this panel.)*
 * `play(start_frame: float = -1.0)`: Starts playback. `-1.0` (the default) **rewinds to the start of the section** — its end when the direction is backward — rather than continuing from where the playhead is. Pass `get_frame()` to play on from the current position.
-* `pause()`: **Toggles** the paused state, keeping the current frame — calling it again resumes. `play()` does not resume a pause; it restarts.
+* `pause()`: Holds playback where it stands, keeping the current frame. **Idempotent** — pausing twice leaves it paused.
+* `resume()`: Lifts the hold and carries on from the same frame. **Idempotent**, and a no-op on an animation that is stopped rather than held — `play()` is what starts a stopped animation, and it rewinds.
 * `stop()`: Stops playback. The playhead **stays where it was**, so the node keeps drawing the frame it stopped on.
-* `is_playing() -> bool`: `true` while playing, **including while paused**. / `is_pausing() -> bool`: `true` only while paused. Check `is_pausing()` when you need to tell the two states apart.
+* `is_playing() -> bool`: `true` while playing, **including while paused** — a pause is a hold, not a stop. / `is_pausing() -> bool`: `true` only while held. Both are `false` on an animation that has never played, and after `stop()`.
 * `set_frame(frame: float)` / `get_frame() -> float` / `get_total_frames() -> int`
 * `get_start_frame() -> int` / `get_end_frame() -> int`: The first and last frame that actually plays — the current playback section. They return the same values as `get_animation_section_start()` / `get_animation_section_end()`, which is the whole animation until `set_animation_section()` narrows it.
 * `set_speed_scale(speed_scale: float)` / `get_speed_scale() -> float`

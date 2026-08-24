@@ -89,6 +89,7 @@ public:
     void play( float p_start_frame = -1.0f );
     bool isPausing() const;
     void pause();
+    void resume();
     void stop();
 
     void set_flip_h( bool p_flip );

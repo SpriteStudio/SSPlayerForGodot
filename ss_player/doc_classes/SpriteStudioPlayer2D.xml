@@ -5,7 +5,7 @@
 	</brief_description>
 	<description>
 		Node that plays a SpriteStudio 7 animation imported as an [code].ssab[/code] resource ([SSABResource]).
-		Assign a resource to [member ssab], pick an animation with [member animation], then drive playback from code with [method play], [method pause] and [method stop], or preview it in the editor from the [b]SpriteStudio[/b] bottom panel (shown while the node is selected).
+		Assign a resource to [member ssab], pick an animation with [member animation], then drive playback from code with [method play], [method pause], [method resume] and [method stop], or preview it in the editor from the [b]SpriteStudio[/b] bottom panel (shown while the node is selected).
 		[b]Editor preview:[/b] with the node selected, the bottom panel provides transport controls (play from start / play from current / stop), a frame scrubber, loop and speed. Its keyboard shortcuts mirror the AnimationPlayer editor ([kbd]D[/kbd] play from current, [kbd]Shift+D[/kbd] play from start, [kbd]S[/kbd] stop).
 	</description>
 	<tutorials>
@@ -35,7 +35,13 @@
 		<method name="pause">
 			<return type="void" />
 			<description>
-				Toggles the paused state, keeping the current frame: calling [method pause] again while paused resumes playback. A paused animation is still considered playing ([method is_playing] returns [code]true[/code]); use [method is_pausing] to detect the paused state.
+				Holds playback where it stands, keeping the current frame. Idempotent: pausing an already-paused animation leaves it paused. A held animation is still considered playing ([method is_playing] returns [code]true[/code]) - a pause is a hold, not a stop - so [method is_pausing] is what detects it. Lift the hold with [method resume]; [method play] rewinds and cannot resume.
+			</description>
+		</method>
+		<method name="resume">
+			<return type="void" />
+			<description>
+				Lifts a [method pause], carrying on from the frame it stopped at. Idempotent, and a no-op on an animation that is stopped rather than held - starting a stopped animation is [method play]'s job, and it rewinds.
 			</description>
 		</method>
 		<method name="stop">
@@ -47,13 +53,13 @@
 		<method name="is_playing" qualifiers="const">
 			<return type="bool" />
 			<description>
-				Returns [code]true[/code] while the animation is playing, [b]including while it is paused[/b]. Use [method is_pausing] to distinguish a paused animation.
+				Returns [code]true[/code] while the animation is playing, [b]including while it is paused[/b]. Use [method is_pausing] to distinguish a held animation. Both are [code]false[/code] on an animation that has never played, and after [method stop].
 			</description>
 		</method>
 		<method name="is_pausing" qualifiers="const">
 			<return type="bool" />
 			<description>
-				Returns [code]true[/code] while playback is paused.
+				Returns [code]true[/code] while playback is held by [method pause]. [code]false[/code] before the first [method play], and after [method stop].
 			</description>
 		</method>
 		<method name="get_total_frames" qualifiers="const">
