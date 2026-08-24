@@ -83,7 +83,9 @@ Once the node is selected, you can adjust various settings from Godot's Inspecto
 | `Audio Backend`            | Resource | Optional `SpriteStudioAudioBackend` that replaces the built-in audio playback |
 
 > [!NOTE]
-> **What an animation change keeps.** `Loop Count`, `Speed Scale`, `Frame Skip Enabled` and `Sub Frame Enabled` are the node's own configuration and survive `set_animation()`. The playback **direction and style**, and a `frame_rate` override, are per-transition: the runtime returns them to Forward / Normal / the clip's authored rate every time an animation is set up, so set them after `set_animation()`. They are deliberately absent from the inspector for that reason — they are reachable from a script (`player.playback_direction`, `player.frame_rate`) but are neither shown nor saved with the scene.
+> **What an animation change keeps.** Everything you set: `Loop Count`, `Speed Scale`, `Frame Skip Enabled`, `Sub Frame Enabled`, a `frame_rate` override, and the playback **direction and style** all survive `set_animation()`. They describe the playback rather than the clip that happens to be loaded. Only the **playback section** is per-transition — frame indices mean nothing against a different animation, so it resets to the new clip's own range.
+>
+> The direction, style and `frame_rate` are reachable from a script (`player.playback_direction`, `player.frame_rate`) but are deliberately absent from the inspector, so they are neither shown nor saved with the scene.
 
 ---
 
