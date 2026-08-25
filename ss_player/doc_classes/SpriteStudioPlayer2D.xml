@@ -62,6 +62,13 @@
 				Returns [code]true[/code] while playback is held by [method pause]. [code]false[/code] before the first [method play], and after [method stop].
 			</description>
 		</method>
+		<method name="is_playing_forward" qualifiers="const">
+			<return type="bool" />
+			<description>
+				Returns which way the playhead is actually travelling this frame, which is [b]not[/b] the heading [method set_playback_direction] configured - [method get_playback_direction] reports that. Under ping-pong the return leg runs backward while the configured heading still reads [code]PLAYBACK_DIRECTION_FORWARD[/code], and a speed of zero or below is a stop rather than a reversal.
+				This is the gate to put in front of audio. SpriteStudio has no reverse audio, so a sound key crossed on a backward leg is not meant to sound - the player applies exactly this test itself when [member play_audio] is on, and a project driving its own audio from [signal audio] wants the same one. Returns [code]true[/code] before anything has played: forward is the resting state.
+			</description>
+		</method>
 		<method name="get_total_frames" qualifiers="const">
 			<return type="int" />
 			<description>

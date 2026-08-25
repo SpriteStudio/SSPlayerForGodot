@@ -88,6 +88,9 @@ public:
     bool isPlaying() const;
     void play( float p_start_frame = -1.0f );
     bool isPausing() const;
+    // Which way the playhead is actually travelling, not the configured heading
+    // (getPlaybackDirection). Diverges under ping-pong, and it is what gates audio.
+    bool isPlayingForward() const;
     void pause();
     void resume();
     void stop();

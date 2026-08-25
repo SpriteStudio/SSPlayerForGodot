@@ -36,6 +36,7 @@ func _ready() -> void:
 * `resume()`: 保持を解除し、同じフレームから再開します。**冪等**で、一時停止ではなく停止している場合は何もしません（停止からの開始は `play()` で、こちらは巻き戻ります）。
 * `stop()`: 再生を停止します。再生ヘッドは **その場に留まる** ため、停止したフレームを表示し続けます。
 * `is_playing() -> bool`: 再生中に `true`。**一時停止中も `true` です**（一時停止は「保持」であって「停止」ではありません）。 / `is_pausing() -> bool`: 保持中のみ `true`。一度も再生していないアニメーションと `stop()` 後は、どちらも `false` です。
+* `is_playing_forward() -> bool`: 再生ヘッドが**実際に**進んでいる向きです。設定した向きを返す `get_playback_direction()` とは別物で、ピンポン再生の戻りの脚では `get_playback_direction()` が `PLAYBACK_DIRECTION_FORWARD` のままでもこちらは `false` になります（速度 0 以下は逆再生ではなく停止なので、これも反転しません）。**音声のゲートに使ってください** — SpriteStudio に逆再生音声は無いため、後ろ向きの脚で跨いだサウンドキーは鳴らすべきものではありません。`play_audio` が有効なときにプレイヤー自身が掛けている判定と同じものです。何も再生していないときは `true`（前進が既定の状態）。
 * `set_frame(frame: float)` / `get_frame() -> float` / `get_total_frames() -> int`
 * `get_start_frame() -> int` / `get_end_frame() -> int`: 実際に再生される先頭 / 末尾フレーム、すなわち現在の再生区間です。`get_animation_section_start()` / `get_animation_section_end()` と同じ値を返します（`set_animation_section()` で狭めるまではアニメーション全体）。
 * `set_speed_scale(speed_scale: float)` / `get_speed_scale() -> float`
