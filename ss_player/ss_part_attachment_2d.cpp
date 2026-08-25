@@ -93,7 +93,7 @@ void SpriteStudioPartAttachment2D::_on_player_frame_updated(float frame_no) {
     Node2D* target = _resolve_target();
     if (!target) return;
 
-    int idx = player->get_part_index(_part_name);
+    int idx = player->find_part_index(_part_name);
     if (idx < 0) {
         // Part absent from this animation: nothing to follow, so hide the target.
         if (target->is_visible()) target->set_visible(false);

@@ -503,6 +503,10 @@ bool SsInternalPlayer::isPlaying() const {
     return ss_runtime_is_playing(runtime_ctx);
 }
 
+bool SsInternalPlayer::justLooped() const {
+    return ss_runtime_is_looped(runtime_ctx);
+}
+
 bool SsInternalPlayer::isPlayingForward() const {
     return ss_runtime_is_playing_forward(runtime_ctx);
 }

@@ -52,9 +52,10 @@ public:
     // How long a part override outlives the keyframes it overrides. Mirrors
     // the runtime's `priority_mode` encoding.
     enum OverridePriority {
-        OVERRIDE_PRIORITY_NEXT_KEYFRAME,          // dropped when the animation next keys the attribute
-        OVERRIDE_PRIORITY_UNTIL_ANIMATION_CHANGE, // held until another animation is set up
-        OVERRIDE_PRIORITY_PERMANENT,              // survives animation changes
+        // The Brain's own enumerator names (SDK: 20_design/40_api_conventions).
+        OVERRIDE_PRIORITY_OVERWRITE_ON_NEXT_KEYFRAME, // the animation takes the attribute back at its next key, for good
+        OVERRIDE_PRIORITY_HOLD_UNTIL_NEXT_ANIMATION,  // held until another animation is set up
+        OVERRIDE_PRIORITY_PERMANENT,                  // survives animation changes
     };
 
 private:
@@ -91,6 +92,10 @@ public:
     // Which way the playhead is actually travelling, not the configured heading
     // (getPlaybackDirection). Diverges under ping-pong, and it is what gates audio.
     bool isPlayingForward() const;
+    // The loop pulse: true only inside the tick that crossed a boundary, which is
+    // why it is not called is_looped.
+    bool justLooped() const;
+    PackedStringArray get_animation_names() const;
     void pause();
     void resume();
     void stop();
@@ -175,9 +180,9 @@ public:
 
     // ---- Part query API (consumed by SpriteStudioPartAttachment2D) --------
     // Resolve a part name to its index in the current binary; -1 if unknown.
-    int get_part_index(const String& part_name) const;
+    int find_part_index(const String& part_name) const;
     // Player-local Transform2D of the named part for the current frame. Returns
-    // the identity when the part is unknown (use get_part_index to disambiguate).
+    // the identity when the part is unknown (use find_part_index to disambiguate).
     Transform2D get_part_transform(const String& part_name) const;
     // True if the named part is hidden on the current frame. False when unknown.
     bool is_part_hidden(const String& part_name) const;
@@ -195,19 +200,17 @@ public:
     // Four-corner (per-vertex) color override. Corners follow the runtime's
     // order: left-top, right-top, left-bottom, right-bottom. Shares one slot
     // with set_part_color_override — clear_part_color_override clears either.
-    bool set_part_color_override_corners(const String& part_name, const Color& left_top, const Color& right_top,
-                                         const Color& left_bottom, const Color& right_bottom,
+    bool set_part_color_override_corners(const String& part_name, const PackedColorArray& corners,
                                          ColorBlendOperation blend_op, OverridePriority priority);
     bool clear_part_color_override(const String& part_name);
     bool set_part_cell_override(const String& part_name, const String& cellmap_name, const String& cell_name, OverridePriority priority);
     bool clear_part_cell_override(const String& part_name);
     bool clear_all_part_overrides();
-    // By-index variants (part_index from get_part_index): skip the name lookup.
+    // By-index variants (part_index from find_part_index): skip the name lookup.
     bool set_part_visibility_override_by_index(int part_index, bool force_hidden, bool cascade);
     bool clear_part_visibility_override_by_index(int part_index);
     bool set_part_color_override_by_index(int part_index, const Color& color, ColorBlendOperation blend_op, OverridePriority priority);
-    bool set_part_color_override_corners_by_index(int part_index, const Color& left_top, const Color& right_top,
-                                                  const Color& left_bottom, const Color& right_bottom,
+    bool set_part_color_override_corners_by_index(int part_index, const PackedColorArray& corners,
                                                   ColorBlendOperation blend_op, OverridePriority priority);
     bool clear_part_color_override_by_index(int part_index);
     bool set_part_cell_override_by_index(int part_index, const String& cellmap_name, const String& cell_name, OverridePriority priority);

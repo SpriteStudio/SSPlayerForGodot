@@ -124,6 +124,9 @@ public:
     // reversed). Audio playback is gated on this: the runtime fires audio events
     // on reverse playback too, but reverse audio is a documented limitation.
     bool isPlayingForward() const;
+    // The loop pulse. The runtime clears it at the top of every update, so it only
+    // reads true inside the tick that crossed — hence not `isLooped`.
+    bool justLooped() const;
     void play(float p_start_frame = -1.0f);
     bool isPausing() const;
     void pause();

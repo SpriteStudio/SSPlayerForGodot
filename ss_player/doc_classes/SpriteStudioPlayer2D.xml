@@ -69,6 +69,18 @@
 				This is the gate to put in front of audio. SpriteStudio has no reverse audio, so a sound key crossed on a backward leg is not meant to sound - the player applies exactly this test itself when [member play_audio] is on, and a project driving its own audio from [signal audio] wants the same one. Returns [code]true[/code] before anything has played: forward is the resting state.
 			</description>
 		</method>
+		<method name="just_looped" qualifiers="const">
+			<return type="bool" />
+			<description>
+				Returns [code]true[/code] when the last update crossed a loop boundary. A [b]pulse[/b], not a state: the runtime clears it at the top of every update, so it only reads [code]true[/code] inside the tick that crossed - which is why it is not called [code]is_looped[/code], and why reading it a tick late reads [code]false[/code]. Connect to [signal animation_looped] if you would rather have it delivered than polled.
+			</description>
+		</method>
+		<method name="get_animation_names" qualifiers="const">
+			<return type="PackedStringArray" />
+			<description>
+				Names of the animations in the assigned [SSABResource], empty when none is assigned. The same list [member animation] is chosen from.
+			</description>
+		</method>
 		<method name="get_total_frames" qualifiers="const">
 			<return type="int" />
 			<description>
@@ -150,7 +162,7 @@
 				Returns every part name in the bound [member ssab]. Parts belong to the asset rather than to one animation, so the list is the same whichever animation is selected. Empty when no resource is assigned.
 			</description>
 		</method>
-		<method name="get_part_index" qualifiers="const">
+		<method name="find_part_index" qualifiers="const">
 			<return type="int" />
 			<param index="0" name="part_name" type="String" />
 			<description>
@@ -238,20 +250,17 @@
 			<param index="2" name="blend_op" type="int" enum="SpriteStudioPlayer2D.ColorBlendOperation" default="0" />
 			<param index="3" name="priority" type="int" enum="SpriteStudioPlayer2D.OverridePriority" default="1" />
 			<description>
-				[method set_part_color_override] addressed by the index from [method get_part_index], skipping the name lookup.
+				[method set_part_color_override] addressed by the index from [method find_part_index], skipping the name lookup.
 			</description>
 		</method>
 		<method name="set_part_color_override_corners_by_index">
 			<return type="bool" />
 			<param index="0" name="part_index" type="int" />
-			<param index="1" name="left_top" type="Color" />
-			<param index="2" name="right_top" type="Color" />
-			<param index="3" name="left_bottom" type="Color" />
-			<param index="4" name="right_bottom" type="Color" />
-			<param index="5" name="blend_op" type="int" enum="SpriteStudioPlayer2D.ColorBlendOperation" default="0" />
-			<param index="6" name="priority" type="int" enum="SpriteStudioPlayer2D.OverridePriority" default="1" />
+			<param index="1" name="corners" type="PackedColorArray" />
+			<param index="2" name="blend_op" type="int" enum="SpriteStudioPlayer2D.ColorBlendOperation" default="0" />
+			<param index="3" name="priority" type="int" enum="SpriteStudioPlayer2D.OverridePriority" default="1" />
 			<description>
-				[method set_part_color_override_corners] addressed by the index from [method get_part_index], skipping the name lookup.
+				[method set_part_color_override_corners] addressed by the index from [method find_part_index], skipping the name lookup.
 			</description>
 		</method>
 		<method name="set_part_cell_override_by_index">
@@ -261,7 +270,7 @@
 			<param index="2" name="cell_name" type="String" />
 			<param index="3" name="priority" type="int" enum="SpriteStudioPlayer2D.OverridePriority" default="1" />
 			<description>
-				[method set_part_cell_override] addressed by the index from [method get_part_index], skipping the name lookup.
+				[method set_part_cell_override] addressed by the index from [method find_part_index], skipping the name lookup.
 			</description>
 		</method>
 		<method name="set_part_visibility_override_by_index">
@@ -270,39 +279,36 @@
 			<param index="1" name="force_hidden" type="bool" />
 			<param index="2" name="cascade" type="bool" default="false" />
 			<description>
-				[method set_part_visibility_override] addressed by the index from [method get_part_index], skipping the name lookup.
+				[method set_part_visibility_override] addressed by the index from [method find_part_index], skipping the name lookup.
 			</description>
 		</method>
 		<method name="clear_part_color_override_by_index">
 			<return type="bool" />
 			<param index="0" name="part_index" type="int" />
 			<description>
-				[method clear_part_color_override] addressed by the index from [method get_part_index].
+				[method clear_part_color_override] addressed by the index from [method find_part_index].
 			</description>
 		</method>
 		<method name="clear_part_cell_override_by_index">
 			<return type="bool" />
 			<param index="0" name="part_index" type="int" />
 			<description>
-				[method clear_part_cell_override] addressed by the index from [method get_part_index].
+				[method clear_part_cell_override] addressed by the index from [method find_part_index].
 			</description>
 		</method>
 		<method name="clear_part_visibility_override_by_index">
 			<return type="bool" />
 			<param index="0" name="part_index" type="int" />
 			<description>
-				[method clear_part_visibility_override] addressed by the index from [method get_part_index].
+				[method clear_part_visibility_override] addressed by the index from [method find_part_index].
 			</description>
 		</method>
 		<method name="set_part_color_override_corners">
 			<return type="bool" />
 			<param index="0" name="part_name" type="String" />
-			<param index="1" name="left_top" type="Color" />
-			<param index="2" name="right_top" type="Color" />
-			<param index="3" name="left_bottom" type="Color" />
-			<param index="4" name="right_bottom" type="Color" />
-			<param index="5" name="blend_op" type="int" enum="SpriteStudioPlayer2D.ColorBlendOperation" default="0" />
-			<param index="6" name="priority" type="int" enum="SpriteStudioPlayer2D.OverridePriority" default="1" />
+			<param index="1" name="corners" type="PackedColorArray" />
+			<param index="2" name="blend_op" type="int" enum="SpriteStudioPlayer2D.ColorBlendOperation" default="0" />
+			<param index="3" name="priority" type="int" enum="SpriteStudioPlayer2D.OverridePriority" default="1" />
 			<description>
 				Overrides a part's color with a distinct color per corner, producing a gradient across the part. See [enum ColorBlendOperation] and [enum OverridePriority] for [param blend_op] and [param priority].
 				Shares one override slot with [method set_part_color_override], so the last call wins and [method clear_part_color_override] clears either kind. Returns [code]false[/code] when the part is unknown or the runtime rejects the call.

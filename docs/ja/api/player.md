@@ -36,6 +36,8 @@ func _ready() -> void:
 * `resume()`: 保持を解除し、同じフレームから再開します。**冪等**で、一時停止ではなく停止している場合は何もしません（停止からの開始は `play()` で、こちらは巻き戻ります）。
 * `stop()`: 再生を停止します。再生ヘッドは **その場に留まる** ため、停止したフレームを表示し続けます。
 * `is_playing() -> bool`: 再生中に `true`。**一時停止中も `true` です**（一時停止は「保持」であって「停止」ではありません）。 / `is_pausing() -> bool`: 保持中のみ `true`。一度も再生していないアニメーションと `stop()` 後は、どちらも `false` です。
+* `just_looped() -> bool`: 直近の update でループ境界を跨いだかどうか。**パルス**であって状態ではありません — ランタイムが毎 update の冒頭でクリアするので、跨いだ tick の内側でのみ `true` です（だから `is_looped` ではありません。1 tick 遅れて読むと `false` になります）。ポーリングしたくなければ `animation_looped` シグナルが同じエッジを配ります。
+* `get_animation_names() -> PackedStringArray`: 割り当てた [SSABResource] のアニメーション名一覧。`animation` プロパティが選ぶのと同じリストです。
 * `is_playing_forward() -> bool`: 再生ヘッドが**実際に**進んでいる向きです。設定した向きを返す `get_playback_direction()` とは別物で、ピンポン再生の戻りの脚では `get_playback_direction()` が `PLAYBACK_DIRECTION_FORWARD` のままでもこちらは `false` になります（速度 0 以下は逆再生ではなく停止なので、これも反転しません）。**音声のゲートに使ってください** — SpriteStudio に逆再生音声は無いため、後ろ向きの脚で跨いだサウンドキーは鳴らすべきものではありません。`play_audio` が有効なときにプレイヤー自身が掛けている判定と同じものです。何も再生していないときは `true`（前進が既定の状態）。
 * `set_frame(frame: float)` / `get_frame() -> float` / `get_total_frames() -> int`
 * `get_start_frame() -> int` / `get_end_frame() -> int`: 実際に再生される先頭 / 末尾フレーム、すなわち現在の再生区間です。`get_animation_section_start()` / `get_animation_section_end()` と同じ値を返します（`set_animation_section()` で狭めるまではアニメーション全体）。
@@ -64,7 +66,7 @@ func _ready() -> void:
 ## パーツの参照
 
 * `get_part_names() -> PackedStringArray`: アセット（`.ssab`）に含まれる全パーツ名。パーツはアニメーションに依存しないため、同じアセット内のどのアニメーションでも同じ一覧になります。
-* `get_part_index(part_name: String) -> int`: パーツ名をパーツインデックスへ解決します。存在しない場合は `-1`。
+* `find_part_index(part_name: String) -> int`: パーツ名をパーツインデックスへ解決します。存在しない場合は `-1`。
 * `get_part_transform(part_name: String) -> Transform2D`: 現在のフレームでのパーツの `Transform2D`（プレイヤーノードのローカル空間。`flip_h` / `flip_v` / `offset` を含みます）。パーツが不明な場合は単位行列を返します。
 * `is_part_hidden(part_name: String) -> bool`: 現在のフレームでそのパーツが非表示かどうか。
 
@@ -74,13 +76,13 @@ func _ready() -> void:
 
 パーツ単位で、カラー / セル / 表示指定をキーフレームより優先して上書きします。各メソッドは成功時に `true`、パーツが不明な場合やランタイムが受け付けなかった場合に `false` を返します。詳細と注意点は [スクリプト制御とイベント → パーツオーバーライド](../workflow/usage_scripting.md) を参照してください。
 
-* `set_part_color_override(part_name: String, color: Color, blend_op: ColorBlendOperation = COLOR_BLEND_MIX, priority: OverridePriority = OVERRIDE_PRIORITY_UNTIL_ANIMATION_CHANGE) -> bool`
-* `set_part_color_override_corners(part_name: String, left_top: Color, right_top: Color, left_bottom: Color, right_bottom: Color, blend_op: ColorBlendOperation = COLOR_BLEND_MIX, priority: OverridePriority = OVERRIDE_PRIORITY_UNTIL_ANIMATION_CHANGE) -> bool`: 4 頂点それぞれに色を指定して、パーツ内をグラデーションにします。`set_part_color_override` と同じオーバーライド枠を共有するので、後から呼んだ方が有効になり、`clear_part_color_override` はどちらも解除します。
-* `set_part_cell_override(part_name: String, cellmap_name: String, cell_name: String, priority: OverridePriority = OVERRIDE_PRIORITY_UNTIL_ANIMATION_CHANGE) -> bool`
+* `set_part_color_override(part_name: String, color: Color, blend_op: ColorBlendOperation = COLOR_BLEND_MIX, priority: OverridePriority = OVERRIDE_PRIORITY_HOLD_UNTIL_NEXT_ANIMATION) -> bool`
+* `set_part_color_override_corners(part_name: String, left_top: Color, right_top: Color, left_bottom: Color, right_bottom: Color, blend_op: ColorBlendOperation = COLOR_BLEND_MIX, priority: OverridePriority = OVERRIDE_PRIORITY_HOLD_UNTIL_NEXT_ANIMATION) -> bool`: 4 頂点それぞれに色を指定して、パーツ内をグラデーションにします。`set_part_color_override` と同じオーバーライド枠を共有するので、後から呼んだ方が有効になり、`clear_part_color_override` はどちらも解除します。
+* `set_part_cell_override(part_name: String, cellmap_name: String, cell_name: String, priority: OverridePriority = OVERRIDE_PRIORITY_HOLD_UNTIL_NEXT_ANIMATION) -> bool`
 * `set_part_visibility_override(part_name: String, force_hidden: bool, cascade: bool = false) -> bool`
 * `clear_part_color_override(part_name: String) -> bool` / `clear_part_cell_override(part_name: String) -> bool` / `clear_part_visibility_override(part_name: String) -> bool`
 * `clear_all_part_overrides() -> bool`
-* 各メソッドには、パーツ名の解決を省略できるインデックス指定版 `*_by_index(part_index: int, ...)` があります（インデックスは `get_part_index()` で取得）。
+* 各メソッドには、パーツ名の解決を省略できるインデックス指定版 `*_by_index(part_index: int, ...)` があります（インデックスは `find_part_index()` で取得）。
 
 ### `blend_op` の値
 
@@ -95,8 +97,8 @@ func _ready() -> void:
 
 | 定数 | 値 | 意味 |
 | --- | --- | --- |
-| `OVERRIDE_PRIORITY_NEXT_KEYFRAME` | `0` | アニメーションが当該アトリビュートを更新するまで適用 |
-| `OVERRIDE_PRIORITY_UNTIL_ANIMATION_CHANGE` | `1` | 現在のアニメーション中は適用され、アニメーション変更で解除（既定） |
+| `OVERRIDE_PRIORITY_OVERWRITE_ON_NEXT_KEYFRAME` | `0` | アニメーションが当該アトリビュートを更新するまで適用 |
+| `OVERRIDE_PRIORITY_HOLD_UNTIL_NEXT_ANIMATION` | `1` | 現在のアニメーション中は適用され、アニメーション変更で解除（既定） |
 | `OVERRIDE_PRIORITY_PERMANENT` | `2` | 同じ `.ssab` を再生している間は適用（アニメーション変更をまたいで持続） |
 
 > [!NOTE]

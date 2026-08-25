@@ -36,6 +36,8 @@ func _ready() -> void:
 * `resume()`: Lifts the hold and carries on from the same frame. **Idempotent**, and a no-op on an animation that is stopped rather than held — `play()` is what starts a stopped animation, and it rewinds.
 * `stop()`: Stops playback. The playhead **stays where it was**, so the node keeps drawing the frame it stopped on.
 * `is_playing() -> bool`: `true` while playing, **including while paused** — a pause is a hold, not a stop. / `is_pausing() -> bool`: `true` only while held. Both are `false` on an animation that has never played, and after `stop()`.
+* `just_looped() -> bool`: Whether the last update crossed a loop boundary. A **pulse**, not a state — the runtime clears it at the top of every update, so it only reads `true` inside the tick that crossed (which is why it is not `is_looped`: reading it a tick late reads `false`). The `animation_looped` signal delivers the same edge if you would rather not poll.
+* `get_animation_names() -> PackedStringArray`: Names of the animations in the assigned [SSABResource] — the same list the `animation` property is chosen from.
 * `is_playing_forward() -> bool`: Which way the playhead is **actually** travelling. Not `get_playback_direction()`, which reports the configured heading: on a ping-pong return leg this reads `false` while that still reads `PLAYBACK_DIRECTION_FORWARD` (a speed of zero or below is a stop, not a reversal, and does not flip it either). **Gate audio on it** — SpriteStudio has no reverse audio, so a sound key crossed on a backward leg is not meant to sound, and this is the test the node itself applies when `play_audio` is on. `true` before anything has played: forward is the resting state.
 * `set_frame(frame: float)` / `get_frame() -> float` / `get_total_frames() -> int`
 * `get_start_frame() -> int` / `get_end_frame() -> int`: The first and last frame that actually plays — the current playback section. They return the same values as `get_animation_section_start()` / `get_animation_section_end()`, which is the whole animation until `set_animation_section()` narrows it.
@@ -64,7 +66,7 @@ func _ready() -> void:
 ## Part queries
 
 * `get_part_names() -> PackedStringArray`: Every part name in the asset (`.ssab`). Parts do not depend on the animation, so the list is the same for every animation in that asset.
-* `get_part_index(part_name: String) -> int`: Resolves a part name to its part index, or `-1` if it does not exist.
+* `find_part_index(part_name: String) -> int`: Resolves a part name to its part index, or `-1` if it does not exist.
 * `get_part_transform(part_name: String) -> Transform2D`: The part's `Transform2D` on the current frame, in the player node's local space (`flip_h` / `flip_v` / `offset` included). Returns the identity when the part is unknown.
 * `is_part_hidden(part_name: String) -> bool`: Whether the part is hidden on the current frame.
 
@@ -74,13 +76,13 @@ See [Scripting and Event-Driven Control → Part Tracking](../workflow/usage_scr
 
 Override a single part's color / cell / visibility so that it wins over the keyframes. Every method returns `true` on success, or `false` when the part is unknown or the runtime rejects the call. See [Scripting and Event-Driven Control → Part Overrides](../workflow/usage_scripting.md) for the details and caveats.
 
-* `set_part_color_override(part_name: String, color: Color, blend_op: ColorBlendOperation = COLOR_BLEND_MIX, priority: OverridePriority = OVERRIDE_PRIORITY_UNTIL_ANIMATION_CHANGE) -> bool`
-* `set_part_color_override_corners(part_name: String, left_top: Color, right_top: Color, left_bottom: Color, right_bottom: Color, blend_op: ColorBlendOperation = COLOR_BLEND_MIX, priority: OverridePriority = OVERRIDE_PRIORITY_UNTIL_ANIMATION_CHANGE) -> bool`: Four-corner (per-vertex) colour, for a gradient across the part. Shares one override slot with `set_part_color_override` — the last call wins, and `clear_part_color_override` clears either kind.
-* `set_part_cell_override(part_name: String, cellmap_name: String, cell_name: String, priority: OverridePriority = OVERRIDE_PRIORITY_UNTIL_ANIMATION_CHANGE) -> bool`
+* `set_part_color_override(part_name: String, color: Color, blend_op: ColorBlendOperation = COLOR_BLEND_MIX, priority: OverridePriority = OVERRIDE_PRIORITY_HOLD_UNTIL_NEXT_ANIMATION) -> bool`
+* `set_part_color_override_corners(part_name: String, left_top: Color, right_top: Color, left_bottom: Color, right_bottom: Color, blend_op: ColorBlendOperation = COLOR_BLEND_MIX, priority: OverridePriority = OVERRIDE_PRIORITY_HOLD_UNTIL_NEXT_ANIMATION) -> bool`: Four-corner (per-vertex) colour, for a gradient across the part. Shares one override slot with `set_part_color_override` — the last call wins, and `clear_part_color_override` clears either kind.
+* `set_part_cell_override(part_name: String, cellmap_name: String, cell_name: String, priority: OverridePriority = OVERRIDE_PRIORITY_HOLD_UNTIL_NEXT_ANIMATION) -> bool`
 * `set_part_visibility_override(part_name: String, force_hidden: bool, cascade: bool = false) -> bool`
 * `clear_part_color_override(part_name: String) -> bool` / `clear_part_cell_override(part_name: String) -> bool` / `clear_part_visibility_override(part_name: String) -> bool`
 * `clear_all_part_overrides() -> bool`
-* Each method has an index-based variant `*_by_index(part_index: int, ...)` that skips the name lookup (get the index from `get_part_index()`).
+* Each method has an index-based variant `*_by_index(part_index: int, ...)` that skips the name lookup (get the index from `find_part_index()`).
 
 ### Values for `blend_op`
 
@@ -95,8 +97,8 @@ Override a single part's color / cell / visibility so that it wins over the keyf
 
 | Constant | Value | Meaning |
 | --- | --- | --- |
-| `OVERRIDE_PRIORITY_NEXT_KEYFRAME` | `0` | Applies until the animation updates that attribute |
-| `OVERRIDE_PRIORITY_UNTIL_ANIMATION_CHANGE` | `1` | Applies for the current animation; cleared when a new animation is set up (default) |
+| `OVERRIDE_PRIORITY_OVERWRITE_ON_NEXT_KEYFRAME` | `0` | Applies until the animation updates that attribute |
+| `OVERRIDE_PRIORITY_HOLD_UNTIL_NEXT_ANIMATION` | `1` | Applies for the current animation; cleared when a new animation is set up (default) |
 | `OVERRIDE_PRIORITY_PERMANENT` | `2` | Applies for as long as the same `.ssab` is playing, surviving animation changes |
 
 > [!NOTE]
