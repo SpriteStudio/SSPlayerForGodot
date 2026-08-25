@@ -309,8 +309,9 @@
 		<member name="animation" type="String">
 			Name of the animation to play, chosen from the animations contained in [member ssab].
 		</member>
-		<member name="autoplay" type="bool" default="false">
-			If [code]true[/code], the selected animation starts playing automatically when the scene runs.
+		<member name="autoplay" type="bool" default="true">
+			If [code]true[/code] (the default), the selected animation starts playing automatically when the scene runs. A node placed in a scene has no code calling [method play] for it, so it plays.
+			Turn it off for a node whose playback you drive yourself, or one that should hold its first frame as a pose. Note that autoplay starts at [constant Node.NOTIFICATION_READY], before an attached script's [method Node._ready] runs — so a script connecting [signal animation_started] there will not see the one autoplay fired.
 		</member>
 		<member name="offset" type="Vector2" default="Vector2(0, 0)">
 			The drawing offset of the animation. Useful for visually centering an animation without altering the node's Transform.

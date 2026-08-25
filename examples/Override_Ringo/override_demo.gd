@@ -18,8 +18,9 @@ var _label: Label
 
 func _ready() -> void:
 	# Ensure the animation is playing: cell/frame overrides only become visible
-	# while the player advances frames, so start playback here rather than relying
-	# on the scene's autoplay flag being set.
+	# while the player advances frames. `autoplay` is on by default and this scene
+	# leaves it there, so this is belt and braces — it also re-heads-out, which is
+	# what makes the demo restart cleanly if the scene is reloaded.
 	play()
 	# Auto-place Ringo at a visible spot ONLY if the scene left it at the origin
 	# (0,0) — which sits at the top-left corner at runtime. If you move it in the

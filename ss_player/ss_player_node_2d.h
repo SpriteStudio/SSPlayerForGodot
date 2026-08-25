@@ -228,7 +228,12 @@ private:
     void _handle_audio(const Dictionary& payload);
 
     HashMap<String, Ref<Texture2D>> _cellmap_overrides;
-    bool _autoplay = false;
+    // On, so a node dropped into a scene animates when the scene runs. A player
+    // sitting on its first frame reads as broken, and there is no code to call
+    // `play()` for a node that was placed rather than constructed -- which is
+    // what an `autoplay` property is for. ForUnity's `AutoPlay` defaults the
+    // same way, for the same reason.
+    bool _autoplay = true;
     // The loop count as configured on the node — an inspector property, so it is
     // the node's own state and has to outlive an animation change. The runtime
     // resets its own count on every `setup_animation` (the transition is meant to
