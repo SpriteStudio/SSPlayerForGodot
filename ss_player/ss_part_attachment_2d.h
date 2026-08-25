@@ -42,8 +42,12 @@ private:
     bool _use_global_coordinates = true;
     bool _update_position = true;
     bool _update_rotation = true;
-    bool _update_scale = false; // off by default (Godot Transform2D carries the
-                                // part's scale anyway when all three are on)
+    // Off by default, as in every sibling Player: a follower is placed AT the
+    // part, not SIZED BY it, and a health bar or a name plate stretching with a
+    // breathing animation is rarely what was wanted. Turn it on for something
+    // that is part of the artwork — a weapon in a hand. With all three on the
+    // part's affine is applied as it is, so skew and mirroring survive.
+    bool _update_scale = false;
     HiddenBehavior _on_part_hidden = FOLLOW_ALWAYS;
 
     SpriteStudioPlayer2D* _resolve_player() const;

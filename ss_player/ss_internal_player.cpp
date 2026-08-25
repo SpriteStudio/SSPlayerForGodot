@@ -1551,7 +1551,8 @@ void SsInternalPlayer::_drawAnimation(float frame_no, float delta_seconds, bool 
         } else if (kind == ss::runtime::DrawBatchKind_Mesh) {
             _emit_mesh_batch(f, ci, batch, draw_order_data);
         }
-        // DrawBatchKind_Text / Nines / Mask: not yet implemented.
+        // DrawBatchKind_Text / Nines: not yet implemented. Mask is not missing —
+        // it is consumed by the mask planner above, not emitted as a batch here.
     }
 
     _batch_canvas_items_in_use = (int)batch_count;
