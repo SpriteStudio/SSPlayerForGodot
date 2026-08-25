@@ -7,7 +7,7 @@ extends SpriteStudioPlayer2D
 ##
 ## API used (all on SpriteStudioPlayer2D):
 ##   set_part_color_override(part, color, blend_op=0, priority=1)
-##   set_part_color_override_corners(part, lt, rt, lb, rb, blend_op=0, priority=1)
+##   set_part_color_override_corners(part, PackedColorArray([lt, rt, lb, rb]), blend_op=0, priority=1)
 ##   set_part_visibility_override(part, force_hidden, cascade=false)
 ##   set_part_cell_override(part, cellmap, cell, priority=1)
 ##   clear_all_part_overrides()
@@ -55,7 +55,7 @@ func _run_demo() -> void:
 
 	# Since the same part is accessed repeatedly, identify it by part-ID
 	# rather than its name (accessing by ID is slightly faster).
-	var part_id := get_part_index("apple")
+	var part_id := find_part_index("apple")
 
 	while true:
 		clear_all_part_overrides()
@@ -71,9 +71,9 @@ func _run_demo() -> void:
 		# 2) Color (4 corners) — one colour per vertex gives a gradient across the part.
 		#    Corner order is left-top, right-top, left-bottom, right-bottom. This shares
 		#    the single colour-override slot, so it replaces step 1's flat tint.
-		set_part_color_override_corners_by_index(part_id,
+		set_part_color_override_corners_by_index(part_id, PackedColorArray([
 			Color(1.0, 0.1, 0.1, 1.0), Color(1.0, 0.1, 0.1, 1.0),
-			Color(0.1, 0.3, 1.0, 1.0), Color(0.1, 0.3, 1.0, 1.0))
+			Color(0.1, 0.3, 1.0, 1.0), Color(0.1, 0.3, 1.0, 1.0)]))
 		await _step("2) Corner colour override:  body -> red-to-blue gradient", 2.0)
 
 		# 3) Visibility — force-hide the 'apple' and cascade to its children (the whole face).

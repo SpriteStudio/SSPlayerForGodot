@@ -172,7 +172,7 @@ func _on_frame_updated(frame_no: float):
 | API | 説明 |
 |---|---|
 | `get_part_names()` | アセット（`.ssab`）に含まれる全パーツ名 |
-| `get_part_index(part_name)` | パーツインデックス。アセットに無ければ `-1` |
+| `find_part_index(part_name)` | パーツインデックス。アセットに無ければ `-1` |
 | `get_part_transform(part_name)` | そのパーツの現在フレームの変換（`Transform2D`。プレーヤローカルで、`flip_h` / `flip_v` / `offset` を適用済み）。パーツが不明なら単位行列 |
 | `is_part_hidden(part_name)` | そのパーツが現在フレームで hide かどうか。パーツが不明なら `false` |
 | signal `frame_updated(frame_no: float)` | そのフレームのパーツ姿勢が確定した直後に発火する |
@@ -222,7 +222,7 @@ func _ready():
 
     # 4 頂点それぞれに色を指定してグラデーションにすることもできます。
     ss_player.set_part_color_override_corners(
-        "body", Color.RED, Color.RED, Color.BLUE, Color.BLUE, 0)
+        "body", PackedColorArray([Color.RED, Color.RED, Color.BLUE, Color.BLUE]))
 
     # 別のセルを描画させる（セルマップ名は ".ssce" を付けずに指定）。
     ss_player.set_part_cell_override("body", "Ringo", "effect3")
@@ -237,10 +237,10 @@ func _ready():
 
 | メソッド | 説明 |
 |---|---|
-| `get_part_index(part_name)` | パーツインデックス。アセットに無ければ `-1` |
-| `set_part_color_override(part_name, color, blend_op = COLOR_BLEND_MIX, priority = OVERRIDE_PRIORITY_UNTIL_ANIMATION_CHANGE)` | パーツカラーオーバーライド（単色） |
-| `set_part_color_override_corners(part_name, left_top, right_top, left_bottom, right_bottom, blend_op = COLOR_BLEND_MIX, priority = OVERRIDE_PRIORITY_UNTIL_ANIMATION_CHANGE)` | パーツカラーオーバーライド（4 頂点それぞれに色を指定＝グラデーション） |
-| `set_part_cell_override(part_name, cellmap_name, cell_name, priority = OVERRIDE_PRIORITY_UNTIL_ANIMATION_CHANGE)` | 別のセルで描画する |
+| `find_part_index(part_name)` | パーツインデックス。アセットに無ければ `-1` |
+| `set_part_color_override(part_name, color, blend_op = COLOR_BLEND_MIX, priority = OVERRIDE_PRIORITY_HOLD_UNTIL_NEXT_ANIMATION)` | パーツカラーオーバーライド（単色） |
+| `set_part_color_override_corners(part_name, corners, blend_op = COLOR_BLEND_MIX, priority = OVERRIDE_PRIORITY_HOLD_UNTIL_NEXT_ANIMATION)` | パーツカラーオーバーライド（4 頂点それぞれに色を指定＝グラデーション） |
+| `set_part_cell_override(part_name, cellmap_name, cell_name, priority = OVERRIDE_PRIORITY_HOLD_UNTIL_NEXT_ANIMATION)` | 別のセルで描画する |
 | `set_part_visibility_override(part_name, force_hidden, cascade = false)` | 強制非表示（`force_hidden = false` でアニメーションに戻す） |
 | `clear_part_color_override` / `clear_part_cell_override` / `clear_part_visibility_override` | 1 パーツの 1 オーバーライドを解除 |
 | `clear_all_part_overrides()` | そのプレーヤの全オーバーライドを解除 |
@@ -259,7 +259,7 @@ print(ss_player.get_cell_names("Ringo"))    # → ["effect3", ...]
 
 > **テクスチャとセルの差し替えの使い分けについて**: 前節の `set_cellmap_texture()` は**セルマップ（テクスチャ）まるごと**の差し替えで、そのセルマップを使う全パーツにまとめて効きます。こちらは**パーツ 1 つ単位**で、描画するセルそのものを差し替える機能です。目的に応じて使い分けてください。
 
-> **パーツインデックスの使い方について**: パーツインデックスは同一アセット（同じ `.ssab`）内では安定しているので、頻繁にオーバーライドするなら `get_part_index()` で一度パーツ名をパーツインデックスに解決して、`*_by_index()` にそのインデックスを使い回すことを推奨します。
+> **パーツインデックスの使い方について**: パーツインデックスは同一アセット（同じ `.ssab`）内では安定しているので、頻繁にオーバーライドするなら `find_part_index()` で一度パーツ名をパーツインデックスに解決して、`*_by_index()` にそのインデックスを使い回すことを推奨します。
 
 ### 合成モード（blend_op）
 
@@ -280,8 +280,8 @@ print(ss_player.get_cell_names("Ringo"))    # → ["effect3", ...]
 
 | 定数 | 値 | 挙動 |
 |---|---|---|
-| `OVERRIDE_PRIORITY_NEXT_KEYFRAME` | `0` | アニメーションデータが当該アトリビュートを更新するまで、オーバーライドが適用される |
-| `OVERRIDE_PRIORITY_UNTIL_ANIMATION_CHANGE` | `1` | 現在のアニメーション中は勝ち続け、新しいアニメーションを設定するとオーバーライドが解除される（既定） |
+| `OVERRIDE_PRIORITY_OVERWRITE_ON_NEXT_KEYFRAME` | `0` | アニメーションデータが当該アトリビュートを更新するまで、オーバーライドが適用される |
+| `OVERRIDE_PRIORITY_HOLD_UNTIL_NEXT_ANIMATION` | `1` | 現在のアニメーション中は勝ち続け、新しいアニメーションを設定するとオーバーライドが解除される（既定） |
 | `OVERRIDE_PRIORITY_PERMANENT` | `2` | 同じアニメーションデータ（`.ssab`）である間、オーバーライドが適用される（アニメーション変更をまたいでも持続） |
 
 ### 注意点

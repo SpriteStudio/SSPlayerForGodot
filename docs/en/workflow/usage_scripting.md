@@ -172,7 +172,7 @@ func _on_frame_updated(frame_no: float):
 | API | Description |
 |---|---|
 | `get_part_names()` | Every part name in the asset (`.ssab`) |
-| `get_part_index(part_name)` | Part index, or `-1` if the part is not in the asset |
+| `find_part_index(part_name)` | Part index, or `-1` if the part is not in the asset |
 | `get_part_transform(part_name)` | The part's transform for the current frame (a `Transform2D`, player-local, with `flip_h` / `flip_v` / `offset` already applied). Identity if the part is unknown |
 | `is_part_hidden(part_name)` | Whether the part is hidden on the current frame. `false` if the part is unknown |
 | signal `frame_updated(frame_no: float)` | Emitted right after the frame's part poses are finalized |
@@ -222,7 +222,7 @@ func _ready():
 
     # Or give each of the four corners its own color, for a gradient.
     ss_player.set_part_color_override_corners(
-        "body", Color.RED, Color.RED, Color.BLUE, Color.BLUE, 0)
+        "body", PackedColorArray([Color.RED, Color.RED, Color.BLUE, Color.BLUE]))
 
     # Make a part draw a different cell (cell map name is written without ".ssce").
     ss_player.set_part_cell_override("body", "Ringo", "effect3")
@@ -237,10 +237,10 @@ func _ready():
 
 | Method | Description |
 |---|---|
-| `get_part_index(part_name)` | Part index, or `-1` if the part is not in the asset |
-| `set_part_color_override(part_name, color, blend_op = COLOR_BLEND_MIX, priority = OVERRIDE_PRIORITY_UNTIL_ANIMATION_CHANGE)` | Color override (single color) |
-| `set_part_color_override_corners(part_name, left_top, right_top, left_bottom, right_bottom, blend_op = COLOR_BLEND_MIX, priority = OVERRIDE_PRIORITY_UNTIL_ANIMATION_CHANGE)` | Color override with a distinct color per corner (gradient) |
-| `set_part_cell_override(part_name, cellmap_name, cell_name, priority = OVERRIDE_PRIORITY_UNTIL_ANIMATION_CHANGE)` | Draw a different cell |
+| `find_part_index(part_name)` | Part index, or `-1` if the part is not in the asset |
+| `set_part_color_override(part_name, color, blend_op = COLOR_BLEND_MIX, priority = OVERRIDE_PRIORITY_HOLD_UNTIL_NEXT_ANIMATION)` | Color override (single color) |
+| `set_part_color_override_corners(part_name, corners, blend_op = COLOR_BLEND_MIX, priority = OVERRIDE_PRIORITY_HOLD_UNTIL_NEXT_ANIMATION)` | Color override with a distinct color per corner (gradient) |
+| `set_part_cell_override(part_name, cellmap_name, cell_name, priority = OVERRIDE_PRIORITY_HOLD_UNTIL_NEXT_ANIMATION)` | Draw a different cell |
 | `set_part_visibility_override(part_name, force_hidden, cascade = false)` | Force-hide (`force_hidden = false` reverts to the animation) |
 | `clear_part_color_override` / `clear_part_cell_override` / `clear_part_visibility_override` | Clear one override on one part |
 | `clear_all_part_overrides()` | Clear every override on the player |
@@ -259,7 +259,7 @@ Both read the bound `SSABResource` and return an empty array when none is assign
 
 > **On choosing between a texture swap and a cell override**: `set_cellmap_texture()` in the previous section replaces a **whole cell map (texture)** at once, affecting every part that uses it. This feature instead replaces the cell that a **single part** draws. Pick whichever matches your intent.
 
-> **On using part indices**: Part indices are stable within one asset (the same `.ssab`), so if you set overrides frequently, resolve the name once with `get_part_index()` and reuse that index with the `*_by_index()` variants.
+> **On using part indices**: Part indices are stable within one asset (the same `.ssab`), so if you set overrides frequently, resolve the name once with `find_part_index()` and reuse that index with the `*_by_index()` variants.
 
 ### Blend operation (`blend_op`)
 
@@ -280,8 +280,8 @@ Color and cell overrides conflict with the animation, so they take a `priority` 
 
 | Constant | Value | Behavior |
 |---|---|---|
-| `OVERRIDE_PRIORITY_NEXT_KEYFRAME` | `0` | The override applies until the animation data updates that attribute |
-| `OVERRIDE_PRIORITY_UNTIL_ANIMATION_CHANGE` | `1` | The override wins for the current animation and is cleared when a new animation is set up (default) |
+| `OVERRIDE_PRIORITY_OVERWRITE_ON_NEXT_KEYFRAME` | `0` | The override applies until the animation data updates that attribute |
+| `OVERRIDE_PRIORITY_HOLD_UNTIL_NEXT_ANIMATION` | `1` | The override wins for the current animation and is cleared when a new animation is set up (default) |
 | `OVERRIDE_PRIORITY_PERMANENT` | `2` | The override applies for as long as the same animation data (`.ssab`) is playing, surviving animation changes |
 
 ### Notes

@@ -168,7 +168,7 @@ PackedStringArray SpriteStudioPlayer2D::get_cell_names(const String& cellmap_nam
     return names;
 }
 
-int SpriteStudioPlayer2D::get_part_index(const String& part_name) const {
+int SpriteStudioPlayer2D::find_part_index(const String& part_name) const {
     return _internal->resolve_part_index(part_name);
 }
 
@@ -205,7 +205,7 @@ PackedStringArray SpriteStudioPlayer2D::get_part_names() const {
 // ---- Override Layer (Phase 2) --------------------------------------------
 
 // By-index variants. The runtime addresses parts by index, so these skip the
-// name lookup — resolve a name once via get_part_index() and reuse the index.
+// name lookup — resolve a name once via find_part_index() and reuse the index.
 // An out-of-range index is a no-op returning false (guarded in SsInternalPlayer).
 
 bool SpriteStudioPlayer2D::set_part_visibility_override_by_index(int part_index, bool force_hidden, bool cascade) {
@@ -220,10 +220,15 @@ bool SpriteStudioPlayer2D::set_part_color_override_by_index(int part_index, cons
     return _internal->set_part_color_override(part_index, color, (int)blend_op, (int)priority);
 }
 
-bool SpriteStudioPlayer2D::set_part_color_override_corners_by_index(int part_index, const Color& left_top, const Color& right_top,
-                                                                    const Color& left_bottom, const Color& right_bottom,
+bool SpriteStudioPlayer2D::set_part_color_override_corners_by_index(int part_index, const PackedColorArray& corners,
                                                                     ColorBlendOperation blend_op, OverridePriority priority) {
-    return _internal->set_part_color_override_corners(part_index, left_top, right_top, left_bottom, right_bottom, (int)blend_op, (int)priority);
+    // One argument rather than four, so this reads the same shape as the
+    // single-colour form (SDK: 20_design/40_api_conventions). Four is the only
+    // valid length: a shorter array would silently leave corners at whatever the
+    // default Color is, which looks like a gradient bug rather than a bad call.
+    ERR_FAIL_COND_V_MSG(corners.size() != 4, false,
+                        "corners must hold exactly 4 colours, in left-top, right-top, left-bottom, right-bottom order");
+    return _internal->set_part_color_override_corners(part_index, corners[0], corners[1], corners[2], corners[3], (int)blend_op, (int)priority);
 }
 
 bool SpriteStudioPlayer2D::clear_part_color_override_by_index(int part_index) {
@@ -253,10 +258,9 @@ bool SpriteStudioPlayer2D::set_part_color_override(const String& part_name, cons
     return set_part_color_override_by_index(_internal->resolve_part_index(part_name), color, blend_op, priority);
 }
 
-bool SpriteStudioPlayer2D::set_part_color_override_corners(const String& part_name, const Color& left_top, const Color& right_top,
-                                                           const Color& left_bottom, const Color& right_bottom,
+bool SpriteStudioPlayer2D::set_part_color_override_corners(const String& part_name, const PackedColorArray& corners,
                                                            ColorBlendOperation blend_op, OverridePriority priority) {
-    return set_part_color_override_corners_by_index(_internal->resolve_part_index(part_name), left_top, right_top, left_bottom, right_bottom, blend_op, priority);
+    return set_part_color_override_corners_by_index(_internal->resolve_part_index(part_name), corners, blend_op, priority);
 }
 
 bool SpriteStudioPlayer2D::clear_part_color_override(const String& part_name) {
@@ -298,6 +302,12 @@ bool SpriteStudioPlayer2D::isPlaying() const { return _internal->isPlaying(); }
 void SpriteStudioPlayer2D::play(float p_start_frame) { _internal->play(p_start_frame); }
 bool SpriteStudioPlayer2D::isPausing() const { return _internal->isPausing(); }
 bool SpriteStudioPlayer2D::isPlayingForward() const { return _internal->isPlayingForward(); }
+bool SpriteStudioPlayer2D::justLooped() const { return _internal->justLooped(); }
+
+PackedStringArray SpriteStudioPlayer2D::get_animation_names() const {
+    Ref<SSABResource> res = _internal->getSSABResource();
+    return res.is_valid() ? res->get_animation_names() : PackedStringArray();
+}
 // Per the Player porting doc, built-in audio is fired-and-forgotten: it is not
 // coupled to animation pause or stop. Sounds already playing run to completion.
 void SpriteStudioPlayer2D::pause() { _internal->pause(); }
@@ -477,6 +487,8 @@ void SpriteStudioPlayer2D::_bind_methods() {
     ClassDB::bind_method( D_METHOD( "play", "start_frame" ), &SpriteStudioPlayer2D::play, DEFVAL(-1.0f) );
     ClassDB::bind_method( D_METHOD( "is_pausing" ), &SpriteStudioPlayer2D::isPausing );
     ClassDB::bind_method( D_METHOD( "is_playing_forward" ), &SpriteStudioPlayer2D::isPlayingForward );
+    ClassDB::bind_method( D_METHOD( "just_looped" ), &SpriteStudioPlayer2D::justLooped );
+    ClassDB::bind_method( D_METHOD( "get_animation_names" ), &SpriteStudioPlayer2D::get_animation_names );
     ClassDB::bind_method( D_METHOD( "pause" ), &SpriteStudioPlayer2D::pause );
     ClassDB::bind_method( D_METHOD( "resume" ), &SpriteStudioPlayer2D::resume );
     ClassDB::bind_method( D_METHOD( "stop" ), &SpriteStudioPlayer2D::stop );
@@ -537,7 +549,7 @@ void SpriteStudioPlayer2D::_bind_methods() {
     ClassDB::bind_method( D_METHOD( "set_flip_v", "flip_v" ), &SpriteStudioPlayer2D::set_flip_v );
     ClassDB::bind_method( D_METHOD( "is_flipped_v" ), &SpriteStudioPlayer2D::is_flipped_v );
 
-    ClassDB::bind_method( D_METHOD( "get_part_index", "part_name" ), &SpriteStudioPlayer2D::get_part_index );
+    ClassDB::bind_method( D_METHOD( "find_part_index", "part_name" ), &SpriteStudioPlayer2D::find_part_index );
     ClassDB::bind_method( D_METHOD( "get_part_transform", "part_name" ), &SpriteStudioPlayer2D::get_part_transform );
     ClassDB::bind_method( D_METHOD( "is_part_hidden", "part_name" ), &SpriteStudioPlayer2D::is_part_hidden );
     ClassDB::bind_method( D_METHOD( "get_part_names" ), &SpriteStudioPlayer2D::get_part_names );
@@ -545,20 +557,20 @@ void SpriteStudioPlayer2D::_bind_methods() {
     // ---- Override Layer (Phase 2): per-part runtime overrides -------------
     ClassDB::bind_method( D_METHOD( "set_part_visibility_override", "part_name", "force_hidden", "cascade" ), &SpriteStudioPlayer2D::set_part_visibility_override, DEFVAL(false) );
     ClassDB::bind_method( D_METHOD( "clear_part_visibility_override", "part_name" ), &SpriteStudioPlayer2D::clear_part_visibility_override );
-    ClassDB::bind_method( D_METHOD( "set_part_color_override", "part_name", "color", "blend_op", "priority" ), &SpriteStudioPlayer2D::set_part_color_override, DEFVAL(COLOR_BLEND_MIX), DEFVAL(OVERRIDE_PRIORITY_UNTIL_ANIMATION_CHANGE) );
-    ClassDB::bind_method( D_METHOD( "set_part_color_override_corners", "part_name", "left_top", "right_top", "left_bottom", "right_bottom", "blend_op", "priority" ), &SpriteStudioPlayer2D::set_part_color_override_corners, DEFVAL(COLOR_BLEND_MIX), DEFVAL(OVERRIDE_PRIORITY_UNTIL_ANIMATION_CHANGE) );
+    ClassDB::bind_method( D_METHOD( "set_part_color_override", "part_name", "color", "blend_op", "priority" ), &SpriteStudioPlayer2D::set_part_color_override, DEFVAL(COLOR_BLEND_MIX), DEFVAL(OVERRIDE_PRIORITY_HOLD_UNTIL_NEXT_ANIMATION) );
+    ClassDB::bind_method( D_METHOD( "set_part_color_override_corners", "part_name", "corners", "blend_op", "priority" ), &SpriteStudioPlayer2D::set_part_color_override_corners, DEFVAL(COLOR_BLEND_MIX), DEFVAL(OVERRIDE_PRIORITY_HOLD_UNTIL_NEXT_ANIMATION) );
     ClassDB::bind_method( D_METHOD( "clear_part_color_override", "part_name" ), &SpriteStudioPlayer2D::clear_part_color_override );
-    ClassDB::bind_method( D_METHOD( "set_part_cell_override", "part_name", "cellmap_name", "cell_name", "priority" ), &SpriteStudioPlayer2D::set_part_cell_override, DEFVAL(OVERRIDE_PRIORITY_UNTIL_ANIMATION_CHANGE) );
+    ClassDB::bind_method( D_METHOD( "set_part_cell_override", "part_name", "cellmap_name", "cell_name", "priority" ), &SpriteStudioPlayer2D::set_part_cell_override, DEFVAL(OVERRIDE_PRIORITY_HOLD_UNTIL_NEXT_ANIMATION) );
     ClassDB::bind_method( D_METHOD( "clear_part_cell_override", "part_name" ), &SpriteStudioPlayer2D::clear_part_cell_override );
     ClassDB::bind_method( D_METHOD( "clear_all_part_overrides" ), &SpriteStudioPlayer2D::clear_all_part_overrides );
 
     // By-index variants
     ClassDB::bind_method( D_METHOD( "set_part_visibility_override_by_index", "part_index", "force_hidden", "cascade" ), &SpriteStudioPlayer2D::set_part_visibility_override_by_index, DEFVAL(false) );
     ClassDB::bind_method( D_METHOD( "clear_part_visibility_override_by_index", "part_index" ), &SpriteStudioPlayer2D::clear_part_visibility_override_by_index );
-    ClassDB::bind_method( D_METHOD( "set_part_color_override_by_index", "part_index", "color", "blend_op", "priority" ), &SpriteStudioPlayer2D::set_part_color_override_by_index, DEFVAL(COLOR_BLEND_MIX), DEFVAL(OVERRIDE_PRIORITY_UNTIL_ANIMATION_CHANGE) );
-    ClassDB::bind_method( D_METHOD( "set_part_color_override_corners_by_index", "part_index", "left_top", "right_top", "left_bottom", "right_bottom", "blend_op", "priority" ), &SpriteStudioPlayer2D::set_part_color_override_corners_by_index, DEFVAL(COLOR_BLEND_MIX), DEFVAL(OVERRIDE_PRIORITY_UNTIL_ANIMATION_CHANGE) );
+    ClassDB::bind_method( D_METHOD( "set_part_color_override_by_index", "part_index", "color", "blend_op", "priority" ), &SpriteStudioPlayer2D::set_part_color_override_by_index, DEFVAL(COLOR_BLEND_MIX), DEFVAL(OVERRIDE_PRIORITY_HOLD_UNTIL_NEXT_ANIMATION) );
+    ClassDB::bind_method( D_METHOD( "set_part_color_override_corners_by_index", "part_index", "corners", "blend_op", "priority" ), &SpriteStudioPlayer2D::set_part_color_override_corners_by_index, DEFVAL(COLOR_BLEND_MIX), DEFVAL(OVERRIDE_PRIORITY_HOLD_UNTIL_NEXT_ANIMATION) );
     ClassDB::bind_method( D_METHOD( "clear_part_color_override_by_index", "part_index" ), &SpriteStudioPlayer2D::clear_part_color_override_by_index );
-    ClassDB::bind_method( D_METHOD( "set_part_cell_override_by_index", "part_index", "cellmap_name", "cell_name", "priority" ), &SpriteStudioPlayer2D::set_part_cell_override_by_index, DEFVAL(OVERRIDE_PRIORITY_UNTIL_ANIMATION_CHANGE) );
+    ClassDB::bind_method( D_METHOD( "set_part_cell_override_by_index", "part_index", "cellmap_name", "cell_name", "priority" ), &SpriteStudioPlayer2D::set_part_cell_override_by_index, DEFVAL(OVERRIDE_PRIORITY_HOLD_UNTIL_NEXT_ANIMATION) );
     ClassDB::bind_method( D_METHOD( "clear_part_cell_override_by_index", "part_index" ), &SpriteStudioPlayer2D::clear_part_cell_override_by_index );
 
     ADD_SIGNAL(
@@ -645,8 +657,8 @@ void SpriteStudioPlayer2D::_bind_methods() {
     BIND_ENUM_CONSTANT(COLOR_BLEND_ADD);
     BIND_ENUM_CONSTANT(COLOR_BLEND_SUB);
 
-    BIND_ENUM_CONSTANT(OVERRIDE_PRIORITY_NEXT_KEYFRAME);
-    BIND_ENUM_CONSTANT(OVERRIDE_PRIORITY_UNTIL_ANIMATION_CHANGE);
+    BIND_ENUM_CONSTANT(OVERRIDE_PRIORITY_OVERWRITE_ON_NEXT_KEYFRAME);
+    BIND_ENUM_CONSTANT(OVERRIDE_PRIORITY_HOLD_UNTIL_NEXT_ANIMATION);
     BIND_ENUM_CONSTANT(OVERRIDE_PRIORITY_PERMANENT);
 }
 
