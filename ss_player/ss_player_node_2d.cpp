@@ -303,6 +303,7 @@ void SpriteStudioPlayer2D::play(float p_start_frame) { _internal->play(p_start_f
 bool SpriteStudioPlayer2D::isPausing() const { return _internal->isPausing(); }
 bool SpriteStudioPlayer2D::isPlayingForward() const { return _internal->isPlayingForward(); }
 bool SpriteStudioPlayer2D::justLooped() const { return _internal->justLooped(); }
+bool SpriteStudioPlayer2D::isFinished() const { return _internal->isFinished(); }
 
 PackedStringArray SpriteStudioPlayer2D::get_animation_names() const {
     Ref<SSABResource> res = _internal->getSSABResource();
@@ -488,6 +489,7 @@ void SpriteStudioPlayer2D::_bind_methods() {
     ClassDB::bind_method( D_METHOD( "is_pausing" ), &SpriteStudioPlayer2D::isPausing );
     ClassDB::bind_method( D_METHOD( "is_playing_forward" ), &SpriteStudioPlayer2D::isPlayingForward );
     ClassDB::bind_method( D_METHOD( "just_looped" ), &SpriteStudioPlayer2D::justLooped );
+    ClassDB::bind_method( D_METHOD( "is_finished" ), &SpriteStudioPlayer2D::isFinished );
     ClassDB::bind_method( D_METHOD( "get_animation_names" ), &SpriteStudioPlayer2D::get_animation_names );
     ClassDB::bind_method( D_METHOD( "pause" ), &SpriteStudioPlayer2D::pause );
     ClassDB::bind_method( D_METHOD( "resume" ), &SpriteStudioPlayer2D::resume );

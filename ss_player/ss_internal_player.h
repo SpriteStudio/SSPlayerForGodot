@@ -127,6 +127,11 @@ public:
     // The loop pulse. The runtime clears it at the top of every update, so it only
     // reads true inside the tick that crossed — hence not `isLooped`.
     bool justLooped() const;
+    // The completion state. Unlike justLooped this is sticky: it latches when every
+    // configured loop has played and stays true until the next play()/setAnimation().
+    // Never true under an infinite loop count, and NOT raised by stop() — which is
+    // what lets a caller tell a run that ended on its own from one that was stopped.
+    bool isFinished() const;
     void play(float p_start_frame = -1.0f);
     bool isPausing() const;
     void pause();

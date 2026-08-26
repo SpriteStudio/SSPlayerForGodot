@@ -529,6 +529,10 @@ bool SsInternalPlayer::isPausing() const {
     return ss_runtime_is_pausing(runtime_ctx);
 }
 
+bool SsInternalPlayer::isFinished() const {
+    return ss_runtime_is_finished(runtime_ctx);
+}
+
 void SsInternalPlayer::pause() {
     ss_runtime_pause(runtime_ctx);
 }
