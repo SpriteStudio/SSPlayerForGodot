@@ -581,6 +581,11 @@ void SpriteStudioPlayer2D::_bind_methods() {
             PropertyInfo(Variant::DICTIONARY, "payload")
         )
     );
+    // The conventions' stem for this one is `signal`
+    // (SDK: 20_design/40_api_conventions, §4), and this is the one place the
+    // family cannot spell it: `signal` is a GDScript keyword, so a signal by
+    // that name cannot be connected to or awaited without fighting the parser.
+    // `_emitted` is the smallest suffix that keeps the stem readable.
     ADD_SIGNAL(
         MethodInfo(
             "signal_emitted",
@@ -596,6 +601,11 @@ void SpriteStudioPlayer2D::_bind_methods() {
         )
     );
 
+    // Not in the conventions' required set (SDK: 20_design/40_api_conventions,
+    // §4): a host that called set_animation() already knows what it selected.
+    // It earns its place here because `animation` is an exported property, so
+    // the inspector, an AnimationPlayer track or a tool script can mount a
+    // different clip without any of the node's own callers touching it.
     ADD_SIGNAL(MethodInfo("animation_changed", PropertyInfo(Variant::STRING, "anim_name")));
     ADD_SIGNAL(MethodInfo("animation_started", PropertyInfo(Variant::STRING, "anim_name")));
     ADD_SIGNAL(MethodInfo("animation_finished", PropertyInfo(Variant::STRING, "anim_name")));

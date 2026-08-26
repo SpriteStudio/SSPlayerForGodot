@@ -391,7 +391,8 @@
 		<signal name="animation_changed">
 			<param index="0" name="anim_name" type="String" />
 			<description>
-				Emitted when the current animation changes.
+				Emitted when the current animation changes, with the name of the new one.
+				A host that called [method set_animation] already knows what it selected, so this exists for the routes that do not go through it: [member animation] is an exported property, so the inspector, an [AnimationPlayer] track or a tool script can mount a different clip without any of the node's own callers touching it.
 			</description>
 		</signal>
 		<signal name="animation_finished">
