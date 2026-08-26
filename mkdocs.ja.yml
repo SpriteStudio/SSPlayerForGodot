@@ -28,6 +28,11 @@ extra:
   site_root_prefix: "../"
   # Footer icon labels (title / aria-label). Mirrors `extra.social` in mkdocs.yml.
   social:
+    # ポータルへの戻り導線。全 Player サイトが 1 つ目のフッターアイコンとして持つ。
+    # 日本語ロケール（/ja/）を指すこと - 英語版に送るのは避ける。
+    - icon: material/motion-play
+      link: https://cri-middleware.github.io/SpriteStudio-Docs/ja/
+      name: SpriteStudio Docs（ポータル）
     - icon: fontawesome/brands/github
       link: https://github.com/cri-middleware
       name: GitHub の cri-middleware
