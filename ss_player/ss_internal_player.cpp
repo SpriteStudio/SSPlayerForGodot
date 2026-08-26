@@ -556,14 +556,14 @@ float SsInternalPlayer::getSpeed() const {
     return ss_runtime_get_animation_speed(runtime_ctx);
 }
 
-void SsInternalPlayer::setFrame(float p_frame) {
+void SsInternalPlayer::setFrameNo(float p_frame) {
     if (runtime_ctx) {
         ss_runtime_set_frame_no(runtime_ctx, p_frame);
         _seek_and_redraw(ss_runtime_get_frame_no(runtime_ctx), 0.0f, false);
     }
 }
 
-float SsInternalPlayer::getFrame() const {
+float SsInternalPlayer::getFrameNo() const {
     return ss_runtime_get_frame_no(runtime_ctx);
 }
 

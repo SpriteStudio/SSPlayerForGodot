@@ -252,7 +252,7 @@ void SSPlaybackPanel::_sync_playhead() {
         return;
     }
     _updating = true;
-    float frame = _player->getFrame();
+    float frame = _player->getFrameNo();
     _frame_slider->set_value(frame);
     _frame_spin->set_value(frame);
     _updating = false;
@@ -320,7 +320,7 @@ void SSPlaybackPanel::_on_play_pressed() {
     // ss_runtime_play, which does not restart from a stopped state; passing the
     // current frame routes through play_with_start_frame so it reliably plays
     // from wherever the playhead is.
-    _player->play(_player->getFrame());
+    _player->play(_player->getFrameNo());
 }
 
 void SSPlaybackPanel::_on_stop_pressed() {
@@ -349,7 +349,7 @@ void SSPlaybackPanel::_on_slider_changed(double p_value) {
     if (_updating || !_player) {
         return;
     }
-    _player->setFrame((float)p_value);
+    _player->setFrameNo((float)p_value);
     _updating = true;
     _frame_spin->set_value(p_value);
     _updating = false;
@@ -359,7 +359,7 @@ void SSPlaybackPanel::_on_frame_spin_changed(double p_value) {
     if (_updating || !_player) {
         return;
     }
-    _player->setFrame((float)p_value);
+    _player->setFrameNo((float)p_value);
     _updating = true;
     _frame_slider->set_value(p_value);
     _updating = false;

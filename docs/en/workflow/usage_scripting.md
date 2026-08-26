@@ -35,7 +35,7 @@ func _process(delta):
 > [!IMPORTANT]
 > There are three states, not two. **`is_playing()` stays `true` while paused** — a pause is a hold, not a stop — so `is_pausing()` is what tells a held animation from a running one, and both are `false` before the first `play()` and after `stop()`.
 >
-> **`play()` is not a resume.** It rewinds to the start of the section and re-arms the loop counter. Lift a hold with `resume()`, and carry on from a stop with `play(get_frame())`.
+> **`play()` is not a resume.** It rewinds to the start of the section and re-arms the loop counter. Lift a hold with `resume()`, and carry on from a stop with `play(get_frame_no())`.
 
 ---
 
@@ -293,4 +293,4 @@ Color and cell overrides conflict with the animation, so they take a `priority` 
 - Assigning a different `.ssab` resource clears every override, because part identity is lost.
 - Overrides do not reach parts **inside** an instance part (the child animation runs as a separate player). Force-hiding the instance part itself does stop its contents from being drawn.
 
-> **On when an override is not reflected in the drawing**: While playback is stopped or paused — or on any frame that does not advance — the drawing is not rebuilt, so setting or clearing an override will not appear on screen. Call `set_frame(get_frame())` to force a redraw when you need it reflected immediately.
+> **On when an override is not reflected in the drawing**: While playback is stopped or paused — or on any frame that does not advance — the drawing is not rebuilt, so setting or clearing an override will not appear on screen. Call `set_frame_no(get_frame_no())` to force a redraw when you need it reflected immediately.
