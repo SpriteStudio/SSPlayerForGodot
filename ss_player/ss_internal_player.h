@@ -141,8 +141,8 @@ public:
     void setSpeed(float p_speed);
     float getSpeed() const;
 
-    void setFrame(float p_frame);
-    float getFrame() const;
+    void setFrameNo(float p_frame);
+    float getFrameNo() const;
 
     int getTotalFrames() const;
 
@@ -770,7 +770,7 @@ private:
     // forwarded to children whose EventInstance has `independent = true`
     // (those children run their own controller via `ss_runtime_update`
     // rather than being seeked deterministically from `parent_frame_no`).
-    // Pass 0 from non-tick callers (`setFrame`, `setSubFrameEnabled`,
+    // Pass 0 from non-tick callers (`setFrameNo`, `setSubFrameEnabled`,
     // `_fetchAnimation`) — synced children still update via parent-frame
     // seek; independent children stay where they are.
     //
@@ -800,7 +800,7 @@ private:
     // Apply the current `frame_no` to this player's draw state in one shot:
     // resolve `draw_frame` per `_sub_frame_enabled`, store it as
     // `previous_frame_no`, drive Instance children for that frame, and
-    // redraw. Used by `setFrame`, `setSubFrameEnabled`, `_fetchAnimation`
+    // redraw. Used by `setFrameNo`, `setSubFrameEnabled`, `_fetchAnimation`
     // (delta=0, parent_looped=false — non-tick callers don't step
     // independent children) and the per-tick `update` path.
     void _seek_and_redraw(float frame_no, float delta_seconds, bool parent_looped);

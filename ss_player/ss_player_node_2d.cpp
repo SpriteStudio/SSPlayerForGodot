@@ -429,14 +429,14 @@ void SpriteStudioPlayer2D::advance(double p_delta) {
     _internal->update(p_delta);
     // Same post-update contract as an automatic tick: world matrices are final,
     // so part attachments mirror their parts before anything draws.
-    emit_signal(SNAME("frame_updated"), _internal->getFrame());
+    emit_signal(SNAME("frame_updated"), _internal->getFrameNo());
 }
 
 void SpriteStudioPlayer2D::setSpeedScale(float p_speed) { _internal->setSpeed(p_speed); }
 float SpriteStudioPlayer2D::getSpeedScale() const { return _internal->getSpeed(); }
 
-void SpriteStudioPlayer2D::setFrame(float p_frame) { _internal->setFrame(p_frame); }
-float SpriteStudioPlayer2D::getFrame() const { return _internal->getFrame(); }
+void SpriteStudioPlayer2D::setFrameNo(float p_frame) { _internal->setFrameNo(p_frame); }
+float SpriteStudioPlayer2D::getFrameNo() const { return _internal->getFrameNo(); }
 
 int SpriteStudioPlayer2D::getTotalFrames() const { return _internal->getTotalFrames(); }
 
@@ -497,8 +497,8 @@ void SpriteStudioPlayer2D::_bind_methods() {
 
     ClassDB::bind_method( D_METHOD( "set_speed_scale", "speed_scale" ), &SpriteStudioPlayer2D::setSpeedScale );
     ClassDB::bind_method( D_METHOD( "get_speed_scale" ), &SpriteStudioPlayer2D::getSpeedScale );
-    ClassDB::bind_method( D_METHOD( "set_frame", "frame" ), &SpriteStudioPlayer2D::setFrame );
-    ClassDB::bind_method( D_METHOD( "get_frame" ), &SpriteStudioPlayer2D::getFrame );
+    ClassDB::bind_method( D_METHOD( "set_frame_no", "frame_no" ), &SpriteStudioPlayer2D::setFrameNo );
+    ClassDB::bind_method( D_METHOD( "get_frame_no" ), &SpriteStudioPlayer2D::getFrameNo );
 
     ClassDB::bind_method( D_METHOD( "get_total_frames" ), &SpriteStudioPlayer2D::getTotalFrames );
     ClassDB::bind_method( D_METHOD( "get_start_frame" ), &SpriteStudioPlayer2D::getStartFrame );
@@ -631,7 +631,7 @@ void SpriteStudioPlayer2D::_bind_methods() {
     ADD_PROPERTY(PropertyInfo(Variant::BOOL, "autoplay"), "set_autoplay", "is_autoplay");
     // Editor-only (never stored): the playhead is runtime state, but it stays in
     // the property list so an AnimationPlayer can keyframe it.
-    ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "frame", PROPERTY_HINT_RANGE, "0,0,0.01", PROPERTY_USAGE_EDITOR), "set_frame", "get_frame");
+    ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "frame_no", PROPERTY_HINT_RANGE, "0,0,0.01", PROPERTY_USAGE_EDITOR), "set_frame_no", "get_frame_no");
     ADD_PROPERTY(PropertyInfo(Variant::INT, "loop_count", PROPERTY_HINT_RANGE, "-1,9999,1,or_greater"), "set_loop_count", "get_loop_count");
     ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "speed_scale", PROPERTY_HINT_RANGE, "0,4,0.01,or_greater"), "set_speed_scale", "get_speed_scale");
 
@@ -764,7 +764,7 @@ void SpriteStudioPlayer2D::_validate_property(PropertyInfo& p_property) const {
 
     // The playhead and the section endpoints are bounded by the current
     // animation's length, which only the instance knows.
-    bool is_frame = p_property.name == StringName("frame");
+    bool is_frame = p_property.name == StringName("frame_no");
     bool is_section = p_property.name == StringName("animation_section_start") ||
                       p_property.name == StringName("animation_section_end");
     if (is_frame || is_section) {
@@ -824,7 +824,7 @@ void SpriteStudioPlayer2D::_notification(int p_notification) {
                 _internal->update(get_process_delta_time());
                 // Post-update: world matrices are final this tick, so part
                 // attachments can mirror their parts in the same frame.
-                emit_signal(SNAME("frame_updated"), _internal->getFrame());
+                emit_signal(SNAME("frame_updated"), _internal->getFrameNo());
             }
             // Audio voices advance independently of the animation's play/pause
             // state (fire-and-forget), so tick every frame the node processes.
@@ -834,7 +834,7 @@ void SpriteStudioPlayer2D::_notification(int p_notification) {
             if (_process_mode == ANIMATION_PROCESS_PHYSICS) {
                 _push_coverage_screen_scale();
                 _internal->update(get_physics_process_delta_time());
-                emit_signal(SNAME("frame_updated"), _internal->getFrame());
+                emit_signal(SNAME("frame_updated"), _internal->getFrameNo());
             }
             if (_audio_controller) _audio_controller->tick();
             break;

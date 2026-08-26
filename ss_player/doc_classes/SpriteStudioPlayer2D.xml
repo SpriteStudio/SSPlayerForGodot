@@ -28,7 +28,7 @@
 			<return type="void" />
 			<param index="0" name="start_frame" type="float" default="-1.0" />
 			<description>
-				Starts playback. [param start_frame] of [code]-1.0[/code] (the default) [b]rewinds to the start of the playback section[/b] - its end when [method set_playback_direction] is set to [constant PLAYBACK_DIRECTION_BACKWARD] - rather than continuing from where the playhead is. Pass [method get_frame] to play on from the current position.
+				Starts playback. [param start_frame] of [code]-1.0[/code] (the default) [b]rewinds to the start of the playback section[/b] - its end when [method set_playback_direction] is set to [constant PLAYBACK_DIRECTION_BACKWARD] - rather than continuing from where the playhead is. Pass [method get_frame_no] to play on from the current position.
 				This is a fresh start, not a resume: it re-arms the loop counter and clears the paused state. Resuming a pause is [method pause]'s own toggle.
 			</description>
 		</method>
@@ -47,7 +47,7 @@
 		<method name="stop">
 			<return type="void" />
 			<description>
-				Stops playback. The playhead [b]stays where it was[/b], so the node keeps drawing the frame it stopped on; seek with [member frame] or start over with [method play] if you want it elsewhere.
+				Stops playback. The playhead [b]stays where it was[/b], so the node keeps drawing the frame it stopped on; seek with [member frame_no] or start over with [method play] if you want it elsewhere.
 			</description>
 		</method>
 		<method name="is_finished" qualifiers="const">
@@ -351,8 +351,8 @@
 		<member name="animation_section_end" type="int">
 			Last frame of the played section, inclusive. Setting it keeps [member animation_section_start]; use [method set_animation_section] to move both endpoints at once.
 		</member>
-		<member name="frame" type="float">
-			Current playback frame (editor-only display). Can be keyframed from an [AnimationPlayer] to drive playback from a timeline.
+		<member name="frame_no" type="float">
+			Where the playhead is, in frames. Fractional: sub-frame interpolation puts it between two authored frames, which is why it is not called [code]frame[/code] - [member AnimatedSprite2D.frame] is an integer index into a [SpriteFrames] set and means something else. Editor-only display. Can be keyframed from an [AnimationPlayer] to drive playback from a timeline.
 		</member>
 		<member name="speed_scale" type="float" default="1.0">
 			Playback speed multiplier. [code]1.0[/code] is normal speed.

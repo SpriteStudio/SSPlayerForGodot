@@ -130,8 +130,8 @@ public:
 
     void setSpeedScale( float p_speed );
     float getSpeedScale() const;
-    void setFrame( float p_frame );
-    float getFrame() const;
+    void setFrameNo( float p_frame );
+    float getFrameNo() const;
 
     int getTotalFrames() const;
 

@@ -56,7 +56,7 @@ Keep the output directory (`res://ssab_generated` by default) intact, or move th
 
 ### An override does not appear on screen
 
-While playback is stopped or paused — or on any frame that does not advance — the drawing is not rebuilt, so setting or clearing an override changes nothing visible. Force a redraw with `set_frame(get_frame())`.
+While playback is stopped or paused — or on any frame that does not advance — the drawing is not rebuilt, so setting or clearing an override changes nothing visible. Force a redraw with `set_frame_no(get_frame_no())`.
 
 ### `animation_finished` never fires
 
