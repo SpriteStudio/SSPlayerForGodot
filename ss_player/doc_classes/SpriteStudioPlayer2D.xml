@@ -5,7 +5,7 @@
 	</brief_description>
 	<description>
 		Node that plays a SpriteStudio 7 animation imported as an [code].ssab[/code] resource ([SSABResource]).
-		Assign a resource to [member ssab], pick an animation with [member animation], then drive playback from code with [method play], [method pause], [method resume] and [method stop], or preview it in the editor from the [b]SpriteStudio[/b] bottom panel (shown while the node is selected).
+		Assign a resource to [member ssab], pick an animation with [member current_animation], then drive playback from code with [method play], [method pause], [method resume] and [method stop], or preview it in the editor from the [b]SpriteStudio[/b] bottom panel (shown while the node is selected).
 		[b]Editor preview:[/b] with the node selected, the bottom panel provides transport controls (play from start / play from current / stop), a frame scrubber, loop and speed. Its keyboard shortcuts mirror the AnimationPlayer editor ([kbd]D[/kbd] play from current, [kbd]Shift+D[/kbd] play from start, [kbd]S[/kbd] stop).
 	</description>
 	<tutorials>
@@ -53,7 +53,7 @@
 		<method name="is_finished" qualifiers="const">
 			<return type="bool" />
 			<description>
-				Returns [code]true[/code] once every configured loop has played. A [b]state[/b], not a pulse: it latches on completion and holds until the next [method play] or [member animation] change, so a caller that was not listening when [signal animation_finished] fired can still ask whether the run is over.
+				Returns [code]true[/code] once every configured loop has played. A [b]state[/b], not a pulse: it latches on completion and holds until the next [method play] or [member current_animation] change, so a caller that was not listening when [signal animation_finished] fired can still ask whether the run is over.
 				Never [code]true[/code] under an infinite [member loop_count], and [b]not raised by [method stop][/b] - a commanded stop is not a completion. That is what separates it from [code]not is_playing()[/code], which cannot tell the two apart. Connect to [signal animation_finished] if you want the one-shot edge instead.
 			</description>
 		</method>
@@ -85,7 +85,7 @@
 		<method name="get_animation_names" qualifiers="const">
 			<return type="PackedStringArray" />
 			<description>
-				Names of the animations in the assigned [SSABResource], empty when none is assigned. The same list [member animation] is chosen from.
+				Names of the animations in the assigned [SSABResource], empty when none is assigned. The same list [member current_animation] is chosen from.
 			</description>
 		</method>
 		<method name="get_total_frames" qualifiers="const">
@@ -120,7 +120,7 @@
 			<param index="1" name="style" type="int" enum="SpriteStudioPlayer2D.PlaybackStyle" />
 			<description>
 				Sets the playback direction and style.
-				Both are kept across [member animation] changes - "play this backwards" describes the playback rather than the clip that happens to be loaded. What does not carry is the heading within a [constant PLAYBACK_STYLE_PING_PONG] cycle: a new animation always starts on the outward leg.
+				Both are kept across [member current_animation] changes - "play this backwards" describes the playback rather than the clip that happens to be loaded. What does not carry is the heading within a [constant PLAYBACK_STYLE_PING_PONG] cycle: a new animation always starts on the outward leg.
 			</description>
 		</method>
 		<method name="get_playback_direction" qualifiers="const">
@@ -326,7 +326,7 @@
 		<member name="ssab" type="SSABResource">
 			The SpriteStudio animation resource ([code].ssab[/code]) to play.
 		</member>
-		<member name="animation" type="String">
+		<member name="current_animation" type="String">
 			Name of the animation to play, chosen from the animations contained in [member ssab].
 		</member>
 		<member name="autoplay" type="bool" default="true">
@@ -359,10 +359,10 @@
 		</member>
 		<member name="loop_count" type="int" default="-1">
 			How many times to play the animation. [code]n[/code] plays [code]n[/code] cycles and stops, so [code]1[/code] plays it once; [code]-1[/code] loops forever, and [code]0[/code] is an alias for that rather than "no cycles" - the runtime normalizes everything at or below zero to [code]-1[/code].
-			Kept across [member animation] changes, because it is the node's own configuration - as are [member speed_scale], [member frame_skip_enabled], [member frame_rate] and the playback direction and style. Only the playback section is per-transition: frame indices mean nothing against a different clip.
+			Kept across [member current_animation] changes, because it is the node's own configuration - as are [member speed_scale], [member frame_skip_enabled], [member frame_rate] and the playback direction and style. Only the playback section is per-transition: frame indices mean nothing against a different clip.
 		</member>
 		<member name="frame_rate" type="int">
-			Playback frame rate (FPS). Setting one overrides whatever the animation was authored at, and the override is kept across [member animation] changes; set it to [code]0[/code] to clear it and hand playback back to each clip's authored rate.
+			Playback frame rate (FPS). Setting one overrides whatever the animation was authored at, and the override is kept across [member current_animation] changes; set it to [code]0[/code] to clear it and hand playback back to each clip's authored rate.
 			This is an [i]absolute[/i] rate where [member speed_scale] is a multiplier, so its effect depends on the clip: 60 against a 30fps animation is double speed, and against a 60fps one is none.
 		</member>
 		<member name="frame_skip_enabled" type="bool" default="true">
@@ -392,7 +392,7 @@
 			<param index="0" name="anim_name" type="String" />
 			<description>
 				Emitted when the current animation changes, with the name of the new one.
-				A host that called [method set_animation] already knows what it selected, so this exists for the routes that do not go through it: [member animation] is an exported property, so the inspector, an [AnimationPlayer] track or a tool script can mount a different clip without any of the node's own callers touching it.
+				A host that called [method set_animation] already knows what it selected, so this exists for the routes that do not go through it: [member current_animation] is an exported property, so the inspector, an [AnimationPlayer] track or a tool script can mount a different clip without any of the node's own callers touching it.
 			</description>
 		</signal>
 		<signal name="animation_finished">

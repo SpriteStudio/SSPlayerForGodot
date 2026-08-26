@@ -286,8 +286,8 @@ void SpriteStudioPlayer2D::setAnimation(const String& strName) {
     update_configuration_warnings();
 }
 
-String SpriteStudioPlayer2D::getAnimation() const {
-    return _internal->getAnimation();
+String SpriteStudioPlayer2D::getCurrentAnimation() const {
+    return _internal->getCurrentAnimation();
 }
 
 void SpriteStudioPlayer2D::setAutoplay(bool p_autoplay) {
@@ -479,7 +479,7 @@ void SpriteStudioPlayer2D::_bind_methods() {
     ClassDB::bind_method( D_METHOD( "set_ssab_resource", "res_ssab" ), &SpriteStudioPlayer2D::setSSABResource );
     ClassDB::bind_method( D_METHOD( "get_ssab_resource" ), &SpriteStudioPlayer2D::getSSABResource );
     ClassDB::bind_method( D_METHOD( "set_animation", "name" ), &SpriteStudioPlayer2D::setAnimation );
-    ClassDB::bind_method( D_METHOD( "get_animation" ), &SpriteStudioPlayer2D::getAnimation );
+    ClassDB::bind_method( D_METHOD( "get_current_animation" ), &SpriteStudioPlayer2D::getCurrentAnimation );
 
     ClassDB::bind_method( D_METHOD( "set_autoplay", "autoplay" ), &SpriteStudioPlayer2D::setAutoplay );
     ClassDB::bind_method( D_METHOD( "is_autoplay" ), &SpriteStudioPlayer2D::isAutoplay );
@@ -627,7 +627,13 @@ void SpriteStudioPlayer2D::_bind_methods() {
         "set_ssab_resource",
         "get_ssab_resource"
     );
-    ADD_PROPERTY(PropertyInfo(Variant::STRING, "animation", PROPERTY_HINT_ENUM, ""), "set_animation", "get_animation");
+    // The accessors are deliberately asymmetric. `set_animation` is the verb the
+    // whole family publishes and `get_current_animation` is its read
+    // (SDK: 20_design/40_api_conventions), and ADD_PROPERTY names the two
+    // independently -- so the property reads as Godot expects
+    // (`AnimationPlayer.current_animation` is this same thing) without inventing a
+    // `set_current_animation` that would be a second name for one operation.
+    ADD_PROPERTY(PropertyInfo(Variant::STRING, "current_animation", PROPERTY_HINT_ENUM, ""), "set_animation", "get_current_animation");
     ADD_PROPERTY(PropertyInfo(Variant::BOOL, "autoplay"), "set_autoplay", "is_autoplay");
     // Editor-only (never stored): the playhead is runtime state, but it stays in
     // the property list so an AnimationPlayer can keyframe it.
@@ -747,7 +753,7 @@ void SpriteStudioPlayer2D::_get_property_list(List<PropertyInfo>* p_list) const 
 }
 
 void SpriteStudioPlayer2D::_validate_property(PropertyInfo& p_property) const {
-    if (p_property.name == StringName("animation")) {
+    if (p_property.name == StringName("current_animation")) {
         // Turn the statically registered enum hint into the animation names of
         // the bound resource. Left empty when no resource is assigned.
         Ref<SSABResource> res = _internal->getSSABResource();
@@ -783,7 +789,7 @@ PackedStringArray SpriteStudioPlayer2D::get_configuration_warnings() const {
 #endif
     if (getSSABResource().is_null()) {
         warnings.push_back(tr("Assign an SSABResource to the \"ssab\" property to play an animation."));
-    } else if (getAnimation().is_empty()) {
+    } else if (getCurrentAnimation().is_empty()) {
         warnings.push_back(tr("Select an animation in the \"animation\" property."));
     }
     return warnings;
