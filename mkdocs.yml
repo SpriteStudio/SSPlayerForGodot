@@ -23,6 +23,11 @@ extra:
   # Footer icons. Keep to destinations that outlive any single release. Mirrored, with
   # translated labels, in mkdocs.ja.yml - add or reorder an icon in both files.
   social:
+    # The family entry point. Every sibling site carries this as its first footer icon, so a
+    # reader who arrives here from a search can reach the portal and the other players.
+    - icon: material/motion-play
+      link: https://cri-middleware.github.io/SpriteStudio-Docs/
+      name: SpriteStudio Docs
     - icon: fontawesome/brands/github
       link: https://github.com/cri-middleware
       name: cri-middleware on GitHub
