@@ -50,6 +50,13 @@
 				Stops playback. The playhead [b]stays where it was[/b], so the node keeps drawing the frame it stopped on; seek with [member frame] or start over with [method play] if you want it elsewhere.
 			</description>
 		</method>
+		<method name="is_finished" qualifiers="const">
+			<return type="bool" />
+			<description>
+				Returns [code]true[/code] once every configured loop has played. A [b]state[/b], not a pulse: it latches on completion and holds until the next [method play] or [member animation] change, so a caller that was not listening when [signal animation_finished] fired can still ask whether the run is over.
+				Never [code]true[/code] under an infinite [member loop_count], and [b]not raised by [method stop][/b] - a commanded stop is not a completion. That is what separates it from [code]not is_playing()[/code], which cannot tell the two apart. Connect to [signal animation_finished] if you want the one-shot edge instead.
+			</description>
+		</method>
 		<method name="is_playing" qualifiers="const">
 			<return type="bool" />
 			<description>

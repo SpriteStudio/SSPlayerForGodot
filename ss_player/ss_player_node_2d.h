@@ -95,6 +95,11 @@ public:
     // The loop pulse: true only inside the tick that crossed a boundary, which is
     // why it is not called is_looped.
     bool justLooped() const;
+    // The completion state, and sticky where just_looped is a pulse: it holds until
+    // the next play()/set_animation(). Never true under an infinite loop count, and
+    // not raised by stop(), so it separates a run that ended from one that was
+    // stopped where `not is_playing()` cannot.
+    bool isFinished() const;
     PackedStringArray get_animation_names() const;
     void pause();
     void resume();
