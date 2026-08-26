@@ -15,7 +15,7 @@ To control SSPlayer with an `AnimationPlayer`, you must first convert all animat
 3. Upon success, a file named `[original_filename]_anims.res` will be generated in the same directory.
 
 > [!NOTE]
-> The generated `_anims.res` automatically contains "Value Tracks" with the exact same names as the original SpriteStudio animations. These tracks control the `animation` (animation name) and `frame` (current frame) properties of the target node.
+> The generated `_anims.res` automatically contains "Value Tracks" with the exact same names as the original SpriteStudio animations. These tracks control the `current_animation` (animation name) and `frame_no` (playhead) properties of the target node.
 
 ---
 
@@ -29,7 +29,7 @@ Here is how to apply the generated library to your scene.
    Add an `AnimationPlayer` node to the scene.
 3. **Specify the Target (Important!)**
    Select the added `AnimationPlayer` node and set its **`Root Node`** property in the Inspector to the **`SpriteStudioPlayer2D` node** from step 1.
-   *Note: Since the generated animations are configured to control the `animation` and `frame` properties of the target node itself, the Root Node must point directly to the SSPlayer node.*
+   *Note: Since the generated animations are configured to control the `current_animation` and `frame_no` properties of the target node itself, the Root Node must point directly to the SSPlayer node.*
 4. **Load the Library**
    Open the "Animation" panel at the bottom of the editor, click the "Animation" menu > **"Manage Animations..."**.
    Click the folder icon (Load Library) in the dialog that appears, and load the generated `_anims.res` file.

@@ -15,7 +15,7 @@ SSPlayer を `AnimationPlayer` で制御するためには、まず対象の `.s
 3. 成功すると、同じフォルダに `[元のファイル名]_anims.res` というファイルが生成されます。
 
 > [!NOTE]
-> 生成された `_anims.res` の中には、元の SpriteStudio アニメーションと同じ名前の「Value Track（値トラック）」が自動生成されています。このトラックは対象ノードの `animation`（アニメーション名）と `frame`（現在のフレーム）を制御します。
+> 生成された `_anims.res` の中には、元の SpriteStudio アニメーションと同じ名前の「Value Track（値トラック）」が自動生成されています。このトラックは対象ノードの `current_animation`（アニメーション名）と `frame_no`（再生ヘッド）を制御します。
 
 ---
 
@@ -29,7 +29,7 @@ SSPlayer を `AnimationPlayer` で制御するためには、まず対象の `.s
    シーン内に `AnimationPlayer` ノードを追加します。
 3. **ターゲットの指定（重要！）**
    追加した `AnimationPlayer` ノードを選択し、インスペクタ内の **`Root Node`** を、手順1の **`SpriteStudioPlayer2D` ノード** に設定します。
-   *※自動生成されたアニメーションは「対象ノード自身の `animation` と `frame` を制御する」ようになっているため、Root Node を対象ノードに向ける必要があります。*
+   *※自動生成されたアニメーションは「対象ノード自身の `current_animation` と `frame_no` を制御する」ようになっているため、Root Node を対象ノードに向ける必要があります。*
 4. **ライブラリの読み込み**
    エディタ下部の「アニメーション (Animation)」パネルを開き、「アニメーション」メニュー ＞ **「アニメーションを管理... (Manage Animations)」** をクリックします。
    出てきたウィンドウのフォルダアイコン（ライブラリをロード）を押し、生成された `_anims.res` を読み込みます。

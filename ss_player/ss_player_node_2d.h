@@ -81,7 +81,7 @@ public:
     void setSSABResource( const Ref<SSABResource>& ssabRes );
     Ref<SSABResource> getSSABResource() const;
     void setAnimation( const String& strName );
-    String getAnimation() const;
+    String getCurrentAnimation() const;
 
     void setAutoplay( bool p_autoplay );
     bool isAutoplay() const;

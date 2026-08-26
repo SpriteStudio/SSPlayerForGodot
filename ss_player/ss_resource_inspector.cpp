@@ -177,15 +177,17 @@ void SSResourceInspectorPlugin::_on_generate_animation_library_pressed(const Str
         anim->set_length(length);
         anim->set_step(1.0f / fps);
 
-        // Track 0: animation
+        // Track 0: the selected animation. The path is a PROPERTY path, so it has
+        // to be the exported name -- a track pointing at a property that no longer
+        // exists is not an error, it just silently drives nothing.
         int track_anim = anim->add_track(Animation::TYPE_VALUE);
-        anim->track_set_path(track_anim, NodePath(".:animation"));
+        anim->track_set_path(track_anim, NodePath(".:current_animation"));
         anim->track_insert_key(track_anim, 0.0, anim_name);
         anim->value_track_set_update_mode(track_anim, Animation::UPDATE_DISCRETE);
 
-        // Track 1: frame
+        // Track 1: the playhead. Same story as above.
         int track_frame = anim->add_track(Animation::TYPE_VALUE);
-        anim->track_set_path(track_frame, NodePath(".:frame"));
+        anim->track_set_path(track_frame, NodePath(".:frame_no"));
         anim->track_insert_key(track_frame, 0.0, 0.0f);
         // The player exposes frames 0..total_frame-1, and the last frame occupies
         // the final 1/fps slice of `length`. Keying the last VALID frame at its own

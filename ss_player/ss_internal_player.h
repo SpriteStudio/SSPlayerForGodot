@@ -112,7 +112,7 @@ public:
     Ref<SSABResource> getSSABResource() const { return _ssabRes; }
     void setAnimation(const String& p_name);
     void setAnimationByHash(uint32_t p_hash);
-    String getAnimation() const { return _strAnimationSelected; }
+    String getCurrentAnimation() const { return _strAnimationSelected; }
     // Cached AnimationData* for the currently selected animation. Null until
     // setAnimation+_fetchAnimation succeed; lets callers skip a redundant
     // name->AnimationData lookup in their own binary.

@@ -23,7 +23,7 @@ func _ready() -> void:
 ## Main methods
 
 * `set_ssab_resource(res: SSABResource)` / `get_ssab_resource() -> SSABResource`
-* `set_animation(name: String)` / `get_animation() -> String`
+* `set_animation(name: String)` / `get_current_animation() -> String`
 * `set_autoplay(autoplay: bool)` / `is_autoplay() -> bool`: Whether to start playing automatically when the scene starts. **Default `true`** — a node placed in a scene has no code to call `play()` for it, so it plays. Set it off for a node you drive yourself, or one that should hold its first frame as a pose.
 * `set_offset(offset: Vector2)` / `get_offset() -> Vector2`: Shifts the drawing position without moving the Node2D's origin.
 * `set_flip_h(flip: bool)` / `is_flipped_h() -> bool`: Flips the animation horizontally.

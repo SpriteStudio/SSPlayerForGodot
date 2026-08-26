@@ -23,7 +23,7 @@ func _ready() -> void:
 ## 主なメソッド
 
 * `set_ssab_resource(res: SSABResource)` / `get_ssab_resource() -> SSABResource`
-* `set_animation(name: String)` / `get_animation() -> String`
+* `set_animation(name: String)` / `get_current_animation() -> String`
 * `set_autoplay(autoplay: bool)` / `is_autoplay() -> bool`: シーン開始時に自動再生するかどうか。**既定は `true`** です。シーンに配置したノードのために `play()` を呼ぶコードは存在しないため、そのまま再生されます。自分で再生を制御したい場合や、先頭フレームをポーズとして保持したい場合はオフにしてください。
 * `set_offset(offset: Vector2)` / `get_offset() -> Vector2`: Node2D の原点を動かさずに描画位置だけをずらします。
 * `set_flip_h(flip: bool)` / `is_flipped_h() -> bool`: 水平反転。
