@@ -28,7 +28,7 @@
 - [**ドキュメントサイト (ホスト版)**](https://cri-middleware.github.io/SSPlayerForGodot/) — 🚧 初回リリース後に公開
 - [**ドキュメント (日本語)**](./docs/ja/index.md)
 - [**Documentation (English)**](./docs/en/index.md)
-- [**SpriteStudio Docs（ポータル）**](https://cri-middleware.github.io/SpriteStudio-Docs/) — SDK と全公式 Player の入口 — 🚧 初回リリース後に公開
+- [**SpriteStudio Docs（ポータル）**](https://cri-middleware.github.io/SpriteStudio-Docs/ja/) — SDK と全公式 Player の入口 — 🚧 初回リリース後に公開
 
 ### クイックリンク (日本語)
 - [インストール](./docs/ja/setup/install.md)
@@ -79,7 +79,7 @@
 
 ## 🔗 関連リポジトリ
 
-- [SpriteStudio Docs](https://cri-middleware.github.io/SpriteStudio-Docs/) — SDK と公式 Player のドキュメントポータル
+- [SpriteStudio Docs](https://cri-middleware.github.io/SpriteStudio-Docs/ja/) — SDK と公式 Player のドキュメントポータル
 - [SpriteStudio-SDK](https://github.com/cri-middleware/SpriteStudio-SDK) — `libssruntime` / `libssconverter` を提供する SDK 本体
 - [SSConverterGUI](https://github.com/cri-middleware/SSConverterGUI) — Player なしで `.sspj` を変換できるデスクトップ GUI
 
