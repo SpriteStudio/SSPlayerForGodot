@@ -124,7 +124,7 @@ OTHER_PROJECTS=("overall_gdextension")
 
 # Ensure MAIN_PROJECT has the .gdextension and icons
 /bin/cp misc/spritestudio.gdextension "./examples/${MAIN_PROJECT}/addons/spritestudio/"
-/bin/cp LICENSE.md "./examples/${MAIN_PROJECT}/addons/spritestudio/"
+/bin/cp LICENSE.md LICENSE.ja.md "./examples/${MAIN_PROJECT}/addons/spritestudio/"
 /bin/mkdir -p "./examples/${MAIN_PROJECT}/addons/spritestudio/icons"
 /bin/cp ss_player/icons/icon_*.svg "./examples/${MAIN_PROJECT}/addons/spritestudio/icons/"
 

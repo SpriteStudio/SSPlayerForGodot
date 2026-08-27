@@ -243,8 +243,8 @@ rm -rf "$WORK"
 mkdir -p "$ADDON/bin" "$ADDON/icons" "$ADDON/licenses"
 
 cp "$GDEXTENSION" "$ADDON/"
-cp "$ROOT_DIR/LICENSE.md" "$ADDON/"
-echo "   spritestudio.gdextension + LICENSE.md"
+cp "$ROOT_DIR/LICENSE.md" "$ROOT_DIR/LICENSE.ja.md" "$ADDON/"
+echo "   spritestudio.gdextension + LICENSE.md + LICENSE.ja.md"
 
 # Editor icons referenced by the [icons] section. They are source files, not
 # build outputs, so they never reach the platform artifacts -- copy them
@@ -256,7 +256,7 @@ echo "   icons/ ($(ls -1 "$ADDON/icons" | wc -l | tr -d ' ') files)"
 # FlatBuffers (Apache-2.0), godot-cpp (MIT), and the Rust runtime crates. The
 # runtime crate licences were staged into each platform artifact and are
 # identical across them, so they come from the canonical one.
-cp "$ROOT_DIR/LICENSE.md" "$ADDON/licenses/"
+cp "$ROOT_DIR/LICENSE.md" "$ROOT_DIR/LICENSE.ja.md" "$ADDON/licenses/"
 cp "$ROOT_DIR/THIRD_PARTY_NOTICES.md" "$ADDON/licenses/"
 cp "$ROOT_DIR/licenses/Apache-2.0.txt" "$ADDON/licenses/"
 cp "$IN/$CANONICAL/licenses"/* "$ADDON/licenses/"
@@ -348,7 +348,7 @@ EOF
   fi
 
   # The licences the shipped binaries carry.
-  for f in LICENSE.md THIRD_PARTY_NOTICES.md Apache-2.0.txt \
+  for f in LICENSE.md LICENSE.ja.md THIRD_PARTY_NOTICES.md Apache-2.0.txt \
            THIRD-PARTY-LICENSES.ssruntime.md THIRD-PARTY-LICENSES.ssconverter.md runtime-LICENSE.md; do
     has "addons/spritestudio/licenses/$f" || fail "$ZIP is missing licenses/$f"
   done

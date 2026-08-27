@@ -85,6 +85,6 @@
 
 ## 📄 ライセンス
 
-[LICENSE.md](./LICENSE.md) を参照してください。
+[LICENSE.md](./LICENSE.md)（正文）を参照してください。参考訳は [LICENSE.ja.md](./LICENSE.ja.md) にあります。
 
 サードパーティライブラリ（FlatBuffers, SpriteStudio-SDK の依存クレートなど）のライセンスについては、[THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md) を参照してください。
