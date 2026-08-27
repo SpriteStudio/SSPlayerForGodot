@@ -209,7 +209,8 @@ New-Item -ItemType Directory -Force -Path "$addon/bin", "$addon/icons", "$addon/
 
 Copy-Item -Force $gdextension "$addon/"
 Copy-Item -Force "$rootDirectory/LICENSE.md" "$addon/"
-Write-Host "   spritestudio.gdextension + LICENSE.md"
+Copy-Item -Force "$rootDirectory/LICENSE.ja.md" "$addon/"
+Write-Host "   spritestudio.gdextension + LICENSE.md + LICENSE.ja.md"
 
 # Editor icons referenced by the [icons] section. They are source files, not
 # build outputs, so they never reach the platform artifacts -- copy them
@@ -222,6 +223,7 @@ Write-Host "   icons/ ($((Get-ChildItem "$addon/icons").Count) files)"
 # runtime crate licences were staged into each platform artifact and are
 # identical across them, so they come from the canonical one.
 Copy-Item -Force "$rootDirectory/LICENSE.md" "$addon/licenses/"
+Copy-Item -Force "$rootDirectory/LICENSE.ja.md" "$addon/licenses/"
 Copy-Item -Force "$rootDirectory/THIRD_PARTY_NOTICES.md" "$addon/licenses/"
 Copy-Item -Force "$rootDirectory/licenses/Apache-2.0.txt" "$addon/licenses/"
 Copy-Item -Force "$in/$canonical/licenses/*" "$addon/licenses/"
@@ -319,7 +321,7 @@ if ($verify -eq "yes") {
     }
 
     # The licences the shipped binaries carry.
-    foreach ($notice in @("LICENSE.md", "THIRD_PARTY_NOTICES.md", "Apache-2.0.txt",
+    foreach ($notice in @("LICENSE.md", "LICENSE.ja.md", "THIRD_PARTY_NOTICES.md", "Apache-2.0.txt",
                           "THIRD-PARTY-LICENSES.ssruntime.md", "THIRD-PARTY-LICENSES.ssconverter.md",
                           "runtime-LICENSE.md")) {
         if (-not (Test-Entry "addons/spritestudio/licenses/$notice")) {
