@@ -45,6 +45,9 @@ namespace runtime {
 struct FrameData;
 struct PartState;
 struct DrawBatch;
+// Fixed-underlying-type enum: forward-declarable so signatures can name it
+// without pulling in format/framedata.h.
+enum DrawBatchKind : uint8_t;
 }
 namespace format {
 struct PartData;
@@ -389,6 +392,11 @@ private:
         // stepping — all delegated to ssruntime InstanceSlot via
         // `ss_instance_slot_step`.
         void* instance_slot = nullptr;
+        // True when this slot's EventInstance is active this frame (the child
+        // was redrawn and is shown). The coverage pass reads it to know which
+        // children's clipping writers to bubble up (see
+        // `_bubble_child_clip_writers`); a hidden child's writers are stale.
+        bool visible_this_frame = false;
     };
     LocalVector<InstanceChildState> _instance_children;
 
@@ -616,6 +624,42 @@ private:
     // populated and non-empty. Computes the writer bounding box, sizes the
     // viewport, and sets `_mask_local_to_uv` / `_mask_coverage_valid`.
     void _render_mask_coverage(const DrawFrame& f);
+
+    // Rasterize one writer part's geometry into this owner's coverage under
+    // `bit`. `src` supplies the geometry builders / textures (this player for its
+    // own writers, an instance child for bubbled ones); `to_owner` maps the
+    // built src-local verts into this owner's local space (identity for own
+    // writers). Accumulates the coverage bounding box in `have_bbox/bmin/bmax`.
+    void _bake_coverage_geometry(const DrawFrame& src_f, SsInternalPlayer* src,
+                                 ss::runtime::DrawBatchKind kind, RID tex_rid,
+                                 const Vector2& inv_tex_size, int p_idx, uint8_t bit,
+                                 const Transform2D& to_owner, RenderingServer* rs,
+                                 bool& have_bbox, Vector2& bmin, Vector2& bmax);
+
+    // Carry-over (ForUnity ②/③): bubble an instance child's *clipping* writers
+    // up into this owner's coverage so they clip the owner parts drawn after the
+    // instance (`owner_rank`). Only clipping writers carry out — a pure mask
+    // closes within the child. `to_owner` maps child-local -> owner-local;
+    // `inherited_influence` is the composed mask_influence handed down to the
+    // child, ANDed into each writer's op so a mask_influence==0 instance drops
+    // its writers onto the union (counter) plane. Single-stage, matching the
+    // downlink inheritance.
+    void _bubble_child_clip_writers(SsInternalPlayer* child, const Transform2D& to_owner,
+                                    bool inherited_influence, uint16_t owner_rank,
+                                    RenderingServer* rs, bool& have_bbox,
+                                    Vector2& bmin, Vector2& bmax);
+
+    // Re-read this player's current frame (world matrices + SoA buffers) from its
+    // runtime context into `f`. Used to rasterize an already-drawn instance
+    // child's clipping writers during the owner's coverage pass. Returns false
+    // when the frame is unavailable.
+    bool _fill_frame_from_runtime(DrawFrame& f);
+    // True when any visible instance child holds a clipping writer to carry up
+    // into this coverage, so the coverage pass runs even with no own writers.
+    bool _has_visible_clip_bubbling() const;
+    // Scratch verts (owner-local) for bubbled writer geometry transformed by the
+    // instance placement matrix.
+    SsVec2Array _cov_xform_verts;
 
     // Frame mask state derived by _render_mask_coverage and consumed when
     // emitting maskable parts (P3). `_mask_meta_array` is one Vec4 per writer:
