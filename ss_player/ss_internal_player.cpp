@@ -1060,7 +1060,10 @@ Ref<ShaderMaterial> SsInternalPlayer::_acquire_mask_write_material() {
 
 void SsInternalPlayer::_render_mask_coverage(const DrawFrame& f) {
     _mask_coverage_valid = false;
-    if (_mask_writers.is_empty() || !f.frameData) return;
+    // Coverage runs when this player has its own writers OR an instance child
+    // carries clipping writers out into it — the carry-over must not depend on
+    // the parent owning a mask of its own (ForUnity ②: coverage up-propagation).
+    if ((_mask_writers.is_empty() && !_has_visible_clip_bubbling()) || !f.frameData) return;
     // Borrow a pooled target of the size class decided last frame (stable thanks
     // to quantization), then re-request its one-shot render this frame.
     _acquire_mask_target(_mask_next_w, _mask_next_h);
@@ -1112,98 +1115,35 @@ void SsInternalPlayer::_render_mask_coverage(const DrawFrame& f) {
                 if (_mask_writers[wi].part_index == p_idx) { w = &_mask_writers[wi]; break; }
             }
             if (!w) continue;
-            if (p_idx < 0 || p_idx >= (int)_parts_by_idx.size()) continue;
-            const auto* part = _parts_by_idx[p_idx];
-            if (!part) continue;
-            const float* draw_m = f.get_world_matrix(p_idx);
-            if (!draw_m) continue;
+            // Own writer: geometry and textures come from this player, and it is
+            // already in owner-local space (identity placement).
+            _bake_coverage_geometry(f, this, kind, tex_rid, inv_tex_size, p_idx,
+                                    w->bit, Transform2D(), rs, have_bbox, bmin, bmax);
+        }
+    }
 
-            // Build the writer's geometry per batch kind into common pointers.
-            // Mesh verts already arrive world-space; Normal/Mask/Shape apply
-            // draw_m inside their builders.
-            const SsVec2Array* gverts = nullptr;
-            const SsVec2Array* guvs = nullptr;
-            const SsColorArray* gcolors = nullptr;
-            const SsIntArray* gindices = nullptr;
-            bool no_cutout = false; // Shapes have no texture; the geometry is the mask.
-
-            int nv = 0;
-            if (kind == ss::runtime::DrawBatchKind_Mesh) {
-                if (!_build_mesh_geometry(f, p_idx, part, inv_tex_size, _mesh_buf)) continue;
-                gverts = &_mesh_buf.verts; guvs = &_mesh_buf.uvs;
-                gcolors = &_mesh_buf.colors; gindices = &_mesh_buf.indices;
-                nv = gverts->size();
-            } else if (kind == ss::runtime::DrawBatchKind_Shape) {
-                if (!_build_shape_geometry(f, p_idx, part, draw_m, _shape_buf)) continue;
-                gverts = &_shape_buf.verts; guvs = &_shape_buf.uvs;
-                gcolors = &_shape_buf.colors; gindices = &_shape_buf.indices;
-                no_cutout = true;
-                nv = gverts->size();
-            } else {
-                if (_per_part_normal_verts.size() < MAX_VERTICES_COUNT) {
-                    _per_part_normal_verts.resize(MAX_VERTICES_COUNT);
-                    _per_part_normal_uvs.resize(MAX_VERTICES_COUNT);
-                    _per_part_normal_colors.resize(MAX_VERTICES_COUNT);
-                    _per_part_normal_custom0.resize(MAX_VERTICES_COUNT * 4);
-                }
-                Vector2* verts_ptr = _per_part_normal_verts.ptrw();
-                Vector2* uvs_ptr = _per_part_normal_uvs.ptrw();
-                Color* colors_ptr = _per_part_normal_colors.ptrw();
-                float* custom0_ptr = _per_part_normal_custom0.ptrw();
-                const int vc = _build_normal(f, p_idx, part, draw_m, inv_tex_size,
-                                             verts_ptr, uvs_ptr,
-                                             colors_ptr, custom0_ptr, 0);
-                if (vc <= 0) continue;
-                if (vc == MAX_VERTICES_COUNT) {
-                    _per_part_normal_indices.resize(INDICES_COUNT_PENTAGON);
-                    int32_t* iptr = (int32_t*)_per_part_normal_indices.ptrw();
-                    const int pent[INDICES_COUNT_PENTAGON] = { 0,1,4, 1,3,4, 3,2,4, 2,0,4 };
-                    for (int j = 0; j < INDICES_COUNT_PENTAGON; j++) iptr[j] = pent[j];
-                } else {
-                    _per_part_normal_indices.resize(INDICES_COUNT_QUAD);
-                    int32_t* iptr = (int32_t*)_per_part_normal_indices.ptrw();
-                    const int quad[INDICES_COUNT_QUAD] = { 0,1,2, 1,3,2 };
-                    for (int j = 0; j < INDICES_COUNT_QUAD; j++) iptr[j] = quad[j];
-                }
-                gverts = &_per_part_normal_verts; guvs = &_per_part_normal_uvs;
-                gcolors = &_per_part_normal_colors; gindices = &_per_part_normal_indices;
-                nv = vc;
-            }
-
-            if (nv <= 0) continue;
-
-            // Accumulate the writer bounding box in player-local space.
-            const Vector2* vp = gverts->ptr();
-            for (int j = 0; j < nv; j++) {
-                if (!have_bbox) { bmin = bmax = vp[j]; have_bbox = true; }
-                else {
-                    if (vp[j].x < bmin.x) bmin.x = vp[j].x;
-                    if (vp[j].y < bmin.y) bmin.y = vp[j].y;
-                    if (vp[j].x > bmax.x) bmax.x = vp[j].x;
-                    if (vp[j].y > bmax.y) bmax.y = vp[j].y;
-                }
-            }
-
-            // Encode this writer's bit into R/G/B (24 writers; alpha reserved
-            // as the premultiplied-blend coverage accumulator).
-            const int chan = w->bit / 8;
-            const uint8_t bit_val = 1 << (w->bit % 8);
-            uint8_t r = (chan == 0) ? bit_val : 0;
-            uint8_t g = (chan == 1) ? bit_val : 0;
-            uint8_t b = (chan == 2) ? bit_val : 0;
-            Color bit_color = Color::from_rgba8(r, g, b, 0);
-
-            float threshold = no_cutout ? -1.0f
-                            : (float)(255 - part->mask()) / 255.0f;
-            if (threshold > 1.0f) threshold = 1.0f;
-
-            RID mask_ci = _acquire_mask_canvas_item();
-            Ref<ShaderMaterial> mat = _acquire_mask_write_material();
-            mat->set_shader_parameter("mask_bit_color", bit_color);
-            mat->set_shader_parameter("mask_threshold", threshold);
-            rs->canvas_item_set_material(mask_ci, mat->get_rid());
-            rs->canvas_item_set_transform(mask_ci, Transform2D());
-            rs->canvas_item_add_triangle_array(mask_ci, *gindices, *gverts, *gcolors, *guvs, {}, {}, tex_rid);
+    // Carry-over: bubble each visible instance child's clipping writers up into
+    // this coverage, so they clip the owner parts drawn after the instance.
+    // Ranks come from this frame's draw order; the child's frame state is still
+    // current (it was drawn earlier this tick).
+    {
+        const auto* pm = f.binary ? f.binary->parts() : nullptr;
+        const uint32_t n = draw_order->size();
+        for (uint32_t rank = 0; rank < n; rank++) {
+            if ((int)_mask_writers.size() >= MAX_MASK_WRITERS) break;
+            const int p_idx = (int)draw_order_data[rank];
+            if (p_idx < 0 || (uint32_t)p_idx >= _instance_children.size()) continue;
+            const InstanceChildState& ics = _instance_children[p_idx];
+            if (!ics.player || !ics.visible_this_frame) continue;
+            const float* im = f.get_world_matrix(p_idx);
+            if (!im) continue;
+            const ss::format::PartData* ipd =
+                (pm && p_idx < (int)pm->size()) ? pm->Get(p_idx) : nullptr;
+            // Writer-side composition (§2-6): the influence reaching the child is
+            // this owner's inherited influence ANDed with the instance part's.
+            const bool inh_infl = _compose_mask_context(ipd).influence;
+            _bubble_child_clip_writers(ics.player, matrix_to_transform2d(im), inh_infl,
+                                       (uint16_t)rank, rs, have_bbox, bmin, bmax);
         }
     }
 
@@ -1268,6 +1208,226 @@ void SsInternalPlayer::_render_mask_coverage(const DrawFrame& f) {
     // player's host viewport, so its coverage is this frame's — valid from the
     // very first frame of masking and across size-class transitions alike.
     _mask_coverage_valid = true;
+}
+
+void SsInternalPlayer::_bake_coverage_geometry(
+        const DrawFrame& src_f, SsInternalPlayer* src, ss::runtime::DrawBatchKind kind,
+        RID tex_rid, const Vector2& inv_tex_size, int p_idx, uint8_t bit,
+        const Transform2D& to_owner, RenderingServer* rs,
+        bool& have_bbox, Vector2& bmin, Vector2& bmax) {
+    if (p_idx < 0 || p_idx >= (int)src->_parts_by_idx.size()) return;
+    const auto* part = src->_parts_by_idx[p_idx];
+    if (!part) return;
+    const float* draw_m = src_f.get_world_matrix(p_idx);
+    if (!draw_m) return;
+
+    // Build the writer's geometry per batch kind (from `src`'s buffers). Mesh
+    // verts already arrive world-space; Normal/Mask/Shape apply draw_m inside
+    // their builders.
+    const SsVec2Array* gverts = nullptr;
+    const SsVec2Array* guvs = nullptr;
+    const SsColorArray* gcolors = nullptr;
+    const SsIntArray* gindices = nullptr;
+    bool no_cutout = false; // Shapes have no texture; the geometry is the mask.
+
+    int nv = 0;
+    if (kind == ss::runtime::DrawBatchKind_Mesh) {
+        if (!src->_build_mesh_geometry(src_f, p_idx, part, inv_tex_size, src->_mesh_buf)) return;
+        gverts = &src->_mesh_buf.verts; guvs = &src->_mesh_buf.uvs;
+        gcolors = &src->_mesh_buf.colors; gindices = &src->_mesh_buf.indices;
+        nv = gverts->size();
+    } else if (kind == ss::runtime::DrawBatchKind_Shape) {
+        if (!src->_build_shape_geometry(src_f, p_idx, part, draw_m, src->_shape_buf)) return;
+        gverts = &src->_shape_buf.verts; guvs = &src->_shape_buf.uvs;
+        gcolors = &src->_shape_buf.colors; gindices = &src->_shape_buf.indices;
+        no_cutout = true;
+        nv = gverts->size();
+    } else {
+        if (src->_per_part_normal_verts.size() < MAX_VERTICES_COUNT) {
+            src->_per_part_normal_verts.resize(MAX_VERTICES_COUNT);
+            src->_per_part_normal_uvs.resize(MAX_VERTICES_COUNT);
+            src->_per_part_normal_colors.resize(MAX_VERTICES_COUNT);
+            src->_per_part_normal_custom0.resize(MAX_VERTICES_COUNT * 4);
+        }
+        Vector2* verts_ptr = src->_per_part_normal_verts.ptrw();
+        Vector2* uvs_ptr = src->_per_part_normal_uvs.ptrw();
+        Color* colors_ptr = src->_per_part_normal_colors.ptrw();
+        float* custom0_ptr = src->_per_part_normal_custom0.ptrw();
+        const int vc = src->_build_normal(src_f, p_idx, part, draw_m, inv_tex_size,
+                                          verts_ptr, uvs_ptr,
+                                          colors_ptr, custom0_ptr, 0);
+        if (vc <= 0) return;
+        if (vc == MAX_VERTICES_COUNT) {
+            src->_per_part_normal_indices.resize(INDICES_COUNT_PENTAGON);
+            int32_t* iptr = (int32_t*)src->_per_part_normal_indices.ptrw();
+            const int pent[INDICES_COUNT_PENTAGON] = { 0,1,4, 1,3,4, 3,2,4, 2,0,4 };
+            for (int j = 0; j < INDICES_COUNT_PENTAGON; j++) iptr[j] = pent[j];
+        } else {
+            src->_per_part_normal_indices.resize(INDICES_COUNT_QUAD);
+            int32_t* iptr = (int32_t*)src->_per_part_normal_indices.ptrw();
+            const int quad[INDICES_COUNT_QUAD] = { 0,1,2, 1,3,2 };
+            for (int j = 0; j < INDICES_COUNT_QUAD; j++) iptr[j] = quad[j];
+        }
+        gverts = &src->_per_part_normal_verts; guvs = &src->_per_part_normal_uvs;
+        gcolors = &src->_per_part_normal_colors; gindices = &src->_per_part_normal_indices;
+        nv = vc;
+    }
+
+    if (nv <= 0) return;
+
+    // Map into owner-local space for a bubbled writer (identity for own writers).
+    const bool needs_xform = to_owner != Transform2D();
+    const Vector2* vp;
+    if (needs_xform) {
+        if (_cov_xform_verts.size() < nv) _cov_xform_verts.resize(nv);
+        Vector2* xp = _cov_xform_verts.ptrw();
+        const Vector2* sp = gverts->ptr();
+        for (int j = 0; j < nv; j++) xp[j] = to_owner.xform(sp[j]);
+        vp = xp;
+    } else {
+        vp = gverts->ptr();
+    }
+
+    // Accumulate the writer bounding box in owner-local space.
+    for (int j = 0; j < nv; j++) {
+        if (!have_bbox) { bmin = bmax = vp[j]; have_bbox = true; }
+        else {
+            if (vp[j].x < bmin.x) bmin.x = vp[j].x;
+            if (vp[j].y < bmin.y) bmin.y = vp[j].y;
+            if (vp[j].x > bmax.x) bmax.x = vp[j].x;
+            if (vp[j].y > bmax.y) bmax.y = vp[j].y;
+        }
+    }
+
+    // Encode this writer's bit into R/G/B (24 writers; alpha reserved as the
+    // premultiplied-blend coverage accumulator).
+    const int chan = bit / 8;
+    const uint8_t bit_val = 1 << (bit % 8);
+    uint8_t r = (chan == 0) ? bit_val : 0;
+    uint8_t g = (chan == 1) ? bit_val : 0;
+    uint8_t b = (chan == 2) ? bit_val : 0;
+    Color bit_color = Color::from_rgba8(r, g, b, 0);
+
+    float threshold = no_cutout ? -1.0f
+                    : (float)(255 - part->mask()) / 255.0f;
+    if (threshold > 1.0f) threshold = 1.0f;
+
+    RID mask_ci = _acquire_mask_canvas_item();
+    Ref<ShaderMaterial> mat = _acquire_mask_write_material();
+    mat->set_shader_parameter("mask_bit_color", bit_color);
+    mat->set_shader_parameter("mask_threshold", threshold);
+    rs->canvas_item_set_material(mask_ci, mat->get_rid());
+    rs->canvas_item_set_transform(mask_ci, Transform2D());
+    // uvs/colors/indices are unaffected by the placement transform; only verts
+    // move into owner space.
+    if (needs_xform) {
+        rs->canvas_item_add_triangle_array(mask_ci, *gindices, _cov_xform_verts, *gcolors, *guvs, {}, {}, tex_rid);
+    } else {
+        rs->canvas_item_add_triangle_array(mask_ci, *gindices, *gverts, *gcolors, *guvs, {}, {}, tex_rid);
+    }
+}
+
+void SsInternalPlayer::_bubble_child_clip_writers(
+        SsInternalPlayer* child, const Transform2D& to_owner, bool inherited_influence,
+        uint16_t owner_rank, RenderingServer* rs, bool& have_bbox, Vector2& bmin, Vector2& bmax) {
+    if (!child) return;
+    if ((int)_mask_writers.size() >= MAX_MASK_WRITERS) return; // owner bit budget full
+
+    DrawFrame cf = {};
+    if (!child->_fill_frame_from_runtime(cf)) return;
+    auto draw_batches = cf.frameData->draw_batches();
+    auto draw_order = cf.frameData->draw_order();
+    if (!draw_batches || !draw_order) return;
+    const uint16_t* cdo = draw_order->data();
+
+    for (uint32_t bi = 0; bi < draw_batches->size(); bi++) {
+        const auto* batch = draw_batches->Get(bi);
+        if (!batch) continue;
+        const auto kind = batch->kind();
+        if (kind != ss::runtime::DrawBatchKind_Normal && kind != ss::runtime::DrawBatchKind_Mesh
+            && kind != ss::runtime::DrawBatchKind_Shape) {
+            continue;
+        }
+
+        RID tex_rid;
+        Vector2 inv_tex_size(1, 1);
+        if (batch->texture_hash() != 0 && child->_textures.has(batch->texture_hash())) {
+            Ref<Texture2D> tex = child->_textures[batch->texture_hash()];
+            if (tex.is_valid()) {
+                tex_rid = tex->get_rid();
+                const Vector2 ts = tex->get_size();
+                if (ts.x > 0 && ts.y > 0) inv_tex_size = Vector2(1.0f / ts.x, 1.0f / ts.y);
+            }
+        }
+
+        const uint16_t count = batch->count();
+        for (uint16_t k = 0; k < count; k++) {
+            if ((int)_mask_writers.size() >= MAX_MASK_WRITERS) return;
+            const int p_idx = (int)cdo[batch->start_rank() + k];
+            // Only clipping writers carry out of the sub-animation. A pure mask
+            // closes within the child (masks its own earlier parts) and never
+            // reaches the parent's parts.
+            const MaskWriter* cw = nullptr;
+            for (int wi = 0; wi < child->_mask_writers.size(); wi++) {
+                const MaskWriter& c = child->_mask_writers[wi];
+                if (c.part_index == p_idx && c.is_clipping) { cw = &c; break; }
+            }
+            if (!cw) continue;
+
+            // Effective mask_influence (Rule_Mask.md §2-6): the writer's own op
+            // composed with the influence handed down. A mask_influence==0
+            // instance drops the child's writers onto the union (counter) plane.
+            MaskWriter bw;
+            bw.part_index = -2;                 // foreign: not one of this owner's parts
+            bw.draw_rank = owner_rank;          // clip owner parts drawn after the instance
+            bw.bit = (uint8_t)_mask_writers.size();
+            bw.op_invert = cw->op_invert && inherited_influence;
+            bw.is_clipping = true;
+            const uint8_t bit = bw.bit;
+            _mask_writers.push_back(bw);
+
+            _bake_coverage_geometry(cf, child, kind, tex_rid, inv_tex_size, p_idx,
+                                    bit, to_owner, rs, have_bbox, bmin, bmax);
+        }
+    }
+}
+
+bool SsInternalPlayer::_fill_frame_from_runtime(DrawFrame& f) {
+    if (!runtime_ctx || _ssabRes.is_null()) return false;
+    unsigned char* data = nullptr;
+    uintptr_t len = 0;
+    ss_runtime_get_frame_data(runtime_ctx, previous_frame_no, &data, &len);
+    if (!data) return false;
+    f.frameData = ss::runtime::GetFrameData(data);
+    f.binary = _ssabRes->get_ss_anime_binary();
+    if (!f.frameData || !f.binary) return false;
+    f.rs = RenderingServer::get_singleton();
+    ss_runtime_get_world_matrices(runtime_ctx, &f.world_matrices, &f.world_matrices_len);
+    ss_runtime_get_local_uvs(runtime_ctx, &f.local_uvs, &f.local_uvs_len);
+    ss_runtime_get_cell_meta(runtime_ctx, &f.cell_meta, &f.cell_meta_len);
+    ss_runtime_get_local_vertices(runtime_ctx, &f.local_vertices, &f.local_vertices_len);
+    ss_runtime_get_shape_vertices(runtime_ctx, &f.shape_vertices, &f.shape_vertices_len);
+    ss_runtime_get_shape_vertex_box_coords(runtime_ctx, &f.shape_box_coords, &f.shape_box_coords_len);
+    ss_runtime_get_shape_vertex_counts(runtime_ctx, &f.shape_vertex_counts, &f.shape_vertex_counts_len);
+    ss_runtime_get_mesh_vertices_x(runtime_ctx, &f.mesh_vertices_x, &f.mesh_vertices_x_len);
+    ss_runtime_get_mesh_vertices_y(runtime_ctx, &f.mesh_vertices_y, &f.mesh_vertices_y_len);
+    ss_runtime_get_mesh_vertex_offsets(runtime_ctx, &f.mesh_vertex_offsets, &f.mesh_vertex_offsets_len);
+    ss_runtime_get_mesh_uvs(runtime_ctx, &f.mesh_uvs, &f.mesh_uvs_len);
+    ss_runtime_get_mesh_indices(runtime_ctx, &f.mesh_indices, &f.mesh_indices_len);
+    ss_runtime_get_mesh_index_offsets(runtime_ctx, &f.mesh_index_offsets, &f.mesh_index_offsets_len);
+    return true;
+}
+
+bool SsInternalPlayer::_has_visible_clip_bubbling() const {
+    for (uint32_t i = 0; i < _instance_children.size(); i++) {
+        const InstanceChildState& ics = _instance_children[i];
+        if (!ics.player || !ics.visible_this_frame) continue;
+        const Vector<MaskWriter>& cw = ics.player->_mask_writers;
+        for (int wi = 0; wi < cw.size(); wi++) {
+            if (cw[wi].is_clipping) return true;
+        }
+    }
+    return false;
 }
 
 bool SsInternalPlayer::_part_in_mask_scope(uint16_t rank) const {
@@ -1357,9 +1517,11 @@ SsInternalPlayer::_resolve_part_mask(const DrawFrame& f, int p_idx, uint16_t ran
         (pm && p_idx >= 0 && p_idx < (int)pm->size()) ? pm->Get(p_idx) : nullptr;
     const InheritedMaskContext c = _compose_mask_context(pd);
     // A part opts out with mask_influence == 0, which the AND-chain has already
-    // folded in. A clipping writer stays a target regardless (its mask_influence
-    // encodes the write op, and mask_write does not compose).
-    if (!c.influence && !(pd && pd->mask_write())) return d;
+    // folded in. For a clipping writer the *same* mask_influence is both its
+    // write op and its target flag (Rule_Mask.md §2-3/§3), so mask_write must not
+    // force it to be a target: a mask_influence == 0 clipping part is opted out,
+    // and its own colour is only clipped by *other* masks per its real influence.
+    if (!c.influence) return d;
 
     d.visible_inside = c.visible_inside;
     // Scope: for an inherited mask the instance part's rank already settled it,
@@ -1473,7 +1635,10 @@ void SsInternalPlayer::_drawAnimation(float frame_no, float delta_seconds, bool 
     // CBP masking: collect this frame's mask writers, then render the coverage
     // bitmap. The top-root player owns the mask state (instance children are
     // masked by it in P3), so only render coverage when not parent-driven.
-    if (_build_mask_writers(f) && !_parent_driven) {
+    // Coverage also runs when the parent has no writer of its own but an
+    // instance child carries clipping writers up into it (carry-over).
+    const bool has_own_writers = _build_mask_writers(f);
+    if ((has_own_writers || _has_visible_clip_bubbling()) && !_parent_driven) {
         _render_mask_coverage(f);
     } else {
         // Not masking this frame — return any borrowed coverage target to the pool.
@@ -1766,6 +1931,11 @@ void SsInternalPlayer::_reset_slots_playback_state() {
 }
 
 void SsInternalPlayer::_update_instance_children(float parent_frame_no, float delta_seconds, bool parent_looped) {
+    // Cleared each tick; `_drive_instance_slot` re-arms it for the slots whose
+    // EventInstance is active this frame (read by the coverage pass).
+    for (uint32_t i = 0; i < _instance_children.size(); i++) {
+        _instance_children[i].visible_this_frame = false;
+    }
     if (!_currentAnimationData) {
         // No animation selected on the parent: keep all children hidden.
         for (uint32_t i = 0; i < _instance_children.size(); i++) {
@@ -1795,7 +1965,11 @@ void SsInternalPlayer::_update_instance_children(float parent_frame_no, float de
         const ss::format::PartData* pd =
             (parts_meta && p_idx < parts_meta->size()) ? parts_meta->Get(p_idx) : nullptr;
         InheritedMaskContext ctx = _compose_mask_context(pd);
-        ctx.active = may_mask && (ctx.influence || (pd && pd->mask_write()));
+        // The mask reaches the sub-animation only when the instance part is a
+        // target of it — i.e. its composed mask_influence survives the AND-chain.
+        // mask_write must not force this (Rule_Mask.md §2-3/§3); see the matching
+        // gate in _resolve_part_mask.
+        ctx.active = may_mask && ctx.influence;
         child->_set_inherited_mask_context(ctx);
 
         const ss_event_instance_info info = ss_runtime_get_active_event_instance(runtime_ctx, p_idx);
@@ -1834,6 +2008,9 @@ void SsInternalPlayer::_drive_instance_slot(InstanceChildState& state,
     const ss_instance_step_result r = ss_instance_slot_step(
         state.instance_slot, info, child->runtime_ctx,
         parent_frame_no, delta_seconds, parent_looped);
+
+    // The coverage pass reads this to decide whose clipping writers to bubble up.
+    state.visible_this_frame = r.visible;
 
     if (r.transitioned) {
         // Controller is already configured + playing inside step(); play()
