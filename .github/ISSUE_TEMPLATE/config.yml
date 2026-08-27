@@ -1,8 +1,19 @@
+# Issues are for bugs and feature requests. Everything else has a better home —
+# see SUPPORT.md, which these links mirror.
+#
+# One link the sibling players carry is deliberately absent: the shared
+# SpriteStudio core's issue tracker. SpriteStudio-SDK is not public, so it
+# would 404 for exactly the people who would follow it.
 blank_issues_enabled: false
 contact_links:
-  - name: 💬 SpriteStudio Community / コミュニティ (使い方や質問)
+  - name: ❓ Question about how to use the player / 使い方の質問
     url: https://spritestudio.jp/community/
-    about: Please ask general questions about how to use the SDK here. / SDKの使い方などの一般的なご質問はこちらのコミュニティをご利用ください。
-  - name: 🔒 Private Inquiries & Data Submission / 非公開でのご相談・データ送付
-    url: https://www.webtech.co.jp/help/ja/spritestudio7/inquiries/ssplayer_tool/
-    about: Use this for private inquiries or when sending sensitive reproduction data. / 非公開での相談や、再現データの送付が必要な場合は公式ヘルプセンターをご利用ください。
+    about: Implementation advice and tips, in the official community forum. Issues are not for usage questions.
+
+  - name: 🔒 Private inquiry, or sending reproduction data / 個別のお問い合わせ・データ送付
+    url: https://www.webtech.co.jp/help/en/spritestudio7/inquiries/ssplayer_tool/
+    about: Use the Help Center for sensitive reports, proprietary .sspj files, or contractual support. Never attach proprietary data to a public issue.
+
+  - name: 🛡️ Security vulnerability / 脆弱性の報告
+    url: https://github.com/cri-middleware/SSPlayerForGodot/blob/HEAD/SECURITY.md
+    about: Do not open a public issue. See the security policy for how to report privately.
