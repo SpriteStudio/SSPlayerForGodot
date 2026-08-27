@@ -2109,7 +2109,7 @@ int SsInternalPlayer::_build_normal(const DrawFrame& f, int p_idx,
         corner_rates[1] = pc->rt().rate();
         corner_rates[2] = pc->lb().rate();
         corner_rates[3] = pc->rb().rate();
-        // PartColor blend_type is 0..3 (Mix/Mul/Add/Sub). Higher SS7 values are
+        // PartColor blend_type is 0..3 (Mix/Mul/Add/Sub). Higher SpriteStudio values are
         // GPU framebuffer blends, not PartColor formulas — clamp defensively.
         blend_idx = (int)pc->blend_type();
         if (blend_idx < 0 || blend_idx > 3) blend_idx = 0;
@@ -2306,7 +2306,7 @@ void SsInternalPlayer::_apply_per_part_uniforms(Ref<ShaderMaterial> mat, const f
 void SsInternalPlayer::_apply_partcolor_material(RenderingServer* rs, RID ci, uint32_t shader_id_hash, ss::format::BlendType ss_blend) {
     // Only Mix/Add/Sub/Mul are supported as GPU-side framebuffer blend modes
     // here; any other batch blend_type falls back to Mix at the material level
-    // (the rest of the 12 SS7 blends are deferred — see ROADMAP). The
+    // (the rest of the 12 SpriteStudio blends are deferred — see ROADMAP). The
     // per-vertex CUSTOM0 still drives PartColor compositing regardless.
     ss::format::BlendType resolved = ss_blend;
     switch (ss_blend) {
