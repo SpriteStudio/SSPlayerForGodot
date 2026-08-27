@@ -5,7 +5,7 @@ The stable version can be obtained from the [main branch](https://github.com/cri
 No warranty or support is provided for this branch, and we cannot respond to feature requests or bug reports.  
 Interfaces may change without notice.  
 
-A plugin for playing back animations created with [OPTPiX SpriteStudio](https://www.webtech.co.jp/spritestudio/) inside [Godot Engine](https://godotengine.org/).
+A plugin for playing back animations created with [SpriteStudio](https://www.webtech.co.jp/spritestudio/) inside [Godot Engine](https://godotengine.org/).
 Animation playback uses `libssruntime` provided by [SpriteStudio-SDK](https://github.com/cri-middleware/SpriteStudio-SDK).
 
 ## Table of Contents
@@ -35,9 +35,9 @@ Animation playback uses `libssruntime` provided by [SpriteStudio-SDK](https://gi
 
 ## Key Features
 
-This plugin is designed to bring the full expressive power of SpriteStudio 7 to Godot Engine seamlessly.
+This plugin is designed to bring the full expressive power of SpriteStudio to Godot Engine seamlessly.
 
-*   **Full Feature Support:** Fully supports SpriteStudio 7 features including bone hierarchies, mesh & deformations, and high-performance particle effects.
+*   **Full Feature Support:** Fully supports SpriteStudio features including bone hierarchies, mesh & deformations, and high-performance particle effects.
 *   **Seamless Integration and a Powerful Asset Pipeline:** In addition to easy drag-and-drop importing via the built-in "SS Import Dock", you can open SpriteStudio directly from the Inspector and reconvert with a single click, providing a **powerful asset pipeline that allows you to seamlessly transition between SpriteStudio and Godot**. For details, see [Asset Import and Editor Integration](workflow/usage_asset_pipeline.md).
 *   **Dynamic Customization (CellMap Overrides):** Easily swap textures at runtime to implement character equipment changes or color variations.
 *   **Signals & Events:** Receive "User Data" and "Signals" from your animation timeline directly as Godot Signals, allowing frame-perfect triggers for game logic. Every event says which part fired it.

@@ -89,7 +89,7 @@
 
 ### 「Open SSPJ」を押しても何も起きない
 
-作業中のマシンに [OPTPiX SpriteStudio 7](https://www.webtech.co.jp/spritestudio/) がインストールされ、`.sspj` が関連付けられている必要があります。このボタンは OS のシェルにファイルを渡しているだけです。
+作業中のマシンに [SpriteStudio](https://www.webtech.co.jp/spritestudio/) がインストールされ、`.sspj` が関連付けられている必要があります。このボタンは OS のシェルにファイルを渡しているだけです。
 
 ### 「Reconvert」で元ファイルが見つからない
 

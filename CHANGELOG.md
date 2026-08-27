@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [7.0.0-beta.1] - Unreleased
 
-First release of the SpriteStudio 7 generation of the plugin, and a rewrite of the 1.x
+First release of the SpriteStudio generation of the plugin, and a rewrite of the 1.x
 player. Playback is now driven by `libssruntime` from
 [SpriteStudio-SDK](https://github.com/cri-middleware/SpriteStudio-SDK) and consumes
 converted binaries (`.ssab`) instead of parsing `.sspj` at runtime. See the

@@ -11,7 +11,7 @@
 
 ## Architecture in one paragraph
 
-A Godot Engine integration for SpriteStudio 7, providing a C++ `SpriteStudioPlayer2D` node that can be built as a **GDExtension** or a **custom module**. It uses `libssruntime` (Rust) from SpriteStudio-SDK via FFI to play `.ssab` (FlatBuffers) binaries. Projects are converted from `.sspj` (XML) to `.ssab` at import-time using `libssconverter`. The C++ side handles Godot node lifecycle, resource management, and batch rendering.
+A Godot Engine integration for SpriteStudio, providing a C++ `SpriteStudioPlayer2D` node that can be built as a **GDExtension** or a **custom module**. It uses `libssruntime` (Rust) from SpriteStudio-SDK via FFI to play `.ssab` (FlatBuffers) binaries. Projects are converted from `.sspj` (XML) to `.ssab` at import-time using `libssconverter`. The C++ side handles Godot node lifecycle, resource management, and batch rendering.
 
 ## Key components
 

@@ -89,7 +89,7 @@ Details in [Audio Playback](workflow/audio.md).
 
 ### "Open SSPJ" does nothing
 
-[OPTPiX SpriteStudio 7](https://www.webtech.co.jp/spritestudio/) must be installed on the machine you are working on, and `.sspj` must be associated with it — the button hands the file to the OS shell.
+[SpriteStudio](https://www.webtech.co.jp/spritestudio/) must be installed on the machine you are working on, and `.sspj` must be associated with it — the button hands the file to the OS shell.
 
 ### "Reconvert" cannot find the source
 

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <class name="SSABResource" inherits="Resource" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
 	<brief_description>
-		A SpriteStudio 7 animation binary ([code].ssab[/code]).
+		A SpriteStudio animation binary ([code].ssab[/code]).
 	</brief_description>
 	<description>
 		Holds the animation binary produced from a SpriteStudio project ([code].sspj[/code]), either by dropping the project onto the editor (the [b]SS Import Dock[/b]) or by running [code]ssconverter-cli[/code]. Assign it to [member SpriteStudioPlayer2D.ssab] to play it.
