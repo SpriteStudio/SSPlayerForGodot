@@ -67,7 +67,7 @@ While this powerful cross-editor integration (`Open SSPJ` and `Reconvert`) is in
 
 > [!WARNING]
 > **SpriteStudio installation is required**
-> Clicking the "Open SSPJ" button will launch SpriteStudio. Therefore, [OPTPiX SpriteStudio 7](https://www.webtech.co.jp/spritestudio/) must be installed on the PC you are using.
+> Clicking the "Open SSPJ" button will launch SpriteStudio. Therefore, [SpriteStudio](https://www.webtech.co.jp/spritestudio/) must be installed on the PC you are using.
 
 > [!TIP]
 > **File Path Sharing and Smart Re-link for Team Development**

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <class name="SSQBResource" inherits="Resource" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
 	<brief_description>
-		A SpriteStudio 7 sequence binary ([code].ssqb[/code]).
+		A SpriteStudio sequence binary ([code].ssqb[/code]).
 	</brief_description>
 	<description>
 		Holds the sequence binary produced from a SpriteStudio sequence ([code].ssqe[/code]) alongside the animations, either by dropping the project onto the editor (the [b]SS Import Dock[/b]) or by running [code]ssconverter-cli[/code].

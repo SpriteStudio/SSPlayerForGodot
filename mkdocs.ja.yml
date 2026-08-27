@@ -14,7 +14,7 @@ site_dir: site/ja
 site_url: "https://cri-middleware.github.io/SSPlayerForGodot/ja/"
 # Feeds <meta name="description"> and the Open Graph tags on every ja page. Without it they
 # would inherit the English `site_description`.
-site_description: "SpriteStudio 7 のアニメーションを Godot Engine で再生するプラグイン"
+site_description: "SpriteStudio のアニメーションを Godot Engine で再生するプラグイン"
 
 theme:
   # Drives the UI string translations, the `html lang` attribute, and -- because the search
@@ -38,7 +38,7 @@ extra:
       name: GitHub の cri-middleware
     - icon: material/web
       link: https://www.webtech.co.jp/spritestudio/
-      name: OPTPiX SpriteStudio
+      name: SpriteStudio
     - icon: fontawesome/brands/x-twitter
       link: https://x.com/spritestudio
       name: X の SpriteStudio

@@ -5,7 +5,7 @@
 本developブランチに関してはいかなる保証もサポートも提供しません。リクエストやバグ報告への返信もできません。  
 インターフェースは予告なく変更される可能性があります。
 
-[OPTPiX SpriteStudio](https://www.webtech.co.jp/spritestudio/) で作成したアニメーションを [Godot Engine](https://godotengine.org/) 上で再生するためのプラグインです。
+[SpriteStudio](https://www.webtech.co.jp/spritestudio/) で作成したアニメーションを [Godot Engine](https://godotengine.org/) 上で再生するためのプラグインです。
 再生処理は [SpriteStudio-SDK](https://github.com/cri-middleware/SpriteStudio-SDK) が提供する `libssruntime` を介して行います。
 
 ## 目次
@@ -35,9 +35,9 @@
 
 ## 主な機能 (Key Features)
 
-本プラグインは、Godot Engine 上で SpriteStudio 7 の表現力をフルに引き出すために設計されています。
+本プラグインは、Godot Engine 上で SpriteStudio の表現力をフルに引き出すために設計されています。
 
-*   **完全な機能サポート:** ボーン階層、メッシュ＆デフォーム、パーティクルエフェクトなど、SpriteStudio 7 の全機能を標準でサポートします。
+*   **完全な機能サポート:** ボーン階層、メッシュ＆デフォーム、パーティクルエフェクトなど、SpriteStudio の全機能を標準でサポートします。
 *   **シームレスな統合と強力なアセットパイプライン:** Godot のエディタ内に統合された「SS Import Dock」による簡単なインポートに加え、インスペクタから直接 SpriteStudio を開いて再コンバートできる、**SpriteStudio と Godot をシームレスに行き来できる強力なアセットパイプライン**を提供します。詳しくは [アセットのインポートとエディタ連携](workflow/usage_asset_pipeline.md) をご覧ください。
 *   **動的な着せ替え (CellMap Overrides):** 実行時にテクスチャ（セルマップ）を差し替えることで、キャラクターのカラーバリエーションや装備変更を簡単に実装できます。
 *   **シグナルとイベント:** タイムライン上に設定した「ユーザーデータ」や「シグナル」を Godot のシグナルとして受け取り、ゲームロジックのトリガーを正確なタイミングで行えます。どのパーツが発火したかも各イベントが持っています。
