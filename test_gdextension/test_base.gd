@@ -134,3 +134,15 @@ func has(collection, value, what: String) -> bool:
 ## Declares this case unrunnable here, with the reason. Not a pass.
 func skip(reason: String) -> void:
 	skips.append("%s: %s" % [_case, reason])
+
+
+## Marks the case just run as a defect because it asserted nothing.
+##
+## Called by `run_tests.gd` between cases, never by a case itself. GDScript
+## answers a bad call -- the wrong argument count, a method that is not there --
+## by printing SCRIPT ERROR and abandoning that one function, not by stopping
+## the run. The case then leaves no assertion, no skip and no failure behind,
+## and a suite whose failure count did not grow reads as a pass. A case that
+## asserted nothing was not run, so it is counted here as a failure.
+func record_empty_case() -> void:
+	_record_failure("asserted nothing -- a SCRIPT ERROR above will say why")

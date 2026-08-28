@@ -75,11 +75,17 @@ func _init() -> void:
 		var before_failures: int = suite.failures.size()
 		for case in cases:
 			suite.begin_case(case)
+			var mark := [suite.assertions, suite.skips.size(), suite.failures.size()]
 			suite.setup()
 			suite.call(case)
 			suite.teardown()
 			suite.release_owned()
 			total_cases += 1
+			# A case that recorded nothing at all did not run: GDScript abandons a
+			# function on a bad call without stopping the run, and the case would
+			# otherwise be indistinguishable from one that passed.
+			if mark == [suite.assertions, suite.skips.size(), suite.failures.size()]:
+				suite.record_empty_case()
 
 		total_assertions += suite.assertions
 		failures.append_array(suite.failures)
@@ -110,11 +116,15 @@ func _init() -> void:
 
 ## Prints the marker `run-tests.*` looks for, then exits.
 ##
-## The exit code alone is not enough to trust. A script error inside a case
-## aborts `_init` before anything below it runs, and the tree then idles forever
-## — so the wrapper passes `--quit-after`, which makes Godot exit 0 on the way
-## out and turns a crashed run into a green one. The marker is what tells a run
-## that finished apart from one that stopped in the middle.
+## The exit code alone is not enough to trust. An error `_init` cannot walk away
+## from — a suite that will not parse, above all — leaves the tree idling
+## forever, so the wrapper passes `--quit-after`, which makes Godot exit 0 on the
+## way out and turns a stopped run into a green one. The marker is what tells a
+## run that finished apart from one that stopped in the middle.
+##
+## It says nothing about a single case. GDScript abandons a case's function on a
+## bad call and carries straight on to the next one, which is what the
+## `record_empty_case` check above is for.
 func _finish(code: int) -> void:
 	print("==== SUITE FINISHED ====")
 	quit(code)
@@ -174,5 +184,10 @@ func _cases_of(suite) -> Array[String]:
 func _only_filter() -> Array[String]:
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--only="):
-			return Array(arg.trim_prefix("--only=").split(",", false))
+			# assign(), not a cast: split() hands back a PackedStringArray, and
+			# returning it -- or an untyped Array around it -- from an Array[String]
+			# is a runtime error that takes _init down with it.
+			var names: Array[String] = []
+			names.assign(arg.trim_prefix("--only=").split(",", false))
+			return names
 	return []
