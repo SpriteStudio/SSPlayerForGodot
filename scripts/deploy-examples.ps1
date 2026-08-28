@@ -71,4 +71,29 @@ foreach ($ENTRY in $DEPLOYMENTS) {
     }
 }
 
+# The headless test project is not a sample and so is not under examples\, but
+# it reads the same fixtures -- one entry per pack run_tests.gd's preflight
+# names. Keeping the .ssab out of git and regenerating it here is why the suite
+# cannot quietly test a stale conversion.
+$TEST_PACKS = @(
+    "overall"
+    "Ringo"
+)
+
+foreach ($TEST in $TEST_PACKS) {
+    $SSPJ_PATH = Join-Path $SDK_TESTS_DIR "$TEST/$TEST.sspj"
+    $OUTPUT_DIR = Join-Path $rootDirectory "test_gdextension/ssab_generated/$TEST"
+
+    if (!(Test-Path $SSPJ_PATH)) {
+        Write-Error "${APP}: $SSPJ_PATH not found"
+    }
+
+    Write-Host "Updating SSAB for $TEST in $OUTPUT_DIR..."
+    mkdir -Force $OUTPUT_DIR > $null
+    & $CONVERTER "$SSPJ_PATH" -o "$OUTPUT_DIR"
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "${APP}: ssconverter-cli failed for $TEST ($LASTEXITCODE)"
+    }
+}
+
 Write-Host "Done!"
