@@ -75,9 +75,55 @@ Callouts (`> [!NOTE]`) are parsed natively — `mkdocs-callouts` is gone. Two co
 | Setup (Prebuilt SDK) | `./scripts/download-sdk.sh` (POSIX) / `.\scripts\download-sdk.ps1` (Win) |
 | Deploy Example Assets | `./scripts/deploy-examples.sh` (POSIX) / `.\scripts\deploy-examples.ps1` (Win) |
 | Build the release | `./scripts/build-release.sh` (POSIX) / `.\scripts\build-release.ps1` (Win) — the addon zip, from a downloaded matrix build |
+| Run the headless tests | `./scripts/run-tests.sh` (POSIX) / `.\scripts\run-tests.ps1` (Win) — the GDExtension build, through GDScript. Needs a Godot binary: `godot=<path>`, else `$GODOT`, `godot-bin/`, then PATH |
+| Install the pinned Godot | `./scripts/fetch-godot.sh` (POSIX) / `.\scripts\fetch-godot.ps1` (Win) — the editor build named in `scripts/GODOT_VERSION.txt`, into `godot-bin/`. Nothing runs it for you |
 | Format C++ Code | `clang-format -i ss_player/*.{cpp,h}` (if available) |
 
 *Note: Setup (Source SDK) is recommended for developers using the submodule. Setup (Prebuilt SDK) is intended for CI or release-only environments.*
+
+### The headless suite
+
+`test_gdextension/` is a Godot project that loads the built addon and drives
+`SpriteStudioPlayer2D` from GDScript — 35 cases over the bound API, the part
+override layer and the five signals. It is not a sample and does not live under
+`examples/`: the samples are what a reader is shown, and one project cannot be
+both that and a scratch pad (MAINTAINING_PLAYERS.md). It wears the
+`_gdextension` suffix for the same reason every other project carrying the addon
+does: a custom-module build has the classes compiled in already, so which build a
+project targets has to be readable from its name. Its two inputs are build
+outputs and gitignored — `build-extension.*` installs the addon into it,
+`deploy-examples.*` writes its `.ssab`, and `run_tests.gd` refuses to start
+without either rather than skipping its way to a green run.
+
+**Two things it deliberately does not cover.** Drawing, because `--headless`
+installs a dummy rasteriser and there are no pixels to compare — and
+`NOTIFICATION_DRAW` is a no-op in the node anyway, the InternalPlayer issuing
+its own RenderingServer calls. And the **custom-module build**, because a module
+is compiled into the engine: testing it would mean building Godot rather than
+downloading it, and a module binary cannot even open `test_gdextension/` — it registers the
+classes a second time and aborts (`run-tests.*` recognises that message and says
+so). What the two builds share is one copy of the playback logic; what they do
+not share is a layer of `#ifdef SPRITESTUDIO_GODOT_EXTENSION` adapters, which
+are includes and type conversions — so the module build's guard is that it still
+builds.
+
+Cases step with `advance()` under `ANIMATION_PROCESS_MANUAL`, never the frame
+clock, so a result does not depend on how long a frame took. A case that cannot
+run on this host declares a **skip**, which is reported apart from the passes
+and never counted as one.
+
+**The first headless import crashes, and `run-tests.*` retries it once. It is a
+godot-cpp problem, not ours.** A fresh scan of a project loading *any* godot-cpp
+GDExtension aborts on the way out (null dereference, caught by Godot's own crash
+handler) — **godot-cpp's own `test/` extension reproduces it exactly**, and a
+project with no extension does not. godot-cpp has no 4.6/4.7 release branch: it
+went from `godot-4.5-stable` straight to the 10.0 line, so an extension for
+Godot 4.7 is built from master against `api_version=4.7`, and that pairing is
+what does this. The scan's work completes, so the second run is clean and every
+later one has nothing to do; the retry requires that second run to pass, because
+a crash that repeats is still a failure. Not test-only — anything running
+`godot --headless --import` on a fresh checkout meets it.
+
 
 ## Releases
 
