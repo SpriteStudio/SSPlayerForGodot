@@ -101,4 +101,14 @@ foreach ($project in $OTHER_PROJECTS) {
     Copy-Item "examples\$MAIN_PROJECT\addons\spritestudio\icons" "$dest_dir\" -Recurse -Force
 }
 
+# The headless test project is not a sample, so it is not under examples\ --
+# but it loads the extension exactly as one does, hence the _gdextension suffix
+# every project carrying the addon wears. See test_gdextension\project.godot.
+$test_dest = "test_gdextension\addons\spritestudio"
+mkdir $test_dest -Force | Out-Null
+Copy-Item "misc\spritestudio.gdextension" "$test_dest\spritestudio.gdextension" -Force
+Write-Host "Syncing binaries and icons to test_gdextension..."
+Copy-Item "examples\$MAIN_PROJECT\addons\spritestudio\bin" "$test_dest\" -Recurse -Force
+Copy-Item "examples\$MAIN_PROJECT\addons\spritestudio\icons" "$test_dest\" -Recurse -Force
+
 popd

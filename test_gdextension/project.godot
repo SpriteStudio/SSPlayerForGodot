@@ -1,0 +1,27 @@
+; Test project for the headless suite. Not a sample — the samples are under
+; examples/, and MAINTAINING_PLAYERS.md is why they stay separate: a project
+; that is both the demo and the scratch pad fills its source map with whatever
+; a developer converted last and stops being committable.
+;
+; The _gdextension suffix is the repository's convention for a project that
+; carries addons/spritestudio: a custom-module build of Godot already has the
+; classes compiled in and aborts on double registration, so which build a
+; project targets has to be visible in its name.
+;
+; The addon and ssab_generated/ are build outputs and gitignored:
+; scripts/build-extension.* installs the first, scripts/deploy-examples.* the
+; second. run_tests.gd refuses to start without them.
+
+config_version=5
+
+[application]
+
+config/name="SpriteStudio Player tests (GDExtension)"
+config/features=PackedStringArray("4.7")
+run/disable_stdout=false
+
+[debug]
+
+; A failed assertion inside the extension should reach the log rather than pop
+; a dialog nothing is there to dismiss.
+settings/stdout/print_fps=false

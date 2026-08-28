@@ -128,6 +128,11 @@ OTHER_PROJECTS=("overall_gdextension")
 /bin/mkdir -p "./examples/${MAIN_PROJECT}/addons/spritestudio/icons"
 /bin/cp ss_player/icons/icon_*.svg "./examples/${MAIN_PROJECT}/addons/spritestudio/icons/"
 
+# The headless test project is not a sample, so it is not under examples/ --
+# but it loads the extension exactly as one does -- hence the _gdextension
+# suffix every project carrying the addon wears. See test_gdextension/project.godot.
+TEST_PROJECT="./test_gdextension"
+
 # Copy from MAIN_PROJECT to OTHER_PROJECTS
 for project in "${OTHER_PROJECTS[@]}"; do
     DEST_DIR="./examples/${project}/addons/spritestudio"
@@ -137,5 +142,12 @@ for project in "${OTHER_PROJECTS[@]}"; do
     /bin/cp -R "./examples/${MAIN_PROJECT}/addons/spritestudio/bin" "${DEST_DIR}/"
     /bin/cp -R "./examples/${MAIN_PROJECT}/addons/spritestudio/icons" "${DEST_DIR}/"
 done
+
+TEST_DEST="${TEST_PROJECT}/addons/spritestudio"
+/bin/mkdir -p "${TEST_DEST}"
+/bin/cp misc/spritestudio.gdextension "${TEST_DEST}/"
+echo "Syncing binaries and icons to test_gdextension..."
+/bin/cp -R "./examples/${MAIN_PROJECT}/addons/spritestudio/bin" "${TEST_DEST}/"
+/bin/cp -R "./examples/${MAIN_PROJECT}/addons/spritestudio/icons" "${TEST_DEST}/"
 
 popd > /dev/null # ${ROOTDIR}
