@@ -107,6 +107,18 @@ not share is a layer of `#ifdef SPRITESTUDIO_GODOT_EXTENSION` adapters, which
 are includes and type conversions — so the module build's guard is that it still
 builds.
 
+**A green run still prints `ERROR:` lines, and they belong to that dummy
+rasteriser.** `Condition "!actions.custom_samplers.has(...)" is true. Continuing.`
+comes from Godot's shader compiler, once per player.
+`RendererDummy::MaterialStorage` validates every shader through a compiler built
+with a default-constructed `DefaultIdentifierActions`, so its `custom_samplers`
+table is empty; the real canvas renderer fills that table with `TEXTURE` and its
+siblings. `ss_blur.fs` passes the builtin `TEXTURE` into `ss_input_texture()`,
+which headless therefore cannot resolve a sampler for. `ERR_CONTINUE` is not a
+failure — compilation still returns OK — and the same suite under a real
+renderer prints none of them. The run's verdict is the RESULT line and the
+marker after it, not the absence of `ERROR:` in the log.
+
 Cases step with `advance()` under `ANIMATION_PROCESS_MANUAL`, never the frame
 clock, so a result does not depend on how long a frame took. A case that cannot
 run on this host declares a **skip**, which is reported apart from the passes
