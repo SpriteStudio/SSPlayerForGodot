@@ -91,33 +91,38 @@ Write-Host "run-tests.ps1: $(& $GodotBin --headless --version | Select-Object -L
 # --- import pass ----------------------------------------------------------
 # A project Godot has never opened has no .godot\, and the textures beside each
 # .ssab are not importable until it does. Cheap after the first run.
-# It is run twice on purpose, and the SECOND run is the one that has to pass.
 #
-# The run in which Godot first DISCOVERS the extension aborts on the way out
-# (null dereference, caught by Godot's own crash handler). Not the import: a
-# project with zero importable files does it too. What triggers it is the
-# extension being loaded mid-scan rather than at startup from
-# .godot/extension_list.cfg -- delete just that file and it happens again.
+# The extension is named in .godot\extension_list.cfg BEFORE Godot is started,
+# because the run in which Godot discovers an extension mid-scan crashes on the
+# way out. That crash is Godot's own, and it is not the import -- a project with
+# zero importable files does it too:
 #
-# It is NOT this repository's code. godot-cpp's own test extension, with none of
-# our sources and a different descriptor, reproduces it exactly; a project with
-# no extension does not; and registering nothing at all still does. godot-cpp
-# has no 4.6/4.7 release branch (it went from godot-4.5-stable straight to the
-# 10.0 line), so an extension for Godot 4.7 is built from master against
-# api_version=4.7, and that is the combination that does this.
+#   EditorHelp::_gen_extensions_docs() dereferences the static DocTools without
+#   a null check. Loading an extension mid-scan emits extensions_reloaded, which
+#   sends EditorNode off to regenerate the class reference on a worker thread;
+#   that thread's last act is to queue _gen_extensions_docs as a deferred call.
+#   --import then quits before the message queue is flushed, so the call lands
+#   on the flush at the end of Main::cleanup() -- by which time
+#   EditorHelp::cleanup_doc() has freed the DocTools and set it to null.
 #
-# The scan's work completes -- the second run exits 0 with nothing left to do.
-# So this is a retry, not a tolerance. A crash that repeats is still a failure
-# here, and the clean second run is the evidence that the import finished --
-# nothing is being waved through on the strength of the first one.
+# Naming the extension up front means it is loaded at startup instead, so
+# extensions_reloaded never fires and nothing is ever queued. Godot rewrites
+# this file itself, so seeding it decides only the run in which it did not exist
+# yet. There is no retry here: with the file seeded the import either works or
+# has failed for some other reason, and a crash is a crash.
 if ($DoImport -eq "yes") {
+    $extList = Join-Path $Project ".godot\extension_list.cfg"
+    if (-not (Test-Path $extList)) {
+        $descriptors = Get-ChildItem -Path (Join-Path $Project "addons\spritestudio") -Filter "*.gdextension" -ErrorAction SilentlyContinue
+        foreach ($desc in $descriptors) {
+            New-Item -ItemType Directory -Force -Path (Join-Path $Project ".godot") | Out-Null
+            $rel = $desc.FullName.Substring($Project.Length).TrimStart('\', '/').Replace('\', '/')
+            Add-Content -Path $extList -Value "res://$rel"
+        }
+    }
+
     $importLog = & $GodotBin --headless --path $Project --import 2>&1
     $importStatus = $LASTEXITCODE
-    if ($importStatus -ne 0) {
-        Write-Host "run-tests.ps1: the first import exited $importStatus (godot-cpp's known first-scan crash); retrying."
-        $importLog = & $GodotBin --headless --path $Project --import 2>&1
-        $importStatus = $LASTEXITCODE
-    }
     $importErrors = $importLog | Select-String -Pattern '^ERROR:'
     if ($importStatus -ne 0 -or $importErrors) {
         Write-Host "run-tests.ps1: the import pass failed."
@@ -127,10 +132,13 @@ if ($DoImport -eq "yes") {
 }
 
 # --- run ------------------------------------------------------------------
-# --quit-after is a hang guard, not a schedule: a script error inside a case
-# aborts run_tests.gd's _init and leaves the tree idling forever. It costs the
-# exit code its meaning on that path -- Godot leaves 0 on the way out -- which
-# is why the marker below, and not the status, is what says a run completed.
+# --quit-after is a hang guard, not a schedule: an error run_tests.gd's _init
+# cannot walk away from -- a suite that will not parse -- leaves the tree idling
+# forever. It costs the exit code its meaning on that path -- Godot leaves 0 on
+# the way out -- which is why the marker below, and not the status, is what says
+# a run completed. A script error inside one case is not that: GDScript
+# abandons the case and carries on, and run_tests.gd fails it for recording
+# nothing.
 $runArgs = @("--headless", "--path", $Project, "--quit-after", "100000",
              "--script", "res://run_tests.gd")
 if ($Only) { $runArgs += @("--", "--only=$Only") }

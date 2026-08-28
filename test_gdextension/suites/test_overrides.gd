@@ -93,7 +93,8 @@ func test_an_unknown_part_is_refused_rather_than_ignored() -> void:
 ## is a rendering question and out of scope here; that the call reports success
 ## for a real part and failure for an imaginary one is not.
 func test_colour_and_cell_overrides_are_accepted_for_a_real_part() -> void:
-	ok(player.set_part_color_override(part, Color(1, 0, 0, 1), 0, 1.0, 0),
+	# The two zeroes are COLOR_BLEND_MIX and OVERRIDE_PRIORITY_OVERWRITE_ON_NEXT_KEYFRAME.
+	ok(player.set_part_color_override(part, Color(1, 0, 0, 1), 0, 0),
 		"a colour override on '%s'" % part)
 	player.advance(dt)
 	ok(player.clear_part_color_override(part), "clearing it")

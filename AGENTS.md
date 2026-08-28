@@ -107,25 +107,45 @@ not share is a layer of `#ifdef SPRITESTUDIO_GODOT_EXTENSION` adapters, which
 are includes and type conversions — so the module build's guard is that it still
 builds.
 
+**A green run still prints `ERROR:` lines, and they belong to that dummy
+rasteriser.** `Condition "!actions.custom_samplers.has(...)" is true. Continuing.`
+comes from Godot's shader compiler, once per player.
+`RendererDummy::MaterialStorage` validates every shader through a compiler built
+with a default-constructed `DefaultIdentifierActions`, so its `custom_samplers`
+table is empty; the real canvas renderer fills that table with `TEXTURE` and its
+siblings. `ss_blur.fs` passes the builtin `TEXTURE` into `ss_input_texture()`,
+which headless therefore cannot resolve a sampler for. `ERR_CONTINUE` is not a
+failure — compilation still returns OK — and the same suite under a real
+renderer prints none of them. The run's verdict is the RESULT line and the
+marker after it, not the absence of `ERROR:` in the log.
+
 Cases step with `advance()` under `ANIMATION_PROCESS_MANUAL`, never the frame
 clock, so a result does not depend on how long a frame took. A case that cannot
 run on this host declares a **skip**, which is reported apart from the passes
-and never counted as one.
+and never counted as one. A case that recorded nothing at all — no assertion, no
+skip, no failure — is counted as a **failure**: GDScript answers a bad call by
+abandoning that one function and carrying straight on, so without that check a
+case that never ran would be indistinguishable from one that passed.
 
-**The first headless import crashes, and `run-tests.*` retries it once. It is a
-godot-cpp problem, not ours.** The run in which Godot first *discovers* the
-extension aborts on the way out (null dereference, caught by Godot's own crash
-handler). Not the import — a project with **zero importable files** does it too;
-what triggers it is the extension being loaded mid-scan rather than at startup
-from `.godot/extension_list.cfg`, and deleting just that file brings it back.
-**godot-cpp's own `test/` extension reproduces it exactly**, a project with no
-extension does not, and registering nothing at all still does — so it is the
-pairing, not this code. godot-cpp has no 4.6/4.7 release branch: it went from
-`godot-4.5-stable` straight to the 10.0 line, so an extension for Godot 4.7 is
-built from master against `api_version=4.7`. The scan's work completes, so the
-second run is clean; the retry requires that second run to pass, because a crash
-that repeats is still a failure. Not test-only — anything running
-`godot --headless --import` on a fresh checkout meets it.
+**A first headless import that discovers the extension mid-scan crashes on the
+way out, so `run-tests.*` names the extension in `.godot/extension_list.cfg`
+before it starts Godot. The bug is Godot's — not this code, and not
+godot-cpp's.** `EditorHelp::_gen_extensions_docs()` dereferences the static
+`DocTools` without a null check. Loading an extension mid-scan emits
+`GDExtensionManager::extensions_reloaded`, which sends `EditorNode` off to
+regenerate the class reference on a worker thread; that thread's last act is to
+queue `_gen_extensions_docs` as a deferred call. `--import` quits before the
+message queue is flushed, so the call lands on the flush at the end of
+`Main::cleanup()` — by which time `EditorHelp::cleanup_doc()` has freed the
+`DocTools` and set it to null. It is not the import: a project with **zero
+importable files** does it too, and godot-cpp's own `test/` extension reproduces
+it. Naming the extension up front means it is loaded at startup instead, so
+`extensions_reloaded` never fires and nothing is ever queued; Godot rewrites the
+file itself, so seeding it decides only the run in which it did not exist yet.
+The engine-side fix is a null check in that one function, so a future Godot may
+make the seeding redundant — it stays either way, being what makes the first run
+deterministic. Not test-only: anything running `godot --headless --import` over
+a project whose `.godot/` has never seen the extension meets it.
 
 
 ## Releases
