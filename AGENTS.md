@@ -113,15 +113,18 @@ run on this host declares a **skip**, which is reported apart from the passes
 and never counted as one.
 
 **The first headless import crashes, and `run-tests.*` retries it once. It is a
-godot-cpp problem, not ours.** A fresh scan of a project loading *any* godot-cpp
-GDExtension aborts on the way out (null dereference, caught by Godot's own crash
-handler) — **godot-cpp's own `test/` extension reproduces it exactly**, and a
-project with no extension does not. godot-cpp has no 4.6/4.7 release branch: it
-went from `godot-4.5-stable` straight to the 10.0 line, so an extension for
-Godot 4.7 is built from master against `api_version=4.7`, and that pairing is
-what does this. The scan's work completes, so the second run is clean and every
-later one has nothing to do; the retry requires that second run to pass, because
-a crash that repeats is still a failure. Not test-only — anything running
+godot-cpp problem, not ours.** The run in which Godot first *discovers* the
+extension aborts on the way out (null dereference, caught by Godot's own crash
+handler). Not the import — a project with **zero importable files** does it too;
+what triggers it is the extension being loaded mid-scan rather than at startup
+from `.godot/extension_list.cfg`, and deleting just that file brings it back.
+**godot-cpp's own `test/` extension reproduces it exactly**, a project with no
+extension does not, and registering nothing at all still does — so it is the
+pairing, not this code. godot-cpp has no 4.6/4.7 release branch: it went from
+`godot-4.5-stable` straight to the 10.0 line, so an extension for Godot 4.7 is
+built from master against `api_version=4.7`. The scan's work completes, so the
+second run is clean; the retry requires that second run to pass, because a crash
+that repeats is still a failure. Not test-only — anything running
 `godot --headless --import` on a fresh checkout meets it.
 
 

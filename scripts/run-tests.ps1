@@ -93,16 +93,20 @@ Write-Host "run-tests.ps1: $(& $GodotBin --headless --version | Select-Object -L
 # .ssab are not importable until it does. Cheap after the first run.
 # It is run twice on purpose, and the SECOND run is the one that has to pass.
 #
-# The first headless scan of a project that loads a godot-cpp GDExtension aborts
-# on the way out (null dereference, caught by Godot's own crash handler). It is
-# NOT this repository's code: godot-cpp's own test extension, with none of our
-# sources in it, reproduces it exactly -- and a project with no extension at all
-# does not. godot-cpp has no 4.6/4.7 release branch (it went from
-# godot-4.5-stable straight to the 10.0 line), so an extension for Godot 4.7 is
-# built from master against api_version=4.7, and that is the combination that
-# does this. The scan's work completes: every later run exits 0 with nothing to
-# do.
+# The run in which Godot first DISCOVERS the extension aborts on the way out
+# (null dereference, caught by Godot's own crash handler). Not the import: a
+# project with zero importable files does it too. What triggers it is the
+# extension being loaded mid-scan rather than at startup from
+# .godot/extension_list.cfg -- delete just that file and it happens again.
 #
+# It is NOT this repository's code. godot-cpp's own test extension, with none of
+# our sources and a different descriptor, reproduces it exactly; a project with
+# no extension does not; and registering nothing at all still does. godot-cpp
+# has no 4.6/4.7 release branch (it went from godot-4.5-stable straight to the
+# 10.0 line), so an extension for Godot 4.7 is built from master against
+# api_version=4.7, and that is the combination that does this.
+#
+# The scan's work completes -- the second run exits 0 with nothing left to do.
 # So this is a retry, not a tolerance. A crash that repeats is still a failure
 # here, and the clean second run is the evidence that the import finished --
 # nothing is being waved through on the strength of the first one.
