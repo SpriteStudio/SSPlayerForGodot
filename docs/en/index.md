@@ -8,6 +8,12 @@ Interfaces may change without notice.
 A plugin for playing back animations created with [SpriteStudio](https://www.webtech.co.jp/spritestudio/) inside [Godot Engine](https://godotengine.org/).
 Animation playback uses `libssruntime` provided by [SpriteStudio-SDK](https://github.com/cri-middleware/SpriteStudio-SDK).
 
+!!! tip "No SpriteStudio data of your own yet?"
+    The [official sample data](https://www.webtech.co.jp/help/ja/spritestudio7/download/sample/) works as-is — that page is
+    Japanese only, but the downloads themselves are language-neutral.
+    [Ringo](https://www.webtech.co.jp/help/ja/spritestudio7/download/sample/#ringo) is a good character sample, and
+    [Particle](https://www.webtech.co.jp/help/ja/spritestudio7/download/sample/#Perticle_sample) is a good one if you want effects.
+
 ## Table of Contents
 
 - **Setup**
