@@ -24,6 +24,9 @@ Drag and drop the generated `.ssab` file into the 2D viewport to place a `Sprite
 > </video>
 > <img src="../assets/1-sspj_import.webp" width="100%" style="display: none;">
 
+> [!TIP]
+> If you do not have a `.sspj` yet and just want to try this out, the [official SpriteStudio sample data](https://www.webtech.co.jp/help/ja/spritestudio7/download/sample/) works as-is (that page is only available in Japanese; the downloads themselves are language-neutral). [Ringo](https://www.webtech.co.jp/help/ja/spritestudio7/download/sample/#ringo) is a good character sample, and [Particle](https://www.webtech.co.jp/help/ja/spritestudio7/download/sample/#Perticle_sample) is a good one if you want effects. Drop the downloaded `.sspj` onto the "SS Import" dock exactly as described above.
+
 ---
 
 ## 2. Opening SpriteStudio Directly from Godot

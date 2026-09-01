@@ -24,6 +24,9 @@ SpriteStudioPlayerForGodot は単にアニメーションを再生するだけ�
 > </video>
 > <img src="../assets/1-sspj_import.webp" width="100%" style="display: none;">
 
+> [!TIP]
+> 手元に `.sspj` がまだ無い状態で試したい場合は、[SpriteStudio 公式のサンプルデータ](https://www.webtech.co.jp/help/ja/spritestudio7/download/sample/)がそのまま使えます。キャラクターなら [Ringo](https://www.webtech.co.jp/help/ja/spritestudio7/download/sample/#ringo)、エフェクトを含むものなら [パーティクル](https://www.webtech.co.jp/help/ja/spritestudio7/download/sample/#Perticle_sample) が手頃です。ダウンロードした `.sspj` を、上と同じ手順で「SS Import」ドックへドロップしてください。
+
 ---
 
 ## 2. Godot から SpriteStudio を直接開く
