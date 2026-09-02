@@ -341,16 +341,25 @@ void SsInternalPlayer::setSSABResource(const Ref<SSABResource>& ssabRes) {
 void SsInternalPlayer::_rebuild_part_index_map() {
     _part_name_to_index.clear();
     _part_names.clear();
+    _part_skinned.clear();
     if (_ssabRes.is_null()) return;
     const ss::format::SsAnimeBinary* binary = _ssabRes->get_ss_anime_binary();
     if (!binary || !binary->parts()) return;
     auto parts = binary->parts();
     const uint32_t n = parts->size();
     _part_names.resize(n);
+    _part_skinned.resize(n);
     for (uint32_t i = 0; i < n; i++) {
         const auto* pd = parts->Get(i);
         String nm = (pd && pd->name()) ? String::utf8(pd->name()->c_str()) : String();
         _part_names[i] = nm;
+        // A mesh part is "skinned" when its binding carries influence bones; a
+        // rigid (deform-only) mesh has none and follows its node transform
+        // faithfully. Same test every sibling player uses (PartMeshBinding
+        // influence_bone length > 0), so the flag agrees across engines.
+        const auto* mb = pd ? pd->mesh_binding() : nullptr;
+        const auto* bones = mb ? mb->influence_bone() : nullptr;
+        _part_skinned[i] = (bones && bones->size() > 0) ? 1 : 0;
         // First occurrence wins; duplicate part names are not expected within a
         // single binary, but guard against clobbering a lower index just in case.
         if (!nm.is_empty() && !_part_name_to_index.has(nm)) {
@@ -382,6 +391,13 @@ bool SsInternalPlayer::try_get_part_hidden(int p_part_index, bool& r_hidden) con
     r_hidden = false;
     if (p_part_index < 0 || (uint32_t)p_part_index >= _part_hidden.size()) return false;
     r_hidden = _part_hidden[p_part_index] != 0;
+    return true;
+}
+
+bool SsInternalPlayer::try_get_part_skinned_mesh(int p_part_index, bool& r_skinned) const {
+    r_skinned = false;
+    if (p_part_index < 0 || (uint32_t)p_part_index >= _part_skinned.size()) return false;
+    r_skinned = _part_skinned[p_part_index] != 0;
     return true;
 }
 

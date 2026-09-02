@@ -226,6 +226,14 @@ public:
     // Per-part hide flag for the current frame. False (with r_hidden=false)
     // when the index is out of range.
     bool try_get_part_hidden(int p_part_index, bool& r_hidden) const;
+    // Whether the part is a bone-skinned mesh (its mesh_binding has one or more
+    // influence bones). Such a part's vertices are drawn by skinning while its
+    // own node transform stays near the setup pose, so it is a poor follow
+    // target — the query lets the attachment node flag it. A binary property
+    // (like the part name), so it is answered from the cache built by
+    // `_rebuild_part_index_map`, not the per-frame state. False (with
+    // r_skinned=false) when the index is out of range.
+    bool try_get_part_skinned_mesh(int p_part_index, bool& r_skinned) const;
     // Number of parts in the current binary, and the name of part i ("" if out
     // of range). Used to populate the editor part-name dropdown.
     int get_part_count() const;
@@ -357,6 +365,10 @@ private:
     // space the world matrices and `_parts_by_idx` use.
     HashMap<String, int> _part_name_to_index;
     LocalVector<String> _part_names;
+    // Per-part skinned-mesh flag, indexed by part_index. A binary property, so
+    // it is built once alongside _part_names in _rebuild_part_index_map (unlike
+    // the per-frame _part_hidden). 1 = bone-skinned mesh, 0 = anything else.
+    LocalVector<uint8_t> _part_skinned;
     // Per-part hide flag for the current frame, indexed by part_index. Rebuilt
     // each _drawAnimation; 0 (visible) for parts absent from the frame.
     LocalVector<uint8_t> _part_hidden;

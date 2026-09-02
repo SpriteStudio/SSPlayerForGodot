@@ -193,6 +193,14 @@ bool SpriteStudioPlayer2D::is_part_hidden(const String& part_name) const {
     return hidden;
 }
 
+bool SpriteStudioPlayer2D::is_part_skinned_mesh(const String& part_name) const {
+    int idx = _internal->resolve_part_index(part_name);
+    if (idx < 0) return false;
+    bool skinned = false;
+    _internal->try_get_part_skinned_mesh(idx, skinned);
+    return skinned;
+}
+
 PackedStringArray SpriteStudioPlayer2D::get_part_names() const {
     PackedStringArray names;
     int count = _internal->get_part_count();
@@ -554,6 +562,7 @@ void SpriteStudioPlayer2D::_bind_methods() {
     ClassDB::bind_method( D_METHOD( "find_part_index", "part_name" ), &SpriteStudioPlayer2D::find_part_index );
     ClassDB::bind_method( D_METHOD( "get_part_transform", "part_name" ), &SpriteStudioPlayer2D::get_part_transform );
     ClassDB::bind_method( D_METHOD( "is_part_hidden", "part_name" ), &SpriteStudioPlayer2D::is_part_hidden );
+    ClassDB::bind_method( D_METHOD( "is_part_skinned_mesh", "part_name" ), &SpriteStudioPlayer2D::is_part_skinned_mesh );
     ClassDB::bind_method( D_METHOD( "get_part_names" ), &SpriteStudioPlayer2D::get_part_names );
 
     // ---- Override Layer (Phase 2): per-part runtime overrides -------------

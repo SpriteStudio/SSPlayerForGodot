@@ -150,6 +150,8 @@ Tracking is done with the dedicated **`SpriteStudioPartAttachment2D`** node. Pla
 | **Update Scale** (`update_scale`) | Reflect scale (OFF by default) |
 | **On Part Hidden** (`on_part_hidden`) | Behavior on frames where the part is hidden. `Follow Always` (keep following; default) / `Hide Target` (hide the target). From a script: `SpriteStudioPartAttachment2D.FOLLOW_ALWAYS` / `.HIDE_TARGET` |
 
+> **Mesh (skinned) parts cannot be followed directly.** A bone-bound mesh part (a deforming part such as a hand or a face) has its vertices drawn by bone skinning, while the part's own transform stays at its setup node position — usually near the character root. So targeting such a part makes the follower snap near the root rather than onto the visible art. To follow the position of a mesh part, add a **NULL part (a bone-point / empty part)** at that spot in SpriteStudio and target that part's name instead; a bone (armature) or joint part works the same way. The `SpriteStudioPartAttachment2D` node flags this with a configuration warning when `part_name` is a skinned mesh, and `is_part_skinned_mesh(part_name)` reports it from a script.
+
 ### Querying from a Script
 
 Instead of placing a node, you can also ask the player for a part's pose directly.
@@ -175,6 +177,7 @@ func _on_frame_updated(frame_no: float):
 | `find_part_index(part_name)` | Part index, or `-1` if the part is not in the asset |
 | `get_part_transform(part_name)` | The part's transform for the current frame (a `Transform2D`, player-local, with `flip_h` / `flip_v` / `offset` already applied). Identity if the part is unknown |
 | `is_part_hidden(part_name)` | Whether the part is hidden on the current frame. `false` if the part is unknown |
+| `is_part_skinned_mesh(part_name)` | Whether the part is a bone-skinned mesh — a poor follow target (see the note above). `false` if the part is unknown or is a rigid (deform-only) mesh |
 | signal `frame_updated(frame_no: float)` | Emitted right after the frame's part poses are finalized |
 
 > When you only need the pose at a single moment (a projectile spawn point, for example) rather than continuous following, calling `get_part_transform()` directly is simpler than placing a `SpriteStudioPartAttachment2D`.

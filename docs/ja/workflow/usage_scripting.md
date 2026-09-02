@@ -150,6 +150,8 @@ func change_costume():
 | **Update Scale** (`update_scale`) | スケールを反映します（既定 OFF） |
 | **On Part Hidden** (`on_part_hidden`) | パーツが hide のフレームでの挙動。`Follow Always`（追従を継続。既定）/ `Hide Target`（対象を非表示）。スクリプトからは `SpriteStudioPartAttachment2D.FOLLOW_ALWAYS` / `.HIDE_TARGET` |
 
+> **メッシュ（スキン）パーツには直接追従できません。** ボーンにバインドされたメッシュパーツ（手・顔などの変形パーツ）は、頂点がボーンのスキニングで描かれる一方、パーツ自身の変換はセットアップ時のノード位置（多くはキャラクターのルート付近）に留まります。そのため、こうしたパーツを追従先に指定すると、対象は見た目の絵ではなくルート付近に吸い寄せられます。メッシュパーツの位置に追従させたいときは、SpriteStudio 側でその位置に **NULL パーツ（ボーンポイント／空パーツ）** を1つ置き、そのパーツ名を追従先に指定してください。ボーン（armature）やジョイントパーツを指定しても同様に追従できます。`SpriteStudioPartAttachment2D` は `part_name` がスキンメッシュのとき構成警告（configuration warning）で知らせ、スクリプトからは `is_part_skinned_mesh(part_name)` で判定できます。
+
 ### スクリプトからの参照
 
 ノードを置かずに、プレーヤへ直接パーツの姿勢を問い合わせることもできます。
