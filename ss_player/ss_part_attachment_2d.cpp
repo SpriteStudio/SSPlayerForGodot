@@ -180,10 +180,23 @@ void SpriteStudioPartAttachment2D::_validate_property(PropertyInfo &p_property) 
         const SpriteStudioPlayer2D* player = _resolve_player();
         if (player) {
             PackedStringArray names = player->get_part_names();
+            // Keep skinned (bone-bound) mesh parts OUT of the dropdown: their
+            // vertices are drawn by skinning while the part's own transform stays
+            // near the setup pose, so they track poorly and picking one from the
+            // list is an easy mistake. Rigid (deform-only) meshes follow their
+            // node faithfully, so they stay. A name can still be typed by hand
+            // for the rare deliberate case — the field is ENUM_SUGGESTION, not
+            // ENUM — and the configuration warning then flags it.
+            PackedStringArray suggestions;
+            for (int i = 0; i < names.size(); i++) {
+                if (!player->is_part_skinned_mesh(names[i])) {
+                    suggestions.push_back(names[i]);
+                }
+            }
             // ENUM_SUGGESTION (not ENUM) so the field stays editable when the
             // player isn't resolvable at edit time — never lock out a name.
             p_property.hint = PROPERTY_HINT_ENUM_SUGGESTION;
-            p_property.hint_string = String(",").join(names);
+            p_property.hint_string = String(",").join(suggestions);
         }
     }
 }
@@ -214,10 +227,17 @@ PackedStringArray SpriteStudioPartAttachment2D::_get_configuration_warnings() co
 PackedStringArray SpriteStudioPartAttachment2D::get_configuration_warnings() const {
     PackedStringArray warnings = Node2D::get_configuration_warnings();
 #endif
-    if (_resolve_player() == nullptr) {
+    SpriteStudioPlayer2D* player = _resolve_player();
+    if (player == nullptr) {
         warnings.push_back(tr("No SpriteStudioPlayer2D found. Set \"follow_path\" or place this node under a SpriteStudioPlayer2D."));
     } else if (_part_name.is_empty()) {
         warnings.push_back(tr("Set \"part_name\" to the SpriteStudio part this node should follow."));
+    } else if (player->is_part_skinned_mesh(_part_name)) {
+        // Non-blocking: following still runs, but a bone-skinned mesh draws its
+        // vertices by skinning while its own transform stays near the setup pose
+        // (usually the character root), so the target snaps near the root rather
+        // than onto the visible art. Point at the NULL-part workaround.
+        warnings.push_back(tr("\"part_name\" is a skinned (bone-bound) mesh part. Its transform stays near the setup pose, so the follower will not sit on the visible art. Add a NULL part at that spot in SpriteStudio and follow that instead."));
     }
     return warnings;
 }

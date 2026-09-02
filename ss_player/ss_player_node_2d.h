@@ -191,6 +191,11 @@ public:
     Transform2D get_part_transform(const String& part_name) const;
     // True if the named part is hidden on the current frame. False when unknown.
     bool is_part_hidden(const String& part_name) const;
+    // True if the named part is a bone-skinned mesh. Such a part's vertices are
+    // drawn by skinning while its own transform stays near the setup pose, so it
+    // is a poor follow target — the attachment node uses this to flag it. False
+    // when the part is unknown or is not a skinned mesh.
+    bool is_part_skinned_mesh(const String& part_name) const;
     // All part names in the current binary (for the attachment's dropdown).
     PackedStringArray get_part_names() const;
 

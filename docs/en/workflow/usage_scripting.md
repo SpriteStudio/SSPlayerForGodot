@@ -142,13 +142,17 @@ Tracking is done with the dedicated **`SpriteStudioPartAttachment2D`** node. Pla
 
 | Property | Description |
 |---|---|
-| **Part Name** (`part_name`) | The name of the part to follow (the PartData name in the `.ssab`). The inspector offers a dropdown populated from the asset's part names (still typable, for when the player cannot be resolved) |
+| **Part Name** (`part_name`) | The name of the part to follow (the PartData name in the `.ssab`). The inspector offers a dropdown populated from the asset's part names (still typable, for when the player cannot be resolved). Skinned-mesh parts are left out of the dropdown — see the note below |
 | **Follow Path** (`follow_path`) | The `SpriteStudioPlayer2D` to read from. Empty (default) uses the **nearest ancestor** player |
 | **Remote Path** (`remote_path`) | The `Node2D` to drive. Empty (default) drives this node itself, and its children follow through scene-tree inheritance. Set it to push the pose to an external node instead (for assets that live outside the player's subtree) |
 | **Use Global Coordinates** (`use_global_coordinates`) | ON (default) writes the pose in global coordinates, OFF in the target's local coordinates |
 | **Update Position / Update Rotation** (`update_position` / `update_rotation`) | Reflect position / rotation (both ON by default) |
 | **Update Scale** (`update_scale`) | Reflect scale (OFF by default) |
 | **On Part Hidden** (`on_part_hidden`) | Behavior on frames where the part is hidden. `Follow Always` (keep following; default) / `Hide Target` (hide the target). From a script: `SpriteStudioPartAttachment2D.FOLLOW_ALWAYS` / `.HIDE_TARGET` |
+
+> **Mesh (skinned) parts cannot be followed directly.** A bone-bound mesh part (a deforming part such as a hand or a face) has its vertices drawn by bone skinning, while the part's own transform stays at its setup node position — usually near the character root. So targeting such a part makes the follower snap near the root rather than onto the visible art. To follow the position of a mesh part, add a **NULL part (a bone-point / empty part)** at that spot in SpriteStudio and target that part's name instead; a bone (armature) or joint part works the same way.
+>
+> To steer away from the mistake, **the `part_name` dropdown omits skinned-mesh parts** — you can only reach one by typing its name in the field by hand (kept possible for the rare deliberate case). Whenever `part_name` does resolve to a skinned mesh, the node shows a **configuration warning** (the ⚠ next to it in the Scene dock) so the choice is never silent; `is_part_skinned_mesh(part_name)` reports the same thing from a script. Rigid (deform-only) meshes track their node faithfully, so they stay in the dropdown and raise no warning.
 
 ### Querying from a Script
 
@@ -175,6 +179,7 @@ func _on_frame_updated(frame_no: float):
 | `find_part_index(part_name)` | Part index, or `-1` if the part is not in the asset |
 | `get_part_transform(part_name)` | The part's transform for the current frame (a `Transform2D`, player-local, with `flip_h` / `flip_v` / `offset` already applied). Identity if the part is unknown |
 | `is_part_hidden(part_name)` | Whether the part is hidden on the current frame. `false` if the part is unknown |
+| `is_part_skinned_mesh(part_name)` | Whether the part is a bone-skinned mesh — a poor follow target (see the note above). `false` if the part is unknown or is a rigid (deform-only) mesh |
 | signal `frame_updated(frame_no: float)` | Emitted right after the frame's part poses are finalized |
 
 > When you only need the pose at a single moment (a projectile spawn point, for example) rather than continuous following, calling `get_part_transform()` directly is simpler than placing a `SpriteStudioPartAttachment2D`.
