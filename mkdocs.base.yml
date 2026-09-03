@@ -72,6 +72,12 @@ plugins:
   # one is segmented into words rather than indexed as unbroken runs of characters.
   - search
 
+  # Nothing has shipped from this site yet, so there is nothing to redirect. Add a
+  # `redirect_maps:` entry the moment a published page moves or is renamed: the stub keeps
+  # the old URL working, anchors and all. Sources are relative to `docs_dir`, and the two
+  # locales mirror each other, so a single entry covers en and ja.
+  - redirects
+
 # Restores the one thing `mkdocs-callouts` did for the pages here: rendering the
 # `> [!NOTE]` blockquote syntax as admonitions. Zensical parses it natively, so the plugin
 # is gone. See docs/*/stylesheets/extra.css for the one type it maps differently.
