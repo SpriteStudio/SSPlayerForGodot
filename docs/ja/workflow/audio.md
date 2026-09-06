@@ -19,7 +19,7 @@ SpriteStudio で設定したサウンドパートは、**特別な準備なし�
 | --- | --- | --- | --- |
 | `Play Audio` (`play_audio`) | bool | `true` | 内蔵プレイヤーが音を鳴らすかどうか。オフにすると `audio` シグナルを使って完全に自前で処理できます |
 | `Audio Volume` (`audio_volume`) | float | `1.0` | 内蔵ボイスに適用されるリニア音量 (`[0, 1]`)。バックエンドを割り当てている場合は無視されます |
-| `Audio Backend` (`audio_backend`) | `SpriteStudioAudioBackend` | *(なし)* | 内蔵プレイヤーを置き換えます。[サウンドを別の基盤へ流す](#routing-audio-elsewhere)を参照 |
+| `Audio Backend` (`audio_backend`) | `SpriteStudioAudioBackend` | *(なし)* | 内蔵プレイヤーを置き換えます。[サウンドを別の基盤へ流す](#サウンドを別の基盤へ流す-routing-audio-elsewhere)を参照 |
 
 ```gdscript
 @onready var ss_player: SpriteStudioPlayer2D = $SpriteStudioPlayer2D
@@ -45,7 +45,7 @@ func _ready() -> void:
 - **`loop_num` はフラグではなく再生回数です。** SpriteStudio に無限ループのサウンドはありません。`1` なら 1 回、`n` なら連続して `n` 回再生します。
 
 > [!NOTE]
-> ゲームと一緒に一時停止する、ダッキングする、クロスフェードするといったサウンドが必要な場合は、`audio` シグナルか[バックエンド](#routing-audio-elsewhere)を使って自前で駆動してください。内蔵プレイヤーは、単純なケースを正確に実装することに意図的に絞っています。
+> ゲームと一緒に一時停止する、ダッキングする、クロスフェードするといったサウンドが必要な場合は、`audio` シグナルか[バックエンド](#サウンドを別の基盤へ流す-routing-audio-elsewhere)を使って自前で駆動してください。内蔵プレイヤーは、単純なケースを正確に実装することに意図的に絞っています。
 
 ---
 
@@ -115,5 +115,5 @@ func play_audio(payload: Dictionary, ssab: SSABResource, player: Node) -> void:
 ## 関連ページ
 
 - [スクリプト制御とイベント連携](usage_scripting.md) — 他のタイムラインイベント (`user_data` / `signal_emitted`) とスクリプト API 全般。
-- [SpriteStudioPlayer2D API](../api/player.md#audio) — このページのプロパティに対応するメソッドリファレンス。
+- [SpriteStudioPlayer2D API](../api/player.md#サウンド-audio) — このページのプロパティに対応するメソッドリファレンス。
 - [制限事項](../limitations.md) — サウンドが共通ランタイムから引き継ぐ制約。
