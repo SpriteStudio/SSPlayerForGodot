@@ -26,6 +26,7 @@ Animation playback uses `libssruntime` provided by [SpriteStudio-SDK](https://gi
     - [Scripting and Events](workflow/usage_scripting.md)
     - [Audio Playback](workflow/audio.md)
     - [Exporting Your Project](workflow/export.md)
+    - [Generated Assets and Packs](workflow/generated_assets.md) (dependencies, export modes, `.pck`)
 - **Advanced Topics**
     - [CLI Conversion and Automation](workflow/import.md)
     - [Performance Tuning and Advanced Settings](workflow/tips.md)

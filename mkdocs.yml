@@ -53,6 +53,7 @@ nav:
       - Audio Playback: workflow/audio.md
       - AnimationPlayer Integration: workflow/animation_player.md
       - Exporting Your Project: workflow/export.md
+      - Generated Assets and Packs: workflow/generated_assets.md
   - ⚙️ Advanced Topics:
       - CLI Conversion & CI/CD: workflow/import.md
       - Performance Tuning & Advanced Settings: workflow/tips.md

@@ -62,6 +62,9 @@ With just the following steps, your changes will instantly reflect in the game (
 > </video>
 > <img src="../assets/2-fast_iteration_inspector.webp" width="100%" style="display: none;">
 
+> [!TIP]
+> What each file in the output folder does, how they depend on each other, which of them you have to re-ship after each kind of edit, how to choose an export mode, and how to ship updates as a `.pck` are collected in [Generated Assets and Packs](generated_assets.md).
+
 ---
 
 ## Limitations and Team Development Notes

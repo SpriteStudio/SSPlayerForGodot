@@ -25,6 +25,7 @@
     - [スクリプト制御とイベント](workflow/usage_scripting.md)
     - [サウンド再生](workflow/audio.md)
     - [プロジェクトのエクスポート](workflow/export.md)
+    - [生成アセットの構成と配信](workflow/generated_assets.md)（依存関係・エクスポートモード・`.pck`）
 - **応用**
     - [CLI コンバートと自動化](workflow/import.md)
     - [パフォーマンスチューニングと高度な設定](workflow/tips.md)

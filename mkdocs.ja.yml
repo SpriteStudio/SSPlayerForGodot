@@ -59,6 +59,7 @@ nav:
       - サウンド再生: workflow/audio.md
       - AnimationPlayer 連携: workflow/animation_player.md
       - プロジェクトのエクスポート: workflow/export.md
+      - 生成アセットの構成と配信: workflow/generated_assets.md
   - ⚙️ 高度なトピック:
       - CLI コンバートと CI/CD: workflow/import.md
       - パフォーマンスチューニングと高度な設定: workflow/tips.md
