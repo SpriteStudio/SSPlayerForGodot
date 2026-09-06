@@ -4,7 +4,7 @@
 
 > [!IMPORTANT]
 > **エクスポートモードには生成アセットを落とすものがあります。**
-> `.ssab` は画像・サウンド・Instance の参照先を*実行時のパス解決*で読むため、Godot エディタの依存グラフには現れません。「選択したシーン(と依存関係にあるもの)をエクスポート」のような依存ベースのモードではこれらが同梱されず、**起動はするのに絵が出ない**ビルドになります。詳細と対処は[生成アセットの構成と配信](generated_assets.md) の「エクスポートモードの選び方」を参照してください。
+> `.ssab` は画像・サウンド・Instance の参照先を*実行時のパス解決*で読むため、Godot エディタの依存グラフには現れません。「選択したシーン(と依存関係にあるもの)をエクスポート」のような依存ベースのモードではこれらが同梱されず、**起動はするのに絵が出ない**ビルドになります。詳細と対処は[生成アセットの構成と配信](generated_assets.md#エクスポートモードの選び方) を参照してください。
 
 ## 共通
 
@@ -20,7 +20,7 @@
    エクスポートダイアログで **Web** プリセット → **オプション** → **Extensions Support** を ON にします。GDExtension ライブラリは、エンジンテンプレートが動的リンクに対応している場合のみ Web で読み込まれます。このオプションが、そのテンプレートを使うよう Godot に指示します。
 
 2. **dlink 対応の Web エクスポートテンプレートがインストールされている必要がある。**
-   素の Godot Web テンプレートは GDExtension に対応していません。`web_nothreads_dlink_debug.zip` / `web_nothreads_dlink_release.zip` テンプレートを Godot のエクスポートテンプレートフォルダに導入しておく必要があります。これらのビルドと導入は上級者向けの手順で、[ビルドガイド → Web での GDExtension](../setup/build.md#web-gdextensionextensions-support-dlink) にまとめてあります。導入済みであれば、プリセット側は **Extensions Support** を ON にするだけで、Godot が適切なテンプレートを自動選択します。
+   素の Godot Web テンプレートは GDExtension に対応していません。`web_nothreads_dlink_debug.zip` / `web_nothreads_dlink_release.zip` テンプレートを Godot のエクスポートテンプレートフォルダに導入しておく必要があります。これらのビルドと導入は上級者向けの手順で、[ビルドガイド → Web での GDExtension](../setup/build.md#web-での-gdextensionextensions-support--dlink) にまとめてあります。導入済みであれば、プリセット側は **Extensions Support** を ON にするだけで、Godot が適切なテンプレートを自動選択します。
 
 > [!WARNING]
 > Web ビルドが起動時に *「GDExtension libraries are not supported by this engine version…」* で失敗する場合、上記2つの要件のいずれかが欠けています（Extensions Support が OFF、または dlink テンプレートが未インストール）。

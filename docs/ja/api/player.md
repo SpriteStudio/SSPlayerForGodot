@@ -53,7 +53,7 @@ func _ready() -> void:
 * `set_sub_frame_enabled(enabled: bool)` / `is_sub_frame_enabled() -> bool` (デフォルト: `false`)
 * `set_cellmap_texture(cellmap_name: String, texture: Texture2D)` / `get_cellmap_texture(cellmap_name: String) -> Texture2D`
 * `get_cellmap_names() -> PackedStringArray` / `get_cell_names(cellmap_name: String) -> PackedStringArray`: 割り当て済みの `SSABResource` から読んだ名前一覧（未割り当てなら空）。`set_part_cell_override()` に渡す名前を調べる用途です。まだプレーヤに載せていない `.ssab` を調べたい場合は [`SSABResource`](resource.md) 自身にも同じメソッドがあります。
-* `set_play_audio(enabled: bool)` / `is_play_audio() -> bool` (デフォルト: `true`)、`set_audio_volume(volume: float)` / `get_audio_volume() -> float`、`set_audio_backend(backend: SpriteStudioAudioBackend)` / `get_audio_backend() -> SpriteStudioAudioBackend`: 内蔵のサウンド再生。詳細は後述の [サウンド](#audio) を参照してください。
+* `set_play_audio(enabled: bool)` / `is_play_audio() -> bool` (デフォルト: `true`)、`set_audio_volume(volume: float)` / `get_audio_volume() -> float`、`set_audio_backend(backend: SpriteStudioAudioBackend)` / `get_audio_backend() -> SpriteStudioAudioBackend`: 内蔵のサウンド再生。詳細は後述の [サウンド](#サウンド-audio) を参照してください。
 
 ### `set_playback_direction` の引数
 
@@ -146,7 +146,7 @@ SpriteStudio 上でユーザーデータに設定した値が `Dictionary` と�
 
 ### `audio` の `payload` フィールド
 
-タイムライン上のオーディオキーに設定された情報が `Dictionary` として渡されます。このシグナルは **観測用のチャンネル**で、再生方向を問わず、エディタ上でも、内蔵再生 (`play_audio`) のオン / オフに関わらず発火します。サウンドに反応したい場合や、再生そのものを置き換えたい場合に接続してください（後述の [サウンド](#audio) を参照）。
+タイムライン上のオーディオキーに設定された情報が `Dictionary` として渡されます。このシグナルは **観測用のチャンネル**で、再生方向を問わず、エディタ上でも、内蔵再生 (`play_audio`) のオン / オフに関わらず発火します。サウンドに反応したい場合や、再生そのものを置き換えたい場合に接続してください（後述の [サウンド](#サウンド-audio) を参照）。
 
 | キー | 型 | 内容 |
 | --- | --- | --- |

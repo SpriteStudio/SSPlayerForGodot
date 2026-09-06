@@ -47,7 +47,7 @@ Keep the output directory (`res://ssab_generated` by default) intact, or move th
 ## A part is missing, everything else draws
 
 - **Text parts and 9-slice parts are not drawn yet.** They keep their slot in the draw order, so the animation plays with a hole in it. See [Limitations & Scope](limitations.md).
-- **A part hidden on this frame** is hidden by the animation, not by the plugin. Check the timeline in SpriteStudio, and check that no [visibility override](workflow/usage_scripting.md#part-overrides-color-cell-visibility) is left over from a script.
+- **A part hidden on this frame** is hidden by the animation, not by the plugin. Check the timeline in SpriteStudio, and check that no [visibility override](workflow/usage_scripting.md#part-overrides-color--cell--visibility) is left over from a script.
 - **A part inside an Instance part** cannot be addressed by name from the outside — the child animation runs as a separate player. The Instance part itself can.
 
 ---

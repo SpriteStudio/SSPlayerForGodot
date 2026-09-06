@@ -82,6 +82,19 @@ plugins:
 # `> [!NOTE]` blockquote syntax as admonitions. Zensical parses it natively, so the plugin
 # is gone. See docs/*/stylesheets/extra.css for the one type it maps differently.
 markdown_extensions:
+  # Heading ids. Python-Markdown's default slugify strips every non-ASCII character, which on the
+  # Japanese site leaves half the headings with a positional `_1`, `_2` id -- unlinkable, and renumbered
+  # whenever a heading is added above them. This keeps the text, so `## 依存関係` is `#依存関係` and a
+  # ja page can be deep-linked like an en one. Nearly every ASCII heading slugifies the same either way,
+  # so the English ids stay put; the one exception is heading text containing ` / ` or ` & `, where the
+  # separator now collapses to a double hyphen (`…-color--cell--visibility`) -- six headings here, and
+  # every link into them is updated in the same commit. SpriteStudio-Docs, SSPlayerForUnity
+  # and SSPlayerForWgpu already set this; SSPlayerForFlutter and SSPlayerForRenPy still do not, and
+  # have the same unlinkable ja anchors this fixes.
+  - toc:
+      slugify: !!python/object/apply:pymdownx.slugs.slugify
+        kwds:
+          case: lower
   - admonition
   - pymdownx.details
   - pymdownx.superfences:
