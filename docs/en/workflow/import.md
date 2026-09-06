@@ -32,9 +32,12 @@ Open your terminal or command prompt, and execute the tool by passing the path t
 
 ### 3. Placing the Artifacts
 
-The conversion results will be output into a new folder named `<sspj_name>_ssab/` created in the same directory as the original `.sspj`. Inside, you will find the `.ssab` (animation packs) and `.ssqb` (sequences) files.
+The conversion results will be output into a new folder named `<sspj name>/` created in the same directory as the original `.sspj`. Inside, you will find the `.ssab` (animation packs) and `.ssqb` (sequences) files, along with the referenced textures and audio.
 
 By copying these generated files into any directory under your Godot project's `res://`, they will be recognized and loadable as `SSABResource` / `SSQBResource` in Godot.
+
+> [!IMPORTANT]
+> Copy the **whole `<sspj name>/` folder**. A `.ssab` resolves its textures, its audio and its Instance part targets through paths relative to its own directory, so splitting the contents apart breaks resolution. See [Generated Assets and Packs](generated_assets.md#dependencies) for the details.
 
 ---
 
