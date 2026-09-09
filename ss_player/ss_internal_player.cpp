@@ -1684,6 +1684,10 @@ void SsInternalPlayer::_drawAnimation(float frame_no, float delta_seconds, bool 
         }
     }
 
+    for (uint32_t i = 0; i < _instance_children.size(); i++) {
+        if (_instance_children[i].player) _instance_children[i].player->setRootVisible(false);
+    }
+
     // Per-frame draw-order counter: batch CIs and per-part CIs draw in the
     // order they are emitted (rank order), not in CI-pool allocation order.
     _draw_seq = 0;
@@ -2034,10 +2038,11 @@ void SsInternalPlayer::_drive_instance_slot(InstanceChildState& state,
         child->play();
     }
 
-    child->setRootVisible(false);
     if (!r.visible) {
         return;
     }
+
+    child->_update_instance_children(r.child_frame_no, delta_seconds, r.child_looped);
 
     _redraw_child_if_frame_changed(child, r.child_frame_no, delta_seconds, r.child_looped);
 }
