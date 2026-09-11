@@ -13,6 +13,13 @@ Constraints and platform-specific caveats to be aware of when shipping with the 
 
 Both part types still occupy their place in the draw order, so an animation that uses them plays with those parts missing rather than failing. If you ship one, replace it with an ordinary part at authoring time.
 
+## Blend Modes
+
+> [!WARNING]
+> Only four of SpriteStudio's twelve part blend (mixing) modes are honored — **Mix**, **Multiply**, **Add**, and **Subtract**. The other eight — **Mulalpha**, **Screen**, **Exclusion**, **Invert**, **Mul2**, **Div2**, **Screen2**, **Overlay2** — fall back to **Mix**.
+
+The plugin draws straight to Godot's `RenderingServer` canvas item with no intermediate render target, so a part is limited to the blend modes that map onto a `CanvasItemMaterial`. A part set to an unsupported mode still draws — it just composites as ordinary alpha blending instead of the authored mode. If your artwork relies on one of the other modes, check it in Godot before shipping.
+
 ## Platforms & Export
 
 The plugin ships in two build variants — **GDExtension** and **custom module** — and both can be exported to every Godot target. Build and execution are actively verified on **Windows / macOS**; the other targets are supported but less frequently exercised. See [Build Guide](setup/build.md) for the export flow of each.

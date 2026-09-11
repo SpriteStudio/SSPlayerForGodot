@@ -70,6 +70,7 @@ func _ready() -> void:
 * `find_part_index(part_name: String) -> int`: パーツ名をパーツインデックスへ解決します。存在しない場合は `-1`。
 * `get_part_transform(part_name: String) -> Transform2D`: 現在のフレームでのパーツの `Transform2D`（プレイヤーノードのローカル空間。`flip_h` / `flip_v` / `offset` を含みます）。パーツが不明な場合は単位行列を返します。
 * `is_part_hidden(part_name: String) -> bool`: 現在のフレームでそのパーツが非表示かどうか。
+* `is_part_skinned_mesh(part_name: String) -> bool`: そのパーツがスキンメッシュかどうか（パーツが不明な場合は `false`）。スキンメッシュパーツは追従先に向かないため、`SpriteStudioPartAttachment2D` は対象から除外します。
 
 指定したパーツにノードを追従させる `SpriteStudioPartAttachment2D` については [スクリプト制御とイベント駆動 → パーツトラッキング](../workflow/usage_scripting.md) を参照してください。
 
@@ -78,7 +79,7 @@ func _ready() -> void:
 パーツ単位で、カラー / セル / 表示指定をキーフレームより優先して上書きします。各メソッドは成功時に `true`、パーツが不明な場合やランタイムが受け付けなかった場合に `false` を返します。詳細と注意点は [スクリプト制御とイベント → パーツオーバーライド](../workflow/usage_scripting.md) を参照してください。
 
 * `set_part_color_override(part_name: String, color: Color, blend_op: ColorBlendOperation = COLOR_BLEND_MIX, priority: OverridePriority = OVERRIDE_PRIORITY_HOLD_UNTIL_NEXT_ANIMATION) -> bool`
-* `set_part_color_override_corners(part_name: String, left_top: Color, right_top: Color, left_bottom: Color, right_bottom: Color, blend_op: ColorBlendOperation = COLOR_BLEND_MIX, priority: OverridePriority = OVERRIDE_PRIORITY_HOLD_UNTIL_NEXT_ANIMATION) -> bool`: 4 頂点それぞれに色を指定して、パーツ内をグラデーションにします。`set_part_color_override` と同じオーバーライド枠を共有するので、後から呼んだ方が有効になり、`clear_part_color_override` はどちらも解除します。
+* `set_part_color_override_corners(part_name: String, corners: PackedColorArray, blend_op: ColorBlendOperation = COLOR_BLEND_MIX, priority: OverridePriority = OVERRIDE_PRIORITY_HOLD_UNTIL_NEXT_ANIMATION) -> bool`: 4 頂点それぞれに色を指定して、パーツ内をグラデーションにします。`corners` には左上・右上・左下・右下の順にちょうど 4 色を入れます。`set_part_color_override` と同じオーバーライド枠を共有するので、後から呼んだ方が有効になり、`clear_part_color_override` はどちらも解除します。
 * `set_part_cell_override(part_name: String, cellmap_name: String, cell_name: String, priority: OverridePriority = OVERRIDE_PRIORITY_HOLD_UNTIL_NEXT_ANIMATION) -> bool`
 * `set_part_visibility_override(part_name: String, force_hidden: bool, cascade: bool = false) -> bool`
 * `clear_part_color_override(part_name: String) -> bool` / `clear_part_cell_override(part_name: String) -> bool` / `clear_part_visibility_override(part_name: String) -> bool`
@@ -190,14 +191,14 @@ func play_audio(payload: Dictionary, ssab: SSABResource, player: Node) -> void:
 
 ## AnimationPlayer から駆動する
 
-`frame` プロパティはアニメート可能なので、`AnimationPlayer` のタイムライン（音・メソッド呼び出し・他ノードなど他トラック）と同期させて SpriteStudio アニメをスクラブできます。
+`frame_no` プロパティはアニメート可能なので、`AnimationPlayer` のタイムライン（音・メソッド呼び出し・他ノードなど他トラック）と同期させて SpriteStudio アニメをスクラブできます。
 
 1. `SpriteStudioPlayer2D` に通常どおり `Ssab`（SSAB リソース）を割り当て、`Animation` を選択。
-2. `AnimationPlayer` で、ノードの `frame` プロパティを対象に **プロパティトラック** を追加。
-3. `frame` を時間に沿ってキーフレーム（例：尺に合わせて `0` → 最終フレーム）。`frame` は float なので補間されます。
+2. `AnimationPlayer` で、ノードの `frame_no` プロパティを対象に **プロパティトラック** を追加。
+3. `frame_no` を時間に沿ってキーフレーム（例：尺に合わせて `0` → 最終フレーム）。`frame_no` は float なので補間されます。
 4. `AnimationPlayer` を再生。
 
 > [!IMPORTANT]
-> `AnimationPlayer` が `frame` を駆動している間は、ノードを**自走させない**でください（`Autoplay` をオフにし、`play()` も呼ばない）。さもないとノード自身の再生とキーフレームの `frame` が毎フレーム競合します。
+> `AnimationPlayer` が `frame_no` を駆動している間は、ノードを**自走させない**でください（`Autoplay` をオフにし、`play()` も呼ばない）。さもないとノード自身の再生とキーフレームの `frame_no` が毎フレーム競合します。
 
-これ以上の準備は不要です。キー値は `AnimationPlayer` のアニメーション側に保存され（ノードの `frame` はシーンに保存されません）、同じトラックがランタイムでも再生を駆動します。
+これ以上の準備は不要です。キー値は `AnimationPlayer` のアニメーション側に保存され（ノードの `frame_no` はシーンに保存されません）、同じトラックがランタイムでも再生を駆動します。

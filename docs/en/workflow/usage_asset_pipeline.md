@@ -53,7 +53,7 @@ With just the following steps, your changes will instantly reflect in the game (
 
 > [!IMPORTANT]
 > **The shortest workflow: "Open" -> "Save" -> "Reconvert"**
-> You can call SpriteStudio directly from the Inspector with the node selected, and immediately reconvert in Godot after editing. **This powerful asset pipeline that allows seamless transition between SpriteStudio and Godot** drastically lowers the cost of trial and error during animation adjustments.
+> You can call SpriteStudio directly from the Inspector with the node selected, and immediately reconvert in Godot after editing — which drastically lowers the cost of trial and error during animation adjustments.
 
 > [!TIP]
 > 
