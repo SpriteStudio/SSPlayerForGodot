@@ -10,7 +10,7 @@ Godot 標準の `AnimationPlayer` と組み合わせることで、SSPlayer の�
 
 SSPlayer を `AnimationPlayer` で制御するためには、まず対象の `.ssab` に含まれるすべてのアニメーション（walk, attack など）を Godot が読み込める `AnimationLibrary`（`_anims.res`）に変換する必要があります。
 
-1. Godot エディタ上で、ファイルシステムから `.ssab`（または `.ssqb`）ファイルを選択します。
+1. Godot エディタ上で、ファイルシステムから `.ssab` ファイルを選択します。
 2. インスペクタの下部にある **「Gen AnimLib (AnimationPlayer用ライブラリを生成)」** ボタンをクリックします。
 3. 成功すると、同じフォルダに `[元のファイル名]_anims.res` というファイルが生成されます。
 

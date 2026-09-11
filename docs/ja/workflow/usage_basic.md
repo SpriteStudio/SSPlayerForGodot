@@ -69,7 +69,7 @@ Godot エディタの強力な機能を活かし、最短の手順でアニメ�
 | `Autoplay`                 | bool   | ゲーム開始時に自動再生するかどうか                                  |
 | `Offset`                   | Vector2| 描画位置のオフセット。Transformを動かさずに見た目だけをずらす際に便利 |
 | `Flip H / Flip V`          | bool   | アニメーションの水平 / 垂直反転                                     |
-| `Frame`                    | float  | 現在のフレーム位置                                                  |
+| `Frame No`                 | float  | 現在のフレーム位置                                                  |
 | `Speed Scale`              | float  | 再生速度倍率 (既定: 1.0)                                            |
 | `Frame Rate`               | int    | FPS                                                                 |
 | `Loop Count`               | int    | ループ回数 (`-1` で無限ループ)                                      |

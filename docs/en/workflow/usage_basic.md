@@ -69,7 +69,7 @@ Once the node is selected, you can adjust various settings from Godot's Inspecto
 | `Autoplay`                 | bool     | Whether to play automatically when the game starts                  |
 | `Offset`                   | Vector2  | Drawing offset. Useful to shift visuals without changing the Node Transform |
 | `Flip H / Flip V`          | bool     | Horizontal / Vertical flip of the animation                         |
-| `Frame`                    | float    | The current frame position                                          |
+| `Frame No`                 | float    | The current frame position                                          |
 | `Speed Scale`              | float    | Playback speed multiplier (Default: 1.0)                            |
 | `Frame Rate`               | int      | FPS                                                                 |
 | `Loop Count`               | int      | Number of loops (`-1` for infinite loop)                            |

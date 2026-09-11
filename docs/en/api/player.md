@@ -70,6 +70,7 @@ func _ready() -> void:
 * `find_part_index(part_name: String) -> int`: Resolves a part name to its part index, or `-1` if it does not exist.
 * `get_part_transform(part_name: String) -> Transform2D`: The part's `Transform2D` on the current frame, in the player node's local space (`flip_h` / `flip_v` / `offset` included). Returns the identity when the part is unknown.
 * `is_part_hidden(part_name: String) -> bool`: Whether the part is hidden on the current frame.
+* `is_part_skinned_mesh(part_name: String) -> bool`: Whether the part is a skinned mesh (`false` when the part is unknown). Skinned-mesh parts are not suitable follow targets, so `SpriteStudioPartAttachment2D` excludes them.
 
 See [Scripting and Event-Driven Control → Part Tracking](../workflow/usage_scripting.md) for `SpriteStudioPartAttachment2D`, the node that makes another node follow a specified part.
 
@@ -78,7 +79,7 @@ See [Scripting and Event-Driven Control → Part Tracking](../workflow/usage_scr
 Override a single part's color / cell / visibility so that it wins over the keyframes. Every method returns `true` on success, or `false` when the part is unknown or the runtime rejects the call. See [Scripting and Event-Driven Control → Part Overrides](../workflow/usage_scripting.md) for the details and caveats.
 
 * `set_part_color_override(part_name: String, color: Color, blend_op: ColorBlendOperation = COLOR_BLEND_MIX, priority: OverridePriority = OVERRIDE_PRIORITY_HOLD_UNTIL_NEXT_ANIMATION) -> bool`
-* `set_part_color_override_corners(part_name: String, left_top: Color, right_top: Color, left_bottom: Color, right_bottom: Color, blend_op: ColorBlendOperation = COLOR_BLEND_MIX, priority: OverridePriority = OVERRIDE_PRIORITY_HOLD_UNTIL_NEXT_ANIMATION) -> bool`: Four-corner (per-vertex) colour, for a gradient across the part. Shares one override slot with `set_part_color_override` — the last call wins, and `clear_part_color_override` clears either kind.
+* `set_part_color_override_corners(part_name: String, corners: PackedColorArray, blend_op: ColorBlendOperation = COLOR_BLEND_MIX, priority: OverridePriority = OVERRIDE_PRIORITY_HOLD_UNTIL_NEXT_ANIMATION) -> bool`: Four-corner (per-vertex) colour, for a gradient across the part. `corners` holds exactly four colours in the order left-top, right-top, left-bottom, right-bottom. Shares one override slot with `set_part_color_override` — the last call wins, and `clear_part_color_override` clears either kind.
 * `set_part_cell_override(part_name: String, cellmap_name: String, cell_name: String, priority: OverridePriority = OVERRIDE_PRIORITY_HOLD_UNTIL_NEXT_ANIMATION) -> bool`
 * `set_part_visibility_override(part_name: String, force_hidden: bool, cascade: bool = false) -> bool`
 * `clear_part_color_override(part_name: String) -> bool` / `clear_part_cell_override(part_name: String) -> bool` / `clear_part_visibility_override(part_name: String) -> bool`
@@ -190,14 +191,14 @@ Resolving a sound from the payload is done on [`SSABResource`](resource.md#ssabr
 
 ## Driving from an AnimationPlayer
 
-The `frame` property is animatable, so an `AnimationPlayer` can scrub a SpriteStudio animation in lockstep with its own timeline (and any other tracks on it — audio, calls, other nodes).
+The `frame_no` property is animatable, so an `AnimationPlayer` can scrub a SpriteStudio animation in lockstep with its own timeline (and any other tracks on it — audio, calls, other nodes).
 
 1. Assign the `Ssab` resource and pick an `Animation` on the `SpriteStudioPlayer2D` as usual.
-2. In the `AnimationPlayer`, add a **Property Track** targeting the node's `frame` property.
-3. Keyframe `frame` over time (e.g. `0` → the last frame across the desired duration). `frame` is a float, so values interpolate.
+2. In the `AnimationPlayer`, add a **Property Track** targeting the node's `frame_no` property.
+3. Keyframe `frame_no` over time (e.g. `0` → the last frame across the desired duration). `frame_no` is a float, so values interpolate.
 4. Play the `AnimationPlayer`.
 
 > [!IMPORTANT]
-> While the `AnimationPlayer` drives `frame`, do **not** let the node play itself — leave `Autoplay` off and don't call `play()`. Otherwise the node's own playback and the keyframed `frame` fight each other every frame.
+> While the `AnimationPlayer` drives `frame_no`, do **not** let the node play itself — leave `Autoplay` off and don't call `play()`. Otherwise the node's own playback and the keyframed `frame_no` fight each other every frame.
 
-No setup beyond this is required: keyframe values live in the `AnimationPlayer`'s animation (the node's `frame` is not stored in the scene), and the same track drives playback at runtime.
+No setup beyond this is required: keyframe values live in the `AnimationPlayer`'s animation (the node's `frame_no` is not stored in the scene), and the same track drives playback at runtime.

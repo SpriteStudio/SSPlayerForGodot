@@ -42,10 +42,10 @@ Animation playback uses `libssruntime` provided by [SpriteStudio-SDK](https://gi
 
 ## Key Features
 
-This plugin is designed to bring the full expressive power of SpriteStudio to Godot Engine seamlessly.
+This plugin brings SpriteStudio's full expressive power to Godot Engine.
 
-*   **Full Feature Support:** Fully supports SpriteStudio features including bone hierarchies, mesh & deformations, and high-performance particle effects.
-*   **Seamless Integration and a Powerful Asset Pipeline:** In addition to easy drag-and-drop importing via the built-in "SS Import Dock", you can open SpriteStudio directly from the Inspector and reconvert with a single click, providing a **powerful asset pipeline that allows you to seamlessly transition between SpriteStudio and Godot**. For details, see [Asset Import and Editor Integration](workflow/usage_asset_pipeline.md).
+*   **Broad Feature Support:** Supports nearly all SpriteStudio features — bone hierarchies, mesh & deformations, and high-performance particle effects — with a few exceptions noted in [Limitations & Scope](limitations.md).
+*   **Seamless Integration and a Powerful Asset Pipeline:** In addition to easy drag-and-drop importing via the built-in "SS Import Dock", you can open SpriteStudio directly from the Inspector and reconvert with a single click. For details, see [Asset Import and Editor Integration](workflow/usage_asset_pipeline.md).
 *   **Dynamic Customization (CellMap Overrides):** Easily swap textures at runtime to implement character equipment changes or color variations.
 *   **Signals & Events:** Receive "User Data" and "Signals" from your animation timeline directly as Godot Signals, allowing frame-perfect triggers for game logic. Every event says which part fired it.
 *   **Audio That Just Plays:** Audio parts sound through Godot with no setup — in the editor preview too. Adjust the volume, take it over through the `audio` signal, or route every sound to your own audio middleware with a [backend resource](workflow/audio.md).
