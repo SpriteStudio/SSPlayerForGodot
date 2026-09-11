@@ -555,7 +555,8 @@ private:
 
     // ---- CBP masking (clever bit packing) ----------------------------------
     // One entry per part that writes the mask this frame. Rebuilt by
-    // `_build_mask_writers` each frame from draw_order + static PartData.
+    // `_build_mask_writers` each frame from draw_order, static PartData, and the
+    // per-frame mask / hide that say whether a writer writes at all.
     // `bit` is the writer's slot in the coverage bitmap (0..MAX_MASK_WRITERS-1).
     // `op_invert` comes from PartData.mask_influence (false=increment / true=
     // invert). `is_clipping` selects the scope direction: a pure Mask part
@@ -575,11 +576,13 @@ private:
     Vector<MaskWriter> _mask_writers;
     // Per part index (parallel to `_parts_by_idx`): 1 when the part is a "pure"
     // mask this frame. Rebuilt with `_mask_writers` so the emit paths can test it
-    // once per part without walking the writer list.
+    // once per part without walking the writer list. A pure mask keeps this flag
+    // when it writes nothing — switched off, hidden, or past the bit budget — so
+    // that it still draws no colour of its own.
     LocalVector<uint8_t> _part_pure_mask;
-    // Populate `_mask_writers` from this frame's draw_order + static PartData.
-    // Returns true if at least one writer is present (i.e., masking is active
-    // this frame). Only the top-root player owns the mask state.
+    // Populate `_mask_writers` from this frame's draw_order, static PartData and
+    // per-frame mask / hide. Returns true if at least one writer is present (i.e.,
+    // masking is active this frame). Only the top-root player owns the mask state.
     bool _build_mask_writers(const DrawFrame& f);
 
     // ---- CBP coverage bitmap (offscreen RGBA8 = 32 mask bits) --------------

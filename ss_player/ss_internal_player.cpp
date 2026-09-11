@@ -978,6 +978,18 @@ bool SsInternalPlayer::_build_mask_writers(const DrawFrame& f) {
         // drawing its own colour over the scene.
         if (pure_mask) pure_mask_flags[p_idx] = 1;
 
+        // A writer only writes where its per-frame mask is non-zero and it is not
+        // hidden (Rule_Mask.md §2-2). Both live in FrameData, so this is the one
+        // half of the classification PartData cannot answer: an authored MASK of 0
+        // is how a writer is switched off over a range of frames, and the cutout
+        // threshold cannot stand in for it — a shape mask samples no texture, so
+        // its coverage is its whole geometry whatever the threshold says. A part
+        // with no PartState this frame was not evaluated and writes nothing, which
+        // is what `_bake_coverage_geometry` would decide about it anyway.
+        // Tested before the bitmap budget so a switched-off writer costs no bit.
+        const auto* ps = (p_idx < (int)_parts_by_idx.size()) ? _parts_by_idx[p_idx] : nullptr;
+        if (!ps || ps->mask() == 0.0f || ps->hide()) continue;
+
         // Bitmap holds 24 writers; keep scanning past that so the pure masks that
         // did not fit are still flagged above.
         if ((int)_mask_writers.size() >= MAX_MASK_WRITERS) continue;
