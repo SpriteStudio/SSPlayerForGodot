@@ -870,3 +870,11 @@ cython_debug/
 # SHA256SUMS here (it stages into the already-ignored build/). artifacts/ is the
 # matrix output it reads, downloaded with `gh run download -D artifacts`.
 /release-dist/
+
+# AI assistant configuration
+# AGENTS.md is the tracked canonical guide; per-tool entrypoints that developers
+# symlink to it (e.g. CLAUDE.md) stay local.
+GEMINI.md
+.gemini/
+CLAUDE.md
+.claude/
