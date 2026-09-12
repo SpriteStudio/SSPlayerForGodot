@@ -1,4 +1,4 @@
-[**日本語**](./README.ja.md) | [**English**](./README.md)
+[**English**](./README.md) | [**日本語**](./README.ja.md)
 
 # SpriteStudioPlayer for Godot
 
@@ -23,7 +23,7 @@ A high-performance extension plugin (GDExtension / Custom Module) for playing an
 
 ## 📚 Documentation
 
-Comprehensive documentation is available in the `docs/` folder:
+Comprehensive documentation is available in the `docs/` folder — the data-flow diagram, key features and supported versions are all there:
 
 - [**Documentation site (hosted)**](https://cri-middleware.github.io/SSPlayerForGodot/) — 🚧 live after the first release
 - [**Documentation (English)**](./docs/en/index.md)
@@ -63,12 +63,6 @@ We provide two Quick Starts: one for quickly checking the operation using a samp
 3. **Play**: Add a `SpriteStudioPlayer2D` node and assign the `.ssab` to its `SSAB Resource` property.
 
 For more details, see the [Installation Guide](./docs/en/setup/install.md).
-
-## 💡 Overview
-
-This plugin features a **powerful asset pipeline that allows you to seamlessly transition between SpriteStudio and Godot**, enabling you to update assets instantly.
-
-For the data-flow diagram, key features, supported versions, and more, see the **[Documentation (English)](./docs/en/index.md)**.
 
 ## 🎬 Samples
 
