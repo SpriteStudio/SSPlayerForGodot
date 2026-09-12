@@ -1,4 +1,4 @@
-[**日本語**](./README.ja.md) | [**English**](./README.md)
+[**English**](./README.md) | [**日本語**](./README.ja.md)
 
 # SpriteStudioPlayer for Godot
 
@@ -23,7 +23,7 @@
 
 ## 📚 ドキュメント
 
-詳細な使い方は `docs/` フォルダ内のドキュメントを参照してください。
+詳細な使い方は `docs/` フォルダ内のドキュメントにあります。データフロー図・主な機能・対応バージョンもそちらです。
 
 - [**ドキュメントサイト (ホスト版)**](https://cri-middleware.github.io/SSPlayerForGodot/ja/) — 🚧 初回リリース後に公開
 - [**ドキュメント (日本語)**](./docs/ja/index.md)
@@ -62,12 +62,6 @@
 3. **再生**: `SpriteStudioPlayer2D` ノードを追加し、`SSAB Resource` プロパティに生成された `.ssab` を指定します。
 
 詳細は [インストールガイド](./docs/ja/setup/install.md) を参照してください。
-
-## 💡 概要 (Overview)
-
-本プラグインは、**SpriteStudio と Godot エディタをシームレスに行き来できる強力なアセットパイプライン**を備え、一瞬でアセットを更新することが可能です。
-
-データフロー図、主な機能、対応バージョンなどの詳細は **[ドキュメント (日本語)](./docs/ja/index.md)** を参照してください。
 
 ## 🎬 サンプル
 
