@@ -15,7 +15,7 @@ A high-performance extension plugin (GDExtension / Custom Module) for playing an
 - **Build "Entire Scenes" including Backgrounds and Effects**
   Beyond animating individual characters, you can construct entire "cutscenes" or "full screen" presentations—combining characters, backgrounds, effects, and UI—directly in the editor, and play them back as a single animation in Godot.
 - **Cross-Engine Visual Consistency**
-  Since complex state calculations are handled by an independent core runtime, structural "visual deviations" caused by Godot's unique specifications do not occur. It is guaranteed that the appearance in the editor and the playback results in other engines perfectly match. Sub-frame interpolation ensures smooth rendering even at high refresh rates.
+  Pose, interpolation, deformation and draw order are computed by an independent core runtime shared with every official player, so the structural "visual deviations" that come from an engine's own specifications do not occur — those match across engines. Blend modes and part colours are carried as intent and reproduced as faithfully as the host's rendering layer allows, so they are best-effort rather than identical; masking, text and audio are Godot's own. Sub-frame interpolation ensures smooth rendering even at high refresh rates.
 - **Natural Integration as a Godot "Node" and Conflict Avoidance**
   `SpriteStudioPlayer2D` seamlessly integrates into your Godot scenes as a standard node, allowing easy control from GDScript without bloating the Node tree. At the same time, the animation data itself is separated from the scene, preventing Git conflicts during team development.
 - **Extreme Performance via Zero-copy Loading and SIMD**
@@ -33,25 +33,28 @@ Comprehensive documentation is available in the `docs/` folder:
 ### Quick Links (English)
 - [Installation](./docs/en/setup/install.md)
 - [Basic Usage](./docs/en/workflow/usage_basic.md)
-- [Asset Import and Editor Integration](./docs/en/workflow/usage_asset_pipeline.md)
-- [Scripting and Events](./docs/en/workflow/usage_scripting.md)
-- [Audio Playback](./docs/en/workflow/audio.md)
-- [CLI Conversion and Automation](./docs/en/workflow/import.md)
-- [Performance Tuning and Advanced Settings](./docs/en/workflow/tips.md)
-- [Build Guide](./docs/en/setup/build.md)
+- [Limitations & Scope](./docs/en/limitations.md)
 - [Troubleshooting](./docs/en/troubleshooting.md)
 - [Migration from v1.x](./docs/en/migration_from_v1.md)
 
 ## 🚀 Quick Start with GDExtension
 
-We provide two Quick Starts: one for quickly checking the operation using a sample project, and another for setting up your own project.
+**Using it in your game?** Read on — install the add-on, drag a `.sspj` onto the editor, place a node.
+Everything after that (scripting, signals, per-part overrides) is the same path further in, in the
+[documentation](./docs/en/index.md).
+**Working on the Player, or the Rust runtime under it?** [CONTRIBUTING.md](./CONTRIBUTING.md) and the [Build Guide](./docs/en/setup/build.md).
+
+We provide two Quick Starts: one for quickly checking the operation using a sample project, and another for setting up your own project. Projects have to be authored in **SpriteStudio 7.5 or later**.
 
 ### 1. Check Operation with Sample
 
+> 🚧 **This generation is not released yet.** [Releases](https://github.com/cri-middleware/SSPlayerForGodot/releases) currently carries only the **1.x** plugin, which cannot open the samples on this branch — they use `SSABResource` and `SpriteStudioPlayer2D`, both of which arrived with 7.x. Until the first 7.x release, build the extension from this checkout with the [Build Guide](./docs/en/setup/build.md), then continue from step 3.
+
 1. **Get Godot Engine**: Download a 4.7-series editor from the [official site](https://godotengine.org/download/).
-2. **Download GDExtension**: Get the latest package from [Releases](https://github.com/cri-middleware/SSPlayerForGodot/releases) and extract it.
-3. **Prepare Sample**: Copy the extracted `addons` folder into the [examples/Ringo](./examples/Ringo) folder of this repository.
-4. **Check**: Open the [examples/Ringo](./examples/Ringo) project in Godot Engine and open `Ringo.tscn` to immediately see the animation working.
+2. **Get the repository**: Clone it with `--recurse-submodules`. The sample's source project lives in the `ss_player/SpriteStudio-SDK` submodule, and without it the sample has nothing to convert.
+3. **Download GDExtension**: Get the latest package from [Releases](https://github.com/cri-middleware/SSPlayerForGodot/releases) and extract it.
+4. **Prepare Sample**: Copy the extracted `addons` folder into the [examples/Ringo](./examples/Ringo) folder of this repository.
+5. **Check**: Open the [examples/Ringo](./examples/Ringo) project in Godot Engine. The add-on reads `.ssplayer_sources.cfg` and converts `Ringo.sspj` on first open — no `.ssab` is committed — then open `Ringo.tscn` to see the animation working.
 
 ### 2. Introduce to Your Project
 
