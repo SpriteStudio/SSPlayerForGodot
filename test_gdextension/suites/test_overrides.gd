@@ -6,6 +6,10 @@
 ## reads it back without stepping sees the old answer and concludes the call did
 ## nothing. Every case here steps once after setting, deliberately, and
 ## `test_an_override_lands_on_the_next_update` is the one that states it.
+##
+## **That update does not have to move the frame**, though, which is the half a
+## host driving its own playback runs into: the two cases after it hold the
+## frame still and pause the player, and expect the override on screen anyway.
 extends "res://test_base.gd"
 
 const BASIC := "res://ssab_generated/overall/Basic.ssab"
@@ -34,6 +38,42 @@ func test_an_override_lands_on_the_next_update() -> void:
 	not_ok(player.is_part_hidden(part), "not yet — nothing has been computed")
 	player.advance(dt)
 	ok(player.is_part_hidden(part), "hidden once a frame has been computed")
+
+
+## The update it lands on does not have to be one that *moves* the frame. Every
+## redraw path dedups on the draw frame, so a project driving its own playback —
+## `advance(0.0)`, a frame held at a section end — used to leave the override in
+## the runtime, unseen, until something happened to step.
+func test_an_override_lands_on_a_frame_that_did_not_move() -> void:
+	var before: float = player.get_frame_no()
+	player.set_part_visibility_override(part, true)
+	player.advance(0.0)
+	eq(player.get_frame_no(), before, "the frame did not move")
+	ok(player.is_part_hidden(part), "and the override still reached the draw")
+
+
+## Same rule with playback switched off: a paused player's frame never moves
+## again on its own, so gating the redraw on a change of frame would hold the
+## override until the next resume().
+func test_an_override_lands_on_a_paused_player() -> void:
+	player.pause()
+	player.advance(dt)
+	ok(player.is_pausing(), "paused")
+	player.set_part_visibility_override(part, true)
+	player.advance(dt)
+	ok(player.is_part_hidden(part), "the override reached the draw while paused")
+
+
+## And with playback switched off at the runtime rather than held: a stopped
+## player takes the other early-return in `update`, ahead of the frame step.
+func test_an_override_lands_on_a_stopped_player() -> void:
+	player.stop()
+	player.advance(dt)
+	not_ok(player.is_playing(), "stopped")
+	not_ok(player.is_part_hidden(part), "'%s' is visible where it stopped" % part)
+	player.set_part_visibility_override(part, true)
+	player.advance(dt)
+	ok(player.is_part_hidden(part), "the override reached the draw while stopped")
 
 
 func test_clearing_gives_the_part_back() -> void:

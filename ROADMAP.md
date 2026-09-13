@@ -82,6 +82,29 @@ SSPlayerForGodot leverages Godot's `CanvasItem` API and `Node2D` paradigms. Feat
 - **Done when**: a demo screen puts a player inside a `VBoxContainer`, resizes with the window, receives
   `gui_input` on its own artwork, and changes animation as a `Button` is hovered and pressed.
 
+## ☐ A pure mask inside an Instance part (Player-only)
+
+- **Goal**: a mask part written inside a sub-animation clips that sub-animation's own parts, the way it
+  does when the same pack is played directly.
+- **Key fact**: `_drawAnimation` calls `_render_mask_coverage` only when `!_parent_driven`, so an Instance
+  child never rasterises its own writers, and `_bubble_child_clip_writers` carries **clipping** writers up
+  and nothing else. A pure mask inside an instance is therefore dropped: the pack clips correctly played
+  on its own and draws unclipped through an Instance part. The SDK's `40_mask.md` §2-7 has a pure mask
+  closing *within* the sub-animation, so this is a gap rather than the design.
+- **Why it earns a slot**: a sub-animation is the only way SpriteStudio can express **more than one
+  independent clipping group** in one animation — scope is draw priority and nothing else, so a second
+  mask reaches the first one's targets. Adobe Animate's `Clpb` has no such limit and real exports carry
+  several, which is what holds the conversion in `SSProjectGenerator/ROADMAP.md`.
+- **Steps**:
+  1. Decide where the coverage comes from: a private pass for the child (a second borrowed target, and the
+     owner's UV transform no longer describing it), or the child's pure-mask writers bubbled into the
+     owner's coverage with a scope confined to the child's own draw-order window — `ss_mask_meta` carries
+     `(slot, bit, op, is_clipping)` today and would need the window as well.
+  2. Whichever it is, keep `§2-6`: the instance part's composed `mask_influence` / `visible_inside_mask`
+     still decide whether the *owner's* mask reaches in, independently of the child's own writers.
+- **Done when**: a pack of one drawing part plus the mask that clips it draws the same mounted on an
+  Instance part as it does played directly.
+
 ---
 
 ## 🕒 Deferred ("あとで")

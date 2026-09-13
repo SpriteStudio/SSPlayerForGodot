@@ -258,6 +258,12 @@ public:
     bool set_part_cell_override(int p_part_index, const String& p_cellmap_name, const String& p_cell_name, int p_priority);
     bool clear_part_cell_override(int p_part_index);
     bool clear_all_part_overrides();
+    // Draw a frame that is already current because an override changed it.
+    // The override layer lives in the runtime, so nothing about the frame
+    // number moves when one is set — and the redraw paths dedup on exactly
+    // that. A no-op when no override is waiting, so it is safe to call every
+    // tick; `update()` covers the modes that tick the animation themselves.
+    void redraw_pending_overrides();
 
 private:
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
@@ -390,6 +396,12 @@ private:
     float previous_frame_no = -1.0f;
     bool _sub_frame_enabled = false;
     bool _parent_driven = false;
+    // An override was set or cleared since the last draw. Every redraw path
+    // dedups on the draw frame, which an override does not move — and a
+    // stopped player's frame never moves at all — so without this the change
+    // sits in the runtime, unseen, until playback happens to step. Cleared by
+    // `_drawAnimation`, which both the owner's and the child's path go through.
+    bool _overrides_dirty = false;
 
     SsPlayerEventSink* _event_sink = nullptr;
 
@@ -760,6 +772,10 @@ private:
     void _fetchAnimation();
     void _drawAnimation(float frame_no, float delta_seconds = 0.0f, bool parent_looped = false);
     bool _needs_continuous_update() const;
+    // Every override mutator returns through here: a call the runtime accepted
+    // is a change the next draw has to pick up. Passes the result through so
+    // the mutators stay one line.
+    bool _override_applied(bool p_ok);
     // Instance slot emit: re-parent the child's _root_ci under this slot's
     // batch CI and apply the slot's world matrix as the child's root
     // transform. The child's own draw + simulation already happened earlier

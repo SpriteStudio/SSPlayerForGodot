@@ -841,12 +841,20 @@ void SpriteStudioPlayer2D::_notification(int p_notification) {
             if (_audio_controller) _audio_controller->stop_all();
             break;
         case NOTIFICATION_INTERNAL_PROCESS:
+            // Pushed whichever mode is running: MANUAL does not advance the
+            // animation here, but it still has to report its on-screen scale
+            // for the mask coverage pass.
+            _push_coverage_screen_scale();
             if (_process_mode == ANIMATION_PROCESS_IDLE) {
-                _push_coverage_screen_scale();
                 _internal->update(get_process_delta_time());
                 // Post-update: world matrices are final this tick, so part
                 // attachments can mirror their parts in the same frame.
                 emit_signal(SNAME("frame_updated"), _internal->getFrameNo());
+            } else {
+                // MANUAL. `advance()` is playback, and an override is not, so a
+                // project that drives its own frames still gets the override on
+                // screen without having to step the animation to see it.
+                _internal->redraw_pending_overrides();
             }
             // Audio voices advance independently of the animation's play/pause
             // state (fire-and-forget), so tick every frame the node processes.
