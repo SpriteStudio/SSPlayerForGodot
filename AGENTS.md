@@ -84,7 +84,7 @@ Callouts (`> [!NOTE]`) are parsed natively — `mkdocs-callouts` is gone. Two co
 ### The headless suite
 
 `test_gdextension/` is a Godot project that loads the built addon and drives
-`SpriteStudioPlayer2D` from GDScript — 35 cases over the bound API, the part
+`SpriteStudioPlayer2D` from GDScript — 38 cases over the bound API, the part
 override layer and the five signals. It is not a sample and does not live under
 `examples/`: the samples are what a reader is shown, and one project cannot be
 both that and a scratch pad (MAINTAINING_PLAYERS.md). It wears the

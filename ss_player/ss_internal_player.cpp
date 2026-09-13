@@ -412,15 +412,20 @@ String SsInternalPlayer::get_part_name(int p_part_index) const {
 
 // ---- Override Layer (Phase 2) --------------------------------------------
 
+bool SsInternalPlayer::_override_applied(bool p_ok) {
+    if (p_ok) _overrides_dirty = true;
+    return p_ok;
+}
+
 bool SsInternalPlayer::set_part_visibility_override(int p_part_index, bool p_force_hidden, bool p_cascade) {
     if (p_part_index < 0 || runtime_ctx == nullptr) return false;
     // force: 0 = clear/revert, 1 = force-hide (2 = force-visible is reserved).
-    return ss_runtime_set_part_visibility_override(runtime_ctx, (uint32_t)p_part_index, p_force_hidden ? 1 : 0, p_cascade ? 1 : 0);
+    return _override_applied(ss_runtime_set_part_visibility_override(runtime_ctx, (uint32_t)p_part_index, p_force_hidden ? 1 : 0, p_cascade ? 1 : 0));
 }
 
 bool SsInternalPlayer::clear_part_visibility_override(int p_part_index) {
     if (p_part_index < 0 || runtime_ctx == nullptr) return false;
-    return ss_runtime_clear_part_visibility_override(runtime_ctx, (uint32_t)p_part_index);
+    return _override_applied(ss_runtime_clear_part_visibility_override(runtime_ctx, (uint32_t)p_part_index));
 }
 
 // Godot Color (gamma/sRGB 0..1 under Compatibility 2D) -> packed 0xRRGGBBAA,
@@ -432,7 +437,7 @@ static uint32_t pack_color_rgba(const Color& p_color) {
 
 bool SsInternalPlayer::set_part_color_override(int p_part_index, const Color& p_color, int p_blend_op, int p_priority) {
     if (p_part_index < 0 || runtime_ctx == nullptr) return false;
-    return ss_runtime_set_part_color_override(runtime_ctx, (uint32_t)p_part_index, (unsigned char)p_blend_op, pack_color_rgba(p_color), (unsigned char)p_priority);
+    return _override_applied(ss_runtime_set_part_color_override(runtime_ctx, (uint32_t)p_part_index, (unsigned char)p_blend_op, pack_color_rgba(p_color), (unsigned char)p_priority));
 }
 
 bool SsInternalPlayer::set_part_color_override_corners(int p_part_index, const Color& p_left_top, const Color& p_right_top,
@@ -446,12 +451,12 @@ bool SsInternalPlayer::set_part_color_override_corners(int p_part_index, const C
         pack_color_rgba(p_left_bottom),
         pack_color_rgba(p_right_bottom),
     };
-    return ss_runtime_set_part_color_override_corners(runtime_ctx, (uint32_t)p_part_index, (unsigned char)p_blend_op, rgba, (unsigned char)p_priority);
+    return _override_applied(ss_runtime_set_part_color_override_corners(runtime_ctx, (uint32_t)p_part_index, (unsigned char)p_blend_op, rgba, (unsigned char)p_priority));
 }
 
 bool SsInternalPlayer::clear_part_color_override(int p_part_index) {
     if (p_part_index < 0 || runtime_ctx == nullptr) return false;
-    return ss_runtime_clear_part_color_override(runtime_ctx, (uint32_t)p_part_index);
+    return _override_applied(ss_runtime_clear_part_color_override(runtime_ctx, (uint32_t)p_part_index));
 }
 
 bool SsInternalPlayer::set_part_cell_override(int p_part_index, const String& p_cellmap_name, const String& p_cell_name, int p_priority) {
@@ -462,17 +467,17 @@ bool SsInternalPlayer::set_part_cell_override(int p_part_index, const String& p_
     CharString cn = p_cell_name.utf8();
     uint32_t cellmap_hash = ss_runtime_hash_string(cm.get_data());
     uint32_t cell_hash = ss_runtime_hash_string(cn.get_data());
-    return ss_runtime_set_part_cell_override(runtime_ctx, (uint32_t)p_part_index, cellmap_hash, cell_hash, (unsigned char)p_priority);
+    return _override_applied(ss_runtime_set_part_cell_override(runtime_ctx, (uint32_t)p_part_index, cellmap_hash, cell_hash, (unsigned char)p_priority));
 }
 
 bool SsInternalPlayer::clear_part_cell_override(int p_part_index) {
     if (p_part_index < 0 || runtime_ctx == nullptr) return false;
-    return ss_runtime_clear_part_cell_override(runtime_ctx, (uint32_t)p_part_index);
+    return _override_applied(ss_runtime_clear_part_cell_override(runtime_ctx, (uint32_t)p_part_index));
 }
 
 bool SsInternalPlayer::clear_all_part_overrides() {
     if (runtime_ctx == nullptr) return false;
-    return ss_runtime_clear_all_part_overrides(runtime_ctx);
+    return _override_applied(ss_runtime_clear_all_part_overrides(runtime_ctx));
 }
 
 void SsInternalPlayer::onSSABReloaded() {
@@ -786,7 +791,15 @@ void SsInternalPlayer::update(float delta_seconds) {
     if (_subtree_borrow_stale()) {
         onSSABReloaded();
     }
-    if (!ss_runtime_is_playing(runtime_ctx)) return;
+    if (!ss_runtime_is_playing(runtime_ctx)) {
+        // A stopped or finished player does not reach the draw-dedup at the
+        // bottom at all, so an override taken here would wait for the next
+        // play(). Redraw the frame it is already holding. (A *paused* player
+        // is still "playing" to the runtime and goes the other way, where the
+        // dedup is what the override has to defeat.)
+        redraw_pending_overrides();
+        return;
+    }
 
     auto d = delta_seconds * 1000.0f;
     float frame_no = ss_runtime_update(runtime_ctx, d);
@@ -933,9 +946,16 @@ void SsInternalPlayer::update(float delta_seconds) {
     }
 
     float draw_frame = _sub_frame_enabled ? frame_no : floorf(frame_no);
-    if (previous_frame_no == draw_frame && !_needs_continuous_update()) return;
+    // An override changes what the frame draws without changing which frame it
+    // is, so it has to defeat the dedup the same way a held-frame effect does.
+    if (previous_frame_no == draw_frame && !_needs_continuous_update() && !_overrides_dirty) return;
 
     _seek_and_redraw(frame_no, delta_seconds, was_looped);
+}
+
+void SsInternalPlayer::redraw_pending_overrides() {
+    if (!_overrides_dirty || runtime_ctx == nullptr) return;
+    _seek_and_redraw(ss_runtime_get_frame_no(runtime_ctx), 0.0f, false);
 }
 
 bool SsInternalPlayer::_build_mask_writers(const DrawFrame& f) {
@@ -1612,6 +1632,9 @@ void SsInternalPlayer::_drawAnimation(float frame_no, float delta_seconds, bool 
     _inherited_mask_materials.clear();
     _inherited_mask_children.clear();
     _inherited_mask_dirty = false;
+    // This draw is the one that picks the override layer up, whichever path
+    // reached here — the owner's seek or the parent's child walk.
+    _overrides_dirty = false;
 
     DrawFrame f = {};
     f.rs = RenderingServer::get_singleton();
@@ -2064,7 +2087,7 @@ void SsInternalPlayer::_redraw_child_if_frame_changed(SsInternalPlayer* child, f
     // A changed inherited mask context has to rebuild even on a held frame: the
     // composed polarity is baked into the child's per-part materials.
     if (child->previous_frame_no == draw_frame && !child->_needs_continuous_update()
-        && !child->_inherited_mask_dirty) return;
+        && !child->_inherited_mask_dirty && !child->_overrides_dirty) return;
     child->previous_frame_no = draw_frame;
     child->_drawAnimation(draw_frame, delta_seconds, parent_looped);
 }

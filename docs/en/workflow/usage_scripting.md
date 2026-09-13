@@ -291,6 +291,7 @@ Color and cell overrides conflict with the animation, so they take a `priority` 
 
 ### Notes
 
+- An override lands on the player's **next tick**, not on the call: it changes what the current frame draws without changing which frame it is, so a read-back (`is_part_hidden()`, for instance) before that tick reports the frame computed before it. The tick does not have to advance the animation — a held frame, a paused or stopped player, and `ANIMATION_PROCESS_MANUAL` all pick it up.
 - **Color** applies to normal parts, **cell** to normal and mask parts; other part types silently ignore the override (the call still returns `true`).
 - Colors are interpreted in the same 8-bit sRGB space as the authored Part Color, and alpha is pre-multiplied by the runtime — pass the color as authored, without converting it yourself.
 - A cell override is resolved when you set it, so an unknown cell map / cell name fails immediately (returns `false`).
