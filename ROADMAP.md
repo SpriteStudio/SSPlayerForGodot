@@ -55,6 +55,33 @@ SSPlayerForGodot leverages Godot's `CanvasItem` API and `Node2D` paradigms. Feat
 - **Goal**: Replace a part's `ShaderMaterial` at runtime.
 - **Status**: Currently `_partcolor_materials` assigns internal shaders. Investigate if users need the ability to inject custom Godot `ShaderMaterial` instances per-part for custom visual effects.
 
+## ☐ Tier 6 — UI integration (`Control`) (Player-only)
+
+- **Goal**: A player that behaves like a Godot UI node, not merely one that draws inside a UI screen.
+- **Key fact**: `SpriteStudioPlayer2D` is a `Node2D`. A `Node2D` under a `Control` draws, but it is invisible
+  to every UI system that matters — `Container` layout, anchors and offsets, `_gui_input`, focus traversal,
+  and `theme`. Everything else here follows from that one gap.
+- **Steps**:
+  1. `SpriteStudioPlayerUI` (`Control`): the same `SsInternalPlayer` behind a Control. `_get_minimum_size()`
+     returns the animation's content box so a `VBoxContainer` can size it, and the draw fits the animation
+     into the node's rect. Expose the fit in Godot's vocabulary (`stretch_mode` / `expand_mode`, as
+     `TextureRect` does) over the family's `fit` (`contain` / `cover` / `none`) + `align`.
+  2. Part rect read-out — `get_part_rect(part) -> Rect2` in player-local space, built from the `PartState`
+     fields already delivered every frame (`size_x` / `size_y`, `anchor`, `pivot`) and the part transform.
+     The auto-sizing collider under *Collider integration* below reads the same thing.
+  3. Per-part hit testing — `hit_test_part(point) -> int` and a `_has_point()` override on the Control, so an
+     irregular button stops eating clicks around its artwork and mouse filtering lets what is behind through.
+  4. UI state binding — map `normal` / `hover` / `pressed` / `disabled` / `focused` to an animation or a
+     label, driven by a `BaseButton`'s signals. Keep it properties on the node rather than a second node
+     (*Avoid node bloat*).
+  5. The two part kinds authored for UI, neither of which draws today
+     (`ss_internal_player.cpp:1755`). **Nines** is the cheap one — the runtime hands over finished vertices
+     (`get_nines_*`), so it is a draw path and nothing more. **Text** arrives as a batch with no geometry
+     plus the authored string: draw it through Godot's `Font` / `TextServer`, and allow substituting the
+     string at runtime so a UI label can be localized.
+- **Done when**: a demo screen puts a player inside a `VBoxContainer`, resizes with the window, receives
+  `gui_input` on its own artwork, and changes animation as a `Button` is hovered and pressed.
+
 ---
 
 ## 🕒 Deferred ("あとで")
@@ -65,6 +92,17 @@ SSPlayerForGodot leverages Godot's `CanvasItem` API and `Node2D` paradigms. Feat
 - **Status**: The loader `SSQBResource` is implemented, but there is no node to execute it yet.
 - **Blocked on**: SDK Phase 3 **State machine → Sequence playback**.
 - **Task**: Once the SDK implements sequence/state-machine advancing, create a `SpriteStudioSequence2D` node (or expand `SpriteStudioPlayer2D`) to utilize the SSQB resource and surface step callbacks to Godot signals.
+
+### 🕒 Stretch a 9-slice part to a layout rect (⛔ needs SDK)
+
+- **Goal**: A Nines part that follows the size of the `Control` it lives in, so an authored window frame is a
+  real UI panel rather than a picture of one.
+- **Status**: Drawing a Nines part at all is Tier 6 step 5; this is the step after it. The runtime evaluates
+  the part's size from its keyframes and hands over finished vertices, and the Override Layer covers colour /
+  cell / visibility only — so nothing can resize one from the host.
+- **Blocked on**: the SDK roadmap's **Per-part size override** (Phase 3) — the Override Layer extended with
+  `size_x` / `size_y`. A Nines part's size is inherited by its children, so a label anchored in a stretched
+  panel moves with the panel; that cascade is settled SDK-side, not here.
 
 ### 🕒 Collider integration
 
