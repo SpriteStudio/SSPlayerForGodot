@@ -350,6 +350,13 @@ void SpriteStudioPlayer2D::set_audio_backend(const Ref<SpriteStudioAudioBackend>
 }
 Ref<SpriteStudioAudioBackend> SpriteStudioPlayer2D::get_audio_backend() const { return _audio_backend; }
 
+// Spelled the Godot way, not the family's. Every sibling Player calls this pair
+// `flipX` / `flipY`; here it is `flip_h` / `flip_v` with an `is_flipped_*`
+// reader, because that is what `Sprite2D` and `AnimatedSprite2D` already put on
+// a 2D node — a Godot user reaches for `flip_h` on anything that draws, and an
+// inspector row called `flip_x` next to a Sprite2D's `flip_h` would read as a
+// different feature. A departure with a reason, per the API conventions
+// (SDK: 20_design/40_api_conventions.md, "Departing from this document").
 void SpriteStudioPlayer2D::set_flip_h(bool p_flip) {
     _flip_h = p_flip;
     _update_root_transform();
