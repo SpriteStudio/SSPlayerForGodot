@@ -28,9 +28,19 @@
 
 `.ssab` を割り当てただけでは再生されません。**Animation** ドロップダウンで名前を選ぶ（または `set_animation()` を呼ぶ）→ `play()`、もしくは **Autoplay** を有効にしてください。
 
+### アニメーション名が存在しない
+
+パックに無い名前を指定すると、ノードは何も描画しません。出力パネルには、パックと要求した名前が出ます。
+
+```
+[SS] res://ssab_generated/Ringo/Ringo.ssab has no animation "wakl".
+```
+
+**Animation** ドロップダウンには実在する名前しか出ないので、これはスクリプトの `set_animation()` です。綴り間違いか、別のパックの名前を渡しているのが大半 — パック名も出しているのはそのためです。パックが実際に持っている一覧は `get_animation_names()` で取れます。
+
 ### `.ssab` が不正
 
-出力パネルの `SSAB Error: Assigned resource is invalid (missing parts or animations).` は、バイナリは読めたがパートまたはアニメーションを含んでいないという意味です。`.sspj` を再変換してください。ファイルが途中で切れているか、互換性のないコンバーターで生成された可能性が高いです。
+出力パネルの `[SS] … is not a usable SSAB: it carries no parts or no animations.` は、バイナリは読めたがパートまたはアニメーションを含んでいないという意味です。`.sspj` を再変換してください。ファイルが途中で切れているか、互換性のないコンバーターで生成された可能性が高いです。
 
 ### テクスチャが失われている
 

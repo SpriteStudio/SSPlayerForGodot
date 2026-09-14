@@ -300,6 +300,40 @@ RID SsInternalPlayer::_ensure_batch_ci(int batch_idx) {
     return _batch_canvas_items[batch_idx];
 }
 
+namespace {
+// Every failure below reports what the caller asked for and what was there
+// instead (SDK: 20_design/40_api_conventions, §7). Required is what the caller
+// cannot get another way: which pack, and what they asked it for. Listing the
+// names that WOULD have worked is deliberately not here -- `get_animation_names()`
+// and the inspector's Animation dropdown both already show them.
+
+// The bound pack, as the user would find it in the FileSystem dock. A pack
+// built in memory has no path, so say that rather than print empty quotes.
+String ssab_label(const Ref<SSABResource>& p_res) {
+    if (p_res.is_null()) {
+        return String("<no SSAB assigned>");
+    }
+    const String path = p_res->get_path();
+    return path.is_empty() ? String("<in-memory SSAB>") : path;
+}
+
+// What the caller wrote. `setAnimationByHash` is the only way in without a
+// name, and there the hash IS what they wrote, so it is the honest thing to
+// echo back.
+String animation_label(const String& p_name, uint32_t p_hash) {
+    return p_name.is_empty() ? vformat("name hash 0x%x", p_hash) : vformat("\"%s\"", p_name);
+}
+
+// The part an authored reference sits on. The index is what the loop has; the
+// name is what the user can search for in SpriteStudio.
+String part_label(const ss::format::PartData* p_part, int p_index) {
+    if (p_part && p_part->name()) {
+        return vformat("\"%s\"", String::utf8(p_part->name()->c_str()));
+    }
+    return vformat("#%d", p_index);
+}
+} // namespace
+
 void SsInternalPlayer::setSSABResource(const Ref<SSABResource>& ssabRes) {
     _ssabRes = ssabRes;
     _strAnimationSelected = "";
@@ -312,7 +346,7 @@ void SsInternalPlayer::setSSABResource(const Ref<SSABResource>& ssabRes) {
 
     if (!_ssabRes.is_null()) {
         if (!_ssabRes->is_valid()) {
-            ERR_PRINT("SSAB Error: Assigned resource is invalid (missing parts or animations).");
+            ERR_PRINT(vformat("[SS] %s is not a usable SSAB: it carries no parts or no animations. Re-convert the .sspj it came from.", ssab_label(_ssabRes)));
             _ssabRes = Ref<SSABResource>();
         } else {
             auto vecAnimeName = _ssabRes->get_animation_names();
@@ -1903,7 +1937,8 @@ void SsInternalPlayer::_setup_instance_children() {
         Ref<SSABResource> source = _resolve_ssab_by_hash(pack_name_hash, anim_name_hash);
 
         if (source.is_null()) {
-            ERR_PRINT(vformat("[SS] instance part %d: animation '%s' (pack '%s') not found in current or external SSABs", i, anim_name, pack_name));
+            ERR_PRINT(vformat("[SS] %s: instance part %s references animation \"%s\" in pack \"%s\", which is in neither this SSAB nor the ones beside it.",
+                              ssab_label(_ssabRes), part_label(p, i), anim_name, pack_name));
             continue;
         }
 
@@ -1965,7 +2000,11 @@ void SsInternalPlayer::_setup_effect_slots() {
         const uint32_t seed = (uint32_t)i ^ pt->ref_effect_name_hash();
         void* effect_slot = ss_effect_slot_create(runtime_res, pt->ref_effect_name_hash(), seed);
         if (!effect_slot) {
-            ERR_PRINT(vformat("[SS] effect part %d: ref_effect_name_hash=0x%x not found in current SSAB", i, pt->ref_effect_name_hash()));
+            // The hash is all the authored reference carries -- the effect's name
+            // is not in the part -- so it stays in the message, next to the part
+            // name the user can actually find in SpriteStudio.
+            ERR_PRINT(vformat("[SS] %s: effect part %s references an effect (name hash 0x%x) that is not in this SSAB.",
+                              ssab_label(_ssabRes), part_label(p, i), pt->ref_effect_name_hash()));
             continue;
         }
         _effect_slots[i].effect_slot = effect_slot;
@@ -3240,13 +3279,19 @@ void SsInternalPlayer::_fetchAnimation() {
         // destroyed; every resource change re-creates this borrow.
         runtime_res = ss_resource_create_borrow(_ssabRes->get_data_ptr(), _ssabRes->get_data_size());
         if (runtime_res == nullptr) {
-            ERR_PRINT("SSAB Resource Create Failed");
+            ERR_PRINT(vformat("[SS] %s: the runtime could not read these %d bytes as an SSAB. Re-convert the .sspj it came from.", ssab_label(_ssabRes), _ssabRes->get_data_size()));
             return;
         }
 
         bool binded = ss_runtime_bind_resource(runtime_ctx, runtime_res);
         if (!binded) {
-            ERR_PRINT("SSAB Resource Bind Failed");
+            // TODO: append
+            // `ss_runtime_error_message(ss_runtime_get_last_error(runtime_ctx))`
+            // once the downloaded SDK carries the pair. They landed in the SDK
+            // after the release `scripts/download-sdk.sh` pulls
+            // `ss_player/runtime/include/ssruntime.h` from, so calling them here
+            // would not compile yet.
+            ERR_PRINT(vformat("[SS] %s: the runtime read the SSAB but would not bind it.", ssab_label(_ssabRes)));
             return;
         }
         _res_rebind_pending = false;
@@ -3273,13 +3318,24 @@ void SsInternalPlayer::_fetchAnimation() {
     }
 
     if (!animation) {
-        ERR_PRINT("Select Anime is Null");
+        // Reported once per wrong name without a guard of its own: setAnimation
+        // stores the name before calling in here and returns early when it is
+        // asked for the same one again, so a state machine re-asserting a typo
+        // every frame logs a single line.
+        ERR_PRINT(vformat("[SS] %s has no animation %s.",
+                          ssab_label(_ssabRes),
+                          animation_label(_strAnimationSelected, _animationSelectedHash)));
         return;
     }
     _currentAnimationData = animation;
     bool setup = ss_runtime_setup_animation_by_hash(runtime_ctx, _animationSelectedHash);
     if (!setup) {
-        ERR_PRINT("SSAB Setup Animation Failed by hash: " + String::num_int64(_animationSelectedHash));
+        // The animation IS in the pack -- the lookup above found it -- so this is
+        // the runtime declining to set it up, not a wrong name. Say which one
+        // anyway: it is the only handle the user has on the failure.
+        ERR_PRINT(vformat("[SS] %s: the runtime would not set up animation %s.",
+                          ssab_label(_ssabRes),
+                          animation_label(_strAnimationSelected, _animationSelectedHash)));
         // The runtime has no animation bound, so nothing may consume this frame's
         // animation data either.
         _currentAnimationData = nullptr;
