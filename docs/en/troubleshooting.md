@@ -28,9 +28,19 @@ Export needs the **same target** you export with: `--export-debug` uses the `tem
 
 Assigning the `.ssab` is not enough. Pick a name in the **Animation** dropdown (or call `set_animation()`), then `play()` — or turn **Autoplay** on.
 
+### The animation name does not exist
+
+A name that is not in the pack leaves the node drawing nothing. The Output panel names the pack and the name you asked it for:
+
+```
+[SS] res://ssab_generated/Ringo/Ringo.ssab has no animation "wakl".
+```
+
+The **Animation** dropdown only offers real names, so this is a `set_animation()` in a script — usually a typo, or a name that belongs to a different pack, which is why the pack is named too. `get_animation_names()` lists what the pack actually has.
+
 ### The `.ssab` is invalid
 
-`SSAB Error: Assigned resource is invalid (missing parts or animations).` in the Output panel means the binary loaded but carries no parts or no animations. Reconvert the `.sspj`; the file is most likely truncated or from an incompatible converter version.
+`[SS] … is not a usable SSAB: it carries no parts or no animations.` in the Output panel means the binary loaded but carries no parts or no animations. Reconvert the `.sspj`; the file is most likely truncated or from an incompatible converter version.
 
 ### The textures are gone
 
