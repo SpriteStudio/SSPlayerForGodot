@@ -80,7 +80,7 @@
 		<method name="just_looped" qualifiers="const">
 			<return type="bool" />
 			<description>
-				Returns [code]true[/code] when the last update crossed a loop boundary. A [b]pulse[/b], not a state: the runtime clears it at the top of every update, so it only reads [code]true[/code] inside the tick that crossed - which is why it is not called [code]is_looped[/code], and why reading it a tick late reads [code]false[/code]. Connect to [signal animation_looped] if you would rather have it delivered than polled.
+				Returns [code]true[/code] when the last update crossed a loop boundary. A [b]pulse[/b], not a state: the runtime clears it at the top of every update, so it only reads [code]true[/code] inside the tick that crossed - which is why it is not called [code]is_looped[/code], here or in the Brain, and why reading it a tick late reads [code]false[/code]. Connect to [signal animation_looped] if you would rather have it delivered than polled.
 			</description>
 		</method>
 		<method name="get_animation_names" qualifiers="const">

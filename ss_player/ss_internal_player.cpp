@@ -267,7 +267,7 @@ SsInternalPlayer::~SsInternalPlayer() {
 
 void SsInternalPlayer::_reconfigure() {
     if (runtime_ctx != nullptr) {
-        ss_context_set_coordinate_system(runtime_ctx, 1);
+        ss_runtime_set_coordinate_system(runtime_ctx, 1);
     }
 }
 
@@ -559,7 +559,7 @@ bool SsInternalPlayer::isPlaying() const {
 }
 
 bool SsInternalPlayer::justLooped() const {
-    return ss_runtime_is_looped(runtime_ctx);
+    return ss_runtime_just_looped(runtime_ctx);
 }
 
 bool SsInternalPlayer::isPlayingForward() const {
@@ -601,14 +601,14 @@ void SsInternalPlayer::stop() {
 }
 
 void SsInternalPlayer::setSpeed(float p_speed) {
-    ss_runtime_set_animation_speed(runtime_ctx, p_speed);
+    ss_runtime_set_speed_scale(runtime_ctx, p_speed);
 }
 
 float SsInternalPlayer::getSpeed() const {
     // The runtime, not a copy of what was last set: it clamps a zero or negative
     // rate to a stop, so a cache would report the -1.0 that was asked for while
     // playback is actually held at 0.0.
-    return ss_runtime_get_animation_speed(runtime_ctx);
+    return ss_runtime_get_speed_scale(runtime_ctx);
 }
 
 void SsInternalPlayer::setFrameNo(float p_frame) {
@@ -631,7 +631,7 @@ void SsInternalPlayer::setFrameRate(int p_fps) {
 }
 
 int SsInternalPlayer::getFrameRate() const {
-    return ss_runtime_get_fps(runtime_ctx);
+    return ss_runtime_get_frame_rate(runtime_ctx);
 }
 
 void SsInternalPlayer::setAnimationSection(int p_start, int p_end) {
@@ -659,11 +659,11 @@ int SsInternalPlayer::getPlaybackStyle() const {
 }
 
 void SsInternalPlayer::setLoop(int p_count) {
-    ss_runtime_set_loop(runtime_ctx, p_count);
+    ss_runtime_set_loop_count(runtime_ctx, p_count);
 }
 
 int SsInternalPlayer::getLoop() const {
-    return ss_runtime_get_loops(runtime_ctx);
+    return ss_runtime_get_loop_count(runtime_ctx);
 }
 
 void SsInternalPlayer::setSkipFrames(bool p_skip) {
@@ -838,11 +838,11 @@ void SsInternalPlayer::update(float delta_seconds) {
     auto d = delta_seconds * 1000.0f;
     float frame_no = ss_runtime_update(runtime_ctx, d);
 
-    // `is_looped` is a pulse the runtime clears on entry to every update, so
+    // `just_looped` is a pulse the runtime clears on entry to every update, so
     // reading it right after the tick is what catches it. `is_finished` is a
     // sticky state instead; the `is_playing` early-return above is what keeps
     // it from re-emitting, since only play() clears it.
-    const bool was_looped = ss_runtime_is_looped(runtime_ctx);
+    const bool was_looped = ss_runtime_just_looped(runtime_ctx);
     if (was_looped) {
         if (_event_sink) _event_sink->onAnimationLooped(_strAnimationSelected);
     }
@@ -1476,7 +1476,7 @@ void SsInternalPlayer::_bubble_child_clip_writers(
 
 bool SsInternalPlayer::_fill_frame_from_runtime(DrawFrame& f) {
     if (!runtime_ctx || _ssabRes.is_null()) return false;
-    unsigned char* data = nullptr;
+    const unsigned char* data = nullptr;
     uintptr_t len = 0;
     ss_runtime_get_frame_data(runtime_ctx, previous_frame_no, &data, &len);
     if (!data) return false;
@@ -1648,7 +1648,7 @@ void SsInternalPlayer::_apply_inherited_mask(bool active, RID coverage_tex, cons
 }
 
 void SsInternalPlayer::_drawAnimation(float frame_no, float delta_seconds, bool parent_looped) {
-    unsigned char* data = nullptr;
+    const unsigned char* data = nullptr;
     uintptr_t len = 0;
     ss_runtime_get_frame_data(runtime_ctx, frame_no, &data, &len);
     if (!data) return;

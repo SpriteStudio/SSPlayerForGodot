@@ -128,7 +128,8 @@ public:
     // on reverse playback too, but reverse audio is a documented limitation.
     bool isPlayingForward() const;
     // The loop pulse. The runtime clears it at the top of every update, so it only
-    // reads true inside the tick that crossed — hence not `isLooped`.
+    // reads true inside the tick that crossed — hence not `isLooped`, here or in
+    // the Brain, whose C ABI spells it `ss_runtime_just_looped`.
     bool justLooped() const;
     // The completion state. Unlike justLooped this is sticky: it latches when every
     // configured loop has played and stays true until the next play()/setAnimation().
@@ -850,7 +851,7 @@ private:
     // seek; independent children stay where they are.
     //
     // `parent_looped` re-arms transition detection. When the parent's
-    // controller wraps (`ss_runtime_is_looped` true) the same EventInstance
+    // controller wraps (`ss_runtime_just_looped` true) the same EventInstance
     // identity matches a child's stored `last_event_frame`, so without this
     // flag the loop edge would be invisible and finite-loop independent
     // children would stay frozen at their previous end_frame.
