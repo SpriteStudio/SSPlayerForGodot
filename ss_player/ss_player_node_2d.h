@@ -93,7 +93,7 @@ public:
     // (getPlaybackDirection). Diverges under ping-pong, and it is what gates audio.
     bool isPlayingForward() const;
     // The loop pulse: true only inside the tick that crossed a boundary, which is
-    // why it is not called is_looped.
+    // why it is not called is_looped, here or in the Brain.
     bool justLooped() const;
     // The completion state, and sticky where just_looped is a pulse: it holds until
     // the next play()/set_animation(). Never true under an infinite loop count, and
