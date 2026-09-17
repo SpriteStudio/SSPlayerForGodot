@@ -7848,7 +7848,8 @@ struct AnimationData FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
     VT_END_FRAME = 20,
     VT_TOTAL_FRAME = 22,
     VT_FPS = 24,
-    VT_CANVAS = 26
+    VT_CANVAS_SIZE = 26,
+    VT_PIVOT = 28
   };
   const ::flatbuffers::String *name() const {
     return GetPointer<const ::flatbuffers::String *>(VT_NAME);
@@ -7883,8 +7884,11 @@ struct AnimationData FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   int16_t fps() const {
     return GetField<int16_t>(VT_FPS, 0);
   }
-  const ss::format::Rect *canvas() const {
-    return GetPointer<const ss::format::Rect *>(VT_CANVAS);
+  const ss::format::Vec2 *canvas_size() const {
+    return GetPointer<const ss::format::Vec2 *>(VT_CANVAS_SIZE);
+  }
+  const ss::format::Vec2 *pivot() const {
+    return GetPointer<const ss::format::Vec2 *>(VT_PIVOT);
   }
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
@@ -7911,8 +7915,10 @@ struct AnimationData FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyField<int16_t>(verifier, VT_END_FRAME, 2) &&
            VerifyField<int16_t>(verifier, VT_TOTAL_FRAME, 2) &&
            VerifyField<int16_t>(verifier, VT_FPS, 2) &&
-           VerifyOffsetRequired(verifier, VT_CANVAS) &&
-           verifier.VerifyTable(canvas()) &&
+           VerifyOffsetRequired(verifier, VT_CANVAS_SIZE) &&
+           verifier.VerifyTable(canvas_size()) &&
+           VerifyOffsetRequired(verifier, VT_PIVOT) &&
+           verifier.VerifyTable(pivot()) &&
            verifier.EndTable();
   }
 };
@@ -7954,8 +7960,11 @@ struct AnimationDataBuilder {
   void add_fps(int16_t fps) {
     fbb_.AddElement<int16_t>(AnimationData::VT_FPS, fps, 0);
   }
-  void add_canvas(::flatbuffers::Offset<ss::format::Rect> canvas) {
-    fbb_.AddOffset(AnimationData::VT_CANVAS, canvas);
+  void add_canvas_size(::flatbuffers::Offset<ss::format::Vec2> canvas_size) {
+    fbb_.AddOffset(AnimationData::VT_CANVAS_SIZE, canvas_size);
+  }
+  void add_pivot(::flatbuffers::Offset<ss::format::Vec2> pivot) {
+    fbb_.AddOffset(AnimationData::VT_PIVOT, pivot);
   }
   explicit AnimationDataBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
@@ -7967,7 +7976,8 @@ struct AnimationDataBuilder {
     fbb_.Required(o, AnimationData::VT_NAME);
     fbb_.Required(o, AnimationData::VT_PARTS_INITIAL_ATTRIBUTES);
     fbb_.Required(o, AnimationData::VT_PARTS_ANIMATION_DATA);
-    fbb_.Required(o, AnimationData::VT_CANVAS);
+    fbb_.Required(o, AnimationData::VT_CANVAS_SIZE);
+    fbb_.Required(o, AnimationData::VT_PIVOT);
     return o;
   }
 };
@@ -7985,9 +7995,11 @@ inline ::flatbuffers::Offset<AnimationData> CreateAnimationData(
     int16_t end_frame = 0,
     int16_t total_frame = 0,
     int16_t fps = 0,
-    ::flatbuffers::Offset<ss::format::Rect> canvas = 0) {
+    ::flatbuffers::Offset<ss::format::Vec2> canvas_size = 0,
+    ::flatbuffers::Offset<ss::format::Vec2> pivot = 0) {
   AnimationDataBuilder builder_(_fbb);
-  builder_.add_canvas(canvas);
+  builder_.add_pivot(pivot);
+  builder_.add_canvas_size(canvas_size);
   builder_.add_labels(labels);
   builder_.add_initial_events(initial_events);
   builder_.add_events(events);
@@ -8015,7 +8027,8 @@ inline ::flatbuffers::Offset<AnimationData> CreateAnimationDataDirect(
     int16_t end_frame = 0,
     int16_t total_frame = 0,
     int16_t fps = 0,
-    ::flatbuffers::Offset<ss::format::Rect> canvas = 0) {
+    ::flatbuffers::Offset<ss::format::Vec2> canvas_size = 0,
+    ::flatbuffers::Offset<ss::format::Vec2> pivot = 0) {
   auto name__ = name ? _fbb.CreateString(name) : 0;
   auto parts_initial_attributes__ = parts_initial_attributes ? _fbb.CreateVector<::flatbuffers::Offset<ss::format::InitialPartAttributes>>(*parts_initial_attributes) : 0;
   auto parts_animation_data__ = parts_animation_data ? _fbb.CreateVector<::flatbuffers::Offset<ss::format::PartAnimationData>>(*parts_animation_data) : 0;
@@ -8035,7 +8048,8 @@ inline ::flatbuffers::Offset<AnimationData> CreateAnimationDataDirect(
       end_frame,
       total_frame,
       fps,
-      canvas);
+      canvas_size,
+      pivot);
 }
 
 struct ExternalTexture FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
@@ -8299,7 +8313,7 @@ struct SsAnimeBinary FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
     VT_EMBEDDED_ASSETS = 26
   };
   uint32_t version() const {
-    return GetField<uint32_t>(VT_VERSION, 1);
+    return GetField<uint32_t>(VT_VERSION, 0);
   }
   const ::flatbuffers::String *name() const {
     return GetPointer<const ::flatbuffers::String *>(VT_NAME);
@@ -8377,7 +8391,7 @@ struct SsAnimeBinaryBuilder {
   ::flatbuffers::FlatBufferBuilder &fbb_;
   ::flatbuffers::uoffset_t start_;
   void add_version(uint32_t version) {
-    fbb_.AddElement<uint32_t>(SsAnimeBinary::VT_VERSION, version, 1);
+    fbb_.AddElement<uint32_t>(SsAnimeBinary::VT_VERSION, version, 0);
   }
   void add_name(::flatbuffers::Offset<::flatbuffers::String> name) {
     fbb_.AddOffset(SsAnimeBinary::VT_NAME, name);
@@ -8428,7 +8442,7 @@ struct SsAnimeBinaryBuilder {
 
 inline ::flatbuffers::Offset<SsAnimeBinary> CreateSsAnimeBinary(
     ::flatbuffers::FlatBufferBuilder &_fbb,
-    uint32_t version = 1,
+    uint32_t version = 0,
     ::flatbuffers::Offset<::flatbuffers::String> name = 0,
     uint32_t name_hash = 0,
     ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartData>>> parts = 0,
@@ -8458,7 +8472,7 @@ inline ::flatbuffers::Offset<SsAnimeBinary> CreateSsAnimeBinary(
 
 inline ::flatbuffers::Offset<SsAnimeBinary> CreateSsAnimeBinaryDirect(
     ::flatbuffers::FlatBufferBuilder &_fbb,
-    uint32_t version = 1,
+    uint32_t version = 0,
     const char *name = nullptr,
     uint32_t name_hash = 0,
     const std::vector<::flatbuffers::Offset<ss::format::PartData>> *parts = nullptr,
