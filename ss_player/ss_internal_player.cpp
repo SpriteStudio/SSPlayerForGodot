@@ -3231,10 +3231,6 @@ void SsInternalPlayer::_fetchAnimation() {
     if ((_strAnimationSelected.is_empty() && _animationSelectedHash == 0) || _ssabRes.is_null()) {
         ss_runtime_reset(runtime_ctx);
         _reconfigure();
-        if (runtime_res != nullptr) {
-            ss_resource_destroy(runtime_res);
-            runtime_res = nullptr;
-        }
         _res_rebind_pending = true;
         _currentAnimationData = nullptr;
         // Free instance children before their parent canvas items — each
@@ -3247,6 +3243,10 @@ void SsInternalPlayer::_fetchAnimation() {
         _clear_batch_canvas_items();
         _free_per_part_canvas_items();
         _free_mask_targets();
+        if (runtime_res != nullptr) {
+            ss_resource_destroy(runtime_res);
+            runtime_res = nullptr;
+        }
         return;
     }
 
