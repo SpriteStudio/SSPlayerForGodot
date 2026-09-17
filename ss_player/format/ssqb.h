@@ -285,7 +285,7 @@ struct SsSequenceBinary FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
     VT_SEQUENCE_LIST = 6
   };
   uint32_t version() const {
-    return GetField<uint32_t>(VT_VERSION, 1);
+    return GetField<uint32_t>(VT_VERSION, 0);
   }
   const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::Sequence>> *sequence_list() const {
     return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::Sequence>> *>(VT_SEQUENCE_LIST);
@@ -306,7 +306,7 @@ struct SsSequenceBinaryBuilder {
   ::flatbuffers::FlatBufferBuilder &fbb_;
   ::flatbuffers::uoffset_t start_;
   void add_version(uint32_t version) {
-    fbb_.AddElement<uint32_t>(SsSequenceBinary::VT_VERSION, version, 1);
+    fbb_.AddElement<uint32_t>(SsSequenceBinary::VT_VERSION, version, 0);
   }
   void add_sequence_list(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::Sequence>>> sequence_list) {
     fbb_.AddOffset(SsSequenceBinary::VT_SEQUENCE_LIST, sequence_list);
@@ -325,7 +325,7 @@ struct SsSequenceBinaryBuilder {
 
 inline ::flatbuffers::Offset<SsSequenceBinary> CreateSsSequenceBinary(
     ::flatbuffers::FlatBufferBuilder &_fbb,
-    uint32_t version = 1,
+    uint32_t version = 0,
     ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::Sequence>>> sequence_list = 0) {
   SsSequenceBinaryBuilder builder_(_fbb);
   builder_.add_sequence_list(sequence_list);
@@ -335,7 +335,7 @@ inline ::flatbuffers::Offset<SsSequenceBinary> CreateSsSequenceBinary(
 
 inline ::flatbuffers::Offset<SsSequenceBinary> CreateSsSequenceBinaryDirect(
     ::flatbuffers::FlatBufferBuilder &_fbb,
-    uint32_t version = 1,
+    uint32_t version = 0,
     std::vector<::flatbuffers::Offset<ss::format::Sequence>> *sequence_list = nullptr) {
   auto sequence_list__ = sequence_list ? _fbb.CreateVectorOfSortedTables<ss::format::Sequence>(sequence_list) : 0;
   return ss::format::CreateSsSequenceBinary(
