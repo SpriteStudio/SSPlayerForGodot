@@ -22,6 +22,12 @@ struct Vec2Builder;
 struct Rect;
 struct RectBuilder;
 
+struct Region;
+struct RegionBuilder;
+
+struct MinMax2;
+struct MinMax2Builder;
+
 struct U8Rect;
 struct U8RectBuilder;
 
@@ -46,8 +52,8 @@ struct StringValueEntryBuilder;
 struct Vec2ValueEntry;
 struct Vec2ValueEntryBuilder;
 
-struct RectValueEntry;
-struct RectValueEntryBuilder;
+struct MinMax2ValueEntry;
+struct MinMax2ValueEntryBuilder;
 
 struct EventUserData;
 struct EventUserDataBuilder;
@@ -76,8 +82,8 @@ struct CellMapBuilder;
 struct EffectParticlePointGravity;
 struct EffectParticlePointGravityBuilder;
 
-struct RectAndVec2ValueTable;
-struct RectAndVec2ValueTableBuilder;
+struct MinMax2AndVec2ValueTable;
+struct MinMax2AndVec2ValueTableBuilder;
 
 struct EffectParticleElementTransColor;
 struct EffectParticleElementTransColorBuilder;
@@ -1221,6 +1227,150 @@ inline ::flatbuffers::Offset<Rect> CreateRect(
   return builder_.Finish();
 }
 
+struct Region FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef RegionBuilder Builder;
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
+    VT_X = 4,
+    VT_Y = 6,
+    VT_W = 8,
+    VT_H = 10
+  };
+  float x() const {
+    return GetField<float>(VT_X, 0.0f);
+  }
+  float y() const {
+    return GetField<float>(VT_Y, 0.0f);
+  }
+  float w() const {
+    return GetField<float>(VT_W, 0.0f);
+  }
+  float h() const {
+    return GetField<float>(VT_H, 0.0f);
+  }
+  template <bool B = false>
+  bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyField<float>(verifier, VT_X, 4) &&
+           VerifyField<float>(verifier, VT_Y, 4) &&
+           VerifyField<float>(verifier, VT_W, 4) &&
+           VerifyField<float>(verifier, VT_H, 4) &&
+           verifier.EndTable();
+  }
+};
+
+struct RegionBuilder {
+  typedef Region Table;
+  ::flatbuffers::FlatBufferBuilder &fbb_;
+  ::flatbuffers::uoffset_t start_;
+  void add_x(float x) {
+    fbb_.AddElement<float>(Region::VT_X, x, 0.0f);
+  }
+  void add_y(float y) {
+    fbb_.AddElement<float>(Region::VT_Y, y, 0.0f);
+  }
+  void add_w(float w) {
+    fbb_.AddElement<float>(Region::VT_W, w, 0.0f);
+  }
+  void add_h(float h) {
+    fbb_.AddElement<float>(Region::VT_H, h, 0.0f);
+  }
+  explicit RegionBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  ::flatbuffers::Offset<Region> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = ::flatbuffers::Offset<Region>(end);
+    return o;
+  }
+};
+
+inline ::flatbuffers::Offset<Region> CreateRegion(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    float x = 0.0f,
+    float y = 0.0f,
+    float w = 0.0f,
+    float h = 0.0f) {
+  RegionBuilder builder_(_fbb);
+  builder_.add_h(h);
+  builder_.add_w(w);
+  builder_.add_y(y);
+  builder_.add_x(x);
+  return builder_.Finish();
+}
+
+struct MinMax2 FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef MinMax2Builder Builder;
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
+    VT_X_MIN = 4,
+    VT_Y_MIN = 6,
+    VT_X_MAX = 8,
+    VT_Y_MAX = 10
+  };
+  float x_min() const {
+    return GetField<float>(VT_X_MIN, 0.0f);
+  }
+  float y_min() const {
+    return GetField<float>(VT_Y_MIN, 0.0f);
+  }
+  float x_max() const {
+    return GetField<float>(VT_X_MAX, 0.0f);
+  }
+  float y_max() const {
+    return GetField<float>(VT_Y_MAX, 0.0f);
+  }
+  template <bool B = false>
+  bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyField<float>(verifier, VT_X_MIN, 4) &&
+           VerifyField<float>(verifier, VT_Y_MIN, 4) &&
+           VerifyField<float>(verifier, VT_X_MAX, 4) &&
+           VerifyField<float>(verifier, VT_Y_MAX, 4) &&
+           verifier.EndTable();
+  }
+};
+
+struct MinMax2Builder {
+  typedef MinMax2 Table;
+  ::flatbuffers::FlatBufferBuilder &fbb_;
+  ::flatbuffers::uoffset_t start_;
+  void add_x_min(float x_min) {
+    fbb_.AddElement<float>(MinMax2::VT_X_MIN, x_min, 0.0f);
+  }
+  void add_y_min(float y_min) {
+    fbb_.AddElement<float>(MinMax2::VT_Y_MIN, y_min, 0.0f);
+  }
+  void add_x_max(float x_max) {
+    fbb_.AddElement<float>(MinMax2::VT_X_MAX, x_max, 0.0f);
+  }
+  void add_y_max(float y_max) {
+    fbb_.AddElement<float>(MinMax2::VT_Y_MAX, y_max, 0.0f);
+  }
+  explicit MinMax2Builder(::flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  ::flatbuffers::Offset<MinMax2> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = ::flatbuffers::Offset<MinMax2>(end);
+    return o;
+  }
+};
+
+inline ::flatbuffers::Offset<MinMax2> CreateMinMax2(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    float x_min = 0.0f,
+    float y_min = 0.0f,
+    float x_max = 0.0f,
+    float y_max = 0.0f) {
+  MinMax2Builder builder_(_fbb);
+  builder_.add_y_max(y_max);
+  builder_.add_x_max(x_max);
+  builder_.add_y_min(y_min);
+  builder_.add_x_min(x_min);
+  return builder_.Finish();
+}
+
 struct U8Rect FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   typedef U8RectBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
@@ -1618,13 +1768,13 @@ inline ::flatbuffers::Offset<Vec2ValueEntry> CreateVec2ValueEntry(
   return builder_.Finish();
 }
 
-struct RectValueEntry FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
-  typedef RectValueEntryBuilder Builder;
+struct MinMax2ValueEntry FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef MinMax2ValueEntryBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_VALUE = 4
   };
-  const ss::format::Rect *value() const {
-    return GetPointer<const ss::format::Rect *>(VT_VALUE);
+  const ss::format::MinMax2 *value() const {
+    return GetPointer<const ss::format::MinMax2 *>(VT_VALUE);
   }
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
@@ -1635,29 +1785,29 @@ struct RectValueEntry FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   }
 };
 
-struct RectValueEntryBuilder {
-  typedef RectValueEntry Table;
+struct MinMax2ValueEntryBuilder {
+  typedef MinMax2ValueEntry Table;
   ::flatbuffers::FlatBufferBuilder &fbb_;
   ::flatbuffers::uoffset_t start_;
-  void add_value(::flatbuffers::Offset<ss::format::Rect> value) {
-    fbb_.AddOffset(RectValueEntry::VT_VALUE, value);
+  void add_value(::flatbuffers::Offset<ss::format::MinMax2> value) {
+    fbb_.AddOffset(MinMax2ValueEntry::VT_VALUE, value);
   }
-  explicit RectValueEntryBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
+  explicit MinMax2ValueEntryBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
-  ::flatbuffers::Offset<RectValueEntry> Finish() {
+  ::flatbuffers::Offset<MinMax2ValueEntry> Finish() {
     const auto end = fbb_.EndTable(start_);
-    auto o = ::flatbuffers::Offset<RectValueEntry>(end);
-    fbb_.Required(o, RectValueEntry::VT_VALUE);
+    auto o = ::flatbuffers::Offset<MinMax2ValueEntry>(end);
+    fbb_.Required(o, MinMax2ValueEntry::VT_VALUE);
     return o;
   }
 };
 
-inline ::flatbuffers::Offset<RectValueEntry> CreateRectValueEntry(
+inline ::flatbuffers::Offset<MinMax2ValueEntry> CreateMinMax2ValueEntry(
     ::flatbuffers::FlatBufferBuilder &_fbb,
-    ::flatbuffers::Offset<ss::format::Rect> value = 0) {
-  RectValueEntryBuilder builder_(_fbb);
+    ::flatbuffers::Offset<ss::format::MinMax2> value = 0) {
+  MinMax2ValueEntryBuilder builder_(_fbb);
   builder_.add_value(value);
   return builder_.Finish();
 }
@@ -2098,7 +2248,7 @@ struct Cell FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_NAME_HASH = 4,
     VT_NAME = 6,
-    VT_RECTANGLE = 8,
+    VT_REGION = 8,
     VT_PIVOT = 10,
     VT_ROTATED = 12,
     VT_TABLE_COORD_X = 14,
@@ -2117,8 +2267,8 @@ struct Cell FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   const ::flatbuffers::String *name() const {
     return GetPointer<const ::flatbuffers::String *>(VT_NAME);
   }
-  const ss::format::Rect *rectangle() const {
-    return GetPointer<const ss::format::Rect *>(VT_RECTANGLE);
+  const ss::format::Region *region() const {
+    return GetPointer<const ss::format::Region *>(VT_REGION);
   }
   const ss::format::Vec2 *pivot() const {
     return GetPointer<const ss::format::Vec2 *>(VT_PIVOT);
@@ -2141,8 +2291,8 @@ struct Cell FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyField<uint32_t>(verifier, VT_NAME_HASH, 4) &&
            VerifyOffsetRequired(verifier, VT_NAME) &&
            verifier.VerifyString(name()) &&
-           VerifyOffsetRequired(verifier, VT_RECTANGLE) &&
-           verifier.VerifyTable(rectangle()) &&
+           VerifyOffsetRequired(verifier, VT_REGION) &&
+           verifier.VerifyTable(region()) &&
            VerifyOffsetRequired(verifier, VT_PIVOT) &&
            verifier.VerifyTable(pivot()) &&
            VerifyField<uint8_t>(verifier, VT_ROTATED, 1) &&
@@ -2166,8 +2316,8 @@ struct CellBuilder {
   void add_name(::flatbuffers::Offset<::flatbuffers::String> name) {
     fbb_.AddOffset(Cell::VT_NAME, name);
   }
-  void add_rectangle(::flatbuffers::Offset<ss::format::Rect> rectangle) {
-    fbb_.AddOffset(Cell::VT_RECTANGLE, rectangle);
+  void add_region(::flatbuffers::Offset<ss::format::Region> region) {
+    fbb_.AddOffset(Cell::VT_REGION, region);
   }
   void add_pivot(::flatbuffers::Offset<ss::format::Vec2> pivot) {
     fbb_.AddOffset(Cell::VT_PIVOT, pivot);
@@ -2192,7 +2342,7 @@ struct CellBuilder {
     const auto end = fbb_.EndTable(start_);
     auto o = ::flatbuffers::Offset<Cell>(end);
     fbb_.Required(o, Cell::VT_NAME);
-    fbb_.Required(o, Cell::VT_RECTANGLE);
+    fbb_.Required(o, Cell::VT_REGION);
     fbb_.Required(o, Cell::VT_PIVOT);
     return o;
   }
@@ -2202,7 +2352,7 @@ inline ::flatbuffers::Offset<Cell> CreateCell(
     ::flatbuffers::FlatBufferBuilder &_fbb,
     uint32_t name_hash = 0,
     ::flatbuffers::Offset<::flatbuffers::String> name = 0,
-    ::flatbuffers::Offset<ss::format::Rect> rectangle = 0,
+    ::flatbuffers::Offset<ss::format::Region> region = 0,
     ::flatbuffers::Offset<ss::format::Vec2> pivot = 0,
     bool rotated = false,
     ::flatbuffers::Offset<::flatbuffers::Vector<float>> table_coord_x = 0,
@@ -2213,7 +2363,7 @@ inline ::flatbuffers::Offset<Cell> CreateCell(
   builder_.add_table_coord_y(table_coord_y);
   builder_.add_table_coord_x(table_coord_x);
   builder_.add_pivot(pivot);
-  builder_.add_rectangle(rectangle);
+  builder_.add_region(region);
   builder_.add_name(name);
   builder_.add_name_hash(name_hash);
   builder_.add_rotated(rotated);
@@ -2224,7 +2374,7 @@ inline ::flatbuffers::Offset<Cell> CreateCellDirect(
     ::flatbuffers::FlatBufferBuilder &_fbb,
     uint32_t name_hash = 0,
     const char *name = nullptr,
-    ::flatbuffers::Offset<ss::format::Rect> rectangle = 0,
+    ::flatbuffers::Offset<ss::format::Region> region = 0,
     ::flatbuffers::Offset<ss::format::Vec2> pivot = 0,
     bool rotated = false,
     const std::vector<float> *table_coord_x = nullptr,
@@ -2238,7 +2388,7 @@ inline ::flatbuffers::Offset<Cell> CreateCellDirect(
       _fbb,
       name_hash,
       name__,
-      rectangle,
+      region,
       pivot,
       rotated,
       table_coord_x__,
@@ -2451,14 +2601,14 @@ inline ::flatbuffers::Offset<EffectParticlePointGravity> CreateEffectParticlePoi
   return builder_.Finish();
 }
 
-struct RectAndVec2ValueTable FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
-  typedef RectAndVec2ValueTableBuilder Builder;
+struct MinMax2AndVec2ValueTable FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef MinMax2AndVec2ValueTableBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_SIZE = 4,
     VT_SCALE_FACTOR_VALUE = 6
   };
-  const ss::format::Rect *size() const {
-    return GetPointer<const ss::format::Rect *>(VT_SIZE);
+  const ss::format::MinMax2 *size() const {
+    return GetPointer<const ss::format::MinMax2 *>(VT_SIZE);
   }
   const ss::format::Vec2 *scale_factor_value() const {
     return GetPointer<const ss::format::Vec2 *>(VT_SCALE_FACTOR_VALUE);
@@ -2474,33 +2624,33 @@ struct RectAndVec2ValueTable FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Ta
   }
 };
 
-struct RectAndVec2ValueTableBuilder {
-  typedef RectAndVec2ValueTable Table;
+struct MinMax2AndVec2ValueTableBuilder {
+  typedef MinMax2AndVec2ValueTable Table;
   ::flatbuffers::FlatBufferBuilder &fbb_;
   ::flatbuffers::uoffset_t start_;
-  void add_size(::flatbuffers::Offset<ss::format::Rect> size) {
-    fbb_.AddOffset(RectAndVec2ValueTable::VT_SIZE, size);
+  void add_size(::flatbuffers::Offset<ss::format::MinMax2> size) {
+    fbb_.AddOffset(MinMax2AndVec2ValueTable::VT_SIZE, size);
   }
   void add_scale_factor_value(::flatbuffers::Offset<ss::format::Vec2> scale_factor_value) {
-    fbb_.AddOffset(RectAndVec2ValueTable::VT_SCALE_FACTOR_VALUE, scale_factor_value);
+    fbb_.AddOffset(MinMax2AndVec2ValueTable::VT_SCALE_FACTOR_VALUE, scale_factor_value);
   }
-  explicit RectAndVec2ValueTableBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
+  explicit MinMax2AndVec2ValueTableBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
-  ::flatbuffers::Offset<RectAndVec2ValueTable> Finish() {
+  ::flatbuffers::Offset<MinMax2AndVec2ValueTable> Finish() {
     const auto end = fbb_.EndTable(start_);
-    auto o = ::flatbuffers::Offset<RectAndVec2ValueTable>(end);
-    fbb_.Required(o, RectAndVec2ValueTable::VT_SCALE_FACTOR_VALUE);
+    auto o = ::flatbuffers::Offset<MinMax2AndVec2ValueTable>(end);
+    fbb_.Required(o, MinMax2AndVec2ValueTable::VT_SCALE_FACTOR_VALUE);
     return o;
   }
 };
 
-inline ::flatbuffers::Offset<RectAndVec2ValueTable> CreateRectAndVec2ValueTable(
+inline ::flatbuffers::Offset<MinMax2AndVec2ValueTable> CreateMinMax2AndVec2ValueTable(
     ::flatbuffers::FlatBufferBuilder &_fbb,
-    ::flatbuffers::Offset<ss::format::Rect> size = 0,
+    ::flatbuffers::Offset<ss::format::MinMax2> size = 0,
     ::flatbuffers::Offset<ss::format::Vec2> scale_factor_value = 0) {
-  RectAndVec2ValueTableBuilder builder_(_fbb);
+  MinMax2AndVec2ValueTableBuilder builder_(_fbb);
   builder_.add_scale_factor_value(scale_factor_value);
   builder_.add_size(size);
   return builder_.Finish();
@@ -2884,8 +3034,8 @@ struct EffectNodeBehaviorWrapper FLATBUFFERS_FINAL_CLASS : private ::flatbuffers
   const ss::format::Vec2ValueEntry *value_as_EffectParticleElementGravity() const {
     return value_type() == ss::format::EffectNodeBehavior_EffectParticleElementGravity ? static_cast<const ss::format::Vec2ValueEntry *>(value()) : nullptr;
   }
-  const ss::format::RectValueEntry *value_as_EffectParticleElementPosition() const {
-    return value_type() == ss::format::EffectNodeBehavior_EffectParticleElementPosition ? static_cast<const ss::format::RectValueEntry *>(value()) : nullptr;
+  const ss::format::MinMax2ValueEntry *value_as_EffectParticleElementPosition() const {
+    return value_type() == ss::format::EffectNodeBehavior_EffectParticleElementPosition ? static_cast<const ss::format::MinMax2ValueEntry *>(value()) : nullptr;
   }
   const ss::format::EffectParticleElementRotation *value_as_EffectParticleElementRotation() const {
     return value_type() == ss::format::EffectNodeBehavior_EffectParticleElementRotation ? static_cast<const ss::format::EffectParticleElementRotation *>(value()) : nullptr;
@@ -2908,11 +3058,11 @@ struct EffectNodeBehaviorWrapper FLATBUFFERS_FINAL_CLASS : private ::flatbuffers
   const ss::format::Vec2ValueEntry *value_as_EffectParticleElementAlphaFade() const {
     return value_type() == ss::format::EffectNodeBehavior_EffectParticleElementAlphaFade ? static_cast<const ss::format::Vec2ValueEntry *>(value()) : nullptr;
   }
-  const ss::format::RectAndVec2ValueTable *value_as_EffectParticleElementSize() const {
-    return value_type() == ss::format::EffectNodeBehavior_EffectParticleElementSize ? static_cast<const ss::format::RectAndVec2ValueTable *>(value()) : nullptr;
+  const ss::format::MinMax2AndVec2ValueTable *value_as_EffectParticleElementSize() const {
+    return value_type() == ss::format::EffectNodeBehavior_EffectParticleElementSize ? static_cast<const ss::format::MinMax2AndVec2ValueTable *>(value()) : nullptr;
   }
-  const ss::format::RectAndVec2ValueTable *value_as_EffectParticleElementTransSize() const {
-    return value_type() == ss::format::EffectNodeBehavior_EffectParticleElementTransSize ? static_cast<const ss::format::RectAndVec2ValueTable *>(value()) : nullptr;
+  const ss::format::MinMax2AndVec2ValueTable *value_as_EffectParticleElementTransSize() const {
+    return value_type() == ss::format::EffectNodeBehavior_EffectParticleElementTransSize ? static_cast<const ss::format::MinMax2AndVec2ValueTable *>(value()) : nullptr;
   }
   const ss::format::EffectParticlePointGravity *value_as_EffectParticlePointGravity() const {
     return value_type() == ss::format::EffectNodeBehavior_EffectParticlePointGravity ? static_cast<const ss::format::EffectParticlePointGravity *>(value()) : nullptr;
@@ -3439,8 +3589,8 @@ struct FontGlyphBitmap FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   int KeyCompareWithValue(uint16_t _id) const {
     return static_cast<int>(id() > _id) - static_cast<int>(id() < _id);
   }
-  const ss::format::Rect *atlas() const {
-    return GetPointer<const ss::format::Rect *>(VT_ATLAS);
+  const ss::format::Region *atlas() const {
+    return GetPointer<const ss::format::Region *>(VT_ATLAS);
   }
   const ss::format::Vec2 *offset() const {
     return GetPointer<const ss::format::Vec2 *>(VT_OFFSET);
@@ -3481,7 +3631,7 @@ struct FontGlyphBitmapBuilder {
   void add_id(uint16_t id) {
     fbb_.AddElement<uint16_t>(FontGlyphBitmap::VT_ID, id, 0);
   }
-  void add_atlas(::flatbuffers::Offset<ss::format::Rect> atlas) {
+  void add_atlas(::flatbuffers::Offset<ss::format::Region> atlas) {
     fbb_.AddOffset(FontGlyphBitmap::VT_ATLAS, atlas);
   }
   void add_offset(::flatbuffers::Offset<ss::format::Vec2> offset) {
@@ -3513,7 +3663,7 @@ struct FontGlyphBitmapBuilder {
 inline ::flatbuffers::Offset<FontGlyphBitmap> CreateFontGlyphBitmap(
     ::flatbuffers::FlatBufferBuilder &_fbb,
     uint16_t id = 0,
-    ::flatbuffers::Offset<ss::format::Rect> atlas = 0,
+    ::flatbuffers::Offset<ss::format::Region> atlas = 0,
     ::flatbuffers::Offset<ss::format::Vec2> offset = 0,
     float width_advance = 0.0f,
     ::flatbuffers::Offset<::flatbuffers::String> text = 0,
@@ -3533,7 +3683,7 @@ inline ::flatbuffers::Offset<FontGlyphBitmap> CreateFontGlyphBitmap(
 inline ::flatbuffers::Offset<FontGlyphBitmap> CreateFontGlyphBitmapDirect(
     ::flatbuffers::FlatBufferBuilder &_fbb,
     uint16_t id = 0,
-    ::flatbuffers::Offset<ss::format::Rect> atlas = 0,
+    ::flatbuffers::Offset<ss::format::Region> atlas = 0,
     ::flatbuffers::Offset<ss::format::Vec2> offset = 0,
     float width_advance = 0.0f,
     const char *text = nullptr,
@@ -8533,7 +8683,7 @@ inline bool VerifyEffectNodeBehavior(::flatbuffers::VerifierTemplate<B> &verifie
       return verifier.VerifyTable(ptr);
     }
     case EffectNodeBehavior_EffectParticleElementPosition: {
-      auto ptr = reinterpret_cast<const ss::format::RectValueEntry *>(obj);
+      auto ptr = reinterpret_cast<const ss::format::MinMax2ValueEntry *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case EffectNodeBehavior_EffectParticleElementRotation: {
@@ -8565,11 +8715,11 @@ inline bool VerifyEffectNodeBehavior(::flatbuffers::VerifierTemplate<B> &verifie
       return verifier.VerifyTable(ptr);
     }
     case EffectNodeBehavior_EffectParticleElementSize: {
-      auto ptr = reinterpret_cast<const ss::format::RectAndVec2ValueTable *>(obj);
+      auto ptr = reinterpret_cast<const ss::format::MinMax2AndVec2ValueTable *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case EffectNodeBehavior_EffectParticleElementTransSize: {
-      auto ptr = reinterpret_cast<const ss::format::RectAndVec2ValueTable *>(obj);
+      auto ptr = reinterpret_cast<const ss::format::MinMax2AndVec2ValueTable *>(obj);
       return verifier.VerifyTable(ptr);
     }
     case EffectNodeBehavior_EffectParticlePointGravity: {
