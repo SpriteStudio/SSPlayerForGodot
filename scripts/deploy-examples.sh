@@ -1,7 +1,7 @@
 #!/bin/bash
 #
-# Convert the SpriteStudio-SDK bundled test projects (tests/overall, tests/Ringo)
-# into the .ssab assets the sample projects under examples/ load.
+# Convert the SpriteStudio-SDK bundled test projects (tests/overall, tests/Ringo,
+# tests/Doll) into the .ssab assets the sample projects under examples/ load.
 #
 # Each sample project also carries a .ssplayer_sources.cfg pointing at the same
 # .sspj, so opening it in the Godot Editor regenerates the same output through the
@@ -50,6 +50,8 @@ CONVERTER="${SDK_DIR}/target/debug/ssconverter-cli"
 DEPLOYMENTS=(
     "overall|overall"
     "overall|overall_gdextension"
+    "Doll|overall"
+    "Doll|overall_gdextension"
     "Ringo|Ringo"
     "Ringo|Override_Ringo"
     "Ringo|Scripting"
