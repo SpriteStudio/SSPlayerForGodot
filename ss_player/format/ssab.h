@@ -19,8 +19,8 @@ namespace format {
 struct Vec2;
 struct Vec2Builder;
 
-struct Rect;
-struct RectBuilder;
+struct Bounds;
+struct BoundsBuilder;
 
 struct Region;
 struct RegionBuilder;
@@ -28,8 +28,8 @@ struct RegionBuilder;
 struct MinMax2;
 struct MinMax2Builder;
 
-struct U8Rect;
-struct U8RectBuilder;
+struct U8Color;
+struct U8ColorBuilder;
 
 struct SsCurve;
 struct SsCurveBuilder;
@@ -1155,75 +1155,75 @@ inline ::flatbuffers::Offset<Vec2> CreateVec2(
   return builder_.Finish();
 }
 
-struct Rect FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
-  typedef RectBuilder Builder;
+struct Bounds FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef BoundsBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
-    VT_X1 = 4,
-    VT_Y1 = 6,
-    VT_X2 = 8,
-    VT_Y2 = 10
+    VT_LEFT = 4,
+    VT_TOP = 6,
+    VT_RIGHT = 8,
+    VT_BOTTOM = 10
   };
-  float x1() const {
-    return GetField<float>(VT_X1, 0.0f);
+  float left() const {
+    return GetField<float>(VT_LEFT, 0.0f);
   }
-  float y1() const {
-    return GetField<float>(VT_Y1, 0.0f);
+  float top() const {
+    return GetField<float>(VT_TOP, 0.0f);
   }
-  float x2() const {
-    return GetField<float>(VT_X2, 0.0f);
+  float right() const {
+    return GetField<float>(VT_RIGHT, 0.0f);
   }
-  float y2() const {
-    return GetField<float>(VT_Y2, 0.0f);
+  float bottom() const {
+    return GetField<float>(VT_BOTTOM, 0.0f);
   }
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<float>(verifier, VT_X1, 4) &&
-           VerifyField<float>(verifier, VT_Y1, 4) &&
-           VerifyField<float>(verifier, VT_X2, 4) &&
-           VerifyField<float>(verifier, VT_Y2, 4) &&
+           VerifyField<float>(verifier, VT_LEFT, 4) &&
+           VerifyField<float>(verifier, VT_TOP, 4) &&
+           VerifyField<float>(verifier, VT_RIGHT, 4) &&
+           VerifyField<float>(verifier, VT_BOTTOM, 4) &&
            verifier.EndTable();
   }
 };
 
-struct RectBuilder {
-  typedef Rect Table;
+struct BoundsBuilder {
+  typedef Bounds Table;
   ::flatbuffers::FlatBufferBuilder &fbb_;
   ::flatbuffers::uoffset_t start_;
-  void add_x1(float x1) {
-    fbb_.AddElement<float>(Rect::VT_X1, x1, 0.0f);
+  void add_left(float left) {
+    fbb_.AddElement<float>(Bounds::VT_LEFT, left, 0.0f);
   }
-  void add_y1(float y1) {
-    fbb_.AddElement<float>(Rect::VT_Y1, y1, 0.0f);
+  void add_top(float top) {
+    fbb_.AddElement<float>(Bounds::VT_TOP, top, 0.0f);
   }
-  void add_x2(float x2) {
-    fbb_.AddElement<float>(Rect::VT_X2, x2, 0.0f);
+  void add_right(float right) {
+    fbb_.AddElement<float>(Bounds::VT_RIGHT, right, 0.0f);
   }
-  void add_y2(float y2) {
-    fbb_.AddElement<float>(Rect::VT_Y2, y2, 0.0f);
+  void add_bottom(float bottom) {
+    fbb_.AddElement<float>(Bounds::VT_BOTTOM, bottom, 0.0f);
   }
-  explicit RectBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
+  explicit BoundsBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
-  ::flatbuffers::Offset<Rect> Finish() {
+  ::flatbuffers::Offset<Bounds> Finish() {
     const auto end = fbb_.EndTable(start_);
-    auto o = ::flatbuffers::Offset<Rect>(end);
+    auto o = ::flatbuffers::Offset<Bounds>(end);
     return o;
   }
 };
 
-inline ::flatbuffers::Offset<Rect> CreateRect(
+inline ::flatbuffers::Offset<Bounds> CreateBounds(
     ::flatbuffers::FlatBufferBuilder &_fbb,
-    float x1 = 0.0f,
-    float y1 = 0.0f,
-    float x2 = 0.0f,
-    float y2 = 0.0f) {
-  RectBuilder builder_(_fbb);
-  builder_.add_y2(y2);
-  builder_.add_x2(x2);
-  builder_.add_y1(y1);
-  builder_.add_x1(x1);
+    float left = 0.0f,
+    float top = 0.0f,
+    float right = 0.0f,
+    float bottom = 0.0f) {
+  BoundsBuilder builder_(_fbb);
+  builder_.add_bottom(bottom);
+  builder_.add_right(right);
+  builder_.add_top(top);
+  builder_.add_left(left);
   return builder_.Finish();
 }
 
@@ -1371,8 +1371,8 @@ inline ::flatbuffers::Offset<MinMax2> CreateMinMax2(
   return builder_.Finish();
 }
 
-struct U8Rect FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
-  typedef U8RectBuilder Builder;
+struct U8Color FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef U8ColorBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_A = 4,
     VT_R = 6,
@@ -1402,40 +1402,40 @@ struct U8Rect FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   }
 };
 
-struct U8RectBuilder {
-  typedef U8Rect Table;
+struct U8ColorBuilder {
+  typedef U8Color Table;
   ::flatbuffers::FlatBufferBuilder &fbb_;
   ::flatbuffers::uoffset_t start_;
   void add_a(uint8_t a) {
-    fbb_.AddElement<uint8_t>(U8Rect::VT_A, a, 0);
+    fbb_.AddElement<uint8_t>(U8Color::VT_A, a, 0);
   }
   void add_r(uint8_t r) {
-    fbb_.AddElement<uint8_t>(U8Rect::VT_R, r, 0);
+    fbb_.AddElement<uint8_t>(U8Color::VT_R, r, 0);
   }
   void add_g(uint8_t g) {
-    fbb_.AddElement<uint8_t>(U8Rect::VT_G, g, 0);
+    fbb_.AddElement<uint8_t>(U8Color::VT_G, g, 0);
   }
   void add_b(uint8_t b) {
-    fbb_.AddElement<uint8_t>(U8Rect::VT_B, b, 0);
+    fbb_.AddElement<uint8_t>(U8Color::VT_B, b, 0);
   }
-  explicit U8RectBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
+  explicit U8ColorBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
   }
-  ::flatbuffers::Offset<U8Rect> Finish() {
+  ::flatbuffers::Offset<U8Color> Finish() {
     const auto end = fbb_.EndTable(start_);
-    auto o = ::flatbuffers::Offset<U8Rect>(end);
+    auto o = ::flatbuffers::Offset<U8Color>(end);
     return o;
   }
 };
 
-inline ::flatbuffers::Offset<U8Rect> CreateU8Rect(
+inline ::flatbuffers::Offset<U8Color> CreateU8Color(
     ::flatbuffers::FlatBufferBuilder &_fbb,
     uint8_t a = 0,
     uint8_t r = 0,
     uint8_t g = 0,
     uint8_t b = 0) {
-  U8RectBuilder builder_(_fbb);
+  U8ColorBuilder builder_(_fbb);
   builder_.add_b(b);
   builder_.add_g(g);
   builder_.add_r(r);
@@ -4118,8 +4118,8 @@ struct SsAttributePartColorKeyValueColor FLATBUFFERS_FINAL_CLASS : private ::fla
     VT_RGBA = 4,
     VT_RATE = 6
   };
-  const ss::format::U8Rect *rgba() const {
-    return GetPointer<const ss::format::U8Rect *>(VT_RGBA);
+  const ss::format::U8Color *rgba() const {
+    return GetPointer<const ss::format::U8Color *>(VT_RGBA);
   }
   float rate() const {
     return GetField<float>(VT_RATE, 0.0f);
@@ -4138,7 +4138,7 @@ struct SsAttributePartColorKeyValueColorBuilder {
   typedef SsAttributePartColorKeyValueColor Table;
   ::flatbuffers::FlatBufferBuilder &fbb_;
   ::flatbuffers::uoffset_t start_;
-  void add_rgba(::flatbuffers::Offset<ss::format::U8Rect> rgba) {
+  void add_rgba(::flatbuffers::Offset<ss::format::U8Color> rgba) {
     fbb_.AddOffset(SsAttributePartColorKeyValueColor::VT_RGBA, rgba);
   }
   void add_rate(float rate) {
@@ -4157,7 +4157,7 @@ struct SsAttributePartColorKeyValueColorBuilder {
 
 inline ::flatbuffers::Offset<SsAttributePartColorKeyValueColor> CreateSsAttributePartColorKeyValueColor(
     ::flatbuffers::FlatBufferBuilder &_fbb,
-    ::flatbuffers::Offset<ss::format::U8Rect> rgba = 0,
+    ::flatbuffers::Offset<ss::format::U8Color> rgba = 0,
     float rate = 0.0f) {
   SsAttributePartColorKeyValueColorBuilder builder_(_fbb);
   builder_.add_rate(rate);
@@ -4811,8 +4811,8 @@ struct PartAttributeUserData FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Ta
   const ss::format::IntValueEntry *integer() const {
     return GetPointer<const ss::format::IntValueEntry *>(VT_INTEGER);
   }
-  const ss::format::Rect *rect() const {
-    return GetPointer<const ss::format::Rect *>(VT_RECT);
+  const ss::format::Bounds *rect() const {
+    return GetPointer<const ss::format::Bounds *>(VT_RECT);
   }
   const ss::format::Vec2 *point() const {
     return GetPointer<const ss::format::Vec2 *>(VT_POINT);
@@ -4842,7 +4842,7 @@ struct PartAttributeUserDataBuilder {
   void add_integer(::flatbuffers::Offset<ss::format::IntValueEntry> integer) {
     fbb_.AddOffset(PartAttributeUserData::VT_INTEGER, integer);
   }
-  void add_rect(::flatbuffers::Offset<ss::format::Rect> rect) {
+  void add_rect(::flatbuffers::Offset<ss::format::Bounds> rect) {
     fbb_.AddOffset(PartAttributeUserData::VT_RECT, rect);
   }
   void add_point(::flatbuffers::Offset<ss::format::Vec2> point) {
@@ -4865,7 +4865,7 @@ struct PartAttributeUserDataBuilder {
 inline ::flatbuffers::Offset<PartAttributeUserData> CreatePartAttributeUserData(
     ::flatbuffers::FlatBufferBuilder &_fbb,
     ::flatbuffers::Offset<ss::format::IntValueEntry> integer = 0,
-    ::flatbuffers::Offset<ss::format::Rect> rect = 0,
+    ::flatbuffers::Offset<ss::format::Bounds> rect = 0,
     ::flatbuffers::Offset<ss::format::Vec2> point = 0,
     ::flatbuffers::Offset<::flatbuffers::String> str = 0) {
   PartAttributeUserDataBuilder builder_(_fbb);
@@ -4879,7 +4879,7 @@ inline ::flatbuffers::Offset<PartAttributeUserData> CreatePartAttributeUserData(
 inline ::flatbuffers::Offset<PartAttributeUserData> CreatePartAttributeUserDataDirect(
     ::flatbuffers::FlatBufferBuilder &_fbb,
     ::flatbuffers::Offset<ss::format::IntValueEntry> integer = 0,
-    ::flatbuffers::Offset<ss::format::Rect> rect = 0,
+    ::flatbuffers::Offset<ss::format::Bounds> rect = 0,
     ::flatbuffers::Offset<ss::format::Vec2> point = 0,
     const char *str = nullptr) {
   auto str__ = str ? _fbb.CreateString(str) : 0;

@@ -20,7 +20,7 @@ struct PartAttributeCell;
 
 struct Vec2;
 
-struct U8Rect;
+struct U8Color;
 
 struct SsAttributePartColorKeyValueColor;
 
@@ -325,7 +325,7 @@ FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(4) Vec2 FLATBUFFERS_FINAL_CLASS {
 };
 FLATBUFFERS_STRUCT_END(Vec2, 8);
 
-FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(1) U8Rect FLATBUFFERS_FINAL_CLASS {
+FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(1) U8Color FLATBUFFERS_FINAL_CLASS {
  private:
   uint8_t a_;
   uint8_t r_;
@@ -333,13 +333,13 @@ FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(1) U8Rect FLATBUFFERS_FINAL_CLASS {
   uint8_t b_;
 
  public:
-  U8Rect()
+  U8Color()
       : a_(0),
         r_(0),
         g_(0),
         b_(0) {
   }
-  U8Rect(uint8_t _a, uint8_t _r, uint8_t _g, uint8_t _b)
+  U8Color(uint8_t _a, uint8_t _r, uint8_t _g, uint8_t _b)
       : a_(::flatbuffers::EndianScalar(_a)),
         r_(::flatbuffers::EndianScalar(_r)),
         g_(::flatbuffers::EndianScalar(_g)),
@@ -358,11 +358,11 @@ FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(1) U8Rect FLATBUFFERS_FINAL_CLASS {
     return ::flatbuffers::EndianScalar(b_);
   }
 };
-FLATBUFFERS_STRUCT_END(U8Rect, 4);
+FLATBUFFERS_STRUCT_END(U8Color, 4);
 
 FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(4) SsAttributePartColorKeyValueColor FLATBUFFERS_FINAL_CLASS {
  private:
-  ss::runtime::U8Rect rgba_;
+  ss::runtime::U8Color rgba_;
   float rate_;
 
  public:
@@ -370,11 +370,11 @@ FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(4) SsAttributePartColorKeyValueColor FLATBUF
       : rgba_(),
         rate_(0) {
   }
-  SsAttributePartColorKeyValueColor(const ss::runtime::U8Rect &_rgba, float _rate)
+  SsAttributePartColorKeyValueColor(const ss::runtime::U8Color &_rgba, float _rate)
       : rgba_(_rgba),
         rate_(::flatbuffers::EndianScalar(_rate)) {
   }
-  const ss::runtime::U8Rect &rgba() const {
+  const ss::runtime::U8Color &rgba() const {
     return rgba_;
   }
   float rate() const {

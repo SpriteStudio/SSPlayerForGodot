@@ -889,7 +889,7 @@ void SsInternalPlayer::update(float delta_seconds) {
                     payload["part_name"] = get_part_name(part_index);
                     payload["frame_no"] = frame_no;
                     if (auto i = val->integer()) payload["integer"] = i->value();
-                    if (auto r = val->rect())    payload["rect"]    = Rect2(r->x1(), r->y1(), r->x2() - r->x1(), r->y2() - r->y1());
+                    if (auto r = val->rect())    payload["rect"]    = Rect2(r->left(), r->top(), r->right() - r->left(), r->bottom() - r->top());
                     if (auto p = val->point())   payload["point"]   = Vector2(p->v1(), p->v2());
                     if (auto s = val->str())     payload["string"]  = String::utf8(s->c_str());
 
