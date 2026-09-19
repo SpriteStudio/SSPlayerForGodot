@@ -64,7 +64,10 @@ function Show-Usage {
     Write-Host "                          writes; same spelling as build-extension.ps1."
     Write-Host "  verify=<yes|no>         Re-open the finished zip and check it (default: yes)."
     Write-Host "  clean=<yes|no>          Delete <out> before assembling (default: yes)."
-    Write-Host "  -h | --help             Show this help"
+        Write-Host "  sdk= skip=              Accepted and ignored here. The family's build-release"
+    Write-Host "                          scripts share out= clean= verify= in= sdk= skip=,"
+    Write-Host "                          so one command line drives all of them."
+Write-Host "  -h | --help             Show this help"
     Write-Host ""
     Write-Host "Output: <out>/ssplayer-godot-extension-<api_version>.zip, holding addons/ at the"
     Write-Host "archive root so a user unzips it straight into a project, plus SHA256SUMS."
@@ -83,8 +86,17 @@ foreach ($argument in $Arguments) {
         '^api_version=' { $apiVersion = $argument.Substring(12) }
         '^verify='      { $verify = $argument.Substring(7).ToLower() }
         '^clean='       { $clean = $argument.Substring(6).ToLower() }
+        # Accepted so one command line drives build-release in every repository
+        # of the family; this one has no use for them.
+        '^(sdk|skip)=' {
+            [Console]::Error.WriteLine("${app}: " + ($argument -replace '=.*$', '') + "= does not apply here; ignored")
+        }
         default {
-            Write-Error "${app}: unknown argument '$argument' (options are key=value; see $app --help)"
+            # Plain stderr and the code, matching the .sh twin (2 = bad usage).
+            # Write-Error throws under $ErrorActionPreference = "Stop", so an
+            # `exit 2` after one never runs and the shell sees 1.
+            [Console]::Error.WriteLine("${app}: unknown argument '$argument' (options are key=value; see $app --help)")
+            exit 2
         }
     }
 }
