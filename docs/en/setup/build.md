@@ -490,13 +490,13 @@ When `.fbs` files in SpriteStudio-SDK have changed, regenerate the headers under
 **macOS / Linux**
 
 ```sh
-./scripts/generate-runtime-code.sh
+./scripts/generate-fbs-code.sh
 ```
 
 **Windows (PowerShell)**
 
 ```powershell
-.\scripts\generate-runtime-code.ps1
+.\scripts\generate-fbs-code.ps1
 ```
 
 ### Deploying the sample project assets
