@@ -10,7 +10,9 @@ compile_commands.json
 /ss_player/runtime/libs
 /ss_player/runtime/*.md
 /scripts/.sdk-cache/
-/examples/dev_*/ssab_generated
+# deploy-examples.* writes these, and the editor's source sync regenerates them
+# from each project's .ssplayer_sources.cfg. Build output, never a source file.
+/examples/*/ssab_generated
 /examples/dev_*/.ssplayer_sources.cfg
 /examples/*/addons/spritestudio
 # The headless test project's build inputs: the addon comes from
