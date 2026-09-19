@@ -15,6 +15,22 @@
 # built from source; the prebuilt SDK packages only ship libssconverter).
 set -euo pipefail
 
+HELP_APP="$(basename "$0")"
+usage () {
+    cat <<USAGE
+Usage: ${HELP_APP} [--help]
+  Convert the SDK's bundled test projects into each sample project's
+  ssab_generated/. Needs the SpriteStudio-SDK submodule and a Rust toolchain.
+USAGE
+}
+
+for arg in "$@"; do
+  case "$arg" in
+    -h|--help|help) usage; exit 0 ;;
+    *) echo "${HELP_APP}: unknown argument '${arg}'" >&2; usage >&2; exit 2 ;;
+  esac
+done
+
 BASEDIR=$(dirname $0)
 BASEDIR=$(cd $BASEDIR && pwd -P)
 ROOTDIR=${BASEDIR}/..
