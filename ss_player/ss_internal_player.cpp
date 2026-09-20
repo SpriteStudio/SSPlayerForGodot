@@ -1361,10 +1361,19 @@ void SsInternalPlayer::_bake_coverage_geometry(
     const bool needs_xform = to_owner != Transform2D();
     const Vector2* vp;
     if (needs_xform) {
-        if (_cov_xform_verts.size() < nv) _cov_xform_verts.resize(nv);
+        // This stands in for `gverts` in the draw call below, so it has to be
+        // the same length, not `nv` long: the Normal builder reports `nv` = 4
+        // for a quad while writing into a buffer fixed at MAX_VERTICES_COUNT,
+        // and `canvas_item_add_triangle_array` drops the whole call when the
+        // vertex and colour counts disagree -- which silently lost every
+        // bubbled quad writer, and with it the clipping it was there to do.
+        // The vertices past `nv` are unreferenced by the indices; mapping them
+        // anyway keeps this path identical to the untransformed one.
+        const int gn = gverts->size();
+        if (_cov_xform_verts.size() != gn) _cov_xform_verts.resize(gn);
         Vector2* xp = _cov_xform_verts.ptrw();
         const Vector2* sp = gverts->ptr();
-        for (int j = 0; j < nv; j++) xp[j] = to_owner.xform(sp[j]);
+        for (int j = 0; j < gn; j++) xp[j] = to_owner.xform(sp[j]);
         vp = xp;
     } else {
         vp = gverts->ptr();
