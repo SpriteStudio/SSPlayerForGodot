@@ -64,7 +64,9 @@ SSPlayerForGodot leverages Godot's `CanvasItem` API and `Node2D` paradigms. Feat
 - **Steps**:
   1. `SpriteStudioPlayerUI` (`Control`): the same `SsInternalPlayer` behind a Control. `_get_minimum_size()`
      returns the animation's content box so a `VBoxContainer` can size it, and the draw fits the animation
-     into the node's rect. Expose the fit in Godot's vocabulary (`stretch_mode` / `expand_mode`, as
+     into the node's rect. The box is the **authored canvas**, which `get_canvas_size()` /
+     `get_canvas_rect()` already report — the same source wgpu settled `fit` / `align` on, and no
+     measurement. Expose the fit in Godot's vocabulary (`stretch_mode` / `expand_mode`, as
      `TextureRect` does) over the family's `fit` (`contain` / `cover` / `none`) + `align`.
   2. Part rect read-out — `get_part_rect(part) -> Rect2` in player-local space, built from the `PartState`
      fields already delivered every frame (`size_x` / `size_y`, `anchor`, `pivot`) and the part transform.

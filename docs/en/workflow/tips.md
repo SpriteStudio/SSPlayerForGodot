@@ -41,6 +41,40 @@ func _process(delta: float) -> void:
 
 ---
 
+### Skipping Players That Are Off Screen
+
+A player that is off screen still evaluates every part of every frame. Only the *drawing* is culled by the renderer; the CPU-side evaluation is not, so a crowd scene pays for the characters nobody can see.
+
+Godot already has the node for this — [`VisibleOnScreenEnabler2D`](https://docs.godotengine.org/en/stable/classes/class_visibleonscreenenabler2d.html), which sets its target's `process_mode` to `DISABLED` while its rect is off screen. What it cannot know on its own is how big the animation is, and that is what `get_canvas_rect()` answers.
+
+Add a `VisibleOnScreenEnabler2D` as a child of the player (its default `enable_node_path` of `..` already points at the parent), and give it the box:
+
+```gdscript
+extends SpriteStudioPlayer2D
+
+@onready var _enabler: VisibleOnScreenEnabler2D = $VisibleOnScreenEnabler2D
+
+func _ready() -> void:
+    animation_changed.connect(func(_name: String) -> void: _refresh_cull_rect())
+    _refresh_cull_rect()
+
+func _refresh_cull_rect() -> void:
+    _enabler.rect = get_canvas_rect()
+```
+
+The enabler keeps working while its target is disabled: visibility is reported by the rendering server, not by a `_process` tick, so the player comes back the moment its box re-enters the view.
+
+> [!IMPORTANT]
+> **Re-read the box on `animation_changed`.** The canvas is authored per animation, so a pack whose animations differ in size — `Ringo`'s `dead` is `1300 x 600` where most of the others are `800 x 600` — will pop in late on the wider one if the rect is set once and left.
+
+> [!NOTE]
+> The canvas is the box the artist composed in, not a measured outline. Parts are free to draw outside it, so grow the rect if an animation throws something well past its canvas. `Rect2.grow()` on the value above is the whole fix.
+
+> [!NOTE]
+> A disabled player stops advancing rather than playing on silently: it resumes from the frame it froze on. That is the right behaviour for an idle loop and the wrong one for anything that has to stay in step with the rest of the scene. Sounds already playing are unaffected — audio is fire-and-forget.
+
+---
+
 ## Part Add-On Shaders (Per-Part Effects)
 
 The **add-on shaders** you can assign to a part in SpriteStudio are reproduced natively — no setup, no material to assign. The shader id is carried in the `.ssab`, and the plugin compiles a Godot shader for it on first use and caches it per `(shader, blend mode)` pair.

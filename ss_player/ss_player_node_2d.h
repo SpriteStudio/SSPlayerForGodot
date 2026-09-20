@@ -199,6 +199,18 @@ public:
     // All part names in the current binary (for the attachment's dropdown).
     PackedStringArray get_part_names() const;
 
+    // ---- Authored canvas --------------------------------------------------
+    // The current animation's authored canvas — see SSABResource for what that
+    // box is and is not. Zero-sized when nothing is bound.
+    Vector2 get_canvas_size() const;
+    // The same canvas placed against this node's origin by the animation's
+    // pivot, with flip / offset composed in exactly as get_part_transform does,
+    // so it is a box in THIS node's local space. Feed it to a
+    // VisibleOnScreenEnabler2D to stop evaluating a player that is off screen —
+    // re-reading it on `animation_changed`, because the canvas is authored per
+    // animation and a pack's animations do not all share one.
+    Rect2 get_canvas_rect() const;
+
     // ---- Override Layer (Phase 2): per-part runtime overrides -------------
     // Overrides win over both keyframes and blend for the named part. Return
     // false when the part name is unknown / no animation is bound.
