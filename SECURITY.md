@@ -13,9 +13,11 @@ Security fixes are applied to the most recent release. Fixes are not backported 
 
 **Please do not report security issues through public GitHub Issues.** A public report exposes the problem to users before a fix is available.
 
-Instead, use the official Help Center inquiry form, which is a private channel and also supports file uploads for reproduction data:
+Instead, use the official inquiry form, which is a private channel:
 
-👉 [**CRI Middleware Help Center (Inquiry Form)**](https://www.webtech.co.jp/help/en/spritestudio7/inquiries/ssplayer_tool/)
+👉 [**CRI Middleware Inquiry Form (English)**](https://www.webtech.co.jp/contact/en.html)
+
+The English form has no file upload. If you need to attach a reproduction, use the [Japanese Help Center form](https://www.webtech.co.jp/help/ja/spritestudio7/inquiries/ssplayer_tool/), which takes a zip of up to 8 MB.
 
 Please include as much of the following as you can:
 

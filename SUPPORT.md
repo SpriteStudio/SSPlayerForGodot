@@ -17,11 +17,11 @@ If you have questions about how to use the SDK, need implementation advice, or w
 👉 [**SpriteStudio Community**](https://spritestudio.jp/community/)
 
 ## 🔒 Private Inquiries & Data Submission
-For private consultations, sensitive issue reports, sending large reproduction data (e.g., `.sspj` projects), or support with contractual guarantees, please use our official **Help Center**:
+For private consultations, sensitive issue reports, or support with contractual guarantees, please use our official inquiry form:
 
-👉 [**CRI Middleware Help Center (Inquiry Form)**](https://www.webtech.co.jp/help/en/spritestudio7/inquiries/ssplayer_tool/)
+👉 [**CRI Middleware Inquiry Form (English)**](https://www.webtech.co.jp/contact/en.html)
 
-*Note: For reproduction data, please use the file upload feature within the Help Center form.*
+*Note: the English form has no file upload. To send large reproduction data (e.g., a `.sspj` project), use the [Japanese Help Center form](https://www.webtech.co.jp/help/ja/spritestudio7/inquiries/ssplayer_tool/), which takes a zip of up to 8 MB.*
 
 ---
 
