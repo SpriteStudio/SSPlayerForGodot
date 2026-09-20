@@ -10,9 +10,13 @@ contact_links:
     url: https://spritestudio.jp/community/
     about: Implementation advice and tips, in the official community forum. Issues are not for usage questions.
 
-  - name: 🔒 Private inquiry, or sending reproduction data / 個別のお問い合わせ・データ送付
-    url: https://www.webtech.co.jp/help/en/spritestudio7/inquiries/ssplayer_tool/
-    about: Use the Help Center for sensitive reports, proprietary .sspj files, or contractual support. Never attach proprietary data to a public issue.
+  - name: 🔒 Private inquiry (English)
+    url: https://www.webtech.co.jp/contact/en.html
+    about: Sensitive reports and contractual support. The English form has no file upload — ask here and we will arrange a transfer. Never attach proprietary data to a public issue.
+
+  - name: 🔒 個別のお問い合わせ・データ送付（日本語）
+    url: https://www.webtech.co.jp/help/ja/spritestudio7/inquiries/ssplayer_tool/
+    about: 非公開のご相談、再現データの送付（zip・8MB まで）、契約に基づくサポート。公開 Issue に業務データを添付しないでください。
 
   - name: 🛡️ Security vulnerability / 脆弱性の報告
     url: https://github.com/cri-middleware/SSPlayerForGodot/blob/HEAD/SECURITY.md
