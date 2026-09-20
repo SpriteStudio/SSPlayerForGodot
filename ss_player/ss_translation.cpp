@@ -37,6 +37,9 @@ void register_ss_translations() {
     ja_translation->add_message("Reveal", "ファイルの場所を開く");
     ja_translation->add_message("Remove from Recent", "履歴から削除");
     ja_translation->add_message("No recent files. Drop a sspj above to start.", "履歴がありません。上の枠にSSPJをドロップして開始してください。");
+    ja_translation->add_message("Output directory", "出力先ディレクトリ");
+    ja_translation->add_message("The output directory cannot be empty.", "出力先ディレクトリを空にはできません。");
+    ja_translation->add_message("\"%s\" is not inside the project.\nThe output directory has to be a res:// path.", "\"%s\" はプロジェクト内のパスではありません。\n出力先は res:// のパスである必要があります。");
     
     // Importer
     ja_translation->add_message("Import", "インポート");
@@ -51,6 +54,7 @@ void register_ss_translations() {
     ja_translation->add_message("Output name collision", "出力名の衝突");
     ja_translation->add_message("Overwrite", "上書き");
     ja_translation->add_message("Cancel", "キャンセル");
+    ja_translation->add_message("Skipped - %s already writes to %s. Rename one .sspj, or import them into separate output folders.", "スキップ - %s が既に %s へ出力します。どちらかの.sspjをリネームするか、別々の出力フォルダにインポートしてください。");
     ja_translation->add_message("Some files failed to import.\n\n", "一部のファイルのインポートに失敗しました。\n\n");
     ja_translation->add_message("\nPlease check the Output tab for details.", "\n詳細は出力タブを確認してください。");
 

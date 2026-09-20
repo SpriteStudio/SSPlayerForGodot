@@ -124,7 +124,8 @@ graph LR
 |---|---|
 | `.ssab` / `.ssqb` / images / audio | **Overwritten.** The files are rewritten rather than deleted, so an image's `.import` (import settings and UID) survives |
 | Hitting an output folder owned by a different `.sspj` | A confirmation dialog (*Output name collision*) appears before overwriting. Reconverting the same `.sspj` never shows it |
-| Images and anime packs removed from the `.sspj` | **Stale files remain** in the output folder. Delete them by hand if they are no longer needed |
+| Two `.sspj` in **one** import whose file names match | Their output folder is the same, so only the first is converted. The rest are listed when the import ends — rename one, or import them into separate output folders |
+| Images and anime packs removed from the `.sspj` | **Stale files remain** in the output folder, and they still load — a scene pointing at a deleted anime pack keeps playing the old `.ssab` instead of reporting a missing resource, and both it and the orphaned images still ship with the project. Delete them by hand |
 
 ---
 

@@ -131,6 +131,11 @@ private:
   Dictionary _convert_source_map;
   Vector<String> _failed_files;
   Vector<String> _failed_reasons;
+  // Plan entries dropped before the convert phase started (see _dedupe_plan).
+  // _begin_convert seeds the failure lists with these so they reach the same
+  // end-of-import report.
+  Vector<String> _skipped_files;
+  Vector<String> _skipped_reasons;
 
   // scan helpers
   void _scan_start_current();
@@ -145,6 +150,11 @@ private:
   int _concurrency() const;
 
   // convert helpers
+  // Removes plan entries that would have two conversions writing the same
+  // output directory: the same .sspj reaching the plan twice, and two
+  // different .sspj whose stem maps onto one destination. Both race, because
+  // _convert_pump runs up to _concurrency() of them at once.
+  void _dedupe_plan();
   void _begin_convert_checked(const String &p_dialog_title);
   Vector<int> _find_collisions(const Dictionary &p_map) const;
   void _show_collision_dialog(const Vector<int> &p_collisions);
