@@ -166,4 +166,22 @@ if ($output -notmatch "==== SUITE FINISHED ====") {
     exit 1
 }
 
+# What Godot itself said, which the pass/fail line above cannot see. A case
+# asserts what the API returns; it cannot notice that producing that answer also
+# made the engine or the runtime complain -- a player asking the runtime for a
+# frame it has not got, say, which is a defect the suite would otherwise report
+# as a clean pass. The run is expected to be silent here, so anything listed is
+# either new or newly tolerated. Reported rather than failed: the suite runs on
+# three platforms and a message Godot only prints on one of them should show up
+# as something to read, not as a red build.
+$engineMsgs = @($output | ForEach-Object { "$_" } |
+                Select-String -Pattern '^(WARNING|ERROR|SCRIPT ERROR):')
+if ($engineMsgs.Count -eq 0) {
+    Write-Host "== ENGINE: silent =="
+} else {
+    Write-Host "== ENGINE: $($engineMsgs.Count) message(s) -- expected none =="
+    $engineMsgs | Group-Object { $_.Line } | Sort-Object Count -Descending |
+        ForEach-Object { Write-Host ("  {0,5} {1}" -f $_.Count, $_.Name) }
+}
+
 exit $status

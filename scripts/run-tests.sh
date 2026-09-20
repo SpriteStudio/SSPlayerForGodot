@@ -167,4 +167,20 @@ if ! echo "$OUTPUT" | grep -q "==== SUITE FINISHED ===="; then
   exit 1
 fi
 
+# What Godot itself said, which the pass/fail line above cannot see. A case
+# asserts what the API returns; it cannot notice that producing that answer also
+# made the engine or the runtime complain -- a player asking the runtime for a
+# frame it has not got, say, which is a defect the suite would otherwise report
+# as a clean pass. The run is expected to be silent here, so anything listed is
+# either new or newly tolerated. Reported rather than failed: the suite runs on
+# three platforms and a message Godot only prints on one of them should show up
+# as something to read, not as a red build.
+ENGINE_MSGS=$(echo "$OUTPUT" | grep -cE '^(WARNING|ERROR|SCRIPT ERROR):' || true)
+if [ "$ENGINE_MSGS" -eq 0 ]; then
+  echo "== ENGINE: silent =="
+else
+  echo "== ENGINE: $ENGINE_MSGS message(s) -- expected none =="
+  echo "$OUTPUT" | grep -E '^(WARNING|ERROR|SCRIPT ERROR):' | sort | uniq -c | sort -rn | sed 's/^/  /'
+fi
+
 exit $STATUS
