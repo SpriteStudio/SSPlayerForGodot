@@ -70,6 +70,17 @@ To compile the Godot Extension, you must first build the Rust runtime from the S
 
 Once built, open the `examples/Ringo` project in the Godot Editor to verify your changes.
 
+### Test
+```bash
+./scripts/fetch-godot.sh    # once: the editor build named in scripts/GODOT_VERSION.txt, into godot-bin/
+./scripts/deploy-examples.sh
+./scripts/run-tests.sh      # the GDExtension build, driven from GDScript
+```
+`run-tests.sh` needs a Godot binary — `godot=<path>`, else `$GODOT`, `godot-bin/`, then `PATH` — and refuses to start without the addon and the `.ssab` both installed, rather than skipping its way to a green run. **A green run still prints `ERROR:` lines**; they come from the headless dummy rasteriser, and the verdict is the RESULT line and the marker after it. Windows uses the `.ps1` variant of each script.
+
+### Documentation
+Pages live as both `docs/en/<path>` and `docs/ja/<path>`; there is no fallback locale, so a page missing from one side is a nav entry pointing at nothing. Each locale also ships its own `docs/<locale>/assets/`, and asset paths are source-relative (`../assets/…`) **including inside raw `<video>` / `<img>` HTML**, which Zensical rewrites the same way it rewrites Markdown links. If you edit a page, build both locales before you finish — see [RELEASING.md](./RELEASING.md). Nothing builds the docs on a pull request, so that local build is the only gate.
+
 ## Coding Standards
 
 ### C++ Guidelines
@@ -156,6 +167,17 @@ Godot Engineとのネイティブな統合と高いパフォーマンスを維�
 ```
 
 ビルド完了後、Godotエディタで `examples/Ringo` プロジェクトなどを開き、変更内容をテストしてください。
+
+### テスト
+```bash
+./scripts/fetch-godot.sh    # 一度だけ: scripts/GODOT_VERSION.txt のエディタビルドを godot-bin/ へ
+./scripts/deploy-examples.sh
+./scripts/run-tests.sh      # GDExtension ビルドを GDScript から駆動
+```
+`run-tests.sh` は Godot バイナリを必要とします（`godot=<path>`、無ければ `$GODOT`、`godot-bin/`、最後に `PATH`）。addon と `.ssab` が揃っていなければ、スキップして緑にするのではなく起動を拒否します。**成功した実行でも `ERROR:` 行は出ます。** ヘッドレスのダミーラスタライザ由来で、判定は RESULT 行とその後のマーカーです。Windows は各スクリプトの `.ps1` 版を使ってください。
+
+### ドキュメント
+ページは `docs/en/<path>` と `docs/ja/<path>` の両方に存在します。フォールバックロケールは無いため、片方に欠けたページは行き先の無い nav エントリになります。アセットもロケールごとに `docs/<locale>/assets/` を持ち、パスはソース相対（`../assets/…`）です。**生の `<video>` / `<img>` HTML の中でも同じ**で、Zensical は Markdown リンクと同じ規則で書き換えます。ページを編集したら、仕上げる前に両ロケールをビルドしてください（手順は [RELEASING.md](./RELEASING.md)）。プルリクエストでは docs はビルドされないため、手元のビルドが唯一のゲートです。
 
 ## コーディング規約
 
