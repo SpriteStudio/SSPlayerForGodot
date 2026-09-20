@@ -3,167 +3,66 @@
 ## Operating rules
 
 *   Keep changes scoped to the requested task.
-*   Do not commit unless the user explicitly asks.
-*   Before editing, read enough surrounding context to understand callers and invariants; if the read tool truncated the file, read the remaining ranges before making non-trivial changes.
+*   Do not commit, push, or open PRs unless the user explicitly asks.
+*   Before editing, read enough surrounding context to understand callers and invariants; if the
+    read tool truncated the file, read the remaining ranges first.
 *   Follow existing code style in touched files (naming, type usage, control flow, error handling).
-*   **Dependency Constraint:** Never mention or include `godot` or `godot-cpp` source code in responses or suggestions; they are external dependencies.
-*   **SDK Alignment:** When modifying core playback logic, refer to `ss_player/SpriteStudio-SDK/AGENTS.md` for Rust runtime constraints.
+*   Validate with the commands in [CONTRIBUTING.md](./CONTRIBUTING.md) — build the extension, then
+    `scripts/run-tests.sh`. For docs changes, the both-locale build in [RELEASING.md](./RELEASING.md)
+    is the only gate a pull request does not run.
+*   **Never quote or include `godot` or `godot-cpp` source** in responses or suggestions; they are
+    external dependencies.
+*   **Playback semantics are the SDK's.** When touching core playback, read
+    [the SDK's AGENTS.md](./ss_player/SpriteStudio-SDK/AGENTS.md) and do not reimplement the rules
+    it owns here.
 
-## Architecture in one paragraph
+## What this repo is
 
-A Godot Engine integration for SpriteStudio, providing a C++ `SpriteStudioPlayer2D` node that can be built as a **GDExtension** or a **custom module**. It uses `libssruntime` (Rust) from SpriteStudio-SDK via FFI to play `.ssab` (FlatBuffers) binaries. Projects are converted from `.sspj` (XML) to `.ssab` at import-time using `libssconverter`. The C++ side handles Godot node lifecycle, resource management, and batch rendering.
+A Godot integration for SpriteStudio: a C++ `SpriteStudioPlayer2D` node, buildable either as a
+**GDExtension** or as a **custom module**, driving the Rust `libssruntime` over a C-API to play
+`.ssab` binaries. `.sspj` projects are converted at import time with `libssconverter`. The C++ side
+owns node lifecycle, resources and batch rendering.
 
-## Key components
-
-| Path | Role | Docs |
-|---|---|---|
-| `ss_player/` | C++ source: Node bindings, editor import dock, and FFI wrappers. | — |
-| `ss_player/runtime/` | Binary artifacts (`libssruntime`, `libssconverter`) and FFI headers. | — |
-| `ss_player/SpriteStudio-SDK/` | Submodule for core Rust runtime/converter. | [SDK AGENTS](./ss_player/SpriteStudio-SDK/AGENTS.md) |
-| `ss_player/format/` | FlatBuffers-generated headers for C++. | — |
-| `scripts/` | SCons build wrappers and release packaging. | [docs/en/setup/build.md](./docs/en/setup/build.md) |
-
-## Hard constraints
-
-*   **FFI Safety:** C++ interacts with Rust via a C-API. Ensure `SsState` and other Rust-allocated handles are properly released via their respective `*_release` functions to avoid leaks.
-*   **Performance:** Avoid per-frame allocations in the playback hot path. Use the `DrawBatch` plans emitted by the runtime directly for rendering.
-*   **SDK Versioning:** `scripts/SDK_VERSION.txt` pins the required SDK release. Binaries in `ss_player/runtime/` must match this version.
-*   **Build System:** `SConstruct` and `SCsub` files must be updated if new C++ source files are added.
-
-## Documentation site
-
-Built with [Zensical](https://zensical.org), the successor to MkDocs + Material for MkDocs. Zensical has no multi-locale build, so **each locale is built from its own config**: `mkdocs.yml` builds English to `site/`, `mkdocs.ja.yml` builds Japanese to `site/ja/`, and both inherit the shared settings from `mkdocs.base.yml`. Every page still exists as both `docs/en/<path>` and `docs/ja/<path>`; there is no fallback locale any more, so a page missing from one side is a nav entry pointing at nothing.
-
-**The three-config split has one rule: a YAML sequence must be defined in exactly one of the three files.** Zensical's `INHERIT` *concatenates* parent and child sequences where MkDocs replaces them — put `nav` in the base as well as a locale config and the Japanese site renders the English navigation followed by the Japanese one. Shared sequences (`theme.palette`, `theme.features`, `plugins`, `markdown_extensions`, `extra.alternate`, `extra_css`) live in `mkdocs.base.yml` and nowhere else; `nav` and `extra.social` live in the locale configs and never in the base. Mappings deep-merge, so scalars like `theme.language` are safe to override.
-
-Things that do **not** follow the "everything twice" rule, or that changed with the migration — check before duplicating:
-
-*   **`overrides/main.html`** (`theme.custom_dir`) emits the Open Graph / Twitter Card tags the theme omits, **and repairs the page title**: Zensical never sets `page.is_homepage`, which its own `base.html` branches on, so the landing page would title itself "SpriteStudioPlayer for Godot - SpriteStudioPlayer for Godot". The override derives the flag from `page.url` and overrides the `htmltitle` block. **One template serves both locales** — everything is read from whichever locale config is building. Localize by adding a per-locale config override, never by branching in the template. Keep it in sync with the copies in SpriteStudio-Docs and the sibling player repos.
-*   **`overrides/partials/alternate.html`** rebuilds the header language selector so switching language keeps you on the same page. `mkdocs-static-i18n` used to rewrite those links per page; nothing does once the locales are separate builds, and the stock partial would send every reader to the other locale's home page. It is driven by `extra.alternate[].link` (a locale subpath, not a URL) plus `extra.site_root_prefix` in each locale config. Known gap: the `<link rel="alternate" hreflang>` tags in `<head>` still point at each locale root, because they sit inside the theme's `site_meta` block and overriding that would mean copying thirty lines that Zensical may change.
-*   **Each locale ships its own `docs/<locale>/assets/`.** There is no shared `docs/assets/` — it would sit outside both `docs_dir`s and never be copied. The screenshots and videos are therefore duplicated (Git stores identical content once, so this costs working-tree space, not history).
-*   **Asset paths are source-relative** (`../assets/…` from a page one level deep), including inside raw `<video>` / `<img>` HTML. Zensical resolves raw HTML `src` the same way it resolves Markdown links; MkDocs passed it through untouched. That difference is why these paths cannot satisfy both engines at once, and it is the one place where the MkDocs fallback build produces wrong output.
-*   **`site_url` is per locale** and the ja one keeps its `ja/` suffix — `page.canonical_url`, and therefore `og:url`, is built from it.
-*   **Footer social icons are defined twice** — in `mkdocs.yml` and `mkdocs.ja.yml` (translated labels, same icons and links). Add or reorder an icon in both, or the two footers diverge. Keep `twitter:site` in `overrides/main.html` in sync with the X link.
-*   **There is deliberately no `edit_uri`**, so no "edit this page" button renders. It is a branch name nothing validates, and it had drifted wrong in three of the five player repos. Do not reintroduce it.
-
-`mkdocs.base.yml` sets `strict: true`, so a plain `build` fails on a broken link. `serve` validates nothing — `zensical serve --strict` is accepted and currently does nothing. Nothing builds the docs on a pull request either (`pages.yml` runs on `release: published` and dispatch; `pr.yml` builds the extension, not the docs), so the local build is the only gate, and **both locales have to be built** — English first, because it clears `site/`, which contains `site/ja`:
-
-```bash
-scripts/prepare-docs.sh          # once: .venv + the pins in docs/requirements.txt
-scripts/build-docs.sh            # the gate: English then Japanese, both --strict
-```
-
-`scripts/*.ps1` are the PowerShell twins, and both take `key=value` options and `--help` like the other scripts here (`build-docs.sh locale=ja`, `prepare-docs.sh force=yes`). They wrap nothing more than `pip install -r docs/requirements.txt` and the two `zensical build` runs, in the order that works — `zensical` straight out of `.venv` still does the same thing. Every repository in the family spells this pair the same way, and the `-docs` suffix keeps it apart from the scripts that build the code.
-
-`scripts/build-pages.sh` is the published site: the pair above, run for you, plus a static server over the result. The site here carries nothing but the docs, so it adds no build step of its own — what it adds is `serve=yes`, the only way to see both locales at once and the language selector resolving between them (`zensical serve` builds one locale at a time). `pages.yml`'s build job **is** this script (`prepare=no serve=no`, every option spelled out so a publish cannot change because a default did), so CI and the local gate cannot drift, and `build-pages.sh` means the same thing in every repository in the family — including the ones whose site carries a demo or an API reference as well.
-
-```bash
-scripts/build-pages.sh serve=yes    # both locales -> http://localhost:8000/
-```
-
-Building only English is the easy mistake: it leaves a stale `site/ja` behind, so a Japanese page you just broke still looks fine.
-
-Callouts (`> [!NOTE]`) are parsed natively — `mkdocs-callouts` is gone. Two consequences: `[!IMPORTANT]` is not a built-in admonition type, so `docs/*/stylesheets/extra.css` styles it to keep the appearance it had; and a list must be preceded by a blank `>` line, or it renders as literal text rather than a list.
-
-## Verification
-
-| Task | Command |
+| Path | Role |
 |---|---|
-| Build GDExtension | `./scripts/build-extension.sh` (POSIX) / `.\scripts\build-extension.ps1` (Win) |
-| Build Custom Module | `./scripts/build.sh` (POSIX) / `.\scripts\build.ps1` (Win) |
-| Setup (Source SDK) | `./scripts/build-runtime.sh` (POSIX) / `.\scripts\build-runtime.ps1` (Win) |
-| Setup (Prebuilt SDK) | `./scripts/download-sdk.sh` (POSIX) / `.\scripts\download-sdk.ps1` (Win) |
-| Deploy Example Assets | `./scripts/deploy-examples.sh` (POSIX) / `.\scripts\deploy-examples.ps1` (Win) |
-| Build the release | `./scripts/build-release.sh` (POSIX) / `.\scripts\build-release.ps1` (Win) — the addon zip, from a downloaded matrix build |
-| Run the headless tests | `./scripts/run-tests.sh` (POSIX) / `.\scripts\run-tests.ps1` (Win) — the GDExtension build, through GDScript. Needs a Godot binary: `godot=<path>`, else `$GODOT`, `godot-bin/`, then PATH |
-| Install the pinned Godot | `./scripts/fetch-godot.sh` (POSIX) / `.\scripts\fetch-godot.ps1` (Win) — the editor build named in `scripts/GODOT_VERSION.txt`, into `godot-bin/`. Nothing runs it for you |
-| Format C++ Code | `clang-format -i ss_player/*.{cpp,h}` (if available) |
+| `ss_player/` | C++ source: node bindings, editor import dock, FFI wrappers. |
+| `ss_player/runtime/` | Binary artifacts (`libssruntime`, `libssconverter`) and FFI headers. |
+| `ss_player/format/` | FlatBuffers-generated headers. |
+| `ss_player/SpriteStudio-SDK/` | Submodule: the Rust runtime and converter. |
+| `test_gdextension/` | The headless GDScript suite. Not a sample, and not under `examples/`. |
 
-*Note: Setup (Source SDK) is recommended for developers using the submodule. Setup (Prebuilt SDK) is intended for CI or release-only environments.*
+## Where each answer is written
 
-### The headless suite
+| Question | File |
+|---|---|
+| What the plugin does, how to install and use it | [README.md](./README.md), the [docs site](./docs/en/) |
+| How to build and test from a checkout | [CONTRIBUTING.md](./CONTRIBUTING.md), [Build Guide](./docs/en/setup/build.md) |
+| How the site is built and a release is cut | [RELEASING.md](./RELEASING.md), maintainers only |
+| What to build next, and what is out of scope | [ROADMAP.md](./ROADMAP.md) |
+| What each script does and takes | that script's `--help`, and its header comment |
+| Why the headless run seeds `.godot/extension_list.cfg` | the comment block in `scripts/run-tests.sh` |
 
-`test_gdextension/` is a Godot project that loads the built addon and drives
-`SpriteStudioPlayer2D` from GDScript — 38 cases over the bound API, the part
-override layer and the five signals. It is not a sample and does not live under
-`examples/`: the samples are what a reader is shown, and one project cannot be
-both that and a scratch pad (MAINTAINING_PLAYERS.md). It wears the
-`_gdextension` suffix for the same reason every other project carrying the addon
-does: a custom-module build has the classes compiled in already, so which build a
-project targets has to be readable from its name. Its two inputs are build
-outputs and gitignored — `build-extension.*` installs the addon into it,
-`deploy-examples.*` writes its `.ssab`, and `run_tests.gd` refuses to start
-without either rather than skipping its way to a green run.
+Do not restate those here. This file is for what an agent would otherwise break silently.
 
-**Two things it deliberately does not cover.** Drawing, because `--headless`
-installs a dummy rasteriser and there are no pixels to compare — and
-`NOTIFICATION_DRAW` is a no-op in the node anyway, the InternalPlayer issuing
-its own RenderingServer calls. And the **custom-module build**, because a module
-is compiled into the engine: testing it would mean building Godot rather than
-downloading it, and a module binary cannot even open `test_gdextension/` — it registers the
-classes a second time and aborts (`run-tests.*` recognises that message and says
-so). What the two builds share is one copy of the playback logic; what they do
-not share is a layer of `#ifdef SPRITESTUDIO_GODOT_EXTENSION` adapters, which
-are includes and type conversions — so the module build's guard is that it still
-builds.
+## Invariants
 
-**A green run still prints `ERROR:` lines, and they belong to that dummy
-rasteriser.** `Condition "!actions.custom_samplers.has(...)" is true. Continuing.`
-comes from Godot's shader compiler, once per player.
-`RendererDummy::MaterialStorage` validates every shader through a compiler built
-with a default-constructed `DefaultIdentifierActions`, so its `custom_samplers`
-table is empty; the real canvas renderer fills that table with `TEXTURE` and its
-siblings. `ss_blur.fs` passes the builtin `TEXTURE` into `ss_input_texture()`,
-which headless therefore cannot resolve a sampler for. `ERR_CONTINUE` is not a
-failure — compilation still returns OK — and the same suite under a real
-renderer prints none of them. The run's verdict is the RESULT line and the
-marker after it, not the absence of `ERROR:` in the log.
-
-Cases step with `advance()` under `ANIMATION_PROCESS_MANUAL`, never the frame
-clock, so a result does not depend on how long a frame took. A case that cannot
-run on this host declares a **skip**, which is reported apart from the passes
-and never counted as one. A case that recorded nothing at all — no assertion, no
-skip, no failure — is counted as a **failure**: GDScript answers a bad call by
-abandoning that one function and carrying straight on, so without that check a
-case that never ran would be indistinguishable from one that passed.
-
-**A first headless import that discovers the extension mid-scan crashes on the
-way out, so `run-tests.*` names the extension in `.godot/extension_list.cfg`
-before it starts Godot. The bug is Godot's — not this code, and not
-godot-cpp's.** `EditorHelp::_gen_extensions_docs()` dereferences the static
-`DocTools` without a null check. Loading an extension mid-scan emits
-`GDExtensionManager::extensions_reloaded`, which sends `EditorNode` off to
-regenerate the class reference on a worker thread; that thread's last act is to
-queue `_gen_extensions_docs` as a deferred call. `--import` quits before the
-message queue is flushed, so the call lands on the flush at the end of
-`Main::cleanup()` — by which time `EditorHelp::cleanup_doc()` has freed the
-`DocTools` and set it to null. It is not the import: a project with **zero
-importable files** does it too, and godot-cpp's own `test/` extension reproduces
-it. Naming the extension up front means it is loaded at startup instead, so
-`extensions_reloaded` never fires and nothing is ever queued; Godot rewrites the
-file itself, so seeding it decides only the run in which it did not exist yet.
-The engine-side fix is a null check in that one function, so a future Godot may
-make the seeding redundant — it stays either way, being what makes the first run
-deterministic. Not test-only: anything running `godot --headless --import` over
-a project whose `.godot/` has never seen the extension meets it.
-
-
-## Releases
-
-A release is a tag, pushed first and built second: push `v<version>`, then dispatch **release gdextension** from that tag with `upload_release=true`. The tag names the Release; `upload_release=true` from anything else fails the run rather than silently producing none. The default dispatch (`upload_release=false`, off a `release/X.Y` branch) is a build for QA and creates no Release. Drafts are always created as drafts — a human reviews the assets and the generated notes, then publishes from the UI, choosing pre-release / latest there.
-
-`scripts/build-release.sh` is the package: the `addons/spritestudio/` folder a user drops into a project — the descriptor, the icons it points at, every licence the shipped binaries carry, and `bin/<platform>/` for all six — then the zip and `SHA256SUMS`. `release.yml`'s package job **is** this script (`in=artifacts out=release-dist api_version=… verify=yes clean=yes`, every option spelled out so a release cannot change because a default did), so CI and a local run cannot drift. It builds nothing: six platforms need Linux, Windows and macOS between them, so it takes the matrix's output and does the part that never needed a matrix.
-
-```bash
-gh run download <run-id> -D artifacts
-scripts/build-release.sh
-```
-
-Its check is the one nothing else in the pipeline does. `misc/spritestudio.gdextension` names a file per platform and build target — nineteen paths — plus three icons, and **Godot resolves them at load time**. A name that does not match what actually shipped fails no build and no zip; the extension simply does not load, on that one platform, for whoever downloaded it. Every path in the descriptor is looked up inside the finished archive.
-
-## Workspace conventions
-
-*   SCons is the primary build tool.
-*   C++ code follows Godot's style (CamelCase classes, snake_case methods/vars).
-*   Documentation is maintained in both English (`.md`) and Japanese (`.ja.md`).
-*   Submodule `ss_player/SpriteStudio-SDK` should be kept in sync with the project requirements.
+*   **Release every Rust-allocated handle.** `SsState` and its siblings come back from the C-API
+    owned; the matching `*_release` is the only thing that frees them.
+*   **No per-frame allocations in the playback hot path.** Render from the `DrawBatch` plans the
+    runtime emits, as they are.
+*   **`scripts/SDK_VERSION.txt` pins the SDK release**, and the binaries in `ss_player/runtime/`
+    must be that version. Bumping one without the other is a silent ABI mismatch.
+*   **A new C++ source file needs its `SConstruct` / `SCsub` entry** in the same change, or one of
+    the two build shapes stops linking while the other keeps working.
+*   **Both build shapes share one copy of the playback logic**, separated only by a layer of
+    `#ifdef SPRITESTUDIO_GODOT_EXTENSION` adapters — includes and type conversions. Keep behaviour
+    out of those adapters; the module build's only guard is that it still compiles.
+*   **The headless suite covers neither drawing nor the custom-module build.** `--headless`
+    installs a dummy rasteriser, so there are no pixels to compare, and a module binary cannot even
+    open `test_gdextension/` — it registers the classes a second time and aborts.
+*   **A case that records nothing is a failure, not a pass.** GDScript answers a bad call by
+    abandoning that one function and carrying on, so a case that never ran would otherwise be
+    indistinguishable from one that passed. Cases step with `advance()` under
+    `ANIMATION_PROCESS_MANUAL`, never the frame clock, so a result cannot depend on frame timing.
+*   **Documentation is written twice**, `docs/en/<path>` and `docs/ja/<path>`, with per-locale
+    `assets/` and source-relative asset paths — see [CONTRIBUTING.md](./CONTRIBUTING.md).
