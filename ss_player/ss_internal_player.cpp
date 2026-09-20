@@ -1648,6 +1648,15 @@ void SsInternalPlayer::_apply_inherited_mask(bool active, RID coverage_tex, cons
 }
 
 void SsInternalPlayer::_drawAnimation(float frame_no, float delta_seconds, bool parent_looped) {
+    // Nothing set up, so there is no frame to draw -- the same check
+    // `_fill_frame_from_runtime` makes before the same FFI call, and for a
+    // stronger reason here: asking the runtime for frame data it does not have
+    // is an error on its side, and it logs one line per call. The transport
+    // setters reach here before an animation exists (the node's constructor
+    // alone does, through `setSubFrameEnabled`, and so does every Instance
+    // child at setup), which is ordinary rather than a failure. Bailing out
+    // below on `!data` is one call too late to say so.
+    if (!runtime_ctx || !_currentAnimationData) return;
     const unsigned char* data = nullptr;
     uintptr_t len = 0;
     ss_runtime_get_frame_data(runtime_ctx, frame_no, &data, &len);

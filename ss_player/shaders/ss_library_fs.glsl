@@ -36,9 +36,18 @@ uniform float ss_mask_rank;           // this part's draw-order rank
 uniform float ss_mask_visible_inside; // 1 = draw inside mask region, 0 = outside
 varying vec2 ss_mask_uv;
 
-vec4 ss_input_texture(sampler2D tex, vec2 uv) {
-    return texture(tex, uv);
-}
+// A macro rather than a function, because a built-in must not cross a function
+// boundary: Godot resolves `TEXTURE` to a sampler by name, and where that name
+// is not registered -- the headless renderer, which is what the test suite runs
+// on -- `shader_compiler.cpp` fails `custom_samplers.has(tex_builtin)`, falls
+// back to the project default sampler and logs one error per material built.
+// That buried every headless run's own result under its noise. Real renderers
+// resolve it, so nothing about a shipped build changes here.
+//
+// This is still the input-side extension point. Fold a conversion in by
+// wrapping the sample rather than the sampler -- `ss_input_unpremultiply(
+// texture(tex, uv))` takes a vec4, so it stays an ordinary function.
+#define ss_input_texture(tex, uv) texture(tex, uv)
 
 vec3 ss_partcolor_blend(vec3 pixel_rgb, vec3 color_rgb, vec4 varg) {
     return pixel_rgb * varg.x + mix(vec3(1.0), pixel_rgb, varg.z) * color_rgb * varg.y;

@@ -16,10 +16,11 @@
 //   shaders/default.vs          — default vertex stage (vertex() entry)
 //   shaders/default.fs          — default fragment stage (fragment() entry)
 //
-// Library files are stage-organized, not feature-organized. Functions inside
-// them follow the naming convention `ss_<CATEGORY>_<FEATURE>` (e.g.
-// `ss_partcolor_blend`, `ss_output_color`) so the category can be recovered
-// from the function name when a single file hosts many helpers.
+// Library files are stage-organized, not feature-organized. What they define —
+// functions, and the occasional macro where a built-in must not cross a
+// function boundary — follows the naming convention `ss_<CATEGORY>_<FEATURE>`
+// (e.g. `ss_partcolor_blend`, `ss_output_color`) so the category can be
+// recovered from the name when a single file hosts many helpers.
 //
 // Concatenation order (top-down GLSL compilation):
 //   SHADER_HEADER → render_mode → LIBRARY_VS → LIBRARY_FS → DEFAULT_VS → DEFAULT_FS

@@ -69,5 +69,9 @@ owns node lifecycle, resources and batch rendering.
     one function and carrying on, so a case that never ran would otherwise be indistinguishable from one
     that passed. Cases step with `advance()` under `ANIMATION_PROCESS_MANUAL`, never the frame clock, so a
     result cannot depend on frame timing.
+*   **The headless run is expected to be silent.** The suite ends with an `ENGINE` line counting what Godot
+    itself printed, because a case can only assert what the API returned — not that producing that answer
+    also made the engine or the runtime complain. Whatever it lists is a defect or a newly tolerated
+    message, never background.
 *   **Documentation is written twice**, `docs/en/<path>` and `docs/ja/<path>`, with per-locale `assets/` and
     source-relative asset paths — see [CONTRIBUTING.md](./CONTRIBUTING.md).
