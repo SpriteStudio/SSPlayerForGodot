@@ -14,6 +14,7 @@ Godot の `Resource` を継承しているため、複数の `SpriteStudioPlayer
 * `is_valid() -> bool`: 保持しているバイナリが検証を通るかどうか。バッファは読み込みの間は不変であるため、結果はキャッシュされます。
 * `get_animation_count() -> int` / `get_animation_names() -> PackedStringArray`
 * `get_cellmap_names() -> PackedStringArray` / `get_cell_names(cellmap_name: String) -> PackedStringArray`: プレーヤ側と同じ 2 つの参照を、まだプレーヤに載せていない `.ssab` に対して行えます。存在しないセルマップを指定した場合、`get_cell_names()` は空配列を返します。
+* `get_canvas_size(anim_name: String) -> Vector2` / `get_canvas_rect(anim_name: String) -> Rect2`: 指定したアニメーションがオーサリングされたキャンバスと、それを pivot で原点に対して配置した矩形。プレーヤ側は再生中のアニメーションについて同じ 2 つを返しますが、こちらはアセット内の任意のアニメーションを名前で参照できます（キャンバスはアニメーション単位なので、比較するにはこちらが必要です）。存在しないアニメーションを指定した場合は `Vector2.ZERO` と空の `Rect2` を返します。
 * `get_sound_stream(sound_list_name_hash: int, sound_name_hash: int) -> AudioStream`: オーディオイベントに対応するストリーム。参照先のファイルが無い / 非対応の場合は `null`。2 つのハッシュは `audio` シグナルの payload から得られます。結果はリソースごとにキャッシュされます（見つからなかった結果も含むため、欠損ファイルをイベントのたびに解決し直すことはありません）。
 * `get_sound_info(sound_list_name_hash: int, sound_name_hash: int) -> Dictionary`: 同じ参照を、何も読み込まずに行います。`alias`（SpriteStudio 上で設定した名前）/ `file_path`（このリソースからの相対パス）/ `path`（解決済みのプロジェクトパス）/ `file_path_hash` / `time_total` を返します。該当が無い場合は空の `Dictionary` です。
 

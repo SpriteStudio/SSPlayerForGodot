@@ -41,6 +41,40 @@ func _process(delta: float) -> void:
 
 ---
 
+### 画面外のプレイヤーを止める
+
+画面外のプレイヤーも、毎フレーム全パーツの評価を続けています。レンダラがカリングするのは *描画* だけで CPU 側の評価は止まらないため、群衆シーンでは誰にも見えていないキャラクターの分まで払うことになります。
+
+これに使えるノードは Godot 側に既にあります。[`VisibleOnScreenEnabler2D`](https://docs.godotengine.org/ja/stable/classes/class_visibleonscreenenabler2d.html) は、自身の矩形が画面外にある間、対象ノードの `process_mode` を `DISABLED` にします。このノードだけでは分からないのがアニメーションの大きさで、それに答えるのが `get_canvas_rect()` です。
+
+プレイヤーの子として `VisibleOnScreenEnabler2D` を追加し（既定の `enable_node_path` が `..` なので親を指しています）、矩形を渡します。
+
+```gdscript
+extends SpriteStudioPlayer2D
+
+@onready var _enabler: VisibleOnScreenEnabler2D = $VisibleOnScreenEnabler2D
+
+func _ready() -> void:
+    animation_changed.connect(func(_name: String) -> void: _refresh_cull_rect())
+    _refresh_cull_rect()
+
+func _refresh_cull_rect() -> void:
+    _enabler.rect = get_canvas_rect()
+```
+
+対象を無効化した後も enabler 自体は動き続けます。可視判定を報告するのは `_process` のティックではなくレンダリングサーバなので、矩形が視界に戻った時点でプレイヤーも復帰します。
+
+> [!IMPORTANT]
+> **`animation_changed` で矩形を読み直してください。** キャンバスはアニメーション単位でオーサリングされるため、アニメーションごとにサイズが違うパック（`Ringo` は大半が `800 x 600` なのに `dead` だけ `1300 x 600`）では、一度設定したきりにすると大きい方の表示が遅れます。
+
+> [!NOTE]
+> キャンバスは作者が絵を構成した枠であって、描画を測った輪郭ではありません。パーツはキャンバスの外にも描けるので、キャンバスから大きくはみ出すアニメーションがある場合は矩形を広げてください。上の値に `Rect2.grow()` を掛けるだけです。
+
+> [!NOTE]
+> 無効化されたプレイヤーは、裏で再生を続けるのではなく停止し、止まったフレームから再開します。待機ループには正しい挙動ですが、シーンの他の要素と歩調を合わせる必要があるものには向きません。既に鳴っているサウンドは影響を受けません（オーディオは撃ちっぱなしです）。
+
+---
+
 ## パーツのアドオンシェーダ（パーツ単位のエフェクト）
 
 SpriteStudio でパーツに設定できる **アドオンシェーダ** は、そのままネイティブに再現されます。設定もマテリアルの割り当ても不要です。シェーダ ID は `.ssab` に含まれており、プラグインは初回使用時に Godot シェーダをコンパイルし、`(シェーダ, ブレンドモード)` の組み合わせごとにキャッシュします。

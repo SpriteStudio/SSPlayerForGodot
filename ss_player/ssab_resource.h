@@ -12,10 +12,14 @@
 #include <godot_cpp/templates/hash_map.hpp>
 #include <godot_cpp/templates/vector.hpp>
 #include <godot_cpp/variant/dictionary.hpp>
+#include <godot_cpp/variant/rect2.hpp>
+#include <godot_cpp/variant/vector2.hpp>
 using namespace godot;
 #else
 #include "core/io/resource_loader.h"
 #include "core/io/resource_saver.h"
+#include "core/math/rect2.h"
+#include "core/math/vector2.h"
 #include "core/templates/hash_map.h"
 #include "core/variant/dictionary.h"
 #include "servers/audio/audio_stream.h"
@@ -52,6 +56,25 @@ public:
 #endif
 
   uint32_t get_cellmap_hash(const String &cellmap_name);
+
+  // ---- Authored canvas ---------------------------------------------------
+  // The box the animation was composed in — `canvas_size` with `pivot` placing
+  // the origin inside it. Both are required fields, so every valid SSAB has
+  // them, and neither costs more than a table read.
+  //
+  // It is not a measured bounding box of the drawing: parts are free to leave
+  // the canvas. What it is instead is free to read and it is where the author
+  // decided the empty space belongs.
+  //
+  // It is authored **per animation**, not per pack — `Ringo`'s `dead` is
+  // 1300x600 against 800x600 for most of the rest — so a caller that caches one
+  // has to refresh it when the animation changes.
+  Vector2 get_canvas_size(const String &anim_name);
+  // That canvas as a box in player-local (Y-down) space. The pivot is
+  // normalised from the canvas centre in the editor's Y-up space, so this is
+  // the one place it is turned into a rectangle. An empty Rect2 when the
+  // animation is unknown.
+  Rect2 get_canvas_rect(const String &anim_name);
 
   const ss::format::SsAnimeBinary *get_ss_anime_binary();
   const uint8_t *get_data_ptr();

@@ -17,6 +17,8 @@ void SSABResource::_bind_methods() {
   ClassDB::bind_method(D_METHOD("get_animation_names"), &SSABResource::get_animation_names);
   ClassDB::bind_method(D_METHOD("get_cellmap_names"), &SSABResource::get_cellmap_names);
   ClassDB::bind_method(D_METHOD("get_cell_names", "cellmap_name"), &SSABResource::get_cell_names);
+  ClassDB::bind_method(D_METHOD("get_canvas_size", "anim_name"), &SSABResource::get_canvas_size);
+  ClassDB::bind_method(D_METHOD("get_canvas_rect", "anim_name"), &SSABResource::get_canvas_rect);
   ClassDB::bind_method(D_METHOD("get_sound_stream", "sound_list_name_hash", "sound_name_hash"), &SSABResource::get_sound_stream);
   ClassDB::bind_method(D_METHOD("get_sound_info", "sound_list_name_hash", "sound_name_hash"), &SSABResource::get_sound_info);
   }
@@ -263,6 +265,31 @@ ss::format::AnimationData *SSABResource::find_animation_by_hash(uint32_t name_ha
         }
     }
     return nullptr;
+}
+
+Vector2 SSABResource::get_canvas_size(const String &anim_name) {
+    const ss::format::AnimationData *animation = find_animation(anim_name);
+    if (!animation || !animation->canvas_size()) {
+        return Vector2();
+    }
+    return Vector2(animation->canvas_size()->v1(), animation->canvas_size()->v2());
+}
+
+Rect2 SSABResource::get_canvas_rect(const String &anim_name) {
+    const ss::format::AnimationData *animation = find_animation(anim_name);
+    if (!animation || !animation->canvas_size() || !animation->pivot()) {
+        return Rect2();
+    }
+    const real_t w = animation->canvas_size()->v1();
+    const real_t h = animation->canvas_size()->v2();
+    // The pivot says where the origin sits inside the canvas, normalised from
+    // the canvas centre and in the editor's Y-up space; the box is reported
+    // Y-down, which is the one flip in this arithmetic. A pivot of (0, -0.5) —
+    // the editor's bottom edge, how a character standing on the ground is
+    // authored — therefore yields a box entirely above the origin.
+    return Rect2(-animation->pivot()->v1() * w - w * 0.5f,
+                 animation->pivot()->v2() * h - h * 0.5f,
+                 w, h);
 }
 
 String SSABResource::get_parent_dir() const {

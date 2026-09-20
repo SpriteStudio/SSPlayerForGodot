@@ -74,6 +74,19 @@ func _ready() -> void:
 
 See [Scripting and Event-Driven Control → Part Tracking](../workflow/usage_scripting.md) for `SpriteStudioPartAttachment2D`, the node that makes another node follow a specified part.
 
+## The authored canvas
+
+* `get_canvas_size() -> Vector2`: The canvas the current animation was authored in, in the player node's units. `Vector2.ZERO` when nothing is set up.
+* `get_canvas_rect() -> Rect2`: The same canvas placed against the node's origin by the animation's **pivot**, in the player node's local space (`flip_h` / `flip_v` / `offset` included, exactly as `get_part_transform`).
+
+The pivot is where the origin sits inside the canvas. A character authored standing on the ground has its pivot on the canvas's bottom edge, so `get_canvas_rect()` reports a box entirely above the origin.
+
+The canvas is authored **per animation**, not per asset — in the `Ringo` sample, `dead` is `1300 x 600` where most of the others are `800 x 600` — so re-read it whenever `animation_changed` fires.
+
+It is the box the artist composed in, not a measured bounding box: parts are free to draw outside it. Reading it costs nothing, while measuring a tighter one would mean stepping every frame of the animation at load.
+
+See [Performance Tuning → Skipping Players That Are Off Screen](../workflow/tips.md) for the use this box was added for.
+
 ## Part overrides
 
 Override a single part's color / cell / visibility so that it wins over the keyframes. Every method returns `true` on success, or `false` when the part is unknown or the runtime rejects the call. See [Scripting and Event-Driven Control → Part Overrides](../workflow/usage_scripting.md) for the details and caveats.

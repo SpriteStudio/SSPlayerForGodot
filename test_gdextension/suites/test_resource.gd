@@ -74,3 +74,62 @@ func test_a_second_pack_reads_the_same_way() -> void:
 	gt(ringo.get_animation_names().size(), 1, "Ringo has several animations")
 	gt(ringo.get_part_names().size(), 1, "Ringo has parts")
 	eq(ringo.get_part_names()[0], "root", "Ringo's part list starts at the root")
+
+
+## The authored canvas, and the one flip in it.
+##
+## `pivot` is normalised from the canvas centre in the editor's Y-up space, and
+## the box is reported in the node's Y-down local space. Ringo is authored with
+## `pivot (0, -0.5)` — the canvas's bottom edge, which is how a character
+## standing on the ground is drawn — so its box sits entirely above the origin.
+func test_the_canvas_places_itself_against_the_origin_by_its_pivot() -> void:
+	var ringo := make_player(RINGO)
+	ringo.set_animation("wait1")
+	eq(ringo.get_canvas_size(), Vector2(800, 600), "Ringo's authored canvas")
+	eq(ringo.get_canvas_rect(), Rect2(-400, -600, 800, 600),
+		"a bottom-edge pivot puts the whole box above the origin")
+
+	var basic := make_player(BASIC)
+	basic.set_animation("anime_1")
+	eq(basic.get_canvas_size(), Vector2(480, 480), "Basic's authored canvas")
+	eq(basic.get_canvas_rect(), Rect2(-240, -240, 480, 480),
+		"a centre pivot centres the box")
+
+
+## The canvas is authored per animation, not per pack. A host that caches the
+## box -- which is the whole point of handing it to a VisibleOnScreenEnabler2D
+## -- has to refresh it on `animation_changed`, so the suite states the fact
+## that makes that necessary.
+func test_the_canvas_is_per_animation() -> void:
+	var ringo := make_player(RINGO)
+	ringo.set_animation("wait1")
+	eq(ringo.get_canvas_size(), Vector2(800, 600), "wait1's canvas")
+	ringo.set_animation("dead")
+	eq(ringo.get_canvas_size(), Vector2(1300, 600), "dead's canvas is wider")
+	eq(ringo.get_canvas_rect(), Rect2(-650, -600, 1300, 600), "and so is its box")
+
+
+## `get_part_transform` composes flip and offset because they live on the
+## internal root canvas item rather than on the Node2D transform. The box is
+## read in the same space, so it has to compose them too -- otherwise the cull
+## rect of a flipped player describes somewhere the player is not.
+func test_the_box_follows_flip_and_offset() -> void:
+	var ringo := make_player(RINGO)
+	ringo.set_animation("wait1")
+
+	ringo.set_offset(Vector2(10, 20))
+	eq(ringo.get_canvas_rect(), Rect2(-390, -580, 800, 600), "offset moves the box")
+
+	ringo.set_offset(Vector2.ZERO)
+	ringo.set_flip_v(true)
+	eq(ringo.get_canvas_rect(), Rect2(-400, 0, 800, 600),
+		"flipping vertically puts the box below the origin")
+
+
+func test_an_unbound_player_has_no_canvas() -> void:
+	var empty := make_player()
+	eq(empty.get_canvas_size(), Vector2.ZERO, "no resource, no canvas")
+	eq(empty.get_canvas_rect(), Rect2(), "no resource, no box")
+	var res := load(RINGO)
+	eq(res.get_canvas_size("no such animation"), Vector2.ZERO, "an unknown animation")
+	eq(res.get_canvas_rect("no such animation"), Rect2(), "an unknown animation's box")

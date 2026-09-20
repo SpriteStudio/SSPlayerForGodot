@@ -185,6 +185,24 @@ Transform2D SpriteStudioPlayer2D::get_part_transform(const String& part_name) co
     return xf;
 }
 
+Vector2 SpriteStudioPlayer2D::get_canvas_size() const {
+    Ref<SSABResource> res = _internal->getSSABResource();
+    if (res.is_null()) return Vector2();
+    return res->get_canvas_size(_internal->getCurrentAnimation());
+}
+
+Rect2 SpriteStudioPlayer2D::get_canvas_rect() const {
+    Ref<SSABResource> res = _internal->getSSABResource();
+    if (res.is_null()) return Rect2();
+    const Rect2 rect = res->get_canvas_rect(_internal->getCurrentAnimation());
+    if (rect.size == Vector2()) return rect;
+    // Flip and offset live on the internal root canvas item rather than on the
+    // Node2D transform, so a caller reading a box in this node's local space
+    // has to see them -- the same composition get_part_transform does, and for
+    // the same reason.
+    return _make_root_transform().xform(rect);
+}
+
 bool SpriteStudioPlayer2D::is_part_hidden(const String& part_name) const {
     int idx = _internal->resolve_part_index(part_name);
     if (idx < 0) return false;
@@ -571,6 +589,9 @@ void SpriteStudioPlayer2D::_bind_methods() {
     ClassDB::bind_method( D_METHOD( "is_part_hidden", "part_name" ), &SpriteStudioPlayer2D::is_part_hidden );
     ClassDB::bind_method( D_METHOD( "is_part_skinned_mesh", "part_name" ), &SpriteStudioPlayer2D::is_part_skinned_mesh );
     ClassDB::bind_method( D_METHOD( "get_part_names" ), &SpriteStudioPlayer2D::get_part_names );
+
+    ClassDB::bind_method( D_METHOD( "get_canvas_size" ), &SpriteStudioPlayer2D::get_canvas_size );
+    ClassDB::bind_method( D_METHOD( "get_canvas_rect" ), &SpriteStudioPlayer2D::get_canvas_rect );
 
     // ---- Override Layer (Phase 2): per-part runtime overrides -------------
     ClassDB::bind_method( D_METHOD( "set_part_visibility_override", "part_name", "force_hidden", "cascade" ), &SpriteStudioPlayer2D::set_part_visibility_override, DEFVAL(false) );

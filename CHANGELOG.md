@@ -34,6 +34,9 @@ converted binaries (`.ssab`) instead of parsing `.sspj` at runtime. See the
   Every timeline event carries where it came from — `part_index`, `part_name` and `frame_no` —
   in its payload, or as `signal_emitted`'s separate `info` argument.
 - **AnimationPlayer integration**: drive playback from Godot's own animation tooling.
+- **Authored canvas queries**: `get_canvas_size()` and `get_canvas_rect()` report the box the
+  animation was composed in, placed against the node's origin by its pivot. Hand the rect to a
+  `VisibleOnScreenEnabler2D` to stop evaluating a player that is off screen.
 - **Manual playback**: `ANIMATION_PROCESS_MANUAL` plus `advance(delta)`, for custom pause groups,
   a time scale of your own, or deterministic stepping.
 - **Audio playback**: audio parts play through Godot with no setup, in the editor preview as
