@@ -102,6 +102,26 @@ private:
   const String DEFAULT_PATH = "res://ssab_generated";
   static const int RECENT_FILES_CAP = 20;
 
+  // The last Output value that passed _commit_output_dir(). A rejected edit is
+  // rolled back to it, so the field never holds a directory an import cannot
+  // use.
+  String committed_output_dir;
+
+  // Turns what is typed in the Output field into a res:// directory, or
+  // returns an empty String with r_reason set. A bare "ssab_out" becomes
+  // res://ssab_out: only res:// is globalized for the converter and scanned by
+  // the editor, so anything else splits the two apart.
+  String _normalize_output_dir(const String &p_text, String &r_reason) const;
+  // Validates the field, writes the normalized value back and saves it.
+  // False, with an error dialog and the field rolled back, when it does not
+  // name a directory inside the project.
+  bool _commit_output_dir();
+  // The directory an import should write into, or empty when the field does
+  // not name one -- the caller then does nothing, the dialog has said why.
+  String _take_output_dir_for_import();
+  void _show_output_dir_error(const String &p_reason);
+  void _on_output_dir_focus_exited();
+
   void _on_line_edit_submitted(const String &p_path);
   void _on_browse_button_pressed();
   void _on_reset_button_pressed();
@@ -120,9 +140,9 @@ private:
   void _on_importer_files_resolved(const PackedStringArray &p_paths);
   void _reconvert_sspj(const String &p_sspj_path);
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
-  void _start_import(const PackedStringArray &p_sspj_files);
+  void _start_import(const PackedStringArray &p_sspj_files, const String &p_output_dir);
 #else
-  void _start_import(const Vector<String> &p_sspj_files);
+  void _start_import(const Vector<String> &p_sspj_files, const String &p_output_dir);
 #endif
   void _load_settings();
   void _save_settings();

@@ -60,6 +60,7 @@ private:
   void _ensure_file_dialog();
   void _ask_user_for_sspj(const String &p_ssab_path, PendingAction p_action);
   void _on_sspj_file_selected(const String &p_sspj_path);
+  void _on_sspj_dialog_canceled();
   void _do_open_in_editor(const String &p_sspj_path);
   void _do_convert(const String &p_ssab_path, const String &p_sspj_path);
 };

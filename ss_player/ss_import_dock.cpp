@@ -50,6 +50,7 @@ using namespace godot;
 void SSImportControl::_bind_methods() {
     ClassDB::bind_method(D_METHOD("_on_window_files_dropped", "files"), &SSImportControl::_on_window_files_dropped);
     ClassDB::bind_method(D_METHOD("_on_line_edit_submitted", "text"), &SSImportControl::_on_line_edit_submitted);
+    ClassDB::bind_method(D_METHOD("_on_output_dir_focus_exited"), &SSImportControl::_on_output_dir_focus_exited);
     ClassDB::bind_method(D_METHOD("_on_browse_button_pressed"), &SSImportControl::_on_browse_button_pressed);
     ClassDB::bind_method(D_METHOD("_on_reset_button_pressed"), &SSImportControl::_on_reset_button_pressed);
     ClassDB::bind_method(D_METHOD("_on_open_dir_button_pressed"), &SSImportControl::_on_open_dir_button_pressed);
@@ -101,6 +102,10 @@ SSImportControl::SSImportControl() {
         path_line_edit->set_h_size_flags(SIZE_EXPAND_FILL);
         path_line_edit->set_editable(true);
         path_line_edit->connect("text_submitted", Callable(this, "_on_line_edit_submitted"));
+        // text_submitted alone only fires on Enter, so a value typed and then
+        // clicked away from would be imported into without ever being
+        // validated or saved.
+        path_line_edit->connect("focus_exited", Callable(this, "_on_output_dir_focus_exited"));
         output_vbox->add_child(path_line_edit);
     }
 
@@ -360,15 +365,21 @@ void SSImportControl::_on_window_files_dropped(const Vector<String> &p_files) {
             return;
         }
 
+        if (!importer) {
+            ERR_PRINT("SSImportControl: importer is not set.");
+            return;
+        }
+
+        String output_dir = _take_output_dir_for_import();
+        if (output_dir.is_empty()) {
+            return;
+        }
+
         if (!dirs.is_empty()) {
             // A folder was dropped: scan it (and any loose .sspj) and import all.
-            if (!importer) {
-                ERR_PRINT("SSImportControl: importer is not set.");
-                return;
-            }
-            importer->queue_scan_and_import(dirs, sspj_files, path_line_edit->get_text());
+            importer->queue_scan_and_import(dirs, sspj_files, output_dir);
         } else {
-            _start_import(sspj_files);
+            _start_import(sspj_files, output_dir);
         }
     } else {
         _perform_default_drop_logic(p_files);
@@ -376,22 +387,20 @@ void SSImportControl::_on_window_files_dropped(const Vector<String> &p_files) {
 }
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
-void SSImportControl::_start_import(const PackedStringArray &p_sspj_files) {
+void SSImportControl::_start_import(const PackedStringArray &p_sspj_files, const String &p_output_dir) {
 #else
-void SSImportControl::_start_import(const Vector<String> &p_sspj_files) {
+void SSImportControl::_start_import(const Vector<String> &p_sspj_files, const String &p_output_dir) {
 #endif
     if (!importer) {
         ERR_PRINT("SSImportControl: importer is not set.");
         return;
     }
 
-    String output_dir = path_line_edit->get_text();
-
     for (int i = 0; i < p_sspj_files.size(); i++) {
         _add_to_recent_files(p_sspj_files[i]);
     }
 
-    importer->queue_import(p_sspj_files, output_dir);
+    importer->queue_import(p_sspj_files, p_output_dir);
 }
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
@@ -423,9 +432,86 @@ void SSImportControl::_perform_default_drop_logic(const Vector<String> &p_files)
     is_reemitting = false;
 }
 
-void SSImportControl::_on_line_edit_submitted(const String &p_path) {
+String SSImportControl::_normalize_output_dir(const String &p_text, String &r_reason) const {
+    const String typed = p_text.strip_edges();
+    if (typed.is_empty()) {
+        r_reason = tr("The output directory cannot be empty.");
+        return String();
+    }
+
+    String path = typed;
+    if (!path.begins_with("res://")) {
+        // is_absolute_path() is true for anything carrying a scheme or a drive
+        // ("user://x", "/tmp/x", "C:/x"), none of which the editor imports.
+        // What is left is a project-relative "ssab_out", which is almost
+        // certainly a res:// path with the prefix left off -- and which the
+        // converter would otherwise resolve against its own working directory,
+        // while the dock created the folder inside the project.
+        if (path.is_absolute_path()) {
+            r_reason = vformat(tr("\"%s\" is not inside the project.\nThe output directory has to be a res:// path."), typed);
+            return String();
+        }
+        path = "res://" + path;
+    }
+
+    path = path.simplify_path();
+    // simplify_path() deliberately leaves a leading ".." under res:// alone, so
+    // a legal-looking path can still point out of the project.
+    if (path == "res://.." || path.begins_with("res://../")) {
+        r_reason = vformat(tr("\"%s\" is not inside the project.\nThe output directory has to be a res:// path."), typed);
+        return String();
+    }
+    return path;
+}
+
+void SSImportControl::_show_output_dir_error(const String &p_reason) {
+    AcceptDialog *dialog = memnew(AcceptDialog);
+    dialog->set_title(tr("Output directory"));
+    dialog->set_text(p_reason);
+    EditorInterface::get_singleton()->get_base_control()->add_child(dialog);
+    dialog->connect("confirmed", Callable(dialog, "queue_free"));
+    dialog->connect("canceled", Callable(dialog, "queue_free"));
+    dialog->popup_centered();
+}
+
+bool SSImportControl::_commit_output_dir() {
+    const String text = path_line_edit->get_text();
+    if (text == committed_output_dir) {
+        return true;
+    }
+
+    String reason;
+    String normalized = _normalize_output_dir(text, reason);
+    if (normalized.is_empty()) {
+        // Put the last usable value back: a rejected edit must not sit in the
+        // field looking accepted, and the next import has somewhere to go.
+        path_line_edit->set_text(committed_output_dir);
+        _show_output_dir_error(reason);
+        return false;
+    }
+
+    path_line_edit->set_text(normalized);
+    committed_output_dir = normalized;
     _save_settings();
     _ensure_output_dir_exists();
+    return true;
+}
+
+String SSImportControl::_take_output_dir_for_import() {
+    // A drop does not move focus, so the field may still hold an edit that
+    // neither Enter nor focus_exited has been through yet.
+    if (!_commit_output_dir()) {
+        return String();
+    }
+    return path_line_edit->get_text();
+}
+
+void SSImportControl::_on_line_edit_submitted(const String &p_path) {
+    _commit_output_dir();
+}
+
+void SSImportControl::_on_output_dir_focus_exited() {
+    _commit_output_dir();
 }
 
 void SSImportControl::_on_browse_button_pressed() {
@@ -444,8 +530,7 @@ void SSImportControl::_on_browse_button_pressed() {
 
 void SSImportControl::_on_reset_button_pressed() {
     path_line_edit->set_text(DEFAULT_PATH);
-    _save_settings();
-    _ensure_output_dir_exists();
+    _commit_output_dir();
 }
 
 void SSImportControl::_on_open_dir_button_pressed() {
@@ -463,8 +548,7 @@ void SSImportControl::_on_open_dir_button_pressed() {
 
 void SSImportControl::_on_dir_selected(const String &p_path) {
     path_line_edit->set_text(p_path);
-    _save_settings();
-    _ensure_output_dir_exists();
+    _commit_output_dir();
 }
 
 void SSImportControl::_on_recent_file_pressed(const String &p_path) {
@@ -502,7 +586,10 @@ void SSImportControl::_reconvert_sspj(const String &p_sspj_path) {
     Vector<String> files;
 #endif
     files.push_back(p_sspj_path);
-    String output_dir = path_line_edit->get_text();
+    String output_dir = _take_output_dir_for_import();
+    if (output_dir.is_empty()) {
+        return;
+    }
     importer->queue_import(files, output_dir);
 }
 
@@ -678,7 +765,16 @@ void SSImportControl::_load_settings() {
         cfg->save(SSPLAYER_SOURCES_CFG_PATH);
     }
 
-    path_line_edit->set_text(path);
+    // The file is hand-editable, so the stored value gets the same treatment a
+    // typed one does rather than being carried until the field is next touched.
+    String reason;
+    String normalized = _normalize_output_dir(path, reason);
+    if (normalized.is_empty()) {
+        WARN_PRINT(vformat("SSImportControl: ignoring output_directory \"%s\" (%s); using %s.", path, reason, DEFAULT_PATH));
+        normalized = DEFAULT_PATH;
+    }
+    path_line_edit->set_text(normalized);
+    committed_output_dir = normalized;
 
     _ensure_output_dir_exists();
     _update_recent_files_ui();

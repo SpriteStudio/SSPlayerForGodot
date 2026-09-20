@@ -19,6 +19,7 @@
 #include <godot_cpp/classes/resource.hpp>
 #include <godot_cpp/classes/resource_loader.hpp>
 #include <godot_cpp/core/class_db.hpp>
+#include <godot_cpp/templates/hash_map.hpp>
 #include <godot_cpp/variant/utility_functions.hpp>
 using namespace godot;
 #else
@@ -27,6 +28,7 @@ using namespace godot;
 #include "core/io/config_file.h"
 #include "core/io/resource.h"
 #include "core/os/os.h"
+#include "core/templates/hash_map.h"
 #include "editor/editor_interface.h"
 #include "editor/settings/editor_settings.h"
 #include "scene/gui/button.h"
@@ -264,7 +266,17 @@ void SSImporter::_free_budget_dialog() {
 void SSImporter::_on_budget_use_found() {
     _free_budget_dialog();
     _scan_collect_current_results();
-    _end_scan_and_convert();
+    // The budget stopped this directory, not the drop: any directory queued
+    // behind it has not been walked at all yet, so advance instead of finishing
+    // here. _show_budget_dialog() hid the progress dialog and turned PROCESS
+    // off, so both have to come back before the next walk starts.
+    if (_scan_dir_index + 1 < _scan_dirs.size()) {
+        if (_import_dialog) {
+            _import_dialog->show_progress("Scanning SSPJ:", 0);
+        }
+        set_process(true);
+    }
+    _scan_finish_or_advance();
 }
 
 void SSImporter::_on_budget_action(const StringName &p_action) {
@@ -300,7 +312,47 @@ void *SSImporter::_process_file(const String &source_sspj_path, const String &ds
     return ctx;
 }
 
+void SSImporter::_dedupe_plan() {
+    _skipped_files.clear();
+    _skipped_reasons.clear();
+
+    Vector<String> src;
+    Vector<String> dst;
+    HashMap<String, String> owner_of_dst; // destination dir -> the .sspj already claiming it
+
+    for (int i = 0; i < _plan_src.size(); i++) {
+        String src_abs = ProjectSettings::get_singleton()->globalize_path(_plan_src[i]).simplify_path();
+        const String &dst_dir = _plan_dst[i];
+
+        const String *owner = owner_of_dst.getptr(dst_dir);
+        if (owner) {
+            if (*owner == src_abs) {
+                // The same project reached the plan twice: nested folders in
+                // one drop, or a loose .sspj that also sits inside a dropped
+                // folder. Converting it again is the same work on the same
+                // files, so the second copy just goes.
+                continue;
+            }
+            // Two projects, one output folder: their stems collided. Keep the
+            // first and say which one was left out, because the fix is the
+            // user's (rename, or separate output folders) and dropping it
+            // silently would look like the converter lost a file.
+            _skipped_files.push_back(_plan_src[i]);
+            _skipped_reasons.push_back(vformat(tr("Skipped - %s already writes to %s. Rename one .sspj, or import them into separate output folders."), *owner, dst_dir));
+            continue;
+        }
+
+        owner_of_dst.insert(dst_dir, src_abs);
+        src.push_back(_plan_src[i]);
+        dst.push_back(dst_dir);
+    }
+
+    _plan_src = src;
+    _plan_dst = dst;
+}
+
 void SSImporter::_begin_convert_checked(const String &p_dialog_title) {
+    _dedupe_plan();
     Dictionary map = _load_source_map();
     Vector<int> collisions = _find_collisions(map);
     if (collisions.is_empty()) {
@@ -380,8 +432,10 @@ void SSImporter::_begin_convert(const String &p_dialog_title) {
     _active_ctx.clear();
     _active_src.clear();
     _active_dst.clear();
-    _failed_files.clear();
-    _failed_reasons.clear();
+    // Seeded, not cleared: _dedupe_plan() sized the plan down before this and
+    // its skips belong in the same report as the conversion failures.
+    _failed_files = _skipped_files;
+    _failed_reasons = _skipped_reasons;
     _import_generated_files.clear();
     _convert_source_map = _load_source_map();
 
@@ -527,6 +581,8 @@ void SSImporter::_idle_reset() {
     _convert_prev_done = -1;
     _failed_files.clear();
     _failed_reasons.clear();
+    _skipped_files.clear();
+    _skipped_reasons.clear();
     _import_generated_files.clear();
     _import_dialog = nullptr;
 
@@ -725,6 +781,10 @@ void SSImporter::queue_reconvert(const PackedStringArray &p_sspj_files, const Pa
     }
 
     emit_signal("import_started");
+    // Reconvert skips the collision check (the outputs are known to belong to
+    // these .sspj), but not the de-dupe: the right-click path can hand over two
+    // ssab from one folder whose sources differ.
+    _dedupe_plan();
     _begin_convert("Reconverting SSPJ:");
 }
 
@@ -804,8 +864,17 @@ Dictionary SSImporter::_load_source_map() const {
 }
 
 void SSImporter::_save_source_map(const Dictionary &p_map) {
+    // This file also carries the dock's [general] output_directory, so load it
+    // back before saving: a fresh ConfigFile writes only what it was given and
+    // would drop that section. [ssab_sources] itself is replaced wholesale:
+    // the map is authoritative, and an entry it dropped (LRU) must not survive
+    // in the file.
     Ref<ConfigFile> cfg;
     cfg.instantiate();
+    cfg->load(SSPLAYER_SOURCES_CFG_PATH);
+    if (cfg->has_section("ssab_sources")) {
+        cfg->erase_section("ssab_sources");
+    }
 
     Array keys = p_map.keys();
     for (int i = 0; i < keys.size(); i++) {

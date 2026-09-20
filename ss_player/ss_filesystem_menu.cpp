@@ -30,6 +30,7 @@ void SSFileSystemContextMenu::_bind_methods() {
     ClassDB::bind_method(D_METHOD("_on_open_in_editor", "paths"), &SSFileSystemContextMenu::_on_open_in_editor);
     ClassDB::bind_method(D_METHOD("_on_convert", "paths"), &SSFileSystemContextMenu::_on_convert);
     ClassDB::bind_method(D_METHOD("_on_sspj_file_selected", "path"), &SSFileSystemContextMenu::_on_sspj_file_selected);
+    ClassDB::bind_method(D_METHOD("_on_sspj_dialog_canceled"), &SSFileSystemContextMenu::_on_sspj_dialog_canceled);
 }
 
 SSFileSystemContextMenu::SSFileSystemContextMenu() {
@@ -194,6 +195,10 @@ void SSFileSystemContextMenu::_ensure_file_dialog() {
     file_dialog->clear_filters();
     file_dialog->add_filter("*.sspj", "SpriteStudio Project");
     file_dialog->connect("file_selected", Callable(this, "_on_sspj_file_selected"));
+    // "canceled" comes from AcceptDialog and covers the Cancel button, Escape
+    // and the window close. Without it a dismissed picker would strand the
+    // pending_* state and the reconverts already resolved below it.
+    file_dialog->connect("canceled", Callable(this, "_on_sspj_dialog_canceled"));
     EditorInterface::get_singleton()->get_base_control()->add_child(file_dialog);
 }
 
@@ -202,6 +207,22 @@ void SSFileSystemContextMenu::_ask_user_for_sspj(const String &p_ssab_path, Pend
     pending_ssab_path = p_ssab_path;
     pending_action = p_action;
     file_dialog->popup_file_dialog();
+}
+
+void SSFileSystemContextMenu::_on_sspj_dialog_canceled() {
+    PendingAction action = pending_action;
+    pending_action = ACTION_NONE;
+    pending_ssab_path = String();
+    pending_missing_ssabs.clear();
+
+    // Declining to name the source for one ssab is not a reason to drop the
+    // ones whose source _on_convert already resolved: it returned early to ask
+    // about the unknown file, so the reconvert for the rest still has to run.
+    if (action == ACTION_CONVERT && importer && !pending_valid_sspjs.is_empty()) {
+        importer->queue_reconvert(pending_valid_sspjs, pending_valid_dst_dirs);
+    }
+    pending_valid_sspjs.clear();
+    pending_valid_dst_dirs.clear();
 }
 
 void SSFileSystemContextMenu::_on_sspj_file_selected(const String &p_sspj_path) {
