@@ -113,9 +113,7 @@ $env:PYTHONUTF8=1
 
 ## リリースビルド
 
-各プラットフォーム向けに `editor` / `template_debug` / `template_release` を一括でビルドするスクリプトを `scripts/` 配下に用意しています。
-内部では前述の `build.sh` / `build-extension.sh` を `target` を変えて連続実行する構成です。
-これらのスクリプトは `libssruntime` を取得・ビルドはしないため、事前に [1. libssruntime の用意](#1-libssruntime-の用意) を済ませておく必要があります。
+各プラットフォーム向けに `editor` / `template_debug` / `template_release` を一括でビルドするスクリプトを `scripts/` 配下に用意しています。内部では前述の `build.sh` / `build-extension.sh` を `target` を変えて連続実行する構成です。これらのスクリプトは `libssruntime` を取得・ビルドはしないため、事前に [1. libssruntime の用意](#1-libssruntime-の用意) を済ませておく必要があります。
 
 ### GDExtension
 
@@ -150,8 +148,7 @@ $env:PYTHONUTF8=1
    * **Linux:** `godot/bin/godot.linuxbsd.editor.x86_64` 等
 
 2. **デバッガのアタッチと起動引数**
-   VSCode、Visual Studio、XcodeなどのIDEやコマンドラインのデバッガ（LLDB/GDB）から、上記のバイナリを起動プログラムとして指定します。
-   引数として対象プロジェクトへのパス（例: `--path examples/dev_module`）を渡すことで、エディタ画面を挟まずに直接プロジェクトを開いてデバッグを開始できます。
+   VSCode、Visual Studio、XcodeなどのIDEやコマンドラインのデバッガ（LLDB/GDB）から、上記のバイナリを起動プログラムとして指定します。引数として対象プロジェクトへのパス（例: `--path examples/dev_module`）を渡すことで、エディタ画面を挟まずに直接プロジェクトを開いてデバッグを開始できます。
 
 **VSCode (`launch.json`) の設定例 (macOS / LLDB の場合):**
 
@@ -188,8 +185,7 @@ $env:PYTHONUTF8=1
 
 以下の流れで、手元でテンプレートをビルド・インストールし、サンプルプロジェクトをエクスポートします。（以下はmacOSの例です）
 
-1. **ランタイムとテンプレートのビルド**
-   事前に `libssruntime` を用意し、対象プラットフォームのリリーススクリプトを実行します。
+1. **ランタイムとテンプレートのビルド**事前に `libssruntime` を用意し、対象プラットフォームのリリーススクリプトを実行します。
    ```bash
    # (必要に応じて) ランタイムをリリースビルドで用意
    ./scripts/build-runtime.sh build=release platform=macos
@@ -198,8 +194,7 @@ $env:PYTHONUTF8=1
    ./scripts/release-macos.sh
    ```
 
-2. **テンプレートのインストール**
-   ビルドしたテンプレートを、Godotが認識するローカルの所定ディレクトリへインストールします。
+2. **テンプレートのインストール**ビルドしたテンプレートを、Godotが認識するローカルの所定ディレクトリへインストールします。
    **macOS / Linux:**
    ```bash
    ./scripts/install-template.sh macos
@@ -209,8 +204,7 @@ $env:PYTHONUTF8=1
    .\scripts\install-template.ps1 windows
    ```
 
-3. **CLIからのエクスポート実行**
-   ビルドしたGodotエディタ（headlessモード）を使い、コマンドラインから直接エクスポート処理を呼び出します。
+3. **CLIからのエクスポート実行**ビルドしたGodotエディタ（headlessモード）を使い、コマンドラインから直接エクスポート処理を呼び出します。
    ```bash
    # 例: dev_module プロジェクトを macOS 向けにエクスポート (.appとして直接出力)
    ./godot/Godot.app/Contents/MacOS/Godot --path ./examples/dev_module/ --headless --export-debug "macOS" output.app
@@ -230,8 +224,7 @@ mkdir -p build_web
 cd build_web
 python3 -m http.server 8000
 ```
-サーバー起動後、ブラウザで `http://localhost:8000` にアクセスすると動作確認ができます。
-（本プラグインは Web においては `nothread` での動作となるため、特殊なCORSヘッダーなしの単純なHTTPサーバーで起動可能です）
+サーバー起動後、ブラウザで `http://localhost:8000` にアクセスすると動作確認ができます。（本プラグインは Web においては `nothread` での動作となるため、特殊なCORSヘッダーなしの単純なHTTPサーバーで起動可能です）
 
 #### Web での GDExtension（Extensions Support / `dlink`）
 
@@ -280,8 +273,7 @@ Android のエクスポートテンプレートは、エンジンの Gradle プ�
   ```
 - Godot のエディタ設定で、Android SDK パスとデバッグ用キーストアを設定します（`export/android/android_sdk_path`, `export/android/debug_keystore`, `export/android/debug_keystore_pass`）。
 
-1. **ランタイムとテンプレートのビルド**
-   まず Rust ランタイムを一度ビルドし、次に ABI／ターゲットごとにエンジンの共有ライブラリをビルドして、Gradle でテンプレートAPKにパッケージします。
+1. **ランタイムとテンプレートのビルド**まず Rust ランタイムを一度ビルドし、次に ABI／ターゲットごとにエンジンの共有ライブラリをビルドして、Gradle でテンプレートAPKにパッケージします。
    ```bash
    # Rust ランタイム（1回のreleaseビルドを両テンプレートで共用します）
    ./scripts/build-runtime.sh platform=android build=release
@@ -364,8 +356,7 @@ xcrun simctl io "$DEV" screenshot screen.png
 
 GDExtension（例: `dev_gdextension`）の場合、**エンジン本体の再ビルドやカスタムテンプレートのインストールは不要**です。Godot公式が配布している標準のGodotエディタとエクスポートテンプレートを使用して、そのままエクスポートが可能です。
 
-1. **GDExtension プラグインのリリースビルド**
-   事前に対象プラットフォーム向けのビルドスクリプトを実行し、プロジェクトの `addons/` ディレクトリにライブラリ（`.so`, `.xcframework`, `.dll` 等）を出力しておきます。
+1. **GDExtension プラグインのリリースビルド**事前に対象プラットフォーム向けのビルドスクリプトを実行し、プロジェクトの `addons/` ディレクトリにライブラリ（`.so`, `.xcframework`, `.dll` 等）を出力しておきます。
    **macOS / Linux:**
    ```bash
    ./scripts/release-gdextension-macos.sh
@@ -375,8 +366,7 @@ GDExtension（例: `dev_gdextension`）の場合、**エンジン本体の再ビ
    .\scripts\release-gdextension-windows.ps1
    ```
 
-2. **CLIからのエクスポート実行**
-   公式のGodotバイナリ（あるいは各自のGodotコマンド）を使って、プロジェクトをエクスポートします。
+2. **CLIからのエクスポート実行**公式のGodotバイナリ（あるいは各自のGodotコマンド）を使って、プロジェクトをエクスポートします。
    **macOS / Linux:**
    ```bash
    # ※ ここでの "godot" は、パスが通っている公式のGodotエディタ実行ファイル等を指します
@@ -407,8 +397,7 @@ GDExtension（例: `dev_gdextension`）の場合、**エンジン本体の再ビ
 
 GDExtension の場合も、カスタムモジュールとほぼ同じ手順でC++コードをデバッグできます。違いは起動するプログラムが「公式のGodotエディタ」になる点のみです。
 
-1. **GDExtensionのデバッグビルド確認**
-   通常のビルドスクリプト（`build-extension.sh` 等）はデフォルトで `target=template_debug` となっており、出力されるライブラリ（`.dll` や `.dylib`）にはデバッグシンボルが含まれています。
+1. **GDExtensionのデバッグビルド確認**通常のビルドスクリプト（`build-extension.sh` 等）はデフォルトで `target=template_debug` となっており、出力されるライブラリ（`.dll` や `.dylib`）にはデバッグシンボルが含まれています。
 
 2. **デバッガのアタッチと起動引数**
    VSCode や Visual Studio 等のデバッガから、**公式のGodotバイナリ** を起動プログラムとして指定し、引数でプロジェクトのパス（`--path examples/dev_gdextension`）を渡します。Godotが起動時にプラグインを動的ロードした時点でブレークポイントにヒットするようになります。

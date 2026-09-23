@@ -23,16 +23,12 @@ SSPlayer を `AnimationPlayer` で制御するためには、まず対象の `.s
 
 生成されたライブラリを実際にシーンへ適用する手順です。
 
-1. **ノードの準備**
-   シーン上に `SpriteStudioPlayer2D` ノードを配置し、対象の `.ssab` を `Ssab` にセットしておきます。
-2. **AnimationPlayer の追加**
-   シーン内に `AnimationPlayer` ノードを追加します。
+1. **ノードの準備**シーン上に `SpriteStudioPlayer2D` ノードを配置し、対象の `.ssab` を `Ssab` にセットしておきます。
+2. **AnimationPlayer の追加**シーン内に `AnimationPlayer` ノードを追加します。
 3. **ターゲットの指定（重要！）**
    追加した `AnimationPlayer` ノードを選択し、インスペクタ内の **`Root Node`** を、手順1の **`SpriteStudioPlayer2D` ノード** に設定します。
    *※自動生成されたアニメーションは「対象ノード自身の `current_animation` と `frame_no` を制御する」ようになっているため、Root Node を対象ノードに向ける必要があります。*
-4. **ライブラリの読み込み**
-   エディタ下部の「アニメーション (Animation)」パネルを開き、「アニメーション」メニュー ＞ **「アニメーションを管理... (Manage Animations)」** をクリックします。
-   出てきたウィンドウのフォルダアイコン（ライブラリをロード）を押し、生成された `_anims.res` を読み込みます。
+4. **ライブラリの読み込み**エディタ下部の「アニメーション (Animation)」パネルを開き、「アニメーション」メニュー ＞ **「アニメーションを管理... (Manage Animations)」** をクリックします。出てきたウィンドウのフォルダアイコン（ライブラリをロード）を押し、生成された `_anims.res` を読み込みます。
 
 これで AnimationPlayer のドロップダウンに、SpriteStudio で作成したアニメーション一覧が表示されるようになります！
 
@@ -43,8 +39,7 @@ SSPlayer を `AnimationPlayer` で制御するためには、まず対象の `.s
 AnimationPlayer と連携できるようになると、以下のような高度な制御が可能になります。
 
 ### A. イベントや効果音との同期（Call Method Track / Audio Track）
-AnimationPlayer のタイムライン上で「トラックを追加」し、`Call Method Track` や `Audio Playback Track` を追加します。
-「剣を振り下ろしたフレーム」に合わせて効果音を鳴らしたり、GDScript の `enable_hitbox()` 関数を呼び出したりするタイミングを、目で見ながら完璧に合わせることができます。
+AnimationPlayer のタイムライン上で「トラックを追加」し、`Call Method Track` や `Audio Playback Track` を追加します。「剣を振り下ろしたフレーム」に合わせて効果音を鳴らしたり、GDScript の `enable_hitbox()` 関数を呼び出したりするタイミングを、目で見ながら完璧に合わせることができます。
 
 ### B. ステートマシン（AnimationTree）の利用
 シーンに `AnimationTree` ノードを追加し、`Anim Player` に上記の AnimationPlayer を割り当てます。

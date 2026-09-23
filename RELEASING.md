@@ -58,27 +58,18 @@ scripts/build-docs.sh            # 英語 → 日本語の順に、どちらも 
 scripts/build-pages.sh serve=yes # 公開ツリー、両ロケール -> http://localhost:8000/
 ```
 
-必ず両ロケールを、英語を先に。英語ビルドは `site/`（その中に `site/ja` がある）を消すため、英語だけ
-建てると古い日本語サイトが残り、壊したページが無傷に見えます。`mkdocs.base.yml` が `strict: true` を
-設定します。`zensical serve` は `--strict` を付けても何も検証せず、1 ロケールずつしか配信しないため、
-言語セレクタの動作を確認できるのは `build-pages.sh serve=yes` だけです。`pages.yml` のビルドジョブは
-そのスクリプトをすべてのオプションを明示して実行するので、CI と手元のゲートがずれません。Windows は
+必ず両ロケールを、英語を先に。英語ビルドは `site/`（その中に `site/ja` がある）を消すため、英語だけ建てると古い日本語サイトが残り、壊したページが無傷に見えます。`mkdocs.base.yml` が `strict: true` を設定します。`zensical serve` は `--strict` を付けても何も検証せず、1 ロケールずつしか配信しないため、言語セレクタの動作を確認できるのは `build-pages.sh serve=yes` だけです。`pages.yml` のビルドジョブはそのスクリプトをすべてのオプションを明示して実行するので、CI と手元のゲートがずれません。Windows は
 `.ps1` 双子、どちらも `key=value` オプションと `--help` を取ります。
 
 ## リリースの手順
 
 リリースはタグです。先にタグを push し、ビルドはその後です。`v<version>` を push し、そのタグから
-**release gdextension** を `upload_release=true` でディスパッチします。Release の名前はタグで決まり、
-それ以外からの `upload_release=true` は、Release を作らずに済ませるのではなく実行を失敗させます。
-`release/X.Y` ブランチからの既定のディスパッチは QA 用ビルドで、Release は作りません。Release は必ず
-下書きで作られます。人が asset と生成された notes を確認し、pre-release / latest を選んで UI から公開
-してください。
+**release gdextension** を `upload_release=true` でディスパッチします。Release の名前はタグで決まり、それ以外からの `upload_release=true` は、Release を作らずに済ませるのではなく実行を失敗させます。
+`release/X.Y` ブランチからの既定のディスパッチは QA 用ビルドで、Release は作りません。Release は必ず下書きで作られます。人が asset と生成された notes を確認し、pre-release / latest を選んで UI から公開してください。
 
 `scripts/build-release.sh` がパッケージです。ユーザーがプロジェクトに置く `addons/spritestudio/`
 フォルダ — 記述子、そこが参照するアイコン、同梱バイナリのライセンス一式、6 プラットフォーム分の
-`bin/<platform>/` — と、その zip および `SHA256SUMS` を作ります。`release.yml` のパッケージジョブは
-このスクリプト（オプションはすべて明示）です。ビルドは一切行わないので、マトリクス実行の成果物を
-数秒で流し直せます。
+`bin/<platform>/` — と、その zip および `SHA256SUMS` を作ります。`release.yml` のパッケージジョブはこのスクリプト（オプションはすべて明示）です。ビルドは一切行わないので、マトリクス実行の成果物を数秒で流し直せます。
 
 ```bash
 gh run download <run-id> -D artifacts
@@ -86,7 +77,4 @@ scripts/build-release.sh
 ```
 
 このスクリプトの検査は、パイプラインの他のどこもやっていないものです。
-`misc/spritestudio.gdextension` はプラットフォームとビルドターゲットごとにファイルを 1 つずつ、
-計 19 個のパスとアイコン 3 つを指名し、**Godot はそれをロード時に解決します**。実際に同梱された名前と
-食い違っていても、ビルドも zip も失敗しません。ダウンロードした人の、そのプラットフォームでだけ、
-拡張が読み込まれないだけです。記述子のすべてのパスを、出来上がったアーカイブの中で引き当てます。
+`misc/spritestudio.gdextension` はプラットフォームとビルドターゲットごとにファイルを 1 つずつ、計 19 個のパスとアイコン 3 つを指名し、**Godot はそれをロード時に解決します**。実際に同梱された名前と食い違っていても、ビルドも zip も失敗しません。ダウンロードした人の、そのプラットフォームでだけ、拡張が読み込まれないだけです。記述子のすべてのパスを、出来上がったアーカイブの中で引き当てます。
