@@ -21,7 +21,8 @@
 ## adapters, which are includes and type conversions. Those are what a compiler
 ## checks, so the module build's own guard is that it still builds.
 ##
-## Exit status: 0 all passed - 1 a case failed - 2 preflight failed.
+## Exit status: 0 all passed - 1 a case failed - 2 preflight failed, or `--only`
+## matched no case.
 extends SceneTree
 
 const SUITE_DIR := "res://suites"
@@ -98,6 +99,12 @@ func _init() -> void:
 			note = "  %d skipped" % suite.skips.size()
 		print("  %-4s  %-28s %2d cases, %3d assertions%s"
 			% [verdict, name, cases.size(), suite.assertions, note])
+
+	# A filter that matched nothing ran nothing, and a run of nothing is not a pass.
+	if total_cases == 0:
+		print("run_tests.gd: --only=%s matched no suite or case; nothing ran.\n" % ",".join(only))
+		_finish(2)
+		return
 
 	if not skips.is_empty():
 		print("\n-- declared skips (not passes) --")

@@ -25,6 +25,7 @@
 # Usage: scripts/run-tests.sh [godot=<path>] [only=<names>] [import=no]
 #   godot  : the Godot binary to use (else $GODOT, godot-bin/, then PATH)
 #   only   : comma-separated substrings; run only the suites/cases that match
+#            (matching none is a setup failure, exit 2 -- not a green run of nothing)
 #   import : no to skip the import pass, once test_gdextension/.godot exists
 #
 # Exit status: 0 all passed, 1 a case failed, 2 preflight or setup failed.
