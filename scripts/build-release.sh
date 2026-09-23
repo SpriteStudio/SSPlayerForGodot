@@ -97,7 +97,7 @@ while [ $# -gt 0 ]; do
         verify)      VERIFY="$(printf '%s' "$value" | tr '[:upper:]' '[:lower:]')" ;;
         clean)       CLEAN="$(printf '%s' "$value" | tr '[:upper:]' '[:lower:]')" ;;
         # Accepted so one command line drives build-release in every repository
-        # of the family; this one has no use for them (AGENTS.md).
+        # of the family; this one has no use for them.
         sdk|skip) echo "$APP: ${key}= does not apply here; ignored" >&2 ;;
         *)
           echo "$APP: unknown option '$key' (see $APP --help)" >&2
