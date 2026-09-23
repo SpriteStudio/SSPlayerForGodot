@@ -302,7 +302,7 @@ RID SsInternalPlayer::_ensure_batch_ci(int batch_idx) {
 
 namespace {
 // Every failure below reports what the caller asked for and what was there
-// instead (SDK: 20_design/40_api_conventions, §7). Required is what the caller
+// instead. Required is what the caller
 // cannot get another way: which pack, and what they asked it for. Listing the
 // names that WOULD have worked is deliberately not here -- `get_animation_names()`
 // and the inspector's Animation dropdown both already show them.
@@ -1033,7 +1033,7 @@ bool SsInternalPlayer::_build_mask_writers(const DrawFrame& f) {
         if (pure_mask) pure_mask_flags[p_idx] = 1;
 
         // A writer only writes where its per-frame mask is non-zero and it is not
-        // hidden (Rule_Mask.md §2-2). Both live in FrameData, so this is the one
+        // hidden. Both live in FrameData, so this is the one
         // half of the classification PartData cannot answer: an authored MASK of 0
         // is how a writer is switched off over a range of frames, and the cutout
         // threshold cannot stand in for it — a shape mask samples no texture, so
@@ -1221,7 +1221,7 @@ void SsInternalPlayer::_render_mask_coverage(const DrawFrame& f) {
             if (!im) continue;
             const ss::format::PartData* ipd =
                 (pm && p_idx < (int)pm->size()) ? pm->Get(p_idx) : nullptr;
-            // Writer-side composition (§2-6): the influence reaching the child is
+            // Writer-side composition: the influence reaching the child is
             // this owner's inherited influence ANDed with the instance part's.
             const bool inh_infl = _compose_mask_context(ipd).influence;
             _bubble_child_clip_writers(ics.player, matrix_to_transform2d(im), inh_infl,
@@ -1465,7 +1465,7 @@ void SsInternalPlayer::_bubble_child_clip_writers(
             }
             if (!cw) continue;
 
-            // Effective mask_influence (Rule_Mask.md §2-6): the writer's own op
+            // Effective mask_influence: the writer's own op
             // composed with the influence handed down. A mask_influence==0
             // instance drops the child's writers onto the union (counter) plane.
             MaskWriter bw;
@@ -1609,7 +1609,7 @@ SsInternalPlayer::_resolve_part_mask(const DrawFrame& f, int p_idx, uint16_t ran
     const InheritedMaskContext c = _compose_mask_context(pd);
     // A part opts out with mask_influence == 0, which the AND-chain has already
     // folded in. For a clipping writer the *same* mask_influence is both its
-    // write op and its target flag (Rule_Mask.md §2-3/§3), so mask_write must not
+    // write op and its target flag, so mask_write must not
     // force it to be a target: a mask_influence == 0 clipping part is opted out,
     // and its own colour is only clipped by *other* masks per its real influence.
     if (!c.influence) return d;
@@ -2079,7 +2079,7 @@ void SsInternalPlayer::_update_instance_children(float parent_frame_no, float de
         InheritedMaskContext ctx = _compose_mask_context(pd);
         // The mask reaches the sub-animation only when the instance part is a
         // target of it — i.e. its composed mask_influence survives the AND-chain.
-        // mask_write must not force this (Rule_Mask.md §2-3/§3); see the matching
+        // mask_write must not force this; see the matching
         // gate in _resolve_part_mask.
         ctx.active = may_mask && ctx.influence;
         child->_set_inherited_mask_context(ctx);
@@ -2816,7 +2816,7 @@ void SsInternalPlayer::_emit_normal_batch(const DrawFrame& f, RID ci,
     bool batch_ci_used = false;
 
     // batch->blend_type() is the runtime BlendType; converted to ssab BlendType
-    // by raw u8 value (the two enums are layout-equivalent, see chapter 9 §7).
+    // by raw u8 value (the two enums are layout-equivalent).
     const auto ssab_blend = (ss::format::BlendType)batch->blend_type();
     const RID tex_rid = tex->get_rid();
 

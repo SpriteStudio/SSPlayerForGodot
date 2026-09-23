@@ -249,7 +249,7 @@ bool SpriteStudioPlayer2D::set_part_color_override_by_index(int part_index, cons
 bool SpriteStudioPlayer2D::set_part_color_override_corners_by_index(int part_index, const PackedColorArray& corners,
                                                                     ColorBlendOperation blend_op, OverridePriority priority) {
     // One argument rather than four, so this reads the same shape as the
-    // single-colour form (SDK: 20_design/40_api_conventions). Four is the only
+    // single-colour form. Four is the only
     // valid length: a shorter array would silently leave corners at whatever the
     // default Color is, which looks like a gradient bug rather than a bad call.
     ERR_FAIL_COND_V_MSG(corners.size() != 4, false,
@@ -335,7 +335,7 @@ PackedStringArray SpriteStudioPlayer2D::get_animation_names() const {
     Ref<SSABResource> res = _internal->getSSABResource();
     return res.is_valid() ? res->get_animation_names() : PackedStringArray();
 }
-// Per the Player porting doc, built-in audio is fired-and-forgotten: it is not
+// Built-in audio is fired-and-forgotten: it is not
 // coupled to animation pause or stop. Sounds already playing run to completion.
 void SpriteStudioPlayer2D::pause() { _internal->pause(); }
 void SpriteStudioPlayer2D::resume() { _internal->resume(); }
@@ -373,8 +373,7 @@ Ref<SpriteStudioAudioBackend> SpriteStudioPlayer2D::get_audio_backend() const { 
 // reader, because that is what `Sprite2D` and `AnimatedSprite2D` already put on
 // a 2D node — a Godot user reaches for `flip_h` on anything that draws, and an
 // inspector row called `flip_x` next to a Sprite2D's `flip_h` would read as a
-// different feature. A departure with a reason, per the API conventions
-// (SDK: 20_design/40_api_conventions.md, "Departing from this document").
+// different feature. A departure with a reason.
 void SpriteStudioPlayer2D::set_flip_h(bool p_flip) {
     _flip_h = p_flip;
     _update_root_transform();
@@ -618,8 +617,8 @@ void SpriteStudioPlayer2D::_bind_methods() {
             PropertyInfo(Variant::DICTIONARY, "payload")
         )
     );
-    // The conventions' stem for this one is `signal`
-    // (SDK: 20_design/40_api_conventions, §4), and this is the one place the
+    // The conventions' stem for this one is `signal`,
+    // and this is the one place the
     // family cannot spell it: `signal` is a GDScript keyword, so a signal by
     // that name cannot be connected to or awaited without fighting the parser.
     // `_emitted` is the smallest suffix that keeps the stem readable.
@@ -638,8 +637,8 @@ void SpriteStudioPlayer2D::_bind_methods() {
         )
     );
 
-    // Not in the conventions' required set (SDK: 20_design/40_api_conventions,
-    // §4): a host that called set_animation() already knows what it selected.
+    // Not in the conventions' required set:
+    // a host that called set_animation() already knows what it selected.
     // It earns its place here because `animation` is an exported property, so
     // the inspector, an AnimationPlayer track or a tool script can mount a
     // different clip without any of the node's own callers touching it.
@@ -665,8 +664,8 @@ void SpriteStudioPlayer2D::_bind_methods() {
         "get_ssab_resource"
     );
     // The accessors are deliberately asymmetric. `set_animation` is the verb the
-    // whole family publishes and `get_current_animation` is its read
-    // (SDK: 20_design/40_api_conventions), and ADD_PROPERTY names the two
+    // whole family publishes and `get_current_animation` is its read,
+    // and ADD_PROPERTY names the two
     // independently -- so the property reads as Godot expects
     // (`AnimationPlayer.current_animation` is this same thing) without inventing a
     // `set_current_animation` that would be a second name for one operation.

@@ -709,7 +709,7 @@ private:
     void _apply_mask_uniforms(Ref<ShaderMaterial> mat, uint16_t rank, bool visible_inside);
     void _set_mask_uv_uniform(Ref<ShaderMaterial> mat, const Transform2D& local_to_uv);
 
-    // ---- Instance-hierarchy mask composition (SDK masking guide 2-6) --------
+    // ---- Instance-hierarchy mask composition --------------------------------
     // A mask reaching an instance part applies to the whole sub-animation, but
     // the calling part's settings do NOT replace the callee's: they compose.
     // `mask_influence` chains with AND, `visible_inside_mask` with OR. The
