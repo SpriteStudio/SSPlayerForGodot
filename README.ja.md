@@ -59,7 +59,7 @@
 
 1. **配置**: 取得した `addons` フォルダを、ご自身の Godot プロジェクトのルートにコピーします。
 2. **インポート**: `.sspj` を Godot エディタにドラッグ＆ドロップして `.ssab` へ変換します。
-3. **再生**: `SpriteStudioPlayer2D` ノードを追加し、`SSAB Resource` プロパティに生成された `.ssab` を指定します。
+3. **再生**: `SpriteStudioPlayer2D` ノードを追加し、`Ssab` プロパティに生成された `.ssab` を指定します。
 
 詳細は [インストールガイド](./docs/ja/setup/install.md) を参照してください。
 

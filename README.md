@@ -60,7 +60,7 @@ We provide two Quick Starts: one for quickly checking the operation using a samp
 
 1. **Install**: Copy the `addons` folder into your Godot project root.
 2. **Import**: Drag & drop your `.sspj` onto the Godot editor to convert it to `.ssab`.
-3. **Play**: Add a `SpriteStudioPlayer2D` node and assign the `.ssab` to its `SSAB Resource` property.
+3. **Play**: Add a `SpriteStudioPlayer2D` node and assign the `.ssab` to its `Ssab` property.
 
 For more details, see the [Installation Guide](./docs/en/setup/install.md).
 
