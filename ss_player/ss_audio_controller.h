@@ -25,8 +25,7 @@ using namespace godot;
 // class, not a Node). Turns one audio event into an AudioStreamPlayer voice,
 // mirroring the SpriteStudioForUnity SpriteStudioAudioController design.
 //
-// Playback follows the ssruntime Player porting doc (40_components/90_audio):
-// audio is fired-and-forgotten at the moment its frame is passed. There is no
+// Audio is fired-and-forgotten at the moment its frame is passed. There is no
 // seek-offset sync, and playback is NOT coupled to animation pause/stop — once a
 // sound starts it plays to completion (a paused animation keeps its sounds
 // going). The caller applies the forward-playback filter (reverse audio is a

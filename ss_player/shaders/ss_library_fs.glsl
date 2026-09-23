@@ -80,7 +80,7 @@ bool ss_mask_passes() {
     // both into one accumulator makes coverage depend on the order the writers
     // happen to be emitted in: `incr then invert` lands on 254 (covered) where
     // `invert then incr` wraps back to 0 (not covered). A stencil buffer keeps
-    // them apart by giving each op its own WriteMask (SDK masking guide 3-1-4);
+    // them apart by giving each op its own WriteMask;
     // replaying in a shader, separate accumulators do the same job with no bit
     // budget to divide — so the counter has no overlap limit here.
     int parity = 0; // mask_influence == 1: covered where an odd number overlap

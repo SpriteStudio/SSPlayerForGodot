@@ -52,7 +52,7 @@ public:
     // How long a part override outlives the keyframes it overrides. Mirrors
     // the runtime's `priority_mode` encoding.
     enum OverridePriority {
-        // The Brain's own enumerator names (SDK: 20_design/40_api_conventions).
+        // The Brain's own enumerator names.
         OVERRIDE_PRIORITY_OVERWRITE_ON_NEXT_KEYFRAME, // the animation takes the attribute back at its next key, for good
         OVERRIDE_PRIORITY_HOLD_UNTIL_NEXT_ANIMATION,  // held until another animation is set up
         OVERRIDE_PRIORITY_PERMANENT,                  // survives animation changes
