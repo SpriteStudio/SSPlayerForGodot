@@ -1,4 +1,6 @@
 $ErrorActionPreference = "Stop"
+# Invoke-WebRequest's progress bar slows the download itself in Windows PowerShell 5.1.
+$ProgressPreference = "SilentlyContinue"
 
 $HelpApp = Split-Path -Leaf $PSCommandPath
 function Show-Usage {
@@ -83,7 +85,15 @@ Write-Host "Extracting SDK..."
 if (Test-Path "$targetDir/runtime") {
     Remove-Item -Recurse -Force "$targetDir/runtime"
 }
-Expand-Archive -Path $zipFile -DestinationPath "$targetDir/runtime" -Force
+# Expand-Archive is a script-module function: run from a session, it reads the
+# global progress preference rather than this script's.
+$savedProgress = $global:ProgressPreference
+$global:ProgressPreference = "SilentlyContinue"
+try {
+    Expand-Archive -Path $zipFile -DestinationPath "$targetDir/runtime" -Force
+} finally {
+    $global:ProgressPreference = $savedProgress
+}
 
 # Godot Custom Module compatibility (Windows x86_64)
 $winLibDir = "$targetDir/runtime/libs/windows/x86_64"
