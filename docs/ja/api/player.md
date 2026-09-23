@@ -1,7 +1,6 @@
 # 🧩 SpriteStudioPlayer2D
 
-`Node2D` を継承する再生用ノードです。
-リソースとアニメーションを指定して再生を行います。
+`Node2D` を継承する再生用ノードです。リソースとアニメーションを指定して再生を行います。
 
 ```gdscript
 @onready var ssnode: SpriteStudioPlayer2D = $target

@@ -2,8 +2,7 @@
 
 Godot エディタの「SS Import Dock」を使った直感的なインポート方法は [アセットのインポートとエディタ連携](usage_asset_pipeline.md) を参照してください。
 
-このドキュメントでは、Godot エディタを起動せずにコマンドラインから変換を行う方法を解説します。
-これは CI/CD (継続的インテグレーション) やビルドパイプラインに変換処理を組み込みたい場合、あるいは大量のアセットを一括変換したい場合に非常に便利です。
+このドキュメントでは、Godot エディタを起動せずにコマンドラインから変換を行う方法を解説します。これは CI/CD (継続的インテグレーション) やビルドパイプラインに変換処理を組み込みたい場合、あるいは大量のアセットを一括変換したい場合に非常に便利です。
 
 ## SpriteStudio-SDK の `ssconverter-cli` を使う
 
@@ -43,5 +42,4 @@ SpriteStudio プロジェクト (`.sspj`) から Godot 用のアニメーショ�
 
 ## 高度なオプション
 
-`ssconverter-cli` には、変換時の挙動を制御するためのオプションが用意されています。
-詳細なオプション一覧や仕様については、SDK リポジトリの [cli/README.ja.md](https://github.com/cri-middleware/SpriteStudio-SDK/blob/main/cli/README.ja.md) を参照してください。
+`ssconverter-cli` には、変換時の挙動を制御するためのオプションが用意されています。詳細なオプション一覧や仕様については、SDK リポジトリの [cli/README.ja.md](https://github.com/cri-middleware/SpriteStudio-SDK/blob/main/cli/README.ja.md) を参照してください。
