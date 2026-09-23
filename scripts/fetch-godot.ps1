@@ -22,6 +22,8 @@
 # Requires PowerShell 5+ (Invoke-WebRequest, Expand-Archive).
 
 $ErrorActionPreference = "Stop"
+# Invoke-WebRequest's progress bar slows the download itself in Windows PowerShell 5.1.
+$ProgressPreference = "SilentlyContinue"
 $RootDir = Split-Path -Parent (Split-Path -Parent $PSCommandPath)
 $ScriptDir = Join-Path $RootDir "scripts"
 
@@ -70,7 +72,15 @@ if ((-not (Test-Path $ZipFile)) -or $Force -eq "yes") {
 
 if (Test-Path $OutDir) { Remove-Item -Recurse -Force $OutDir }
 mkdir $OutDir -Force | Out-Null
-Expand-Archive -Path $ZipFile -DestinationPath $OutDir -Force
+# Expand-Archive is a script-module function: run from a session, it reads the
+# global progress preference rather than this script's.
+$savedProgress = $global:ProgressPreference
+$global:ProgressPreference = "SilentlyContinue"
+try {
+    Expand-Archive -Path $ZipFile -DestinationPath $OutDir -Force
+} finally {
+    $global:ProgressPreference = $savedProgress
+}
 
 # Normalise what the archive unpacks to, so run-tests.ps1 has one path rather
 # than a version-stamped name that changes with every bump.
