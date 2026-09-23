@@ -127,6 +127,12 @@ popd > /dev/null
 echo "Collecting artifacts from $SRC_DIR..."
 RUNTIME_DIR=${ROOTDIR}/ss_player/runtime
 
+# runtime/VERSION names the SDK release download-sdk installed, and everything
+# below replaces files with this local build. Stamp it "local" first, so a later
+# download-sdk sees a mismatch and reinstalls instead of skipping as up to date.
+mkdir -p ${RUNTIME_DIR}
+echo "local" > ${RUNTIME_DIR}/VERSION
+
 # Headers. The plain-C headers carry `extern "C"` guards (cbindgen cpp_compat),
 # so they are what this C++ code includes; the SDK's .hpp variants are not used.
 #

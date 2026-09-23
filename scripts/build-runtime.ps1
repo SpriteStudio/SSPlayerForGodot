@@ -82,6 +82,12 @@ if ($IS_HOST_BUILD) {
 }
 popd
 
+# runtime/VERSION names the SDK release download-sdk installed, and everything
+# below replaces files with this local build. Stamp it "local" first, so a later
+# download-sdk sees a mismatch and reinstalls instead of skipping as up to date.
+New-Item -ItemType Directory -Path "$rootDirectory/ss_player/runtime" -Force | Out-Null
+Set-Content -Path "$rootDirectory/ss_player/runtime/VERSION" -Value "local"
+
 # 1. Collect Headers. The plain-C headers carry `extern "C"` guards (cbindgen
 # cpp_compat), so they are what this C++ code includes; the .hpp variants are unused.
 #
