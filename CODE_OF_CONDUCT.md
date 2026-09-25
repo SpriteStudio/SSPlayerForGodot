@@ -59,7 +59,17 @@ This Code of Conduct applies within all project spaces — including but not lim
 ## Enforcement
 The project maintainers are responsible for clarifying and enforcing our standards of acceptable behavior and will take appropriate and fair corrective action in response to any behavior that they deem inappropriate, threatening, offensive, or harmful.
 
-Issues or complaints may be reported privately to the maintainers or via the official **Help Center** link provided in `SUPPORT.md`.
+To report a violation privately, use the **inquiry form** listed under *Private Inquiries* in [SUPPORT.md](./SUPPORT.md) — it is the project's confidential channel, and a conduct report is handled as such rather than as a technical inquiry. State clearly that your report concerns the Code of Conduct.
+
+If your report concerns a maintainer, or you would rather not go through the project at all, GitHub's [Report abuse](https://github.com/contact/report-abuse) form reaches GitHub Support directly.
+
+Do not use public GitHub Issues to report a Code of Conduct violation.
+
+行動規範への違反を非公開で報告する場合は、[SUPPORT.md](./SUPPORT.md) の *個別のお問い合わせ* にあるヘルプセンターのお問い合わせフォームをご利用ください。本プロジェクトの非公開の連絡窓口であり、技術的なお問い合わせではなく行動規範に関する報告として取り扱われます。行動規範に関する報告である旨を明記してください。
+
+報告の対象がメンテナー自身である場合や、プロジェクトを介さずに報告したい場合は、GitHub の [不正行為の報告フォーム](https://github.com/contact/report-abuse)から GitHub サポートへ直接連絡できます。
+
+行動規範への違反の報告に、公開の GitHub Issues を使用しないでください。
 
 ---
 
