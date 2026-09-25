@@ -8,8 +8,7 @@ body:
         Please check [ROADMAP.md](https://github.com/cri-middleware/SSPlayerForGodot/blob/develop/ROADMAP.md)
         first — it lists what is planned, and which items are waiting on the shared SpriteStudio SDK.
 
-        まず [ROADMAP.md](https://github.com/cri-middleware/SSPlayerForGodot/blob/develop/ROADMAP.md) を
-        ご確認ください。予定済みの項目と、共通 SDK 側の対応待ちの項目が記載されています。
+        まず [ROADMAP.md](https://github.com/cri-middleware/SSPlayerForGodot/blob/develop/ROADMAP.md) をご確認ください。予定済みの項目と、共通 SDK 側の対応待ちの項目が記載されています。
 
   - type: textarea
     id: problem
