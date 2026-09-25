@@ -80,7 +80,7 @@ jobs:
           key: ${{ matrix.platform }}
 
       - name: Setup SCons Cache
-        uses: actions/cache@v3
+        uses: actions/cache@v6
         with:
           path: ~/.scons_cache
           key: ${{ runner.os }}-${{ matrix.platform }}-scons-${{ github.sha }}

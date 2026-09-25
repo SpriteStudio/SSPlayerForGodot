@@ -1,0 +1,13 @@
+version: 2
+updates:
+  # `/` alone covers `.github/workflows/` and a root `action.yml`, not the
+  # composite actions under `.github/actions/`, which pin actions of their own.
+  - package-ecosystem: github-actions
+    directories:
+      - /
+      - /.github/actions/*
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ['*']
