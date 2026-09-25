@@ -69,17 +69,16 @@ compilation_db = env.CompilationDatabase(
 )
 env.Alias("compiledb", compilation_db)
 
-# --- Submodule Validation ---
+# --- godot-cpp Validation ---
 submodule_initialized = False
 dir_name = 'godot-cpp'
 if os.path.isdir(dir_name) and os.listdir(dir_name):
     submodule_initialized = True
 
 if not submodule_initialized:
-    print("""godot-cpp is not available within this folder, as Git submodules haven't been initialized.
-Run the following command to download godot-cpp:
+    print("""godot-cpp is not available within this folder. It is not a submodule; clone it here:
 
-    git submodule update --init --recursive""")
+    git clone https://github.com/godotengine/godot-cpp.git -b master""")
     sys.exit(1)
 
 # --- Initialize godot-cpp ---

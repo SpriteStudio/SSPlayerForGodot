@@ -29,7 +29,7 @@ that is useful information, not a problem.
 - [ ] Follows the style of the files it touches.
 - [ ] Docs updated if behaviour changed.
 - [ ] Anything that exists twice changed twice — a page and its translation, a `.sh` and its `.ps1`.
-- [ ] Every Rust-allocated handle (`SsState` etc.) is released with its `*_release`.
+- [ ] Every Rust-allocated handle is released with its destroy function (`ss_runtime_destroy`, `ss_resource_destroy`, `ss_converter_destroy`).
 - [ ] No per-frame allocations: rendering goes straight from DrawBatch.
 - [ ] Core logic goes to SpriteStudio-SDK, and nothing is committed inside the submodule.
 
