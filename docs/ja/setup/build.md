@@ -205,9 +205,14 @@ $env:PYTHONUTF8=1
    ```
 
 3. **CLIからのエクスポート実行**ビルドしたGodotエディタ（headlessモード）を使い、コマンドラインから直接エクスポート処理を呼び出します。
+   **macOS / Linux:**
    ```bash
    # 例: dev_module プロジェクトを macOS 向けにエクスポート (.appとして直接出力)
    ./godot/Godot.app/Contents/MacOS/Godot --path ./examples/dev_module/ --headless --export-debug "macOS" output.app
+   ```
+   **Windows (PowerShell):**
+   ```powershell
+   .\godot\bin\godot.windows.editor.x86_64.exe --path .\examples\dev_module\ --headless --export-debug "Windows Desktop" output.exe
    ```
    > **Note:** エクスポートを実行するには、対象プロジェクト内の `export_presets.cfg` に指定したプラットフォーム名（上記の場合は `"macOS"`）のプリセットが存在し、必要な識別子（バンドルIDなど）が正しく設定されている必要があります。
 
