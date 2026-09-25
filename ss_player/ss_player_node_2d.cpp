@@ -826,7 +826,7 @@ PackedStringArray SpriteStudioPlayer2D::get_configuration_warnings() const {
     if (getSSABResource().is_null()) {
         warnings.push_back(tr("Assign an SSABResource to the \"ssab\" property to play an animation."));
     } else if (getCurrentAnimation().is_empty()) {
-        warnings.push_back(tr("Select an animation in the \"animation\" property."));
+        warnings.push_back(tr("Select an animation in the \"current_animation\" property."));
     }
     return warnings;
 }
