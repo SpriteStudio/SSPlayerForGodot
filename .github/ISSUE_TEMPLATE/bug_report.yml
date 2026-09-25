@@ -11,8 +11,7 @@ body:
         **Do not attach proprietary `.sspj` files here** — this is a public tracker. Ask through the
         [inquiry form](https://www.webtech.co.jp/contact/en.html) and we will arrange a private transfer.
 
-        投稿前に既存の Issue を検索してください。**業務データの `.sspj` は公開の場である本 Issue に
-        添付しないでください。** 送付が必要な場合はヘルプセンターをご利用ください。
+        投稿前に既存の Issue を検索してください。**業務データの `.sspj` は公開の場である本 Issue に添付しないでください。** 送付が必要な場合はヘルプセンターをご利用ください。
 
   - type: textarea
     id: what-happened

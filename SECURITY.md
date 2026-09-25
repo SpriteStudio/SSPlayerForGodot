@@ -30,7 +30,7 @@ We will acknowledge your report and keep you informed as we investigate. Please 
 
 ## Scope
 
-This project plays animation binaries (`.ssab` / `.ssqb`) through `libssruntime`, which is maintained in [SpriteStudio-SDK](https://github.com/cri-middleware/SpriteStudio-SDK). Report issues here if they reproduce through the Godot plugin; we will route runtime-level problems to the SDK.
+This project plays animation binaries (`.ssab` / `.ssqb`) through `libssruntime`, which is maintained in SpriteStudio-SDK. Report issues here if they reproduce through the Godot plugin; we will route runtime-level problems to the SDK.
 
 Animation binaries are structurally verified when they are loaded. Even so, this plugin is designed for assets you author and ship with your game. Loading `.ssab` / `.ssqb` files obtained from untrusted third parties at runtime is outside the threat model — treat them as you would any other executable content in your project.
 
@@ -68,7 +68,7 @@ For non-security bugs and feature requests, see [SUPPORT.md](./SUPPORT.md).
 
 ### 対象範囲
 
-本プロジェクトは、[SpriteStudio-SDK](https://github.com/cri-middleware/SpriteStudio-SDK) で開発されている `libssruntime` を通じてアニメーションバイナリ（`.ssab` / `.ssqb`）を再生します。Godot プラグイン経由で再現する問題は本リポジトリへご報告ください。ランタイム側の問題であればこちらから SDK へ引き継ぎます。
+本プロジェクトは、SpriteStudio-SDK で開発されている `libssruntime` を通じてアニメーションバイナリ（`.ssab` / `.ssqb`）を再生します。Godot プラグイン経由で再現する問題は本リポジトリへご報告ください。ランタイム側の問題であればこちらから SDK へ引き継ぎます。
 
 アニメーションバイナリは読み込み時に構造検証を行っていますが、本プラグインは利用者自身が作成しゲームに同梱するアセットを前提としています。信頼できない第三者から入手した `.ssab` / `.ssqb` を実行時に読み込む用途は想定範囲外です。プロジェクト内の他の実行可能なコンテンツと同様に扱ってください。
 
