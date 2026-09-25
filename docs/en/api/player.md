@@ -81,7 +81,7 @@ See [Scripting and Event-Driven Control → Part Tracking](../workflow/usage_scr
 
 The pivot is where the origin sits inside the canvas. A character authored standing on the ground has its pivot on the canvas's bottom edge, so `get_canvas_rect()` reports a box entirely above the origin.
 
-The canvas is authored **per animation**, not per asset — in the `Ringo` sample, `dead` is `1300 x 600` where most of the others are `800 x 600` — so re-read it whenever `animation_changed` fires.
+The canvas is authored **per animation**, not per asset — in the `Ringo` sample, `dead` is `1300 x 600` where most of the others are `800 x 600` — so if you keep the value, re-read it whenever `animation_changed` fires.
 
 It is the box the artist composed in, not a measured bounding box: parts are free to draw outside it. Reading it costs nothing, while measuring a tighter one would mean stepping every frame of the animation at load.
 

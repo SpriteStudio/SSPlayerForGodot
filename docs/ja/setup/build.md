@@ -30,7 +30,7 @@ git clone https://github.com/godotengine/godot-cpp.git -b master
 
 各プラットフォーム向けのビルドツール (コンパイラ・Python・SCons など) の準備は、Godot 公式のコンパイル手順を参照してください。
 
-- [Windows](https://docs.godotengine.org/en/stable/engine_details/development/compiling/compiling_for_windows.html)
+- [Windows](https://docs.godotengine.org/ja/stable/engine_details/development/compiling/compiling_for_windows.html)
 - [macOS](https://docs.godotengine.org/ja/stable/engine_details/development/compiling/compiling_for_macos.html)
 - Linux: T.B.D.
 
@@ -148,7 +148,7 @@ $env:PYTHONUTF8=1
    * **Linux:** `godot/bin/godot.linuxbsd.editor.x86_64` 等
 
 2. **デバッガのアタッチと起動引数**
-   VSCode、Visual Studio、XcodeなどのIDEやコマンドラインのデバッガ（LLDB/GDB）から、上記のバイナリを起動プログラムとして指定します。引数として対象プロジェクトへのパス（例: `--path examples/dev_module`）を渡すことで、エディタ画面を挟まずに直接プロジェクトを開いてデバッグを開始できます。
+   VSCode、Visual Studio、XcodeなどのIDEやコマンドラインのデバッガ（LLDB/GDB）から、上記のバイナリを起動プログラムとして指定します。引数として対象プロジェクトへのパス（例: `--path examples/dev_module`）を渡すことで、プロジェクトマネージャー画面を挟まずに直接プロジェクトを開いてデバッグを開始できます。
 
 **VSCode (`launch.json`) の設定例 (macOS / LLDB の場合):**
 

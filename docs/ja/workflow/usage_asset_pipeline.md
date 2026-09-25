@@ -60,7 +60,7 @@ SpriteStudio 側でアニメーションを修正して保存したら、Godot �
 > <img src="../assets/2-fast_iteration_inspector.webp" width="100%" style="display: none;">
 
 > [!TIP]
-> 出力フォルダに生成される各ファイルの役割と依存関係、どのファイルを更新するとゲーム内の何が変わるか、エクスポートモードの選び方と `.pck` での追加配信は [生成アセットの構成と配信](generated_assets.md) にまとめています。
+> 出力フォルダに生成される各ファイルの役割と依存関係、SpriteStudio 側の編集の種類ごとにどのファイルを配信し直す必要があるか、エクスポートモードの選び方と `.pck` での追加配信は [生成アセットの構成と配信](generated_assets.md) にまとめています。
 
 ---
 

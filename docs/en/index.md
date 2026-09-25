@@ -113,7 +113,7 @@ Sample projects based on SDK test projects are available under the `examples/` f
 
 ## Migration
 
-For instructions on migrating from versions prior to v1.x, please refer to the [Migration Guide](migration_from_v1.md).
+For instructions on migrating from v1.x, please refer to the [Migration Guide](migration_from_v1.md).
 
 ## License
 
