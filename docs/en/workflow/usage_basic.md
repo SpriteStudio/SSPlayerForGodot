@@ -37,8 +37,8 @@ If you want to place the node in a specific location within an existing node hie
 
 Once the node is selected, you can adjust various settings from Godot's Inspector.
 
-1. **Select an `Animation`**
-   Open the dropdown for the `Animation` property in the Inspector. You will see a list of animations contained in the `.ssab`. Select the name of the animation you want to play.
+1. **Select the `Current Animation`**
+   Open the dropdown for the `Current Animation` property in the Inspector. You will see a list of animations contained in the `.ssab`. Select the name of the animation you want to play.
 
 > [!TIP]
 > 
@@ -49,7 +49,7 @@ Once the node is selected, you can adjust various settings from Godot's Inspecto
 
 2. **In-Editor Preview**
    With the node selected, the **SpriteStudio** bottom panel appears. Use its transport controls (play from start / play from current / stop, the frame scrubber, and the **Loop** and **Speed** controls next to them) to **play the animation directly in the editor without running the game**. Keyboard shortcuts mirror the AnimationPlayer editor: **D** play from current, **Shift+D** play from start, **S** stop (active while the panel is visible).
-   Changes to parameters like `Frame`, `Speed`, and `Loop Count` are reflected in the preview in real-time, enabling quick adjustments.
+   Changes to parameters like `Frame No`, `Speed Scale`, and `Loop Count` are reflected in the preview in real-time, enabling quick adjustments.
 
 > [!TIP]
 > 
@@ -65,13 +65,12 @@ Once the node is selected, you can adjust various settings from Godot's Inspecto
 | Property                   | Type     | Description                                                         |
 | -------------------------- | -------- | ------------------------------------------------------------------- |
 | `Ssab`            | Resource | The target `SSABResource` (`.ssab` file) to play                    |
-| `Animation`                | String   | The name of the currently selected animation                        |
+| `Current Animation`        | String   | The name of the currently selected animation                        |
 | `Autoplay`                 | bool     | Whether to play automatically when the game starts                  |
 | `Offset`                   | Vector2  | Drawing offset. Useful to shift visuals without changing the Node Transform |
 | `Flip H / Flip V`          | bool     | Horizontal / Vertical flip of the animation                         |
 | `Frame No`                 | float    | The current frame position                                          |
 | `Speed Scale`              | float    | Playback speed multiplier (Default: 1.0)                            |
-| `Frame Rate`               | int      | FPS                                                                 |
 | `Loop Count`               | int      | Number of loops (`-1` for infinite loop)                            |
 | `Animation Section Start`  | int      | Start frame for partial playback                                    |
 | `Animation Section End`    | int      | End frame for partial playback                                      |

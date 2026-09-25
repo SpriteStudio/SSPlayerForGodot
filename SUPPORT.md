@@ -55,7 +55,7 @@ SSPlayerForGodot をご利用いただきありがとうございます。ご質
 
 👉 [**ヘルプセンター（お問い合わせフォーム）**](https://www.webtech.co.jp/help/ja/spritestudio7/inquiries/ssplayer_tool/)
 
-*注: 再現データの送付には、フォーム内のファイルアップロード機能をご利用ください。*
+*注: 再現データの送付には、フォーム内のファイルアップロード機能をご利用ください。8 MB までの zip ファイルを添付できます。*
 
 ### 🛡️ 脆弱性のご報告
 セキュリティ上の脆弱性は、公開の GitHub Issues では**報告しないでください**。非公開の報告窓口については [SECURITY.md](./SECURITY.md) を参照してください。

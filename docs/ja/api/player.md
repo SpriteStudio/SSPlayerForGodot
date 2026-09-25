@@ -37,7 +37,7 @@ func _ready() -> void:
 * `is_playing() -> bool`: 再生中に `true`。**一時停止中も `true` です**（一時停止は「保持」であって「停止」ではありません）。 / `is_pausing() -> bool`: 保持中のみ `true`。一度も再生していないアニメーションと `stop()` 後は、どちらも `false` です。
 * `is_finished() -> bool`: 設定したループを全て再生し終えたかどうか。パルスではなく**状態**で、完了時に latch され次の `play()` またはアニメ切り替えまで保持されます。`animation_finished` が飛んだ時点で接続していなかった側でも「終わったか」を問えます。`loop_count` が無限のときは決して `true` にならず、**`stop()` でも立ちません** —— 命令された停止は完了ではないからで、そこが `not is_playing()` との違いです。
 * `just_looped() -> bool`: 直近の update でループ境界を跨いだかどうか。**パルス**であって状態ではありません — ランタイムが毎 update の冒頭でクリアするので、跨いだ tick の内側でのみ `true` です（だから `is_looped` ではありません。1 tick 遅れて読むと `false` になります）。ポーリングしたくなければ `animation_looped` シグナルが同じエッジを配ります。
-* `get_animation_names() -> PackedStringArray`: 割り当てた [SSABResource] のアニメーション名一覧。`animation` プロパティが選ぶのと同じリストです。
+* `get_animation_names() -> PackedStringArray`: 割り当てた [SSABResource] のアニメーション名一覧。`current_animation` プロパティが選ぶのと同じリストです。
 * `is_playing_forward() -> bool`: 再生ヘッドが**実際に**進んでいる向きです。設定した向きを返す `get_playback_direction()` とは別物で、ピンポン再生の戻りの脚では `get_playback_direction()` が `PLAYBACK_DIRECTION_FORWARD` のままでもこちらは `false` になります（速度 0 以下は逆再生ではなく停止なので、これも反転しません）。**音声のゲートに使ってください** — SpriteStudio に逆再生音声は無いため、後ろ向きの脚で跨いだサウンドキーは鳴らすべきものではありません。`play_audio` が有効なときにプレイヤー自身が掛けている判定と同じものです。何も再生していないときは `true`（前進が既定の状態）。
 * `set_frame_no(frame: float)` / `get_frame_no() -> float` / `get_total_frames() -> int`
 * `get_start_frame() -> int` / `get_end_frame() -> int`: 実際に再生される先頭 / 末尾フレーム、すなわち現在の再生区間です。`get_animation_section_start()` / `get_animation_section_end()` と同じ値を返します（`set_animation_section()` で狭めるまではアニメーション全体）。
@@ -205,7 +205,7 @@ func play_audio(payload: Dictionary, ssab: SSABResource, player: Node) -> void:
 
 `frame_no` プロパティはアニメート可能なので、`AnimationPlayer` のタイムライン（音・メソッド呼び出し・他ノードなど他トラック）と同期させて SpriteStudio アニメをスクラブできます。
 
-1. `SpriteStudioPlayer2D` に通常どおり `Ssab`（SSAB リソース）を割り当て、`Animation` を選択。
+1. `SpriteStudioPlayer2D` に通常どおり `Ssab`（SSAB リソース）を割り当て、`Current Animation` を選択。
 2. `AnimationPlayer` で、ノードの `frame_no` プロパティを対象に **プロパティトラック** を追加。
 3. `frame_no` を時間に沿ってキーフレーム（例：尺に合わせて `0` → 最終フレーム）。`frame_no` は float なので補間されます。
 4. `AnimationPlayer` を再生。

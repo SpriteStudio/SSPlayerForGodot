@@ -295,8 +295,6 @@ Color and cell overrides conflict with the animation, so they take a `priority` 
 - **Color** applies to normal parts, **cell** to normal and mask parts; other part types silently ignore the override (the call still returns `true`).
 - Colors are interpreted in the same 8-bit sRGB space as the authored Part Color, and alpha is pre-multiplied by the runtime — pass the color as authored, without converting it yourself.
 - A cell override is resolved when you set it, so an unknown cell map / cell name fails immediately (returns `false`).
-- Overrides live on the runtime, which owns their lifecycle. Do not re-apply them after an animation change; choose the priority mode that expresses what you want instead.
+- Overrides live on the runtime, which owns their lifecycle. To keep a color or cell override across animation changes, set it with `OVERRIDE_PRIORITY_PERMANENT` rather than re-applying it after each change. A visibility override has no priority mode, so it has to be set again after an animation change.
 - Assigning a different `.ssab` resource clears every override, because part identity is lost.
 - Overrides do not reach parts **inside** an instance part (the child animation runs as a separate player). Force-hiding the instance part itself does stop its contents from being drawn.
-
-> **On when an override is not reflected in the drawing**: While playback is stopped or paused — or on any frame that does not advance — the drawing is not rebuilt, so setting or clearing an override will not appear on screen. Call `set_frame_no(get_frame_no())` to force a redraw when you need it reflected immediately.

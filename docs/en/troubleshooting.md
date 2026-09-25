@@ -66,7 +66,12 @@ Keep the output directory (`res://ssab_generated` by default) intact, or move th
 
 ### An override does not appear on screen
 
-While playback is stopped or paused — or on any frame that does not advance — the drawing is not rebuilt, so setting or clearing an override changes nothing visible. Force a redraw with `set_frame_no(get_frame_no())`.
+An override lands on the player's next tick — playing, paused, stopped and `ANIMATION_PROCESS_MANUAL` alike — so there is no redraw to force. If it never appears:
+
+- **A part type it does not apply to** ignores it. Color applies to normal parts and cell to normal and mask parts; any other part accepts the call and draws unchanged.
+- **A part inside an Instance part** is out of reach — the child animation runs as a separate player.
+- **An animation change** cleared it. A new animation drops every visibility override, and every color / cell override not set with `OVERRIDE_PRIORITY_PERMANENT`.
+- **A node that is not processing** — in a paused scene tree, or with `process_mode` disabled — gets no tick to pick it up.
 
 ### `animation_finished` never fires
 
@@ -86,7 +91,7 @@ Seeking fires only the destination frame's events. This is a [shared runtime con
 
 Work down the list — each item silences audio on its own:
 
-1. **The playback direction is backward.** Reverse playback fires no audio at all, including the return leg of ping-pong and a negative `speed_scale`.
+1. **The playback direction is backward.** Reverse playback fires no audio at all, including the return leg of ping-pong.
 2. **`play_audio` is off**, or an **`audio_backend` is assigned** and its `play_audio()` does not reach your audio stack. Assigning a backend always suppresses the built-in player.
 3. **The sound file did not load.** Godot logs the path. `.wav` / `.ogg` import as `AudioStream`; a format Godot does not import resolves to `null` and is silently skipped.
 4. **`audio_volume` is 0**, or the game's audio bus is muted.

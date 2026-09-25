@@ -37,7 +37,7 @@ func _process(delta: float) -> void:
 > `Manual` stops the *animation*; it does not freeze sounds already playing. Audio is fire-and-forget and keeps ticking, exactly as it does while the animation is paused. See [Audio Playback](audio.md).
 
 > [!TIP]
-> Prefer `speed_scale` for a simple slow-motion effect and the `frame` property for seeking. `Manual` is for when the *source of time itself* has to be yours.
+> Prefer `speed_scale` for a simple slow-motion effect and the `frame_no` property for seeking. `Manual` is for when the *source of time itself* has to be yours.
 
 ---
 

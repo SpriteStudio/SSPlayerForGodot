@@ -41,7 +41,7 @@
 ## 再生機能の制約
 
 以下は共通の `libssruntime` に由来する挙動のため、ビルド形態に関わらず適用されます。すべての公式
-Player に共通する制約であり、詳しい説明とその他の共通制約（embedded モード、`.ssab` の入力検証など）はポータルの **[共通の制限事項](https://cri-middleware.github.io/SpriteStudio-Docs/ja/sdk/limitations/)**
+Player に共通する制約であり、詳しい説明とその他の共通制約（embedded モード、`.ssab` の入力が検証されないことなど）はポータルの **[共通の制限事項](https://cri-middleware.github.io/SpriteStudio-Docs/ja/sdk/limitations/)**
 にまとまっています。
 
 > [!WARNING]

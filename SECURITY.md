@@ -53,7 +53,7 @@ For non-security bugs and feature requests, see [SUPPORT.md](./SUPPORT.md).
 
 **セキュリティに関する問題を公開の GitHub Issues に投稿しないでください。** 修正が用意される前に問題が利用者に露出してしまいます。
 
-非公開の窓口である公式ヘルプセンターのお問い合わせフォームをご利用ください。再現用データのファイル添付にも対応しています。
+非公開の窓口である公式ヘルプセンターのお問い合わせフォームをご利用ください。再現用データのファイル添付（8 MB までの zip ファイル）にも対応しています。
 
 👉 [**ヘルプセンター（お問い合わせフォーム）**](https://www.webtech.co.jp/help/ja/spritestudio7/inquiries/ssplayer_tool/)
 

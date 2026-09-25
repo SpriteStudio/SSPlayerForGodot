@@ -38,7 +38,7 @@ func _ready() -> void:
 * `is_playing() -> bool`: `true` while playing, **including while paused** — a pause is a hold, not a stop. / `is_pausing() -> bool`: `true` only while held. Both are `false` on an animation that has never played, and after `stop()`.
 * `is_finished() -> bool`: Whether every configured loop has played. A **state**, not a pulse — it latches on completion and holds until the next `play()` or animation change, so a caller that was not connected when `animation_finished` fired can still ask whether the run is over. Never `true` under an infinite `loop_count`, and **not raised by `stop()`** — a commanded stop is not a completion, which is what separates it from `not is_playing()`.
 * `just_looped() -> bool`: Whether the last update crossed a loop boundary. A **pulse**, not a state — the runtime clears it at the top of every update, so it only reads `true` inside the tick that crossed (which is why it is not `is_looped`: reading it a tick late reads `false`). The `animation_looped` signal delivers the same edge if you would rather not poll.
-* `get_animation_names() -> PackedStringArray`: Names of the animations in the assigned [SSABResource] — the same list the `animation` property is chosen from.
+* `get_animation_names() -> PackedStringArray`: Names of the animations in the assigned [SSABResource] — the same list the `current_animation` property is chosen from.
 * `is_playing_forward() -> bool`: Which way the playhead is **actually** travelling. Not `get_playback_direction()`, which reports the configured heading: on a ping-pong return leg this reads `false` while that still reads `PLAYBACK_DIRECTION_FORWARD` (a speed of zero or below is a stop, not a reversal, and does not flip it either). **Gate audio on it** — SpriteStudio has no reverse audio, so a sound key crossed on a backward leg is not meant to sound, and this is the test the node itself applies when `play_audio` is on. `true` before anything has played: forward is the resting state.
 * `set_frame_no(frame: float)` / `get_frame_no() -> float` / `get_total_frames() -> int`
 * `get_start_frame() -> int` / `get_end_frame() -> int`: The first and last frame that actually plays — the current playback section. They return the same values as `get_animation_section_start()` / `get_animation_section_end()`, which is the whole animation until `set_animation_section()` narrows it.
@@ -81,7 +81,7 @@ See [Scripting and Event-Driven Control → Part Tracking](../workflow/usage_scr
 
 The pivot is where the origin sits inside the canvas. A character authored standing on the ground has its pivot on the canvas's bottom edge, so `get_canvas_rect()` reports a box entirely above the origin.
 
-The canvas is authored **per animation**, not per asset — in the `Ringo` sample, `dead` is `1300 x 600` where most of the others are `800 x 600` — so re-read it whenever `animation_changed` fires.
+The canvas is authored **per animation**, not per asset — in the `Ringo` sample, `dead` is `1300 x 600` where most of the others are `800 x 600` — so if you keep the value, re-read it whenever `animation_changed` fires.
 
 It is the box the artist composed in, not a measured bounding box: parts are free to draw outside it. Reading it costs nothing, while measuring a tighter one would mean stepping every frame of the animation at load.
 
@@ -206,7 +206,7 @@ Resolving a sound from the payload is done on [`SSABResource`](resource.md#ssabr
 
 The `frame_no` property is animatable, so an `AnimationPlayer` can scrub a SpriteStudio animation in lockstep with its own timeline (and any other tracks on it — audio, calls, other nodes).
 
-1. Assign the `Ssab` resource and pick an `Animation` on the `SpriteStudioPlayer2D` as usual.
+1. Assign the `Ssab` resource and pick a `Current Animation` on the `SpriteStudioPlayer2D` as usual.
 2. In the `AnimationPlayer`, add a **Property Track** targeting the node's `frame_no` property.
 3. Keyframe `frame_no` over time (e.g. `0` → the last frame across the desired duration). `frame_no` is a float, so values interpolate.
 4. Play the `AnimationPlayer`.
