@@ -43,7 +43,7 @@ If you find a bug, please use the provided Issue Templates. Include:
 - Python 3 and SCons
 - A Rust toolchain (required to build the `libssruntime` runtime)
 - zsh (the build scripts use a `#!/usr/bin/env zsh` shebang)
-- The `godot-cpp` submodule, cloned via `git submodule update --init --recursive`
+- `godot-cpp`, cloned into the repository root: `git clone https://github.com/godotengine/godot-cpp.git -b master` (it is not a submodule)
 
 For the complete build guide, see [docs/en/setup/build.md](./docs/en/setup/build.md).
 
@@ -86,7 +86,7 @@ Pages live as both `docs/en/<path>` and `docs/ja/<path>`; there is no fallback l
 ### C++ Guidelines
 - Follow the [Godot Engine C++ style guide](https://docs.godotengine.org/en/stable/contributing/development/compiling/cpp_style_guide.html).
 - Use `clang-format` if available (`clang-format -i ss_player/*.{cpp,h}`).
-- Ensure safe handling of the Rust FFI objects (always release `SsState` and other handles to prevent memory leaks).
+- Ensure safe handling of the Rust FFI objects: release every handle with its destroy function (`ss_runtime_destroy`, `ss_resource_destroy`, `ss_converter_destroy`) to prevent memory leaks.
 
 ---
 By contributing to this project, you agree that your contributions will be licensed under the project's [LICENSE.md](./LICENSE.md).
@@ -141,7 +141,7 @@ Godot Engineとのネイティブな統合と高いパフォーマンスを維�
 - Python 3 および SCons
 - Rust ツールチェイン (`libssruntime` ランタイムのビルドに必要です)
 - zsh (ビルドスクリプトは `#!/usr/bin/env zsh` を使用しています)
-- `godot-cpp` サブモジュール (`git submodule update --init --recursive` で取得してください)
+- `godot-cpp`（submodule ではありません。リポジトリのルートに `git clone https://github.com/godotengine/godot-cpp.git -b master` で取得してください）
 
 完全なビルド手順については、[docs/ja/setup/build.md](./docs/ja/setup/build.md) を参照してください。
 
@@ -183,8 +183,8 @@ Godot Engineとのネイティブな統合と高いパフォーマンスを維�
 
 ### C++ のガイドライン
 - [Godot EngineのC++スタイルガイド](https://docs.godotengine.org/ja/stable/contributing/development/compiling/cpp_style_guide.html)に従ってください。
-- 可能であれば `clang-format` を使用してフォーマットを統一してください。
-- Rust FFI オブジェクトの安全な取り扱いに注意してください（メモリリークを防ぐため、`SsState` などのハンドルは必ず適切な release 関数を呼んで解放してください）。
+- 可能であれば `clang-format` を使用してフォーマットを統一してください（`clang-format -i ss_player/*.{cpp,h}`）。
+- Rust FFI オブジェクトの安全な取り扱いに注意してください。メモリリークを防ぐため、ハンドルは必ず対応する destroy 関数（`ss_runtime_destroy`、`ss_resource_destroy`、`ss_converter_destroy`）で解放してください。
 
 ---
-本プロジェクトへの貢献は、プロジェクトの [LICENSE.md](./LICENSE.md) に同意したものとみなされます。
+本プロジェクトに貢献することで、あなたの貢献がプロジェクトの [LICENSE.md](./LICENSE.md) の下でライセンスされることに同意したものとみなされます。

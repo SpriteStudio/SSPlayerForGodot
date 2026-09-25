@@ -14,8 +14,8 @@ Both locales, English first: it clears `site/`, which contains `site/ja`, so an 
 leaves a stale Japanese site behind and a page you just broke still looks fine. `mkdocs.base.yml`
 sets `strict: true`; `zensical serve` validates nothing, `--strict` or not, and serves one locale at
 a time, so `build-pages.sh serve=yes` is the only way to see the language selector resolve.
-`pages.yml`'s build job **is** that script with every option spelled out, so CI and the local gate
-cannot drift. `.ps1` twins on Windows, `key=value` options and `--help` on both.
+`pages.yml`'s build job **is** that script, so CI builds exactly what a local run with the same
+options builds. `.ps1` twins on Windows, `key=value` options and `--help` on both.
 
 ## Cutting a release
 
@@ -29,7 +29,7 @@ the UI, choosing pre-release or latest there.
 `scripts/build-release.sh` is the package: the `addons/spritestudio/` folder a user drops into a
 project — the descriptor, the icons it points at, every licence the shipped binaries carry, and
 `bin/<platform>/` for all six — then the zip and `SHA256SUMS`. `release.yml`'s package job **is**
-this script with every option spelled out. It builds nothing, so it replays a matrix run in seconds:
+this script. It builds nothing, so it replays a matrix run in seconds:
 
 ```bash
 gh run download <run-id> -D artifacts
@@ -58,7 +58,7 @@ scripts/build-docs.sh            # 英語 → 日本語の順に、どちらも 
 scripts/build-pages.sh serve=yes # 公開ツリー、両ロケール -> http://localhost:8000/
 ```
 
-必ず両ロケールを、英語を先に。英語ビルドは `site/`（その中に `site/ja` がある）を消すため、英語だけ建てると古い日本語サイトが残り、壊したページが無傷に見えます。`mkdocs.base.yml` が `strict: true` を設定します。`zensical serve` は `--strict` を付けても何も検証せず、1 ロケールずつしか配信しないため、言語セレクタの動作を確認できるのは `build-pages.sh serve=yes` だけです。`pages.yml` のビルドジョブはそのスクリプトをすべてのオプションを明示して実行するので、CI と手元のゲートがずれません。Windows は
+必ず両ロケールを、英語を先に。英語ビルドは `site/`（その中に `site/ja` がある）を消すため、英語だけ建てると古い日本語サイトが残り、壊したページが無傷に見えます。`mkdocs.base.yml` が `strict: true` を設定します。`zensical serve` は `--strict` を付けても何も検証せず、1 ロケールずつしか配信しないため、言語セレクタの動作を確認できるのは `build-pages.sh serve=yes` だけです。`pages.yml` のビルドジョブはそのスクリプトなので、CI が建てるものは、同じオプションで手元で建てたものと一致します。Windows は
 `.ps1` 双子、どちらも `key=value` オプションと `--help` を取ります。
 
 ## リリースの手順
@@ -69,7 +69,7 @@ scripts/build-pages.sh serve=yes # 公開ツリー、両ロケール -> http://l
 
 `scripts/build-release.sh` がパッケージです。ユーザーがプロジェクトに置く `addons/spritestudio/`
 フォルダ — 記述子、そこが参照するアイコン、同梱バイナリのライセンス一式、6 プラットフォーム分の
-`bin/<platform>/` — と、その zip および `SHA256SUMS` を作ります。`release.yml` のパッケージジョブはこのスクリプト（オプションはすべて明示）です。ビルドは一切行わないので、マトリクス実行の成果物を数秒で流し直せます。
+`bin/<platform>/` — と、その zip および `SHA256SUMS` を作ります。`release.yml` のパッケージジョブはこのスクリプトです。ビルドは一切行わないので、マトリクス実行の成果物を数秒で流し直せます。
 
 ```bash
 gh run download <run-id> -D artifacts
