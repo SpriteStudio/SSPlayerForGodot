@@ -4,15 +4,15 @@ Thank you for using SSPlayerForGodot! We want to ensure you have the best experi
 
 ## 🛠️ GitHub Issues (Public)
 For Bug Reports and Feature Requests, please use [GitHub Issues](https://github.com/cri-middleware/SSPlayerForGodot/issues). This is the best place for:
-- **Bug Reports**: If you've found a problem in the SDK.
+- **Bug Reports**: If you've found a problem in the player.
 - **Feature Requests**: If you have ideas for new features or improvements.
 
-*Note: Please do NOT use GitHub Issues for questions about how to use the SDK. See the Help Center section below.*
+*Note: Please do NOT use GitHub Issues for questions about how to use the player. See the Help Center section below.*
 
 Before opening a new issue, please search existing issues to see if your topic has already been discussed.
 
-## ❓ Questions on How to Use the SDK
-If you have questions about how to use the SDK, need implementation advice, or want to share tips with other developers, please use our official community forum:
+## ❓ Questions on How to Use the Player
+If you have questions about how to use the player, need implementation advice, or want to share tips with other developers, please use our official community forum:
 
 👉 [**SpriteStudio Community**](https://spritestudio.jp/community/)
 
@@ -31,19 +31,19 @@ SSPlayerForGodot をご利用いただきありがとうございます。ご質
 
 ### 🛠️ GitHub Issues (公開)
 不具合のご報告や新機能のご要望は [GitHub Issues](https://github.com/cri-middleware/SSPlayerForGodot/issues) へ投稿してください。
-- **不具合**: SDK の動作に問題がある場合。
+- **不具合**: プレイヤーの動作に問題がある場合。
 - **要望**: 新機能や改善のアイデアがある場合。
 
-*注: SDK の使い方に関するご質問は、GitHub Issues では受け付けておりません。以下のヘルプセンターをご利用ください。*
+*注: プレイヤーの使い方に関するご質問は、GitHub Issues では受け付けておりません。以下のヘルプセンターをご利用ください。*
 
 投稿前に、同様の内容が既に報告されていないか、既存の Issue を検索してください。
 
 ### ❓ 使い方のご質問
-SDK の使い方に関するご質問、実装の相談、または他の開発者との情報共有には、公式コミュニティをご利用ください。
+プレイヤーの使い方に関するご質問、実装の相談、または他の開発者との情報共有には、公式コミュニティをご利用ください。
 
 👉 [**SpriteStudio コミュニティ**](https://spritestudio.jp/community/)
 
-### 🔒 非公開でのお問い合わせ・データの送付
+### 🔒 個別のお問い合わせ・データの送付
 非公開でのご相談、再現データ（`.sspj` プロジェクトなど）を送付いただく必要がある場合、または契約に基づくサポートが必要な場合は、公式の**ヘルプセンター**をご利用ください。
 
 👉 [**ヘルプセンター（お問い合わせフォーム）**](https://www.webtech.co.jp/help/ja/spritestudio7/inquiries/ssplayer_tool/)
