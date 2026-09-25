@@ -179,6 +179,7 @@ func _on_frame_updated(frame_no: float):
 | `find_part_index(part_name)` | パーツインデックス。アセットに無ければ `-1` |
 | `get_part_transform(part_name)` | そのパーツの現在フレームの変換（`Transform2D`。プレーヤローカルで、`flip_h` / `flip_v` / `offset` を適用済み）。パーツが不明なら単位行列 |
 | `is_part_hidden(part_name)` | そのパーツが現在フレームで hide かどうか。パーツが不明なら `false` |
+| `is_part_skinned_mesh(part_name)` | そのパーツがボーンでスキニングされるメッシュかどうか。追従先には向きません（上の注記を参照）。パーツが不明、または剛体（変形のみ）のメッシュなら `false` |
 | signal `frame_updated(frame_no: float)` | そのフレームのパーツ姿勢が確定した直後に発火する |
 
 > **一瞬の姿勢だけが要る場合**: 弾の発射位置を取るなど、常時追従させるまでもない場合は、`SpriteStudioPartAttachment2D` を置かずに `get_part_transform()` を直接呼ぶ方が簡潔です。
