@@ -187,4 +187,4 @@ Godot Engineとのネイティブな統合と高いパフォーマンスを維�
 - Rust FFI オブジェクトの安全な取り扱いに注意してください。メモリリークを防ぐため、ハンドルは必ず対応する destroy 関数（`ss_runtime_destroy`、`ss_resource_destroy`、`ss_converter_destroy`）で解放してください。
 
 ---
-本プロジェクトへの貢献は、プロジェクトの [LICENSE.md](./LICENSE.md) に同意したものとみなされます。
+本プロジェクトに貢献することで、あなたの貢献がプロジェクトの [LICENSE.md](./LICENSE.md) の下でライセンスされることに同意したものとみなされます。
