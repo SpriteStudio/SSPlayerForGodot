@@ -17,7 +17,7 @@ void register_ss_translations() {
     
     // Warnings in node 2d
     ja_translation->add_message("Assign an SSABResource to the \"ssab\" property to play an animation.", "アニメーションを再生するには、\"ssab\" プロパティに SSABResource を割り当ててください。");
-    ja_translation->add_message("Select an animation in the \"animation\" property.", "\"animation\" プロパティでアニメーションを選択してください。");
+    ja_translation->add_message("Select an animation in the \"current_animation\" property.", "\"current_animation\" プロパティでアニメーションを選択してください。");
 
     // Dock strings
     ja_translation->add_message("Add SpriteStudioPlayer2D", "SpriteStudioPlayer2Dを追加");
