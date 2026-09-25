@@ -65,3 +65,49 @@
   <meta name="twitter:title" content="{{ doc_title }}">
   <meta name="twitter:description" content="{{ og_description }}">
 {% endblock %}
+
+{#-
+  The `<link rel="alternate" hreflang>` tags. The theme emits `alt.link` as each href, which
+  would name the locale home pages as every page's translations - and since `link` here is
+  a subpath rather than a URL (see partials/alternate.html), the Japanese entry on Japanese
+  pages would resolve to /ja/ja/.
+
+  Jinja cannot replace one line of a block, so this is the theme's `site_meta` block copied
+  from Zensical 0.0.65 base.html with only the alternate links changed. Re-copy it when
+  bumping Zensical if the stock block has moved.
+
+  Each link names this same page in that locale, as an absolute URL - search engines want
+  hreflang targets fully qualified. The root shared by both locales is `site_url` minus
+  the building locale's own `link`: "" for English, "ja/" for Japanese.
+-#}
+{% block site_meta %}
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  {% if page.meta and page.meta.description %}
+    <meta name="description" content="{{ page.meta.description }}">
+  {% elif config.site_description %}
+    <meta name="description" content="{{ config.site_description }}">
+  {% endif %}
+  {% if page.meta and page.meta.author %}
+    <meta name="author" content="{{ page.meta.author }}">
+  {% elif config.site_author %}
+    <meta name="author" content="{{ config.site_author }}">
+  {% endif %}
+  {% if page.canonical_url %}
+    <link rel="canonical" href="{{ page.canonical_url }}">
+  {% endif %}
+  {% if page.previous_page %}
+    <link rel="prev" href="{{ page.previous_page.url | url }}">
+  {% endif %}
+  {% if page.next_page %}
+    <link rel="next" href="{{ page.next_page.url | url }}">
+  {% endif %}
+  {%- set own = config.extra.alternate | selectattr("lang", "equalto", config.theme.language) | first -%}
+  {%- set site_root = config.site_url[:config.site_url | length - own.link | length] -%}
+  {% for alt in config.extra.alternate %}
+    <link rel="alternate" href="{{ site_root ~ alt.link ~ page.url }}" hreflang="{{ alt.lang }}">
+  {% endfor %}
+  {% set href = config.theme.favicon | d("assets/images/favicon.png") %}
+  <link rel="icon" href="{{ href | url }}">
+  <meta name="generator" content="{{ generator }}">
+{% endblock %}

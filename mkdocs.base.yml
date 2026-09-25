@@ -129,6 +129,8 @@ extra:
   # a full URL -- overrides/partials/alternate.html rebuilds the href from it plus the
   # current page, so switching language keeps the reader on the same page. `site_root_prefix`
   # is the other half of that calculation and lives in the locale configs.
+  #
+  # overrides/main.html builds the page head's hreflang links from the same `link`s.
   alternate:
     - name: English
       link: ""
