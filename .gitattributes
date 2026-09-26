@@ -1,0 +1,75 @@
+# Auto detect text files and perform LF normalization
+* text=auto eol=lf
+
+# Explicitly declare text files you want to always be normalized and converted
+# to native line endings on checkout.
+*.c text
+*.cpp text
+*.h text
+*.hpp text
+*.cs text
+*.rs text
+*.md text
+*.xml text
+*.yml text
+*.yaml text
+*.json text
+*.toml text
+*.html text
+*.css text
+*.js text
+*.ts text
+*.sh text eol=lf
+*.ps1 text eol=crlf
+
+# SpriteStudio Project Files (XML-based)
+*.sspj text eol=crlf
+*.ssae text eol=crlf
+*.ssce text eol=crlf
+*.ssee text eol=crlf
+*.ssse text eol=crlf
+*.ssqe text eol=crlf
+
+# Binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.mp3 binary
+*.wav binary
+*.ogg binary
+*.flac binary
+*.aiff binary
+*.aac binary
+
+# SpriteStudio Binary Files
+*.ssab binary
+*.ssqb binary
+
+# Fonts
+*.ttf binary
+*.otf binary
+*.woff binary
+*.woff2 binary
+
+# Archive files
+*.zip binary
+*.tar binary
+*.gz binary
+*.tgz binary
+*.rar binary
+*.7z binary
+
+# Build artifacts
+*.dll binary
+*.so binary
+*.dylib binary
+*.lib binary
+*.a binary
+*.o binary
+*.obj binary
+*.exe binary
+*.wasm binary
+*.rlib binary
+*.rmeta binary
