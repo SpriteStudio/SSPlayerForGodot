@@ -10,7 +10,7 @@ This is highly useful when you want to integrate the conversion process into you
 The conversion from a SpriteStudio project (`.sspj`) to Godot animation binaries (`.ssab` / `.ssqb`) is handled by a standalone command-line tool called `ssconverter-cli`, which is included in the SDK (the built-in editor importer also calls this tool under the hood).
 
 > [!NOTE]
-> The `ssconverter-cli` binary is **only distributed with the SpriteStudio-SDK releases**. It is **not** bundled with the SSPlayerForGodot GDExtension package (`addons/spritestudio/`), so download it separately from the SDK side when you need the CLI.
+> The `ssconverter-cli` binary is **only distributed with the SpriteStudio-SDK releases**. It is **not** bundled with the SpriteStudio Player for Godot GDExtension package (`addons/spritestudio/`), so download it separately from the SDK side when you need the CLI.
 
 ### 1. Obtaining the Tool
 

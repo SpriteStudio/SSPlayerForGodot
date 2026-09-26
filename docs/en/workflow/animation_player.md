@@ -1,6 +1,6 @@
 # 🎞️ Integration with AnimationPlayer (Cinematics and State Machines)
 
-By combining SSPlayer with Godot's standard `AnimationPlayer`, you can integrate SpriteStudio animation playback with Godot's powerful timeline and state machine features.
+By combining `SpriteStudioPlayer2D` with Godot's standard `AnimationPlayer`, you can integrate SpriteStudio animation playback with Godot's powerful timeline and state machine features.
 
 This enables you to visually perform tasks such as **synchronizing attack hitboxes, triggering sound effects (SE), shaking the camera, and creating cutscenes** without writing complex code.
 
@@ -8,7 +8,7 @@ This enables you to visually perform tasks such as **synchronizing attack hitbox
 
 ## 1. Generating an Animation Library
 
-To control SSPlayer with an `AnimationPlayer`, you must first convert all animations (e.g., walk, attack) contained in the target `.ssab` file into an `AnimationLibrary` (`_anims.res`) that Godot can read.
+To control `SpriteStudioPlayer2D` with an `AnimationPlayer`, you must first convert all animations (e.g., walk, attack) contained in the target `.ssab` file into an `AnimationLibrary` (`_anims.res`) that Godot can read.
 
 1. In the Godot editor, select the `.ssab` file from the FileSystem dock.
 2. Click the **"Gen AnimLib"** button at the bottom of the Inspector.
@@ -29,7 +29,7 @@ Here is how to apply the generated library to your scene.
    Add an `AnimationPlayer` node to the scene.
 3. **Specify the Target (Important!)**
    Select the added `AnimationPlayer` node and set its **`Root Node`** property in the Inspector to the **`SpriteStudioPlayer2D` node** from step 1.
-   *Note: Since the generated animations are configured to control the `current_animation` and `frame_no` properties of the target node itself, the Root Node must point directly to the SSPlayer node.*
+   *Note: Since the generated animations are configured to control the `current_animation` and `frame_no` properties of the target node itself, the Root Node must point directly to the `SpriteStudioPlayer2D` node.*
 4. **Load the Library**
    Open the "Animation" panel at the bottom of the editor, click the "Animation" menu > **"Manage Animations..."**.
    Click the folder icon (Load Library) in the dialog that appears, and load the generated `_anims.res` file.

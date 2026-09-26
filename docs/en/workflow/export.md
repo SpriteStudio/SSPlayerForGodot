@@ -1,6 +1,6 @@
 # 📦 Exporting Your Project
 
-Once your scene plays correctly in the editor, you export it like any other Godot project (**Project → Export…**). SpriteStudioPlayer runs in exported builds on every Godot target. There are only a few plugin-specific points to know.
+Once your scene plays correctly in the editor, you export it like any other Godot project (**Project → Export…**). SpriteStudio Player for Godot runs in exported builds on every Godot target. There are only a few plugin-specific points to know.
 
 > [!IMPORTANT]
 > **Some export modes drop the generated assets.**

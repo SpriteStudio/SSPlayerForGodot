@@ -21,7 +21,7 @@ The English form has no file upload. If you need to attach a reproduction, use t
 
 Please include as much of the following as you can:
 
-- The version of SSPlayerForGodot (release tag or commit hash) and whether you use the GDExtension or custom module build.
+- The version of SpriteStudio Player for Godot (release tag or commit hash) and whether you use the GDExtension or custom module build.
 - Your Godot Engine version, platform, and export target.
 - A description of the issue and its impact.
 - Steps to reproduce, and a minimal project or data file if one is needed.
@@ -59,7 +59,7 @@ For non-security bugs and feature requests, see [SUPPORT.md](./SUPPORT.md).
 
 可能な範囲で以下をお知らせください。
 
-- SSPlayerForGodot のバージョン（リリースタグまたはコミットハッシュ）と、GDExtension 版 / カスタムモジュール版のどちらか。
+- SpriteStudio Player for Godot のバージョン（リリースタグまたはコミットハッシュ）と、GDExtension 版 / カスタムモジュール版のどちらか。
 - Godot Engine のバージョン、プラットフォーム、エクスポート先。
 - 問題の内容と影響。
 - 再現手順、および必要であれば最小構成のプロジェクトやデータファイル。

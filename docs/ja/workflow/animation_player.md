@@ -1,6 +1,6 @@
 # 🎞️ AnimationPlayer との連携 (シネマティクスとステートマシン)
 
-Godot 標準の `AnimationPlayer` と組み合わせることで、SSPlayer のアニメーション再生を Godot の強力なタイムライン機能やステートマシン機能と連携させることができます。
+Godot 標準の `AnimationPlayer` と組み合わせることで、`SpriteStudioPlayer2D` のアニメーション再生を Godot の強力なタイムライン機能やステートマシン機能と連携させることができます。
 
 これにより、**攻撃判定（Hitbox）の同期、効果音（SE）の再生タイミング、カメラの揺らし、カットシーンの作成**などが、ノーコードで視覚的に行えるようになります。
 
@@ -8,7 +8,7 @@ Godot 標準の `AnimationPlayer` と組み合わせることで、SSPlayer の�
 
 ## 1. アニメーションライブラリの生成
 
-SSPlayer を `AnimationPlayer` で制御するためには、まず対象の `.ssab` に含まれるすべてのアニメーション（walk, attack など）を Godot が読み込める `AnimationLibrary`（`_anims.res`）に変換する必要があります。
+`SpriteStudioPlayer2D` を `AnimationPlayer` で制御するためには、まず対象の `.ssab` に含まれるすべてのアニメーション（walk, attack など）を Godot が読み込める `AnimationLibrary`（`_anims.res`）に変換する必要があります。
 
 1. Godot エディタ上で、ファイルシステムから `.ssab` ファイルを選択します。
 2. インスペクタの下部にある **「Gen AnimLib (AnimationPlayer用ライブラリを生成)」** ボタンをクリックします。
