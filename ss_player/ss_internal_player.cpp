@@ -2115,8 +2115,8 @@ void SsInternalPlayer::_drive_instance_slot(InstanceChildState& state,
     // All per-slot lifecycle (transition detection, label resolution, child
     // playback config, frame stepping, child-loop detection) runs inside
     // ss_instance_slot_step against the *child* runtime context. The host
-    // is left with the side effects ssruntime cannot perform: firing the
-    // child Player's event sink on transition (via play()), and the redraw.
+    // is left with what ssruntime does not do: starting the child on a
+    // transition (play()), and the redraw.
     const ss_instance_step_result r = ss_instance_slot_step(
         state.instance_slot, info, child->runtime_ctx,
         parent_frame_no, delta_seconds, parent_looped);
@@ -2125,8 +2125,11 @@ void SsInternalPlayer::_drive_instance_slot(InstanceChildState& state,
     state.visible_this_frame = r.visible;
 
     if (r.transitioned) {
-        // Controller is already configured + playing inside step(); play()
-        // here is for its host-side side effect (onAnimationStarted callback).
+        // step() configured the child for the new key (section, direction,
+        // loop count) but did not start it. play() does: it snaps the child to
+        // the section start and clears its own slots' key memory. Without it an
+        // independent child never advances. The child has no event sink, so no
+        // animation_started is emitted for it.
         child->play();
     }
 
@@ -2596,7 +2599,7 @@ void SsInternalPlayer::_apply_per_part_uniforms(Ref<ShaderMaterial> mat, const f
 void SsInternalPlayer::_apply_partcolor_material(RenderingServer* rs, RID ci, uint32_t shader_id_hash, ss::format::BlendType ss_blend) {
     // Only Mix/Add/Sub/Mul are supported as GPU-side framebuffer blend modes
     // here; any other batch blend_type falls back to Mix at the material level
-    // (the rest of the 12 SpriteStudio blends are deferred — see ROADMAP). The
+    // (docs/en/limitations.md lists the eight that do). The
     // per-vertex CUSTOM0 still drives PartColor compositing regardless.
     ss::format::BlendType resolved = ss_blend;
     switch (ss_blend) {
