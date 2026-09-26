@@ -23,7 +23,7 @@ using namespace godot;
 
 // Built-in audio playback helper embedded in SpriteStudioPlayer2D (a plain C++
 // class, not a Node). Turns one audio event into an AudioStreamPlayer voice,
-// mirroring the SpriteStudioForUnity SpriteStudioAudioController design.
+// mirroring the SSPlayerForUnity SpriteStudioAudioController design.
 //
 // Audio is fired-and-forgotten at the moment its frame is passed. There is no
 // seek-offset sync, and playback is NOT coupled to animation pause/stop — once a

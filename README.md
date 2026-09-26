@@ -1,6 +1,6 @@
 [**English**](./README.md) | [**日本語**](./README.ja.md)
 
-# SpriteStudioPlayer for Godot
+# SpriteStudio Player for Godot
 
 **Professional 2D animations for your Godot games. A plugin that balances intuitive usability with extreme performance.**
 

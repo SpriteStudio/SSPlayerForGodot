@@ -9,7 +9,7 @@ Godot エディタの「SS Import Dock」を使った直感的なインポート
 SpriteStudio プロジェクト (`.sspj`) から Godot 用のアニメーションバイナリ (`.ssab` / `.ssqb`) への変換は、SDK に同梱されている `ssconverter-cli` という独立したコマンドラインツールを使用して行われます（エディタ内蔵のインポータも裏ではこれを呼び出しています）。
 
 > [!NOTE]
-> `ssconverter-cli` バイナリは **SpriteStudio-SDK のリリース成果物にのみ同梱** されています。SSPlayerForGodot の GDExtension パッケージ（`addons/spritestudio/`）には含まれないため、CLI を利用する場合は SDK 側から別途取得してください。
+> `ssconverter-cli` バイナリは **SpriteStudio-SDK のリリース成果物にのみ同梱** されています。SpriteStudio Player for Godot の GDExtension パッケージ（`addons/spritestudio/`）には含まれないため、CLI を利用する場合は SDK 側から別途取得してください。
 
 ### 1. ツールの取得
 

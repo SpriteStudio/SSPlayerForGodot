@@ -1,8 +1,8 @@
 # 📥 Installation
 
-Steps for getting started with SpriteStudioPlayer for Godot.
+Steps for getting started with SpriteStudio Player for Godot.
 
-## A. Use the SSPlayerForGodot GDExtension (Recommended)
+## A. Use the SpriteStudio Player for Godot GDExtension (Recommended)
 
 The shortest path to using the plugin without any build work.
 
@@ -12,7 +12,7 @@ The shortest path to using the plugin without any build work.
    * If placed correctly, `res://addons/spritestudio/spritestudio.gdextension` should exist.
 4. Restart the Godot editor and the `SpriteStudioPlayer2D` node and the SS Import Dock will become available.
 
-## B. Use a Godot Engine with the SSPlayerForGodot Custom Module
+## B. Use a Godot Engine with the SpriteStudio Player for Godot Custom Module
 
 If you want to build and use the plugin as a custom module, refer to the [Build Guide](./build.md).
 

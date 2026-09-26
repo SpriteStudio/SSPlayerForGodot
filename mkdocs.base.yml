@@ -12,7 +12,7 @@
 # same with `extra.social` and the footer grows six icons. Mappings deep-merge in both
 # tools, so scalars like `theme.language` are safe to override.
 
-site_name: SpriteStudioPlayer for Godot
+site_name: SpriteStudio Player for Godot
 site_author: "CRI Middleware Co., Ltd."
 repo_name: "cri-middleware/SSPlayerForGodot"
 repo_url: "https://github.com/cri-middleware/SSPlayerForGodot"

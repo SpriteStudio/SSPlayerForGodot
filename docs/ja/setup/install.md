@@ -1,8 +1,8 @@
 # 📥 インストール
 
-SpriteStudioPlayer for Godot を使い始めるための手順です。
+SpriteStudio Player for Godot を使い始めるための手順です。
 
-## A. SSPlayerForGodot の GDExtension を利用する (推奨)
+## A. SpriteStudio Player for Godot の GDExtension を利用する (推奨)
 
 ビルド作業なしでプラグインを利用できる最短の手順です。
 
@@ -12,7 +12,7 @@ SpriteStudioPlayer for Godot を使い始めるための手順です。
    * 正しく配置されると、`res://addons/spritestudio/spritestudio.gdextension` が存在する状態になります。
 4. Godot エディタを再起動すると `SpriteStudioPlayer2D` ノードや SS Import Dock が利用可能になります。
 
-## B. SSPlayerForGodot のカスタムモジュールを組み込んだ Godot Engine を利用する
+## B. SpriteStudio Player for Godot のカスタムモジュールを組み込んだ Godot Engine を利用する
 
 カスタムモジュールとしてビルドして利用する場合は、[ビルドガイド](./build.md) を参照してください。
 
