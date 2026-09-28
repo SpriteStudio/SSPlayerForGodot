@@ -2,7 +2,7 @@
 
 [← Back to documentation index](../index.md)
 
-Converting a `.sspj` produces several files in the output folder. This page covers what you need in order to decide **how much of that has to travel together** when you export or ship a `.pck`: how the files depend on each other, **why the Godot editor cannot see those dependencies**, and what a reconvert overwrites and what it leaves alone.
+Converting a `.sspj` produces several files in the output folder. This page covers what you need in order to decide **how much of that has to travel together** when you export or ship a `.pck`: how the files depend on each other, what the Godot editor does with those dependencies, and what a reconvert overwrites and what it leaves alone.
 
 For the import procedure itself see [Asset Import and Editor Integration](usage_asset_pipeline.md); for per-target export settings see [Exporting Your Project](export.md).
 
@@ -95,9 +95,11 @@ graph LR
 - Image paths may contain a subfolder (`font/RoundedMPlus_0.png` in the example above). Move them with their position relative to the `.ssab` intact.
 - Conversely, there is no equivalent of the Addressables problem where a dependency you did not register explicitly is duplicated into every bundle. One copy at the expected `res://` path is seen by everyone referencing it.
 
-> [!IMPORTANT]
-> **The Godot editor does not know about these dependencies.**
-> `SSABResource` does not report a dependency list, so the editor filesystem's dependency cache is **empty** for a `.ssab`. Anything that relies on the dependency graph comes up empty — moving or deleting files from the FileSystem dock, and the export modes below.
+> [!NOTE]
+> **The Godot editor tracks these dependencies.**
+> A `.ssab` reports all four as its dependencies, so whatever reads the editor's dependency graph sees them: the dependency-based export modes below, and the FileSystem dock, which lists the `.ssab` among a file's owners and warns before you delete a file it still needs.
+>
+> It cannot follow a move. The names are written into the `.ssab` at conversion, so moving an image or a sound away from its `.ssab` still breaks resolution, and the dock does not warn about it. Move the output folder as a whole.
 
 ---
 
@@ -109,12 +111,11 @@ graph LR
 |---|---|
 | **Export all resources in the project** (default) | ✅ Includes every file in the project, so the `.ssab` files, images and audio all ship |
 | **Export all resources in the project except resources checked below** | ✅ Same, minus what you excluded explicitly |
-| **Export selected scenes (and dependencies)** | ⚠️ **This mode collects by walking dependencies.** The `.ssab` ships because a scene references it, but **the images, the audio and the Instance target `.ssab` do not** |
-| **Export selected resources (and dependencies)** | ⚠️ Same as above |
+| **Export selected scenes (and dependencies)** | ✅ The `.ssab` ships because a scene references it, and its images, audio and Instance target `.ssab` ship as its dependencies |
+| **Export selected resources (and dependencies)** | ✅ Same as above |
 
 > [!WARNING]
-> With a dependency-based mode, **the export succeeds, the app launches, and only the artwork is missing.**
-> A texture that fails to resolve does not stop playback — the parts are simply drawn untextured. That is the kind of breakage you only notice by looking at the screen, so either stay on the default **Export all resources in the project**, or, if you do use a dependency-based mode, check that the output folder is not dropped by your exclude filter.
+> **A file that does not ship does not stop the app.** A texture that fails to resolve leaves its parts drawn untextured, and a sound that fails to resolve is silent. That is the kind of breakage you only notice by looking and listening, so if you narrow an export with an exclude filter, check that it does not drop the output folder's images or `sound/`.
 
 ---
 
