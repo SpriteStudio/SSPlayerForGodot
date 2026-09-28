@@ -34,13 +34,7 @@ using namespace godot;
 #include "editor/settings/editor_settings.h"
 #include "scene/gui/button.h"
 #include "scene/gui/dialogs.h"
-#if VERSION_MAJOR >= 4
-    #if VERSION_MINOR >= 5
-    #include "editor/file_system/editor_file_system.h"
-    #else
-    #include "editor/editor_file_system.h"
-    #endif
-#endif
+#include "editor/file_system/editor_file_system.h"
 #endif
 
 #include "ssconverter.h"

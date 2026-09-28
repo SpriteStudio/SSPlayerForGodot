@@ -11,9 +11,6 @@
   #include <godot_cpp/core/version.hpp>
   #include <godot_cpp/variant/string_name.hpp>
   #define SNAME(x) ([]() -> const godot::StringName & { static const godot::StringName *_ss_sname = new godot::StringName(x); return *_ss_sname; }())
-  #define EMPTY(x) ((x).is_empty())
-  #define VARIANT_FLOAT Variant::FLOAT
-  #define NOTIFY_PROPERTY_LIST_CHANGED() notify_property_list_changed()
   #define SS_FILE_EXISTS(x) FileAccess::file_exists(x)
   #define RS_VIEWPORT_UPDATE_ONCE RenderingServer::VIEWPORT_UPDATE_ONCE
   #define RS_VIEWPORT_CLEAR_ALWAYS RenderingServer::VIEWPORT_CLEAR_ALWAYS
@@ -26,6 +23,13 @@
   #include "core/string/string_name.h"
   #include "core/object/class_db.h"
   #include "core/object/callable_mp.h"
+  #if VERSION_MAJOR < 4 || (VERSION_MAJOR == 4 && VERSION_MINOR < 7)
+    #error The custom module needs Godot 4.7 or later.
+  #endif
+  #ifndef SNAME
+    #define SNAME(x) StringName(x)
+  #endif
+  #define SS_FILE_EXISTS(x) FileAccess::exists(x)
   #define RS_VIEWPORT_UPDATE_ONCE RSE::VIEWPORT_UPDATE_ONCE
   #define RS_VIEWPORT_CLEAR_ALWAYS RSE::VIEWPORT_CLEAR_ALWAYS
   #define RS_PRIMITIVE_TRIANGLES RSE::PRIMITIVE_TRIANGLES
@@ -35,18 +39,6 @@
   namespace CoreBind { class ResourceLoader; class ResourceSaver; }
   using SsResourceLoader = CoreBind::ResourceLoader;
   using SsResourceSaver = CoreBind::ResourceSaver;
-  #if VERSION_MAJOR>=4
-    #define	GD_V4
-    #ifndef SNAME
-      #define SNAME(x) StringName(x)
-    #endif
-    #define EMPTY(x) ((x).is_empty())
-    #define VARIANT_FLOAT Variant::FLOAT
-    #define NOTIFY_PROPERTY_LIST_CHANGED() notify_property_list_changed()
-    #define SS_FILE_EXISTS(x) FileAccess::exists(x)
-  #else
-    #error not supported godot version.
-  #endif
 #endif
 
 #endif // SS_MACROS_H

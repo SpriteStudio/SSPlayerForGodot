@@ -60,15 +60,9 @@ public:
     void _edit(Object *p_object) override;
     void _make_visible(bool p_visible) override;
 #else
-#if VERSION_MAJOR > 3 && VERSION_MINOR > 3
     String get_plugin_name() const override {
         return "SpriteStudioEditorPlugin";
     }
-#else
-    String get_name() const override {
-        return "SpriteStudioEditorPlugin";
-    }
-#endif
 
     bool handles(Object *p_object) const override;
     void edit(Object *p_object) override;
