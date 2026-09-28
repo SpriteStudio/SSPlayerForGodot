@@ -195,6 +195,13 @@ public:
     void setRootVisible(bool p_visible);
     void setRootModulate(const Color& p_modulate);
 
+    // The owning CanvasItem's texture filter and repeat (resolved, so never
+    // "parent node": 0 is the viewport's default) and its light mask. Godot
+    // resolves these per node, and a canvas item created on the server starts
+    // at the defaults, so every canvas item this player draws on takes them from
+    // here -- Instance children included.
+    void setCanvasItemDefaults(int p_texture_filter, int p_texture_repeat, uint32_t p_light_mask);
+
     // Effective local-unit -> on-screen-pixel scale of the owning Node2D
     // (global transform composed with the viewport/camera transform). The
     // mask coverage pass uses it to size the coverage target to the mask's
@@ -356,6 +363,12 @@ private:
     Array _surface_arrays;
     Array _surface_empty_blend_shapes;
     Dictionary _surface_empty_lods;
+    // State handed down by setCanvasItemDefaults, applied to each canvas item as
+    // it is created and to all of them when it changes.
+    int _texture_filter = 0;
+    int _texture_repeat = 0;
+    uint32_t _light_mask = 1;
+    void _apply_canvas_item_defaults(RID p_ci) const;
     // The PartColor stream as CUSTOM1 floats, converted from the caller's colours.
     SsFloatArray _surface_custom1;
     // Per-batch canvas_item pool. Index == draw_batches[i] order. Recyclable

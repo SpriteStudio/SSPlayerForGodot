@@ -314,6 +314,7 @@ RID SsInternalPlayer::_ensure_batch_ci(int batch_idx) {
     while (_batch_canvas_items.size() <= batch_idx) {
         RID ci = rs->canvas_item_create();
         rs->canvas_item_set_parent(ci, _root_ci);
+        _apply_canvas_item_defaults(ci);
         _batch_canvas_items.push_back(ci);
     }
     return _batch_canvas_items[batch_idx];
@@ -727,6 +728,41 @@ void SsInternalPlayer::setRootVisible(bool p_visible) {
 void SsInternalPlayer::setRootModulate(const Color& p_modulate) {
     RenderingServer* rs = RenderingServer::get_singleton();
     rs->canvas_item_set_modulate(_root_ci, p_modulate);
+}
+
+void SsInternalPlayer::_apply_canvas_item_defaults(RID p_ci) const {
+    RenderingServer* rs = RenderingServer::get_singleton();
+    rs->canvas_item_set_default_texture_filter(p_ci, (RS_CANVAS_ITEM_TEXTURE_FILTER)_texture_filter);
+    rs->canvas_item_set_default_texture_repeat(p_ci, (RS_CANVAS_ITEM_TEXTURE_REPEAT)_texture_repeat);
+    rs->canvas_item_set_light_mask(p_ci, _light_mask);
+}
+
+void SsInternalPlayer::setCanvasItemDefaults(int p_texture_filter, int p_texture_repeat, uint32_t p_light_mask) {
+    if (_texture_filter == p_texture_filter && _texture_repeat == p_texture_repeat && _light_mask == p_light_mask) {
+        return;
+    }
+    _texture_filter = p_texture_filter;
+    _texture_repeat = p_texture_repeat;
+    _light_mask = p_light_mask;
+    // Pooled canvas items keep what was set on them, so the ones that exist are
+    // set here and new ones as they are created. The mask coverage items are left
+    // alone: they draw into their own viewport, which nothing lights.
+    for (int i = 0; i < _batch_canvas_items.size(); i++) {
+        _apply_canvas_item_defaults(_batch_canvas_items[i]);
+    }
+    for (int i = 0; i < _per_part_canvas_items.size(); i++) {
+        _apply_canvas_item_defaults(_per_part_canvas_items[i]);
+    }
+    for (const EffectSlotState& slot : _effect_slots) {
+        for (const RID& e_ci : slot.emitter_cis) {
+            _apply_canvas_item_defaults(e_ci);
+        }
+    }
+    for (uint32_t i = 0; i < _instance_children.size(); i++) {
+        if (_instance_children[i].player) {
+            _instance_children[i].player->setCanvasItemDefaults(p_texture_filter, p_texture_repeat, p_light_mask);
+        }
+    }
 }
 
 void SsInternalPlayer::setCellMapOverrideTexture(uint32_t cellmap_name_hash, const Ref<Texture2D>& texture) {
@@ -1961,6 +1997,8 @@ void SsInternalPlayer::_setup_instance_children() {
 
         SsInternalPlayer* child = memnew(SsInternalPlayer);
         child->setParentDriven(true);
+        // Before the resource: binding it draws, and that creates canvas items.
+        child->setCanvasItemDefaults(_texture_filter, _texture_repeat, _light_mask);
         child->setSubFrameEnabled(_sub_frame_enabled);
         // Hand the child the SSAB that actually contains the referenced
         // animation — may be `_ssabRes` itself or an external sibling.
@@ -2294,6 +2332,7 @@ void SsInternalPlayer::_emit_effect_slot(const DrawFrame& f, RID ci, int p_idx, 
         while ((uint32_t)slot.emitter_cis.size() <= drawn_cis) {
             RID e_ci = f.rs->canvas_item_create();
             f.rs->canvas_item_set_parent(e_ci, ci);
+            _apply_canvas_item_defaults(e_ci);
             slot.emitter_cis.push_back(e_ci);
         }
 
@@ -2513,6 +2552,7 @@ RID SsInternalPlayer::_acquire_per_part_canvas_item() {
     if (_per_part_canvas_items_in_use >= _per_part_canvas_items.size()) {
         RID ci = rs->canvas_item_create();
         rs->canvas_item_set_parent(ci, _root_ci);
+        _apply_canvas_item_defaults(ci);
         _per_part_canvas_items.push_back(ci);
     }
     RID ci = _per_part_canvas_items[_per_part_canvas_items_in_use++];
