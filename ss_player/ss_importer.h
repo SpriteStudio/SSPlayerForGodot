@@ -39,16 +39,11 @@ public:
   // filesystem sync is still waiting on the editor scan).
   bool is_importing() const { return _is_scanning || _is_converting || _awaiting_collision || _fs_syncing; }
 
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
   void queue_import(const PackedStringArray &p_sspj_files, const String &p_output_dir);
   // Recursively scan each directory in p_dirs for .sspj files, then batch-import
   // the discovered files together with p_loose_sspj into p_output_dir. The scan
   // runs asynchronously in libssconverter and is cancellable / budgeted.
   void queue_scan_and_import(const PackedStringArray &p_dirs, const PackedStringArray &p_loose_sspj, const String &p_output_dir);
-#else
-  void queue_import(const Vector<String> &p_sspj_files, const String &p_output_dir);
-  void queue_scan_and_import(const Vector<String> &p_dirs, const Vector<String> &p_loose_sspj, const String &p_output_dir);
-#endif
 
   // Reconverts the given sspj files into their respective destination
   // directories without appending the sspj stem as a sub-folder. Both arrays
