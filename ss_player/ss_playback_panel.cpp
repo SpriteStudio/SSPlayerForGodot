@@ -247,12 +247,22 @@ void SSPlaybackPanel::_refresh_from_player() {
     _frame_spin->set_max(max_frame);
     _total_label->set_text("/ " + String::num_int64(max_frame));
 
-    _speed_spin->set_value(_player->getSpeedScale());
-    _loop_btn->set_pressed(_player->getLoopCount() != 1);
-
     _updating = false;
 
+    _sync_settings();
     _sync_playhead();
+}
+
+void SSPlaybackPanel::_sync_settings() {
+    const float speed = _player->getSpeedScale();
+    const bool looping = _player->getLoopCount() != 1;
+    if (_speed_spin->get_value() == speed && _loop_btn->is_pressed() == looping) {
+        return;
+    }
+    _updating = true;
+    _speed_spin->set_value(speed);
+    _loop_btn->set_pressed(looping);
+    _updating = false;
 }
 
 void SSPlaybackPanel::_sync_playhead() {
@@ -275,8 +285,14 @@ void SSPlaybackPanel::_notification(int p_what) {
             set_process_shortcut_input(true);
             break;
         case NOTIFICATION_PROCESS:
+            if (!_player) {
+                break;
+            }
+            // Speed and Loop show node properties that the inspector, an undo
+            // or a script can change without telling the panel.
+            _sync_settings();
             // Follow the playhead while the node animates in the editor.
-            if (_player && _player->isPlaying()) {
+            if (_player->isPlaying()) {
                 _sync_playhead();
             }
             break;
