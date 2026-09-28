@@ -20,6 +20,14 @@ Both part types still occupy their place in the draw order, so an animation that
 
 The plugin draws straight to Godot's `RenderingServer` canvas item with no intermediate render target, so a part is limited to the blend modes that map onto a `CanvasItemMaterial`. A part set to an unsupported mode still draws — it just composites as ordinary alpha blending instead of the authored mode. If your artwork relies on one of the other modes, check it in Godot before shipping.
 
+## Masks
+
+> [!WARNING]
+> - **At most 96 masks at once in one animation**, counting both mask parts and parts that write a clipping mask (`writeMask`), and counting the animations it plays through instance parts. An instance's masks count again every time the instance is placed; a hidden mask, or one whose mask value is 0, does not count. Past 96, the rest are ignored and a warning is printed once — restructure the data rather than raising the count.
+> - **Effect parts are not clipped by masks.**
+
+Godot's 2D canvas has no stencil buffer, so the plugin draws every mask of an animation — its instances included — into one offscreen bitmap, one bit per mask. Up to 24 fit at full resolution; past that the bitmap is split into two or four tiles of the same size, so an animation with many masks gets coarser mask edges rather than taking more memory.
+
 ## Platforms & Export
 
 The plugin ships in two build variants — **GDExtension** and **custom module** — and both can be exported to every Godot target. Build and execution are actively verified on **Windows / macOS**; the other targets are supported but less frequently exercised. See [Build Guide](setup/build.md) for the export flow of each.
