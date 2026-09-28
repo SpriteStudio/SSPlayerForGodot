@@ -6,6 +6,7 @@
 #include <godot_cpp/godot.hpp>
 using namespace godot;
 #else
+#include "core/core_bind.h"
 #include "core/object/class_db.h"
 #endif
 
@@ -57,17 +58,10 @@ void register_ss_player_types() {
   ssqb_loader = memnew(SSQBResourceFormatLoader);
   ssqb_saver = memnew(SSQBResourceFormatSaver);
 
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
-  ResourceLoader::get_singleton()->add_resource_format_loader(ssab_loader);
-  ResourceSaver::get_singleton()->add_resource_format_saver(ssab_saver);
-  ResourceLoader::get_singleton()->add_resource_format_loader(ssqb_loader);
-  ResourceSaver::get_singleton()->add_resource_format_saver(ssqb_saver);
-#else
-  ResourceLoader::add_resource_format_loader(ssab_loader);
-  ResourceSaver::add_resource_format_saver(ssab_saver);
-  ResourceLoader::add_resource_format_loader(ssqb_loader);
-  ResourceSaver::add_resource_format_saver(ssqb_saver);
-#endif
+  SsResourceLoader::get_singleton()->add_resource_format_loader(ssab_loader, false);
+  SsResourceSaver::get_singleton()->add_resource_format_saver(ssab_saver, false);
+  SsResourceLoader::get_singleton()->add_resource_format_loader(ssqb_loader, false);
+  SsResourceSaver::get_singleton()->add_resource_format_saver(ssqb_saver, false);
 
   GDREGISTER_CLASS(SpriteStudioAudioBackend);
   GDREGISTER_CLASS(SpriteStudioPlayer2D);
@@ -76,36 +70,20 @@ void register_ss_player_types() {
 
 void unregister_ss_player_types() {
   if (ssab_loader.is_valid()) {
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
-    ResourceLoader::get_singleton()->remove_resource_format_loader(ssab_loader);
-#else
-    ResourceLoader::remove_resource_format_loader(ssab_loader);
-#endif
+    SsResourceLoader::get_singleton()->remove_resource_format_loader(ssab_loader);
     ssab_loader.unref();
   }
   if (ssab_saver.is_valid()) {
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
-    ResourceSaver::get_singleton()->remove_resource_format_saver(ssab_saver);
-#else
-    ResourceSaver::remove_resource_format_saver(ssab_saver);
-#endif
+    SsResourceSaver::get_singleton()->remove_resource_format_saver(ssab_saver);
     ssab_saver.unref();
   }
 
   if (ssqb_loader.is_valid()) {
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
-    ResourceLoader::get_singleton()->remove_resource_format_loader(ssqb_loader);
-#else
-    ResourceLoader::remove_resource_format_loader(ssqb_loader);
-#endif
+    SsResourceLoader::get_singleton()->remove_resource_format_loader(ssqb_loader);
     ssqb_loader.unref();
   }
   if (ssqb_saver.is_valid()) {
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
-    ResourceSaver::get_singleton()->remove_resource_format_saver(ssqb_saver);
-#else
-    ResourceSaver::remove_resource_format_saver(ssqb_saver);
-#endif
+    SsResourceSaver::get_singleton()->remove_resource_format_saver(ssqb_saver);
     ssqb_saver.unref();
   }
 }
