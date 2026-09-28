@@ -91,9 +91,9 @@ SpriteStudio Player for Godot leverages Godot's `CanvasItem` API and `Node2D` pa
   one coverage bitmap, and places each on a sequence that numbers the whole tree in draw order: a pure mask
   holds from the start of its own animation up to itself, a clipping writer from itself to the end of the
   tree. A mask inside a sub-animation now clips that sub-animation's own parts, alongside the caller's
-  masks, and a caller that masks nothing leaves its sub-animations to their own masks whatever the instance
-  part's `mask_influence` / `visible_inside_mask` say — which is what SpriteStudio 7.5 draws
-  (`InstancePropagationTired3`).
+  masks. An instance part's `mask_influence` / `visible_inside_mask` compose into its sub-animation one
+  level deep, whether or not the caller masks — which is what SpriteStudio 7.5 draws
+  (`InstancePropagationTired3` and its Hole-hidden / Hole-removed variants).
 - **Limit**: 96 writers across the tree (24 per tile of the bitmap, up to 4 tiles in the same texture, so a
   tree past 24 trades coverage resolution rather than memory). An instance counts its writers each time it
   is placed; past 96 the rest are ignored with a warning.

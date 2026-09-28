@@ -1668,14 +1668,15 @@ SsInternalPlayer::_compose_mask_context(const ss::format::PartData* pd) const {
 
 SsInternalPlayer::InheritedMaskContext
 SsInternalPlayer::_child_mask_context(const ss::format::PartData* pd) const {
-    // A caller that is not masking composes nothing: its sub-animation keeps its
-    // own masks, even under a mask_influence == 0 or visible_inside_mask
-    // instance part, exactly as if it were drawn on its own.
-    if (!pd || !_mask_active()) return InheritedMaskContext();
-    InheritedMaskContext c = _compose_mask_context(pd);
-    // Whether the caller's mask reaches the sub-animation. mask_write takes part
-    // here only; each part inside is still judged on its composed influence.
-    c.masked = (pd->mask_influence() && _inherited_mask.influence) || pd->mask_write();
+    InheritedMaskContext c;
+    if (!pd) return c;
+    // Only the instance part's own flags reach the sub-animation — not what this
+    // player itself inherited — and they do whether or not anything above masks
+    // (SpriteStudio 7.5 on InstancePropagationTired3).
+    c.influence = pd->mask_influence();
+    c.visible_inside = pd->visible_inside_mask();
+    // Whether a mask from here or above can reach the sub-animation's parts.
+    c.masked = _mask_active();
     return c;
 }
 

@@ -579,7 +579,7 @@ private:
     // `_build_mask_writers` each frame from draw_order, static PartData, and the
     // per-frame mask / hide that say whether a writer writes at all.
     // `op_invert` is the writer's effective mask_influence — its own ANDed with
-    // the influence handed down the instance chain (false=increment / true=
+    // its instance part's (false=increment / true=
     // invert), so a writer inside a mask_influence==0 instance lands on the
     // union (counter) plane. `is_clipping` selects the scope direction: a pure
     // mask (PartTypeMask, or a draw_as_mask part) masks what is drawn BEFORE it,
@@ -761,19 +761,21 @@ private:
     void _set_mask_uv_uniform(Ref<ShaderMaterial> mat, const Transform2D& local_to_uv);
 
     // ---- Instance-hierarchy mask composition --------------------------------
-    // A mask reaching an instance part applies to the whole sub-animation, but
-    // the calling part's settings do NOT replace the callee's: they compose.
-    // `mask_influence` chains with AND, `visible_inside_mask` with OR. The
-    // identity is (influence = true, visible_inside = false), so a top-level
-    // animation resolves to each part's own flags. `mask_write` stays out of the
-    // composition — writing a mask is a local fact, not something descendants
-    // inherit. A caller that is not masking at all hands down the identity, so
-    // a sub-animation under an unmasked caller keeps its own masks whatever the
-    // instance part says.
+    // The instance part's settings do NOT replace a sub-animation part's: they
+    // compose — `mask_influence` with AND, `visible_inside_mask` with OR. Only
+    // the instance part's own flags take part, one level deep: what the caller
+    // itself inherited from further up does not reach the sub-animation, and
+    // the flags apply whether or not anything above masks at all. That is what
+    // SpriteStudio 7.5 draws for InstancePropagationTired3 (a mask_influence==0
+    // instance leaves its own parts unmasked, while the parts of the instances
+    // inside it are still judged on their own instance parts). The identity is
+    // (influence = true, visible_inside = false), so a top-level animation
+    // resolves to each part's own flags. `mask_write` stays out of the
+    // composition — writing a mask is a local fact.
     struct InheritedMaskContext {
-        bool masked = false;         // the instance part is a target of the caller's mask
-        bool influence = true;       // AND-chain of mask_influence
-        bool visible_inside = false; // OR-chain of visible_inside_mask
+        bool masked = false;         // a mask from the caller or above can reach this player
+        bool influence = true;       // the instance part's mask_influence
+        bool visible_inside = false; // the instance part's visible_inside_mask
         bool operator==(const InheritedMaskContext& o) const {
             return masked == o.masked && influence == o.influence && visible_inside == o.visible_inside;
         }
@@ -786,9 +788,8 @@ private:
     // Compose `_inherited_mask` with the part's own flags. Used for the parts of
     // an instance child, and (via the identity) for a top-level player's own.
     InheritedMaskContext _compose_mask_context(const ss::format::PartData* pd) const;
-    // The context an instance part hands to its sub-animation: the composition
-    // above plus whether the instance part is a target at all, or the identity
-    // when this player is not masking.
+    // The context an instance part hands to its sub-animation: the instance
+    // part's own flags, plus whether a mask from here or above can reach it.
     InheritedMaskContext _child_mask_context(const ss::format::PartData* pd) const;
     // True when the part tree holds any mask writer. Static per resource (the
     // part tree is pack-level, so selecting another animation cannot change it),
