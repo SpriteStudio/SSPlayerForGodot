@@ -1,11 +1,13 @@
 #include "ss_player_node_2d.h"
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
+#include <godot_cpp/classes/audio_server.hpp>
 #include <godot_cpp/classes/engine.hpp>
 #include <godot_cpp/classes/viewport.hpp>
 #else
 #include "core/config/engine.h"
 #include "scene/main/viewport.h"
+#include "servers/audio/audio_server.h"
 #endif
 
 class SpriteStudioPlayer2D::_SignalSink : public SsPlayerEventSink {
@@ -48,6 +50,14 @@ SpriteStudioPlayer2D::SpriteStudioPlayer2D() {
     _internal->setEventSink(_sink);
     _internal->setSkipFrames(true);
     _internal->setSubFrameEnabled(false);
+    // A bus added, removed or renamed in the Audio panel changes the
+    // `audio_bus` list, as it does AudioStreamPlayer's. Only the inspector reads
+    // that list, so only the editor listens.
+    if (Engine::get_singleton()->is_editor_hint()) {
+        const Callable refresh(this, "notify_property_list_changed");
+        AudioServer::get_singleton()->connect("bus_layout_changed", refresh);
+        AudioServer::get_singleton()->connect("bus_renamed", refresh.unbind(3));
+    }
 }
 
 SpriteStudioPlayer2D::~SpriteStudioPlayer2D() {
@@ -336,7 +346,7 @@ void SpriteStudioPlayer2D::_handle_audio(const Dictionary& payload) {
     if (_audio_controller == nullptr) {
         _audio_controller = memnew(SsAudioController(this));
     }
-    _audio_controller->play(payload, getSSABResource(), _audio_backend.ptr(), _audio_volume);
+    _audio_controller->play(payload, getSSABResource(), _audio_backend.ptr(), _audio_volume, _audio_bus);
 }
 
 void SpriteStudioPlayer2D::set_play_audio(bool p_enabled) {
@@ -348,6 +358,11 @@ bool SpriteStudioPlayer2D::is_play_audio() const { return _play_audio; }
 
 void SpriteStudioPlayer2D::set_audio_volume(float p_volume) { _audio_volume = p_volume; }
 float SpriteStudioPlayer2D::get_audio_volume() const { return _audio_volume; }
+
+// Taken by each voice as it starts, as the volume is, so a change reaches the
+// next sound rather than the ones already playing.
+void SpriteStudioPlayer2D::set_audio_bus(const StringName& p_bus) { _audio_bus = p_bus; }
+StringName SpriteStudioPlayer2D::get_audio_bus() const { return _audio_bus; }
 
 void SpriteStudioPlayer2D::set_audio_backend(const Ref<SpriteStudioAudioBackend>& p_backend) {
     _audio_backend = p_backend;
@@ -554,6 +569,8 @@ void SpriteStudioPlayer2D::_bind_methods() {
     ClassDB::bind_method( D_METHOD( "is_play_audio" ), &SpriteStudioPlayer2D::is_play_audio );
     ClassDB::bind_method( D_METHOD( "set_audio_volume", "volume" ), &SpriteStudioPlayer2D::set_audio_volume );
     ClassDB::bind_method( D_METHOD( "get_audio_volume" ), &SpriteStudioPlayer2D::get_audio_volume );
+    ClassDB::bind_method( D_METHOD( "set_audio_bus", "bus" ), &SpriteStudioPlayer2D::set_audio_bus );
+    ClassDB::bind_method( D_METHOD( "get_audio_bus" ), &SpriteStudioPlayer2D::get_audio_bus );
     ClassDB::bind_method( D_METHOD( "set_audio_backend", "backend" ), &SpriteStudioPlayer2D::set_audio_backend );
     ClassDB::bind_method( D_METHOD( "get_audio_backend" ), &SpriteStudioPlayer2D::get_audio_backend );
 
@@ -680,6 +697,8 @@ void SpriteStudioPlayer2D::_bind_methods() {
     ADD_GROUP("Audio", "");
     ADD_PROPERTY(PropertyInfo(Variant::BOOL, "play_audio"), "set_play_audio", "is_play_audio");
     ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "audio_volume", PROPERTY_HINT_RANGE, "0,1,0.01"), "set_audio_volume", "get_audio_volume");
+    // The bus names come from the project's bus layout, in _validate_property.
+    ADD_PROPERTY(PropertyInfo(Variant::STRING_NAME, "audio_bus", PROPERTY_HINT_ENUM, ""), "set_audio_bus", "get_audio_bus");
     ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "audio_backend", PROPERTY_HINT_RESOURCE_TYPE, "SpriteStudioAudioBackend"), "set_audio_backend", "get_audio_backend");
 
     BIND_ENUM_CONSTANT(ANIMATION_PROCESS_PHYSICS);
@@ -779,6 +798,17 @@ void SpriteStudioPlayer2D::_validate_property(PropertyInfo& p_property) const {
             PackedStringArray anim_names = res->get_animation_names();
             p_property.hint_string = String(",").join(anim_names);
         }
+        return;
+    }
+
+    if (p_property.name == StringName("audio_bus")) {
+        // The list AudioStreamPlayer.bus offers: the buses of the current layout.
+        AudioServer* audio = AudioServer::get_singleton();
+        PackedStringArray buses;
+        for (int i = 0; i < audio->get_bus_count(); i++) {
+            buses.push_back(audio->get_bus_name(i));
+        }
+        p_property.hint_string = String(",").join(buses);
         return;
     }
 

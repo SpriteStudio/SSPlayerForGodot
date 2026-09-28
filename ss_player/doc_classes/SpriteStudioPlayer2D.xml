@@ -378,6 +378,9 @@
 		<member name="audio_volume" type="float" default="1.0">
 			Volume of the built-in audio playback, as a linear value in [code][0, 1][/code]. Ignored when [member audio_backend] is set.
 		</member>
+		<member name="audio_bus" type="StringName" default="&amp;&quot;Master&quot;">
+			Bus the built-in audio voices play on, chosen from the project's audio bus layout as [member AudioStreamPlayer.bus] is. A name the layout does not have plays on [code]"Master"[/code]. Taken by each voice as it starts, so a change reaches the next sound rather than the ones already playing. Ignored when [member audio_backend] is set.
+		</member>
 		<member name="audio_backend" type="SpriteStudioAudioBackend">
 			Optional override backend. When assigned, built-in playback is suppressed and each audio event is routed to the backend's [code]play_audio[/code] method instead (e.g. to drive audio middleware).
 		</member>

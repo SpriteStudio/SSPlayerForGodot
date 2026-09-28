@@ -53,7 +53,7 @@ func _ready() -> void:
 * `set_sub_frame_enabled(enabled: bool)` / `is_sub_frame_enabled() -> bool` (default: `false`)
 * `set_cellmap_texture(cellmap_name: String, texture: Texture2D)` / `get_cellmap_texture(cellmap_name: String) -> Texture2D`
 * `get_cellmap_names() -> PackedStringArray` / `get_cell_names(cellmap_name: String) -> PackedStringArray`: Names read from the assigned `SSABResource` (empty when none is assigned) — the discovery half of `set_part_cell_override()`. Also available on [`SSABResource`](resource.md) itself for an `.ssab` that is not on a player.
-* `set_play_audio(enabled: bool)` / `is_play_audio() -> bool` (default: `true`), `set_audio_volume(volume: float)` / `get_audio_volume() -> float`, `set_audio_backend(backend: SpriteStudioAudioBackend)` / `get_audio_backend() -> SpriteStudioAudioBackend`: Built-in audio playback. See [Audio](#audio) below.
+* `set_play_audio(enabled: bool)` / `is_play_audio() -> bool` (default: `true`), `set_audio_volume(volume: float)` / `get_audio_volume() -> float`, `set_audio_bus(bus: StringName)` / `get_audio_bus() -> StringName` (default: `&"Master"`), `set_audio_backend(backend: SpriteStudioAudioBackend)` / `get_audio_backend() -> SpriteStudioAudioBackend`: Built-in audio playback. See [Audio](#audio) below.
 
 ### Arguments for `set_playback_direction`
 
@@ -183,11 +183,12 @@ Audio parts play through Godot out of the box — the node owns a pooled set of 
 | --- | --- | --- | --- |
 | `play_audio` | `bool` | `true` | Whether the built-in player makes sound. `set_play_audio(false)` also stops any in-flight built-in voices |
 | `audio_volume` | `float` | `1.0` | Linear volume in `[0, 1]` for the built-in voices. Ignored while `audio_backend` is assigned |
+| `audio_bus` | `StringName` | `&"Master"` | Bus the built-in voices play on, as `AudioStreamPlayer.bus`: a name the bus layout does not have plays on `Master`. Ignored while `audio_backend` is assigned |
 | `audio_backend` | `SpriteStudioAudioBackend` | *(none)* | Replaces the built-in player entirely |
 
 ### `SpriteStudioAudioBackend`
 
-A `Resource` subclass with a single overridable method. Assigning one to `audio_backend` **suppresses the built-in playback**, `audio_volume` included, so the backend owns voice lifecycle and play counts.
+A `Resource` subclass with a single overridable method. Assigning one to `audio_backend` **suppresses the built-in playback**, `audio_volume` and `audio_bus` included, so the backend owns voice lifecycle and play counts.
 
 * `play_audio(payload: Dictionary, ssab: SSABResource, player: Node) -> void`: Called once per audio event, with the same `payload` the `audio` signal carries. The default implementation does nothing.
 
