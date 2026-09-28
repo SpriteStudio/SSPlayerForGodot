@@ -7,7 +7,6 @@
 using namespace godot;
 #else
 #include "editor/plugins/editor_plugin.h"
-#include "editor/editor_node.h"
 #endif
 
 #include "ss_canvas_drop_overlay.h"
@@ -50,11 +49,7 @@ protected:
     void _notification(int what);
 
 public:
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
-    explicit SSEditorPlugin();
-#else
-    explicit SSEditorPlugin(EditorNode *node);
-#endif
+    SSEditorPlugin();
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
     String _get_plugin_name() const override {

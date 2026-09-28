@@ -267,17 +267,10 @@ public:
     void redraw_pending_overrides();
 
 private:
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
     using SsVec2Array = PackedVector2Array;
     using SsColorArray = PackedColorArray;
     using SsIntArray = PackedInt32Array;
     using SsFloatArray = PackedFloat32Array;
-#else
-    using SsVec2Array = Vector<Vector2>;
-    using SsColorArray = Vector<Color>;
-    using SsIntArray = Vector<int>;
-    using SsFloatArray = Vector<float>;
-#endif
 
     // Root canvas item that all per-batch canvas items hang off. Created in
     // ctor, freed in dtor; transform / visibility / parent on this RID is

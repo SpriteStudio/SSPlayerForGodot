@@ -614,11 +614,7 @@ void SSImporter::_enter_fs_sync() {
 }
 
 void SSImporter::_poll_fs_sync() {
-#if defined(SPRITESTUDIO_GODOT_EXTENSION) || (VERSION_MAJOR >= 4 && VERSION_MINOR >= 6)
     auto *efs = EditorInterface::get_singleton()->get_resource_filesystem();
-#else
-    auto *efs = EditorInterface::get_singleton()->get_resource_file_system();
-#endif
     if (!efs) {
         _finish_fs_sync();
         return;

@@ -122,13 +122,8 @@ int SSABResource::get_animation_count() {
   return ss_anime_binary->animations()->size();
 }
 
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
 PackedStringArray SSABResource::get_animation_names() {
     PackedStringArray vec;
-#else
-Vector<String> SSABResource::get_animation_names() {
-    Vector<String> vec;
-#endif
     if (!is_valid()) {
         return vec;
     }
@@ -142,13 +137,8 @@ Vector<String> SSABResource::get_animation_names() {
     return vec;
 }
 
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
 PackedStringArray SSABResource::get_cellmap_names() {
     PackedStringArray vec;
-#else
-Vector<String> SSABResource::get_cellmap_names() {
-    Vector<String> vec;
-#endif
     if (!is_valid()) {
         return vec;
     }
@@ -168,13 +158,8 @@ Vector<String> SSABResource::get_cellmap_names() {
     return vec;
 }
 
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
 PackedStringArray SSABResource::get_cell_names(const String &cellmap_name) {
     PackedStringArray vec;
-#else
-Vector<String> SSABResource::get_cell_names(const String &cellmap_name) {
-    Vector<String> vec;
-#endif
     if (!is_valid()) {
         return vec;
     }

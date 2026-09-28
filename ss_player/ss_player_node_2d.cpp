@@ -142,14 +142,7 @@ PackedStringArray SpriteStudioPlayer2D::get_cellmap_names() const {
     PackedStringArray names;
     Ref<SSABResource> res = _internal->getSSABResource();
     if (res.is_null()) return names;
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
     names = res->get_cellmap_names();
-#else
-    Vector<String> src = res->get_cellmap_names();
-    for (int i = 0; i < src.size(); i++) {
-        names.push_back(src[i]);
-    }
-#endif
     return names;
 }
 
@@ -157,14 +150,7 @@ PackedStringArray SpriteStudioPlayer2D::get_cell_names(const String& cellmap_nam
     PackedStringArray names;
     Ref<SSABResource> res = _internal->getSSABResource();
     if (res.is_null()) return names;
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
     names = res->get_cell_names(cellmap_name);
-#else
-    Vector<String> src = res->get_cell_names(cellmap_name);
-    for (int i = 0; i < src.size(); i++) {
-        names.push_back(src[i]);
-    }
-#endif
     return names;
 }
 
@@ -773,11 +759,7 @@ void SpriteStudioPlayer2D::_get_property_list(List<PropertyInfo>* p_list) const 
         return;
     }
 
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
     PackedStringArray cellmap_names = res->get_cellmap_names();
-#else
-    Vector<String> cellmap_names = res->get_cellmap_names();
-#endif
     if (cellmap_names.size() == 0) {
         return;
     }
@@ -794,11 +776,7 @@ void SpriteStudioPlayer2D::_validate_property(PropertyInfo& p_property) const {
         // the bound resource. Left empty when no resource is assigned.
         Ref<SSABResource> res = _internal->getSSABResource();
         if (res.is_valid()) {
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
             PackedStringArray anim_names = res->get_animation_names();
-#else
-            Vector<String> anim_names = res->get_animation_names();
-#endif
             p_property.hint_string = String(",").join(anim_names);
         }
         return;

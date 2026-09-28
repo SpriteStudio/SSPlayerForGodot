@@ -17,7 +17,7 @@
 #include <godot_cpp/classes/project_settings.hpp>
 #include <godot_cpp/classes/resource.hpp>
 #include <godot_cpp/core/class_db.hpp>
-#include <godot_cpp/variant/utility_functions.hpp>
+#include <godot_cpp/core/print_string.hpp>
 #include <godot_cpp/classes/animation.hpp>
 #include <godot_cpp/classes/animation_library.hpp>
 #include <godot_cpp/classes/resource_saver.hpp>
@@ -156,11 +156,7 @@ void SSResourceInspectorPlugin::_on_generate_animation_library_pressed(const Str
     Ref<AnimationLibrary> library;
     library.instantiate();
 
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
     PackedStringArray anim_names = ssab->get_animation_names();
-#else
-    Vector<String> anim_names = ssab->get_animation_names();
-#endif
 
     for (int i = 0; i < anim_names.size(); i++) {
         String anim_name = anim_names[i];
@@ -213,17 +209,9 @@ void SSResourceInspectorPlugin::_on_generate_animation_library_pressed(const Str
 #endif
 
     if (err == OK) {
-#if defined(SPRITESTUDIO_GODOT_EXTENSION) || (VERSION_MAJOR >= 4 && VERSION_MINOR >= 6)
         auto *efs = EditorInterface::get_singleton()->get_resource_filesystem();
-#else
-        auto *efs = EditorInterface::get_singleton()->get_resource_file_system();
-#endif
         if (efs) efs->scan();
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
-        UtilityFunctions::print("Generated AnimationLibrary: " + out_path);
-#else
         print_line("Generated AnimationLibrary: " + out_path);
-#endif
     } else {
         ERR_PRINT("Failed to save AnimationLibrary to " + out_path);
     }
