@@ -33,27 +33,17 @@ class SSABResource : public Resource {
 protected:
   static void _bind_methods();
 
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
   PackedByteArray binary;
-#else
-  Vector<uint8_t> binary;
-#endif
 
 public:
   Error load_from_file(const String &path);
   Error save_to_file(const String &path);
   bool is_valid() const;
   int get_animation_count();
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
   PackedStringArray get_animation_names();
   PackedStringArray get_cellmap_names();
   // Cell names inside a cellmap (for the per-part cell override API).
   PackedStringArray get_cell_names(const String &cellmap_name);
-#else
-  Vector<String> get_animation_names();
-  Vector<String> get_cellmap_names();
-  Vector<String> get_cell_names(const String &cellmap_name);
-#endif
 
   uint32_t get_cellmap_hash(const String &cellmap_name);
 

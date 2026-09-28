@@ -26,7 +26,7 @@ using namespace godot;
 
 static void editor_init_callback() {
   EditorNode::get_singleton()->add_editor_plugin(
-      memnew(SSEditorPlugin(EditorNode::get_singleton())));
+      memnew(SSEditorPlugin));
 }
 #endif
 #endif

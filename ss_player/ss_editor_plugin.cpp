@@ -9,15 +9,13 @@
 #include <godot_cpp/classes/editor_interface.hpp>
 #include <godot_cpp/variant/utility_functions.hpp>
 using namespace godot;
-SSEditorPlugin::SSEditorPlugin() {
-}
 #else
 #include "editor/editor_interface.h"
-#include "editor/editor_node.h"
 #include "scene/gui/button.h"
-SSEditorPlugin::SSEditorPlugin(EditorNode *node) {
-}
 #endif
+
+SSEditorPlugin::SSEditorPlugin() {
+}
 
 // GDExtension cannot reach CanvasItemEditor, so both build shapes find its
 // viewport by class name. A rename in the engine disables the drop overlay

@@ -188,15 +188,7 @@ SSImportControl::SSImportControl() {
         SSClickableLabel *plugin_version = memnew(SSClickableLabel);
         plugin_version->set_text(String(SSPLAYER_VERSION_FULL));
         plugin_version->set_tooltip_text(String(SSPLAYER_VERSION_FULL));
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
         plugin_version->set_text_overrun_behavior(TextServer::OVERRUN_TRIM_ELLIPSIS);
-#else
-#if VERSION_MAJOR >= 4
-        plugin_version->set_text_overrun_behavior(TextServer::OVERRUN_TRIM_ELLIPSIS);
-#else
-        plugin_version->set_clip_text(true);
-#endif
-#endif
         plugin_version->set_h_size_flags(Control::SIZE_EXPAND_FILL);
         hbox_plugin->add_child(plugin_version);
 
@@ -212,15 +204,7 @@ SSImportControl::SSImportControl() {
         String text = String(v);
         clickable_label->set_text(text);
         clickable_label->set_tooltip_text(text);
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
         clickable_label->set_text_overrun_behavior(TextServer::OVERRUN_TRIM_ELLIPSIS);
-#else
-#if VERSION_MAJOR >= 4
-        clickable_label->set_text_overrun_behavior(TextServer::OVERRUN_TRIM_ELLIPSIS);
-#else
-        clickable_label->set_clip_text(true);
-#endif
-#endif
         clickable_label->set_h_size_flags(Control::SIZE_EXPAND_FILL);
         ss_converter_version_free((char *)v);
         v = nullptr;
@@ -590,11 +574,7 @@ void SSImportControl::_show_recent_context_menu(const String &p_path) {
     recent_popup->add_separator();
     recent_popup->add_icon_item(icon_remove, tr("Remove from Recent"), RECENT_MENU_REMOVE);
 
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
     Vector2i mouse = DisplayServer::get_singleton()->mouse_get_position();
-#else
-    Vector2i mouse = DisplayServer::get_singleton()->mouse_get_position();
-#endif
     recent_popup->set_position(mouse);
     recent_popup->popup();
 }
@@ -762,11 +742,7 @@ void SSImportControl::_ensure_output_dir_exists() {
     if (da->dir_exists(path)) return;
     da->make_dir_recursive(path);
 
-#if defined(SPRITESTUDIO_GODOT_EXTENSION) || (VERSION_MAJOR >= 4 && VERSION_MINOR >= 6)
     auto *efs = EditorInterface::get_singleton()->get_resource_filesystem();
-#else
-    auto *efs = EditorInterface::get_singleton()->get_resource_file_system();
-#endif
     if (!efs) return;
     // Full scan: scan_sources()/scan_changes() are mtime-driven and do not
     // reliably notice a brand-new directory (parent-mtime granularity on

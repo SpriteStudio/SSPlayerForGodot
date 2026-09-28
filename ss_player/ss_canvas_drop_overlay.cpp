@@ -45,14 +45,10 @@ Ref<SSABResource> _load_ssab(const String &p_path) {
 }
 
 // ClassDB::instantiate lets SpriteStudioPlayer2D keep its ctor private and
-// still get constructed from outside the class.
+// still get constructed from outside the class. godot-cpp returns a Variant
+// and the engine an Object *; the cast accepts either.
 SpriteStudioPlayer2D *_make_player(const String &p_name) {
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
-    Variant v = ClassDB::instantiate("SpriteStudioPlayer2D");
-    SpriteStudioPlayer2D *player = Object::cast_to<SpriteStudioPlayer2D>((Object *)v);
-#else
-    SpriteStudioPlayer2D *player = Object::cast_to<SpriteStudioPlayer2D>(ClassDB::instantiate("SpriteStudioPlayer2D"));
-#endif
+    SpriteStudioPlayer2D *player = Object::cast_to<SpriteStudioPlayer2D>((Object *)ClassDB::instantiate("SpriteStudioPlayer2D"));
     if (player == nullptr) {
         ERR_PRINT("SSCanvasDropOverlay: ClassDB::instantiate(SpriteStudioPlayer2D) returned null.");
         return nullptr;

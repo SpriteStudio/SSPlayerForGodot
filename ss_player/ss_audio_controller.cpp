@@ -1,8 +1,8 @@
 #include "ss_audio_controller.h"
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
+#include <godot_cpp/core/math.hpp>
 #include <godot_cpp/variant/array.hpp>
-#include <godot_cpp/variant/utility_functions.hpp>
 #else
 #include "core/math/math_funcs.h"
 #include "core/variant/array.h"
@@ -14,11 +14,7 @@ static float _volume_to_db(float v) {
     if (v <= 0.0f) {
         return -80.0f;
     }
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
-    return (float)UtilityFunctions::linear_to_db(v);
-#else
     return Math::linear_to_db(v);
-#endif
 }
 
 SsAudioController::~SsAudioController() {

@@ -23,11 +23,7 @@ class SSQBResource : public Resource {
 protected:
   static void _bind_methods();
 
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
   PackedByteArray binary;
-#else
-  Vector<uint8_t> binary;
-#endif
 
 public:
   Error load_from_file(const String &path);

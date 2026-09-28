@@ -58,20 +58,12 @@ void register_ss_translations() {
     ja_translation->add_message("Some files failed to import.\n\n", "一部のファイルのインポートに失敗しました。\n\n");
     ja_translation->add_message("\nPlease check the Output tab for details.", "\n詳細は出力タブを確認してください。");
 
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
     TranslationServer::get_singleton()->add_translation(ja_translation);
-#else
-    TranslationServer::get_singleton()->add_translation(ja_translation);
-#endif
 }
 
 void unregister_ss_translations() {
     if (ja_translation.is_valid()) {
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
         TranslationServer::get_singleton()->remove_translation(ja_translation);
-#else
-        TranslationServer::get_singleton()->remove_translation(ja_translation);
-#endif
         ja_translation.unref();
     }
 }
