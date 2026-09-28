@@ -25,8 +25,8 @@ using namespace godot;
 #include "editor/editor_interface.h"
 #include "editor/editor_node.h"
 #include "editor/editor_undo_redo_manager.h"
-#include "editor/scene/canvas_item_editor_plugin.h"
 #include "scene/main/node.h"
+#include "scene/main/viewport.h"
 #endif
 
 namespace {
@@ -61,17 +61,6 @@ SpriteStudioPlayer2D *_make_player(const String &p_name) {
     return player;
 }
 
-// Dispatch EditorInterface::add_root_node across Custom Module / GDExtension.
-// In GDExtension the method exists in extension_api.json but the current
-// godot-cpp header has no generated wrapper, so we call by name.
-void _call_add_root_node(EditorInterface *p_ei, Node *p_node) {
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
-    p_ei->call("add_root_node", p_node);
-#else
-    p_ei->add_root_node(p_node);
-#endif
-}
-
 // Walk the dropped paths until one loads and gets accepted as the scene root.
 // EditorInterface::add_root_node has no symmetric undo hook reachable from
 // here, so this step is committed directly; the scene is left in an unsaved
@@ -95,7 +84,7 @@ SpriteStudioPlayer2D *_promote_first_as_root(
         player->setSSABResource(ssab);
         player->set_position(p_world_pos);
 
-        _call_add_root_node(p_ei, player);
+        p_ei->add_root_node(player);
 
         Node *new_root = p_ei->get_edited_scene_root();
         if (new_root != player) {
@@ -190,23 +179,15 @@ PackedStringArray SSCanvasDropOverlay::_extract_ssab_paths(const Variant &p_data
 }
 
 Vector2 SSCanvasDropOverlay::_viewport_to_world(const Vector2 &p_at_position) const {
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
-    // CanvasItemEditor::get_canvas_transform() is not bound to ClassDB, but the
-    // SubViewport returned by EditorInterface::get_editor_viewport_2d() carries
-    // the same matrix via Viewport::set_global_canvas_transform() (see
-    // CanvasItemEditor::_draw_viewport in Godot's editor).
+    // The 2D editor writes its pan/zoom into this SubViewport's global canvas
+    // transform (CanvasItemEditor::_draw_viewport). CanvasItemEditor holds the
+    // same matrix, but GDExtension cannot reach it, so both build shapes read
+    // it here.
     SubViewport *vp = EditorInterface::get_singleton()->get_editor_viewport_2d();
     if (vp == nullptr) {
         return p_at_position;
     }
     return vp->get_global_canvas_transform().affine_inverse().xform(p_at_position);
-#else
-    CanvasItemEditor *ce = CanvasItemEditor::get_singleton();
-    if (ce == nullptr) {
-        return p_at_position;
-    }
-    return ce->get_canvas_transform().affine_inverse().xform(p_at_position);
-#endif
 }
 
 void SSCanvasDropOverlay::_do_drop(const Vector2 &p_drop_pos, const Variant &p_data) {
