@@ -37,11 +37,12 @@
 		<member name="on_part_hidden" type="int" setter="set_on_part_hidden" getter="get_on_part_hidden" enum="SpriteStudioPartAttachment2D.HiddenBehavior" default="0">
 			What to do on frames where the tracked part is hidden. See [enum HiddenBehavior].
 			This applies only to a part that exists but is hidden on the current frame. A part that is absent from the animation altogether always hides the target.
+			The attachment shows again only a target it hid itself, so a target you hide yourself stays hidden.
 		</member>
 	</members>
 	<constants>
 		<constant name="FOLLOW_ALWAYS" value="0" enum="HiddenBehavior">
-			Keep following the part's pose while it is hidden, leaving the target visible.
+			Keep following the part's pose while it is hidden, leaving the target's visibility as it is.
 		</constant>
 		<constant name="HIDE_TARGET" value="1" enum="HiddenBehavior">
 			Hide the driven target for as long as the part is hidden.
