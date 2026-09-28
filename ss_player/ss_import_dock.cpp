@@ -26,16 +26,8 @@ using namespace godot;
 #include "editor/settings/editor_settings.h"
 #include "scene/gui/dialogs.h"
 #include "scene/main/window.h"
-#if VERSION_MAJOR >= 4
 #include "servers/text/text_server.h"
-#endif
-#if VERSION_MAJOR >= 4
-    #if VERSION_MINOR >= 5
-    #include "editor/file_system/editor_file_system.h"
-    #else
-    #include "editor/editor_file_system.h"
-    #endif
-#endif
+#include "editor/file_system/editor_file_system.h"
 #endif
 
 #include "ss_clickable_label.h"

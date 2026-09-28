@@ -77,7 +77,7 @@ void SpriteStudioPlayer2D::setSSABResource(const Ref<SSABResource>& ssabRes) {
     _internal->setSSABResource(ssabRes);
     _apply_transport_settings();
 
-    NOTIFY_PROPERTY_LIST_CHANGED();
+    notify_property_list_changed();
     update_configuration_warnings();
 
     Ref<SSABResource> now = _internal->getSSABResource();
@@ -103,7 +103,7 @@ void SpriteStudioPlayer2D::_on_ssab_changed() {
             _internal->setCellMapOverrideTexture(hash, E.value);
         }
     }
-    NOTIFY_PROPERTY_LIST_CHANGED();
+    notify_property_list_changed();
     update_configuration_warnings();
 }
 
@@ -294,7 +294,7 @@ bool SpriteStudioPlayer2D::clear_all_part_overrides() {
 void SpriteStudioPlayer2D::setAnimation(const String& strName) {
     _internal->setAnimation(strName);
     _apply_transport_settings();
-    NOTIFY_PROPERTY_LIST_CHANGED();
+    notify_property_list_changed();
     update_configuration_warnings();
 }
 

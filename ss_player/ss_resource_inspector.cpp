@@ -34,15 +34,7 @@ using namespace godot;
 #include "scene/resources/animation.h"
 #include "scene/resources/animation_library.h"
 #include "core/io/resource_saver.h"
-#if VERSION_MAJOR >= 4
-    #if VERSION_MINOR >= 5
-    #include "editor/file_system/editor_file_system.h"
-    #else
-    #include "editor/editor_file_system.h"
-    #endif
-#else
-    #include "editor/editor_file_system.h"
-#endif
+#include "editor/file_system/editor_file_system.h"
 #endif
 
 void SSResourceInspectorPlugin::_bind_methods() {

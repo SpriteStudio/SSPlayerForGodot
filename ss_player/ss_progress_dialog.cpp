@@ -11,15 +11,8 @@
 
     using namespace godot;
 #else
-#if VERSION_MAJOR >= 4
-    #if VERSION_MINOR >= 6
     #include "servers/display/display_server.h"
     #include "servers/rendering/rendering_server.h"
-    #else
-    #include "servers/display_server.h"
-    #include "servers/rendering_server.h"
-    #endif
-#endif
     #include "core/os/time.h"
     #include "scene/gui/panel.h"
     #include "core/object/message_queue.h"

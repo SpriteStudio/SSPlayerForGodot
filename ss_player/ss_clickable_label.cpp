@@ -9,14 +9,7 @@
 #include <godot_cpp/core/class_db.hpp>
 using namespace godot;
 #else
-#if VERSION_MAJOR >= 4
-    #if VERSION_MINOR >= 6
-    #include "servers/display/display_server.h"
-    #else
-    #include "servers/display_server.h"
-    #endif
-#endif
-
+#include "servers/display/display_server.h"
 #endif
 
 void SSClickableLabel::_bind_methods() {
