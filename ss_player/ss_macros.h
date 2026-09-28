@@ -18,6 +18,9 @@
   #define RS_VIEWPORT_UPDATE_ONCE RenderingServer::VIEWPORT_UPDATE_ONCE
   #define RS_VIEWPORT_CLEAR_ALWAYS RenderingServer::VIEWPORT_CLEAR_ALWAYS
   #define RS_PRIMITIVE_TRIANGLES RenderingServer::PRIMITIVE_TRIANGLES
+  namespace godot { class ResourceLoader; class ResourceSaver; }
+  using SsResourceLoader = godot::ResourceLoader;
+  using SsResourceSaver = godot::ResourceSaver;
 #else
   #include "core/version.h"
   #include "core/string/string_name.h"
@@ -26,6 +29,12 @@
   #define RS_VIEWPORT_UPDATE_ONCE RSE::VIEWPORT_UPDATE_ONCE
   #define RS_VIEWPORT_CLEAR_ALWAYS RSE::VIEWPORT_CLEAR_ALWAYS
   #define RS_PRIMITIVE_TRIANGLES RSE::PRIMITIVE_TRIANGLES
+  // The engine's own ResourceLoader and ResourceSaver are static. CoreBind's
+  // are the singletons that scripts and godot-cpp call, so going through them
+  // gives both build shapes the same calls. Callers include core/core_bind.h.
+  namespace CoreBind { class ResourceLoader; class ResourceSaver; }
+  using SsResourceLoader = CoreBind::ResourceLoader;
+  using SsResourceSaver = CoreBind::ResourceSaver;
   #if VERSION_MAJOR>=4
     #define	GD_V4
     #ifndef SNAME

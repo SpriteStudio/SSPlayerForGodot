@@ -19,7 +19,7 @@
 #include <godot_cpp/variant/utility_functions.hpp>
 using namespace godot;
 #else
-#include "core/io/resource_loader.h"
+#include "core/core_bind.h"
 #include "core/object/class_db.h"
 #include "core/variant/dictionary.h"
 #include "editor/editor_interface.h"
@@ -32,11 +32,7 @@ using namespace godot;
 namespace {
 
 Ref<SSABResource> _load_ssab(const String &p_path) {
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
-    Ref<Resource> res = ResourceLoader::get_singleton()->load(p_path);
-#else
-    Ref<Resource> res = ResourceLoader::load(p_path);
-#endif
+    Ref<Resource> res = SsResourceLoader::get_singleton()->load(p_path);
     Ref<SSABResource> ssab = res;
     if (ssab.is_null()) {
         ERR_PRINT(vformat("SSCanvasDropOverlay: failed to load SSAB '%s'.", p_path));

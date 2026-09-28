@@ -11,7 +11,7 @@
 #include <godot_cpp/classes/resource_loader.hpp>
 #include <godot_cpp/variant/utility_functions.hpp>
 #else
-#include "core/io/resource_loader.h"
+#include "core/core_bind.h"
 #include "servers/rendering/rendering_server.h"
 #endif
 
@@ -717,12 +717,7 @@ void SsInternalPlayer::setCellMapOverrideTexture(uint32_t cellmap_name_hash, con
                     auto cellmap = a->cellmaps()->Get(i);
                     if (cellmap->name_hash() == cellmap_name_hash) {
                         String strImage = _ssabRes->get_parent_dir().path_join(String::utf8(cellmap->image_path()->c_str()));
-                        Ref<Texture2D> original_tex =
-                        #ifdef SPRITESTUDIO_GODOT_EXTENSION
-                        ResourceLoader::get_singleton()->load(strImage, "", ResourceLoader::CACHE_MODE_REUSE);
-                        #else
-                        ResourceLoader::load(strImage, "", ResourceFormatLoader::CACHE_MODE_REUSE, nullptr);
-                        #endif
+                        Ref<Texture2D> original_tex = SsResourceLoader::get_singleton()->load(strImage);
                         _textures[cellmap_name_hash] = original_tex;
                         return;
                     }
@@ -733,12 +728,7 @@ void SsInternalPlayer::setCellMapOverrideTexture(uint32_t cellmap_name_hash, con
                     auto etexture = a->external_textures()->Get(i);
                     if (etexture->name_hash() == cellmap_name_hash) {
                         String strImage = _ssabRes->get_parent_dir().path_join(String::utf8(etexture->name()->c_str()));
-                        Ref<Texture2D> original_tex =
-                        #ifdef SPRITESTUDIO_GODOT_EXTENSION
-                        ResourceLoader::get_singleton()->load(strImage, "", ResourceLoader::CACHE_MODE_REUSE);
-                        #else
-                        ResourceLoader::load(strImage, "", ResourceFormatLoader::CACHE_MODE_REUSE, nullptr);
-                        #endif
+                        Ref<Texture2D> original_tex = SsResourceLoader::get_singleton()->load(strImage);
                         _textures[cellmap_name_hash] = original_tex;
                         return;
                     }
@@ -762,12 +752,7 @@ void SsInternalPlayer::_loadTextures(const Ref<SSABResource>& ssabRes) {
         for (int i = 0; i < a->cellmaps()->size(); i++) {
             auto cellmap = a->cellmaps()->Get(i);
             String strImage = _ssabRes->get_parent_dir().path_join(String::utf8(cellmap->image_path()->c_str()));
-            Ref<Texture2D> texture =
-            #ifdef SPRITESTUDIO_GODOT_EXTENSION
-            ResourceLoader::get_singleton()->load(strImage, "", ResourceLoader::CACHE_MODE_REUSE);
-            #else
-            ResourceLoader::load(strImage, "", ResourceFormatLoader::CACHE_MODE_REUSE, nullptr);
-            #endif
+            Ref<Texture2D> texture = SsResourceLoader::get_singleton()->load(strImage);
             _textures[cellmap->name_hash()] = texture;
         }
     }
@@ -775,12 +760,7 @@ void SsInternalPlayer::_loadTextures(const Ref<SSABResource>& ssabRes) {
         for (int i = 0; i < a->external_textures()->size(); i++) {
             auto etexture = a->external_textures()->Get(i);
             String strImage = _ssabRes->get_parent_dir().path_join(String::utf8(etexture->name()->c_str()));
-            Ref<Texture2D> texture =
-            #ifdef SPRITESTUDIO_GODOT_EXTENSION
-            ResourceLoader::get_singleton()->load(strImage, "", ResourceLoader::CACHE_MODE_REUSE);
-            #else
-            ResourceLoader::load(strImage, "", ResourceFormatLoader::CACHE_MODE_REUSE, nullptr);
-            #endif
+            Ref<Texture2D> texture = SsResourceLoader::get_singleton()->load(strImage);
             _textures[etexture->name_hash()] = texture;
         }
     }
@@ -1856,12 +1836,7 @@ void SsInternalPlayer::_load_external_ssabs() {
         if (pack.is_empty() || loaded_packs.has(pack)) continue;
         loaded_packs.insert(pack);
         String path = parent_dir.path_join(pack + ".ssab");
-        Ref<Resource> res =
-        #ifdef SPRITESTUDIO_GODOT_EXTENSION
-            ResourceLoader::get_singleton()->load(path, "", ResourceLoader::CACHE_MODE_REUSE);
-        #else
-            ResourceLoader::load(path, "", ResourceFormatLoader::CACHE_MODE_REUSE, nullptr);
-        #endif
+        Ref<Resource> res = SsResourceLoader::get_singleton()->load(path);
         Ref<SSABResource> ssab = res;
         if (ssab.is_null()) {
             ERR_PRINT(vformat("[SS] external SSAB load failed: %s", path));

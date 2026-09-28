@@ -4,6 +4,7 @@
 #include <godot_cpp/classes/file_access.hpp>
 #include <godot_cpp/core/error_macros.hpp>
 #else
+#include "core/core_bind.h"
 #include "core/error/error_list.h"
 #include "core/error/error_macros.h"
 #include "core/io/file_access.h"
@@ -321,11 +322,7 @@ Ref<AudioStream> SSABResource::get_sound_stream(uint32_t sound_list_name_hash, u
     const ss::format::SoundFile *file = _find_sound_file(sound_list_name_hash, sound_name_hash);
     if (file != nullptr && file->file_path() != nullptr) {
         String path = _parent_dir.path_join(String::utf8(file->file_path()->c_str()));
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
-        Ref<Resource> res = ResourceLoader::get_singleton()->load(path, "AudioStream", ResourceLoader::CACHE_MODE_REUSE);
-#else
-        Ref<Resource> res = ResourceLoader::load(path, "AudioStream", ResourceFormatLoader::CACHE_MODE_REUSE, nullptr);
-#endif
+        Ref<Resource> res = SsResourceLoader::get_singleton()->load(path, "AudioStream");
         stream = Ref<AudioStream>(res);
     }
 

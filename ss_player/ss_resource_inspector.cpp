@@ -25,6 +25,7 @@
 using namespace godot;
 #else
 #include "core/config/project_settings.h"
+#include "core/core_bind.h"
 #include "core/io/resource.h"
 #include "core/os/os.h"
 #include "editor/editor_interface.h"
@@ -202,11 +203,7 @@ void SSResourceInspectorPlugin::_on_generate_animation_library_pressed(const Str
     }
 
     String out_path = p_resource_path.get_basename() + "_anims.res";
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
-    Error err = ResourceSaver::get_singleton()->save(library, out_path);
-#else
-    Error err = ResourceSaver::save(library, out_path);
-#endif
+    Error err = SsResourceSaver::get_singleton()->save(library, out_path, SsResourceSaver::FLAG_NONE);
 
     if (err == OK) {
         auto *efs = EditorInterface::get_singleton()->get_resource_filesystem();
