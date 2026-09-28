@@ -37,16 +37,11 @@ SSProgressDialog::SSProgressDialog() {
     set_keep_title_visible(true);
 
 #ifndef SPRITESTUDIO_GODOT_EXTENSION
+    // Not exposed to scripts, so GDExtension cannot call it.
     set_clamp_to_embedder(true);
-#if VERSION_MAJOR >= 4
-    #if VERSION_MINOR >= 5
+#endif
     set_flag(FLAG_MINIMIZE_DISABLED, true);
     set_flag(FLAG_MAXIMIZE_DISABLED, true);
-    #else
-    set_flag(FLAG_RESIZE_DISABLED, true);
-    #endif
-#endif
-#endif
     set_title("Processing...");
 
     Panel *background = memnew(Panel);
