@@ -96,17 +96,17 @@ void SpriteStudioPartAttachment2D::_on_player_frame_updated(float frame_no) {
     int idx = player->find_part_index(_part_name);
     if (idx < 0) {
         // Part absent from this animation: nothing to follow, so hide the target.
-        if (target->is_visible()) target->set_visible(false);
+        _hide_target(target);
         return;
     }
 
     if (_on_part_hidden == HIDE_TARGET && player->is_part_hidden(_part_name)) {
-        if (target->is_visible()) target->set_visible(false);
+        _hide_target(target);
         return;
     }
 
     // Re-show if a previous frame auto-hid it (absent / hidden).
-    if (!target->is_visible()) target->set_visible(true);
+    _show_target(target);
 
     const Transform2D part_local = player->get_part_transform(_part_name);
     const Transform2D desired = _use_global_coordinates
@@ -142,6 +142,20 @@ void SpriteStudioPartAttachment2D::_apply_transform(Node2D* p_target, const Tran
     }
 }
 
+// Hiding a target that is already hidden takes no claim on it, so the user's
+// own `visible = false` is never undone by the part coming back.
+void SpriteStudioPartAttachment2D::_hide_target(Node2D* p_target) {
+    if (!p_target->is_visible()) return;
+    p_target->set_visible(false);
+    _hid_target = true;
+}
+
+void SpriteStudioPartAttachment2D::_show_target(Node2D* p_target) {
+    if (!_hid_target) return;
+    _hid_target = false;
+    p_target->set_visible(true);
+}
+
 void SpriteStudioPartAttachment2D::set_part_name(const String& p_name) {
     _part_name = p_name;
     update_configuration_warnings();
@@ -157,6 +171,13 @@ void SpriteStudioPartAttachment2D::set_follow_path(const NodePath& p_path) {
 NodePath SpriteStudioPartAttachment2D::get_follow_path() const { return _follow_path; }
 
 void SpriteStudioPartAttachment2D::set_remote_path(const NodePath& p_path) {
+    // The claim is on the old target; left standing, it would let the new one
+    // be shown although this attachment never hid it.
+    if (_hid_target && is_inside_tree()) {
+        Node2D* old_target = _resolve_target();
+        if (old_target) old_target->set_visible(true);
+    }
+    _hid_target = false;
     _remote_path = p_path;
     update_configuration_warnings();
 }

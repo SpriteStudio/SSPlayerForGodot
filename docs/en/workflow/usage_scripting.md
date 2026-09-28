@@ -202,7 +202,7 @@ Turning any of them OFF writes only the enabled components individually, like `R
 
 ### Notes
 
-- **The attachment controls the target's `visible`.** It is hidden automatically in the two cases below, and shown again automatically once the condition clears, so a visibility state you set yourself may be overwritten.
+- **The attachment hides the target in the two cases below, and shows it again once the condition clears.** It only ever shows a target it hid itself, so a target you hide yourself (`visible = false`) stays hidden. The one exception is a target you hide while the attachment already has it hidden: that one reappears when the condition clears.
     - The part name does not exist in the asset (always hidden, regardless of the `On Part Hidden` setting)
     - The part is hidden on this frame and `On Part Hidden` is `Hide Target`
 - Part names resolve against the parts of the `.ssab` the player itself has loaded. **Parts inside an Instance part (the child animation) cannot be specified** (the Instance part itself can).
