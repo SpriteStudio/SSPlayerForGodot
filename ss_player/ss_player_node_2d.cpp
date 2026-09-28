@@ -431,6 +431,34 @@ void SpriteStudioPlayer2D::_push_host_viewport() {
     _internal->setHostViewport(vp ? vp->get_viewport_rid() : RID());
 }
 
+namespace {
+// CanvasItem's own rule for whose setting "parent node" means: the parent, if it
+// is a canvas item and this node is not top level.
+const CanvasItem* ss_parent_item(const CanvasItem* p_item) {
+    return p_item->is_set_as_top_level() ? nullptr : Object::cast_to<CanvasItem>(p_item->get_parent());
+}
+} // namespace
+
+void SpriteStudioPlayer2D::_resolve_texture_settings() {
+    int filter = TEXTURE_FILTER_PARENT_NODE;
+    for (const CanvasItem* item = this; item && filter == TEXTURE_FILTER_PARENT_NODE; item = ss_parent_item(item)) {
+        filter = item->get_texture_filter();
+    }
+    int repeat = TEXTURE_REPEAT_PARENT_NODE;
+    for (const CanvasItem* item = this; item && repeat == TEXTURE_REPEAT_PARENT_NODE; item = ss_parent_item(item)) {
+        repeat = item->get_texture_repeat();
+    }
+    // The server's enums number these as CanvasItem's do, with its "default" --
+    // the viewport's setting -- where CanvasItem has "parent node", which is
+    // what a chain that runs out of canvas items means.
+    _resolved_texture_filter = filter;
+    _resolved_texture_repeat = repeat;
+}
+
+void SpriteStudioPlayer2D::_push_canvas_item_defaults() {
+    _internal->setCanvasItemDefaults(_resolved_texture_filter, _resolved_texture_repeat, get_light_mask());
+}
+
 void SpriteStudioPlayer2D::_push_self_modulate() {
     const Color self_modulate = get_self_modulate();
     if (self_modulate == _pushed_self_modulate) return;
@@ -470,6 +498,7 @@ SpriteStudioPlayer2D::AnimationProcessMode SpriteStudioPlayer2D::get_animation_p
 void SpriteStudioPlayer2D::advance(double p_delta) {
     _push_coverage_screen_scale();
     _push_self_modulate();
+    _push_canvas_item_defaults();
     _internal->update(p_delta);
     // Same post-update contract as an automatic tick: world matrices are final,
     // so part attachments mirror their parts before anything draws.
@@ -871,7 +900,9 @@ void SpriteStudioPlayer2D::_notification(int p_notification) {
             // don't leave the InternalPlayer floating.
             _internal->setParentCanvasItem(get_canvas_item());
             _push_host_viewport();
+            _resolve_texture_settings();
             _push_self_modulate();
+            _push_canvas_item_defaults();
             if (_process_mode == ANIMATION_PROCESS_PHYSICS) {
                 set_physics_process_internal(true);
             } else {
@@ -888,10 +919,11 @@ void SpriteStudioPlayer2D::_notification(int p_notification) {
         case NOTIFICATION_INTERNAL_PROCESS:
             // Pushed whichever mode is running: MANUAL does not advance the
             // animation here, but it still has to report its on-screen scale
-            // for the mask coverage pass, and self_modulate still has to reach
-            // the parts.
+            // for the mask coverage pass, and self_modulate and the light mask
+            // still have to reach the parts.
             _push_coverage_screen_scale();
             _push_self_modulate();
+            _push_canvas_item_defaults();
             if (_process_mode == ANIMATION_PROCESS_IDLE) {
                 _internal->update(get_process_delta_time());
                 // Post-update: world matrices are final this tick, so part
@@ -911,15 +943,18 @@ void SpriteStudioPlayer2D::_notification(int p_notification) {
             if (_process_mode == ANIMATION_PROCESS_PHYSICS) {
                 _push_coverage_screen_scale();
                 _push_self_modulate();
+                _push_canvas_item_defaults();
                 _internal->update(get_physics_process_delta_time());
                 emit_signal(SNAME("frame_updated"), _internal->getFrameNo());
             }
             if (_audio_controller) _audio_controller->tick();
             break;
         case NOTIFICATION_DRAW:
-            // The InternalPlayer handles the actual RenderingServer calls for
-            // its per-batch canvas items, but they are nested under our
-            // get_canvas_item() so we don't need to do anything here.
+            // The InternalPlayer draws on canvas items of its own, nested under
+            // ours, so there is nothing to draw here. A redraw is also how a
+            // texture filter or repeat change -- ours or an ancestor's -- arrives.
+            _resolve_texture_settings();
+            _push_canvas_item_defaults();
             break;
     }
 }

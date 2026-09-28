@@ -291,6 +291,15 @@ private:
     // value is mirrored there. Setting it tells the node nothing, so every tick
     // compares against what was last pushed.
     void _push_self_modulate();
+    // texture_filter / texture_repeat / light_mask likewise reach only the
+    // node's own canvas item, so the parts' canvas items are handed them.
+    // Filter and repeat -- this node's or an ancestor's -- arrive as a redraw,
+    // where they are resolved; the light mask tells the node nothing, so every
+    // tick passes it on and the core ignores what has not changed.
+    void _resolve_texture_settings();
+    void _push_canvas_item_defaults();
+    int _resolved_texture_filter = 0;
+    int _resolved_texture_repeat = 0;
     Color _pushed_self_modulate = Color(1, 1, 1, 1);
 
     // Adapter that turns SsInternalPlayer event callbacks into Node-level

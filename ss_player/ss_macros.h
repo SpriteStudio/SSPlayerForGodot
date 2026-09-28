@@ -15,6 +15,8 @@
   #define RS_VIEWPORT_UPDATE_ONCE RenderingServer::VIEWPORT_UPDATE_ONCE
   #define RS_VIEWPORT_CLEAR_ALWAYS RenderingServer::VIEWPORT_CLEAR_ALWAYS
   #define RS_PRIMITIVE_TRIANGLES RenderingServer::PRIMITIVE_TRIANGLES
+  #define RS_CANVAS_ITEM_TEXTURE_FILTER RenderingServer::CanvasItemTextureFilter
+  #define RS_CANVAS_ITEM_TEXTURE_REPEAT RenderingServer::CanvasItemTextureRepeat
   namespace godot { class ResourceLoader; class ResourceSaver; }
   using SsResourceLoader = godot::ResourceLoader;
   using SsResourceSaver = godot::ResourceSaver;
@@ -33,6 +35,8 @@
   #define RS_VIEWPORT_UPDATE_ONCE RSE::VIEWPORT_UPDATE_ONCE
   #define RS_VIEWPORT_CLEAR_ALWAYS RSE::VIEWPORT_CLEAR_ALWAYS
   #define RS_PRIMITIVE_TRIANGLES RSE::PRIMITIVE_TRIANGLES
+  #define RS_CANVAS_ITEM_TEXTURE_FILTER RSE::CanvasItemTextureFilter
+  #define RS_CANVAS_ITEM_TEXTURE_REPEAT RSE::CanvasItemTextureRepeat
   // The engine's own ResourceLoader and ResourceSaver are static. CoreBind's
   // are the singletons that scripts and godot-cpp call, so going through them
   // gives both build shapes the same calls. Callers include core/core_bind.h.
