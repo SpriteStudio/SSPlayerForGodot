@@ -34,9 +34,8 @@ class Label;
 #endif
 
 // Bottom-panel transport controls for SpriteStudioPlayer2D, mirroring the
-// AnimationPlayer editor experience: an animation picker, play-from-start /
-// play / play-backwards / pause / stop buttons, a frame scrubber, a loop
-// toggle and a speed-scale field.
+// AnimationPlayer editor experience: play-from-start / play / stop buttons, a
+// frame scrubber, a loop toggle and a speed-scale field.
 //
 // The panel never touches the runtime directly; it drives the selected node
 // through its public playback API and reads back state in _process to keep the
@@ -45,7 +44,7 @@ class SSPlaybackPanel : public VBoxContainer {
     GDCLASS(SSPlaybackPanel, VBoxContainer)
 
 protected:
-    static void _bind_methods() {}
+    static void _bind_methods();
     void _notification(int p_what);
 
 public:
@@ -94,6 +93,12 @@ private:
     void _refresh_from_player();
     void _sync_playhead();
     void _set_controls_enabled(bool p_enabled);
+    // Loop and Speed write properties the scene saves, so a change is an edit
+    // of the scene: it goes through its undo history, which is also what marks
+    // the scene modified. `p_merge` folds a run of changes under one name into
+    // one step, as the inspector does for a dragged value.
+    void _commit_player_property(const String &p_action, const StringName &p_property,
+                                 const Variant &p_value, bool p_merge);
 
     void _on_play_start_pressed();
     void _on_play_pressed();
