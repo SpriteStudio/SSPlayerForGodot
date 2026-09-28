@@ -286,6 +286,12 @@ private:
     void _update_root_transform();
     void _push_coverage_screen_scale();
     void _push_host_viewport();
+    // self_modulate only reaches a canvas item's own draw commands, and this
+    // node has none: the parts hang off the internal root canvas item, so the
+    // value is mirrored there. Setting it tells the node nothing, so every tick
+    // compares against what was last pushed.
+    void _push_self_modulate();
+    Color _pushed_self_modulate = Color(1, 1, 1, 1);
 
     // Adapter that turns SsInternalPlayer event callbacks into Node-level
     // emit_signal calls. Lifetime tied to the Node; lives in the cpp file.

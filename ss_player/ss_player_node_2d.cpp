@@ -431,6 +431,13 @@ void SpriteStudioPlayer2D::_push_host_viewport() {
     _internal->setHostViewport(vp ? vp->get_viewport_rid() : RID());
 }
 
+void SpriteStudioPlayer2D::_push_self_modulate() {
+    const Color self_modulate = get_self_modulate();
+    if (self_modulate == _pushed_self_modulate) return;
+    _pushed_self_modulate = self_modulate;
+    _internal->setRootModulate(self_modulate);
+}
+
 void SpriteStudioPlayer2D::set_animation_process_mode(AnimationProcessMode p_mode) {
     AnimationProcessMode mode = p_mode;
     if (_process_mode == mode) return;
@@ -462,6 +469,7 @@ SpriteStudioPlayer2D::AnimationProcessMode SpriteStudioPlayer2D::get_animation_p
 
 void SpriteStudioPlayer2D::advance(double p_delta) {
     _push_coverage_screen_scale();
+    _push_self_modulate();
     _internal->update(p_delta);
     // Same post-update contract as an automatic tick: world matrices are final,
     // so part attachments mirror their parts before anything draws.
@@ -863,6 +871,7 @@ void SpriteStudioPlayer2D::_notification(int p_notification) {
             // don't leave the InternalPlayer floating.
             _internal->setParentCanvasItem(get_canvas_item());
             _push_host_viewport();
+            _push_self_modulate();
             if (_process_mode == ANIMATION_PROCESS_PHYSICS) {
                 set_physics_process_internal(true);
             } else {
@@ -879,8 +888,10 @@ void SpriteStudioPlayer2D::_notification(int p_notification) {
         case NOTIFICATION_INTERNAL_PROCESS:
             // Pushed whichever mode is running: MANUAL does not advance the
             // animation here, but it still has to report its on-screen scale
-            // for the mask coverage pass.
+            // for the mask coverage pass, and self_modulate still has to reach
+            // the parts.
             _push_coverage_screen_scale();
+            _push_self_modulate();
             if (_process_mode == ANIMATION_PROCESS_IDLE) {
                 _internal->update(get_process_delta_time());
                 // Post-update: world matrices are final this tick, so part
@@ -899,6 +910,7 @@ void SpriteStudioPlayer2D::_notification(int p_notification) {
         case NOTIFICATION_INTERNAL_PHYSICS_PROCESS:
             if (_process_mode == ANIMATION_PROCESS_PHYSICS) {
                 _push_coverage_screen_scale();
+                _push_self_modulate();
                 _internal->update(get_physics_process_delta_time());
                 emit_signal(SNAME("frame_updated"), _internal->getFrameNo());
             }

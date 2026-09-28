@@ -113,6 +113,9 @@ vec4 ss_output_color(vec4 c, float pma_flag) {
     if (!ss_mask_passes()) {
         discard;
     }
+    // Last, as Godot applies it to any canvas item: after the PartColor and the
+    // add-on shader, before the blend-specific output form.
+    c *= ss_modulate;
 #ifdef SS_BLEND_MUL
     // blend_mul multiplies the backdrop by the source colour and never reads its
     // alpha, so a transparent texel would still darken it by the colour it
