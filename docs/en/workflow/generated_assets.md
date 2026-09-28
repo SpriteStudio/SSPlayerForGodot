@@ -99,7 +99,7 @@ graph LR
 > **The Godot editor tracks these dependencies.**
 > A `.ssab` reports all four as its dependencies, so whatever reads the editor's dependency graph sees them: the dependency-based export modes below, and the FileSystem dock, which lists the `.ssab` among a file's owners and warns before you delete a file it still needs.
 >
-> It cannot follow a move. The names are written into the `.ssab` at conversion, so moving an image or a sound away from its `.ssab` still breaks resolution, and the dock does not warn about it. Move the output folder as a whole.
+> It cannot follow a move. The names are written into the `.ssab` at conversion, so moving an image, a sound or an Instance target away from its `.ssab` breaks resolution. Once such a move is done, the dock reports *Unable to update dependencies* for the `.ssab`, and the Output panel says which file moved and where the `.ssab` looks for it. Moving the `.ssab` itself away from them goes unreported. Move the output folder as a whole.
 
 ---
 

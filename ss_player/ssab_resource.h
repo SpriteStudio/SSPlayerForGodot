@@ -141,12 +141,16 @@ public:
                 bool use_sub_threads, int32_t cache_mode) const override;
 
   PackedStringArray _get_dependencies(const String &path, bool add_types) const override;
+
+  Error _rename_dependencies(const String &path, const Dictionary &renames) const override;
 #else
   Ref<Resource> load(const String &path, const String &original_path,
                      Error *error, bool use_sub_threads, float *progress,
                      CacheMode cache_mode) override;
 
   void get_dependencies(const String &path, List<String> *dependencies, bool add_types = false) override;
+
+  Error rename_dependencies(const String &path, const HashMap<String, String> &renames) override;
 
   void get_recognized_extensions(List<String> *extensions) const override;
 
