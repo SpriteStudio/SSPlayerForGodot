@@ -61,6 +61,12 @@ struct PartAttributeInstance;
 // of a fixed size class, shared across players via a process-global pool. Full
 // definition lives in the .cpp; players only hold an opaque handle.
 struct SsMaskCoverageTarget;
+// A coverage bitmap holds 24 writer bits per tile (RGB of RGBA8). A tree with
+// more writers splits the same texture into 2 (side by side) or 4 (2x2) tiles
+// rather than growing it, trading resolution for writers so a player never
+// holds more coverage memory than one tile-less bitmap.
+constexpr int SS_MASK_TILE_BITS = 24;
+constexpr int SS_MASK_MAX_TILES = 4;
 
 // Receiver for animation events that need to bubble up to engine-level
 // signals (GDScript signals, Unity events, etc.). The host (Node2D wrapper,
@@ -262,8 +268,10 @@ public:
     // Draw a frame that is already current because an override changed it.
     // The override layer lives in the runtime, so nothing about the frame
     // number moves when one is set — and the redraw paths dedup on exactly
-    // that. A no-op when no override is waiting, so it is safe to call every
-    // tick; `update()` covers the modes that tick the animation themselves.
+    // that. The same holds for a mask coverage still waiting on the size class
+    // its last draw picked. A no-op when neither is waiting, so it is safe to
+    // call every tick; `update()` covers the modes that tick the animation
+    // themselves.
     void redraw_pending_overrides();
 
 private:
@@ -418,9 +426,9 @@ private:
         // `ss_instance_slot_step`.
         void* instance_slot = nullptr;
         // True when this slot's EventInstance is active this frame (the child
-        // was redrawn and is shown). The coverage pass reads it to know which
-        // children's clipping writers to bubble up (see
-        // `_bubble_child_clip_writers`); a hidden child's writers are stale.
+        // was redrawn and is shown). The mask pass reads it to know which
+        // children to number and gather writers from (see `_mask_number_tree`,
+        // `_mask_collect_tree`); a hidden child's writers are stale.
         bool visible_this_frame = false;
     };
     LocalVector<InstanceChildState> _instance_children;
@@ -570,22 +578,28 @@ private:
     // One entry per part that writes the mask this frame. Rebuilt by
     // `_build_mask_writers` each frame from draw_order, static PartData, and the
     // per-frame mask / hide that say whether a writer writes at all.
-    // `bit` is the writer's slot in the coverage bitmap (0..MAX_MASK_WRITERS-1).
-    // `op_invert` comes from PartData.mask_influence (false=increment / true=
-    // invert). `is_clipping` selects the scope direction: a pure Mask part
-    // (PartTypeMask) masks parts drawn BEFORE it (draw_rank < its slot); a
-    // clipping writer (write_mask, and shape/text/nines *_mask) masks parts
-    // drawn AFTER it (draw_rank > its slot), to frame end.
+    // `op_invert` is the writer's effective mask_influence — its own ANDed with
+    // the influence handed down the instance chain (false=increment / true=
+    // invert), so a writer inside a mask_influence==0 instance lands on the
+    // union (counter) plane. `is_clipping` selects the scope direction: a pure
+    // mask (PartTypeMask, or a draw_as_mask part) masks what is drawn BEFORE it,
+    // back to the start of its own animation; a clipping writer (mask_write)
+    // masks what is drawn AFTER it, to the end of the whole tree.
     struct MaskWriter {
         int part_index = -1;
         uint16_t draw_rank = 0;   // slot = position in draw_order
-        uint8_t bit = 0;          // coverage-bitmap bit index
-        bool op_invert = false;   // mask_influence: false=increment, true=invert
-        bool is_clipping = false; // false=Mask part (before), true=clipping (after)
+        bool op_invert = false;   // effective mask_influence: false=increment, true=invert
+        bool is_clipping = false; // false=pure mask (before), true=clipping (after)
     };
     // Coverage bitmap packs writer bits into RGB only (the alpha channel is the
-    // premultiplied-blend coverage accumulator), so cap at 24 writers / frame.
-    static constexpr int MAX_MASK_WRITERS = 24;
+    // premultiplied-blend coverage accumulator): 24 per tile, 4 tiles at most, so
+    // cap at 96 writers / frame — per player here, and across the whole instance
+    // tree in the owner's bitmap. Writers past it are dropped (with a warning):
+    // a tree that needs more should be restructured rather than accommodated.
+    static constexpr int MAX_MASK_WRITERS = SS_MASK_TILE_BITS * SS_MASK_MAX_TILES;
+    // Past every number of the tree sequence (see `_mask_number_tree`): where a
+    // clipping writer's interval closes. Still exact as a float.
+    static constexpr float MASK_SEQ_END = 16777216.0f;
     Vector<MaskWriter> _mask_writers;
     // Per part index (parallel to `_parts_by_idx`): 1 when the part is a "pure"
     // mask this frame. Rebuilt with `_mask_writers` so the emit paths can test it
@@ -594,11 +608,60 @@ private:
     // that it still draws no colour of its own.
     LocalVector<uint8_t> _part_pure_mask;
     // Populate `_mask_writers` from this frame's draw_order, static PartData and
-    // per-frame mask / hide. Returns true if at least one writer is present (i.e.,
-    // masking is active this frame). Only the top-root player owns the mask state.
+    // per-frame mask / hide. Every player builds its own; the top-root player
+    // gathers them from the whole instance tree into the one coverage bitmap.
     bool _build_mask_writers(const DrawFrame& f);
 
-    // ---- CBP coverage bitmap (offscreen RGBA8 = 32 mask bits) --------------
+    // ---- Tree-wide mask ordering --------------------------------------------
+    // One coverage bitmap serves the whole instance tree, owned by the top-root
+    // player. Whether a writer reaches a part is decided on a single sequence
+    // that numbers every draw_order entry of the tree depth-first — an instance
+    // part's sub-animation is numbered right after the instance part itself —
+    // so each writer is an open interval on it: a pure mask spans from the start
+    // of its own animation to itself, a clipping writer from itself to the end
+    // of the tree. That is exactly where a shared stencil would hold each bit,
+    // including a clipping mask written inside an instance staying on for the
+    // caller's parts drawn after it.
+    //
+    // This player's draw_order as of its last draw. Children redraw only when
+    // their frame changes, so the owner numbers them off this copy.
+    LocalVector<uint16_t> _mask_draw_order;
+    // Sequence number of each rank of `_mask_draw_order`, assigned by the owner.
+    LocalVector<float> _mask_seq;
+    // Number this player's ranks (and its visible instance children's, in
+    // between) from `counter`, advancing it.
+    void _mask_number_tree(float& counter);
+    // True when this player or any visible instance child below it has a writer
+    // that writes this frame.
+    bool _subtree_has_mask_writers() const;
+    // Same, for clipping writers only — the ones that outlive their instance.
+    bool _subtree_has_active_clip() const;
+    // Rank of the first visible instance part whose sub-animation leaves a
+    // clipping mask open, or -1. The parts drawn after it are mask targets even
+    // when this player has no mask of its own. Recorded at each draw.
+    int _mask_carry_open_rank = -1;
+    int _find_carry_open_rank() const;
+    // Gather `p`'s writers (then its visible instance children's, recursively)
+    // into this owner's coverage. `pf` is `p`'s frame, `to_root` maps `p`-local
+    // into owner-local space, `start_seq` is where `p`'s animation starts on the
+    // tree sequence (its instance part's number, or -1 for the owner).
+    void _mask_collect_tree(SsInternalPlayer* p, const DrawFrame& pf, const Transform2D& to_root,
+                            float start_seq, RenderingServer* rs,
+                            bool& have_bbox, Vector2& bmin, Vector2& bmax);
+    // Open intervals on the tree sequence, one per writer baked this frame
+    // (x = open, y = close). Owner only.
+    LocalVector<Vector2> _mask_tree_spans;
+    // Tile grid of this frame's coverage (columns, rows), handed to the shader.
+    Vector2 _mask_tiles = Vector2(1, 1);
+    // Set when the tree held more writers than the bitmap has bits.
+    bool _mask_writers_dropped = false;
+    // True when some baked writer's interval holds this rank's sequence number.
+    bool _mask_seq_covered(uint16_t rank) const;
+    // Masking is honoured for this player's parts: it has mask parts of its own,
+    // or an ancestor instance part that is a mask target reaches it.
+    bool _mask_active() const { return _has_mask_capable_parts() || _inherited_mask.masked; }
+
+    // ---- CBP coverage bitmap (offscreen RGBA8, 24 mask bits per tile) ------
     // The coverage render target (viewport + canvas + canvas-item pool) is a
     // size-classed resource borrowed from a process-global pool while this
     // player is actively masking, and returned when it stops. The mask writers'
@@ -639,6 +702,9 @@ private:
     // of resolution) on the rare frame a mask crosses a class boundary.
     int _mask_next_w = MASK_COVERAGE_MIN_DIM;
     int _mask_next_h = MASK_COVERAGE_MIN_DIM;
+    // The last draw picked a size class other than the one it rendered with, so
+    // the frame is drawn again even when it does not change.
+    bool _mask_resize_pending = false;
 
     // Borrow a pooled coverage target of the given size class (swapping if the
     // current one differs), registering this player as a pool user on first use.
@@ -646,11 +712,14 @@ private:
     // Return the borrowed target to the pool (kept registered as a user).
     void _release_mask_target();
     void _free_mask_targets();
-    RID _acquire_mask_canvas_item();
+    // A canvas item drawing into `tile` of the borrowed coverage target.
+    RID _acquire_mask_canvas_item(int tile);
+    RID _mask_tile_canvas(int tile);
     Ref<ShaderMaterial> _acquire_mask_write_material();
-    // Render `_mask_writers` into the coverage bitmap. Assumes the list is
-    // populated and non-empty. Computes the writer bounding box, sizes the
-    // viewport, and sets `_mask_local_to_uv` / `_mask_coverage_valid`.
+    // Render the whole instance tree's writers into the coverage bitmap (the
+    // tree sequence must already be numbered). Computes the writer bounding box,
+    // lays out the tiles, picks next frame's size class, and sets
+    // `_mask_local_to_uv` / `_mask_coverage_valid`.
     void _render_mask_coverage(const DrawFrame& f);
 
     // Rasterize one writer part's geometry into this owner's coverage under
@@ -658,47 +727,29 @@ private:
     // own writers, an instance child for bubbled ones); `to_owner` maps the
     // built src-local verts into this owner's local space (identity for own
     // writers). Accumulates the coverage bounding box in `have_bbox/bmin/bmax`.
-    void _bake_coverage_geometry(const DrawFrame& src_f, SsInternalPlayer* src,
+    // Returns false when the part builds no geometry, leaving `bit` unused.
+    bool _bake_coverage_geometry(const DrawFrame& src_f, SsInternalPlayer* src,
                                  ss::runtime::DrawBatchKind kind, RID tex_rid,
                                  const Vector2& inv_tex_size, int p_idx, uint8_t bit,
                                  const Transform2D& to_owner, RenderingServer* rs,
                                  bool& have_bbox, Vector2& bmin, Vector2& bmax);
 
-    // Carry-over (ForUnity ②/③): bubble an instance child's *clipping* writers
-    // up into this owner's coverage so they clip the owner parts drawn after the
-    // instance (`owner_rank`). Only clipping writers carry out — a pure mask
-    // closes within the child. `to_owner` maps child-local -> owner-local;
-    // `inherited_influence` is the composed mask_influence handed down to the
-    // child, ANDed into each writer's op so a mask_influence==0 instance drops
-    // its writers onto the union (counter) plane. Single-stage, matching the
-    // downlink inheritance.
-    void _bubble_child_clip_writers(SsInternalPlayer* child, const Transform2D& to_owner,
-                                    bool inherited_influence, uint16_t owner_rank,
-                                    RenderingServer* rs, bool& have_bbox,
-                                    Vector2& bmin, Vector2& bmax);
-
     // Re-read this player's current frame (world matrices + SoA buffers) from its
     // runtime context into `f`. Used to rasterize an already-drawn instance
-    // child's clipping writers during the owner's coverage pass. Returns false
-    // when the frame is unavailable.
+    // child's writers during the owner's coverage pass. Returns false when the
+    // frame is unavailable.
     bool _fill_frame_from_runtime(DrawFrame& f);
-    // True when any visible instance child holds a clipping writer to carry up
-    // into this coverage, so the coverage pass runs even with no own writers.
-    bool _has_visible_clip_bubbling() const;
-    // Scratch verts (owner-local) for bubbled writer geometry transformed by the
-    // instance placement matrix.
+    // Point `_parts_by_idx` / `_part_hidden` at `f`'s PartStates.
+    void _index_frame_parts(const DrawFrame& f);
+    // Scratch verts (owner-local) for an instance child's writer geometry
+    // transformed by the instance placement matrices.
     SsVec2Array _cov_xform_verts;
 
     // Frame mask state derived by _render_mask_coverage and consumed when
     // emitting maskable parts (P3). `_mask_meta_array` is one Vec4 per writer:
-    // (draw_rank, bit, op_invert, is_clipping). The two slot bounds bracket
-    // which ranks can be affected (Mask: rank < max mask slot; clipping: rank >
-    // min clip slot) so out-of-scope parts skip the test.
-    float _mask_max_mask_slot = -1.0f;
-    float _mask_min_clip_slot = -1.0f;
+    // (open, close, bit, op_invert) — the writer's interval on the tree sequence.
     Array _mask_meta_array;
     RID _mask_coverage_tex;
-    bool _part_in_mask_scope(uint16_t rank) const;
     // True if the part is a "pure" mask (PartTypeMask or a shape/text/nines
     // *_mask): it feeds the coverage bitmap but must not draw its own colour.
     // write_mask (clipping) writers are NOT pure — they draw AND mask. Valid for
@@ -716,13 +767,15 @@ private:
     // identity is (influence = true, visible_inside = false), so a top-level
     // animation resolves to each part's own flags. `mask_write` stays out of the
     // composition — writing a mask is a local fact, not something descendants
-    // inherit.
+    // inherit. A caller that is not masking at all hands down the identity, so
+    // a sub-animation under an unmasked caller keeps its own masks whatever the
+    // instance part says.
     struct InheritedMaskContext {
-        bool active = false;         // an ancestor's coverage reaches this player
+        bool masked = false;         // the instance part is a target of the caller's mask
         bool influence = true;       // AND-chain of mask_influence
         bool visible_inside = false; // OR-chain of visible_inside_mask
         bool operator==(const InheritedMaskContext& o) const {
-            return active == o.active && influence == o.influence && visible_inside == o.visible_inside;
+            return masked == o.masked && influence == o.influence && visible_inside == o.visible_inside;
         }
     };
     InheritedMaskContext _inherited_mask;
@@ -733,6 +786,10 @@ private:
     // Compose `_inherited_mask` with the part's own flags. Used for the parts of
     // an instance child, and (via the identity) for a top-level player's own.
     InheritedMaskContext _compose_mask_context(const ss::format::PartData* pd) const;
+    // The context an instance part hands to its sub-animation: the composition
+    // above plus whether the instance part is a target at all, or the identity
+    // when this player is not masking.
+    InheritedMaskContext _child_mask_context(const ss::format::PartData* pd) const;
     // True when the part tree holds any mask writer. Static per resource (the
     // part tree is pack-level, so selecting another animation cannot change it),
     // so it is computed once and reset in `setSSABResource`.
@@ -748,25 +805,28 @@ private:
     // paths all go through here so composition (and any future caching or
     // shared-material fast path) lives in one place.
     PartMaskDecision _resolve_part_mask(const DrawFrame& f, int p_idx, uint16_t rank) const;
-    // Write the decision onto the part's material, and enrol it in the inherited
-    // walk when an ancestor owns the coverage.
+    // Write the decision onto the part's material, and enrol it in the owner's
+    // walk when this player is an instance child.
     void _stamp_part_mask(const Ref<ShaderMaterial>& mat, uint16_t rank, const PartMaskDecision& md);
 
-    // Materials this player handed to parts that an ancestor's mask covers.
-    // Filled while building (which is when the composed polarity is known) and
-    // consumed by the coverage owner in `_apply_inherited_mask`, which is the
-    // only point where this frame's coverage texture exists. Instance children
-    // covered by the same ancestor are recorded alongside so one walk from the
-    // owner reaches the whole sub-tree.
-    Vector<Ref<ShaderMaterial>> _inherited_mask_materials;
+    // Materials an instance child handed to its mask targets, with the rank each
+    // was drawn at. Filled while building (which is when the composed polarity
+    // is known) and consumed by the coverage owner in `_apply_inherited_mask`,
+    // which is the only point where this frame's coverage and tree sequence
+    // exist. The visible instance children are recorded alongside so one walk
+    // from the owner reaches the whole sub-tree.
+    struct InheritedMaskMaterial {
+        Ref<ShaderMaterial> mat;
+        uint16_t rank = 0;
+    };
+    Vector<InheritedMaskMaterial> _inherited_mask_materials;
     struct InheritedMaskChild {
         SsInternalPlayer* player = nullptr;
         Transform2D slot_xf;
     };
     Vector<InheritedMaskChild> _inherited_mask_children;
-    void _apply_inherited_mask(bool active, RID coverage_tex, const Array& meta,
-                               int count, const Transform2D& local_to_uv,
-                               float rank);
+    void _apply_inherited_mask(RID coverage_tex, const Array& meta, int count,
+                               const Vector2& tiles, const Transform2D& local_to_uv);
 
     void _reconfigure();
     void _loadTextures(const Ref<SSABResource>& res);
@@ -782,7 +842,7 @@ private:
     // transform. The child's own draw + simulation already happened earlier
     // in `_update_instance_children` (sim phase), so this is positioning
     // only — no event scanning, no playback config, no frame stepping.
-    void _emit_instance_slot(const DrawFrame& f, RID ci, int p_idx, const float* slot_matrix, uint16_t rank);
+    void _emit_instance_slot(const DrawFrame& f, RID ci, int p_idx, const float* slot_matrix);
     void _emit_effect_slot(const DrawFrame& f, RID ci, int p_idx, const float* slot_matrix);
 
     int _build_normal(const DrawFrame& f, int p_idx,

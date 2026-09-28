@@ -19,8 +19,9 @@ uniform float ss_param6;
 uniform float ss_param7;
 
 // ---- CBP masking (P3) -----------------------------------------------------
-// Coverage bitmap (offscreen RGBA8 = 32 writer bits), per-frame writer
-// metadata, and this part's rank / polarity. Masking is off by default
+// Coverage bitmap (offscreen RGBA8, 24 writer bits in RGB), per-frame writer
+// metadata, and this part's number on the tree sequence / its polarity.
+// Masking is off by default
 // (ss_mask_enabled == false) so non-masked draws are untouched. `ss_mask_uv`
 // is the fragment's coverage UV, written in the vertex stage from the
 // player-local position via `ss_mask_uv_basis` / `ss_mask_uv_off`.
@@ -30,9 +31,12 @@ uniform sampler2D ss_mask_coverage : filter_nearest;
 uniform bool ss_mask_enabled;
 uniform vec4 ss_mask_uv_basis;        // (basis.xy = row0, basis.zw = row1)
 uniform vec2 ss_mask_uv_off;          // (offset.x, offset.y)
-uniform int ss_mask_count;            // active writer count (0..32)
-uniform vec4 ss_mask_meta[32];        // per writer: (slot, bit, op_invert, is_clipping)
-uniform float ss_mask_rank;           // this part's draw-order rank
+uniform int ss_mask_count;            // active writer count (0..96)
+uniform vec4 ss_mask_meta[96];        // per writer: (open, close, bit, op_invert)
+// The coverage's tile grid (columns, rows): 24 writer bits per tile, the tiles
+// splitting one texture (1x1, 2x1 or 2x2). Writer `bit` lives in tile bit / 24.
+uniform vec2 ss_mask_tiles = vec2(1.0);
+uniform float ss_mask_rank;           // this part's number on the tree sequence
 uniform float ss_mask_visible_inside; // 1 = draw inside mask region, 0 = outside
 varying vec2 ss_mask_uv;
 
@@ -54,11 +58,16 @@ vec3 ss_partcolor_blend(vec3 pixel_rgb, vec3 color_rgb, vec4 varg) {
 }
 
 // Reconstruct the masked / unmasked state at this fragment by replaying the
-// active mask writers in slot order (CBP). Returns true when the fragment
-// should be drawn. Writer `i`'s coverage bit lives in `ss_mask_meta[i]`.
+// mask writers that hold their bit at this part (CBP). Returns true when the
+// fragment should be drawn. Writer `i`'s coverage bit lives in `ss_mask_meta[i]`.
 bool ss_mask_passes() {
-    if (!ss_mask_enabled || ss_mask_count <= 0) {
+    if (!ss_mask_enabled) {
         return true;
+    }
+    // No writer writes this frame: nothing is masked, so the polarity alone
+    // decides — a part drawn only inside a mask has nowhere to draw.
+    if (ss_mask_count <= 0) {
+        return ss_mask_visible_inside <= 0.5;
     }
     // The coverage bitmap only spans the mask writers' bounding box. A fragment
     // outside it (uv beyond [0,1]) is covered by no writer, so it must not be
@@ -70,11 +79,23 @@ bool ss_mask_passes() {
         // masked_state = false: visible_inside=0 draws, visible_inside=1 discards.
         return ss_mask_visible_inside <= 0.5;
     }
-    vec4 cov = texture(ss_mask_coverage, ss_mask_uv);
-    int byte0 = int(cov.r * 255.0 + 0.5);
-    int byte1 = int(cov.g * 255.0 + 0.5);
-    int byte2 = int(cov.b * 255.0 + 0.5);
-    int byte3 = int(cov.a * 255.0 + 0.5);
+    // Each tile maps the same bbox, so the fragment reads the same texel of
+    // every tile the writers use. Clamped half a texel inside the tile, or its
+    // edge would read the neighbouring tile's bits.
+    int cols = int(ss_mask_tiles.x + 0.5);
+    vec2 tiles = max(ss_mask_tiles, vec2(1.0));
+    vec2 tile_px = vec2(textureSize(ss_mask_coverage, 0)) / tiles;
+    vec2 local_px = clamp(ss_mask_uv * tile_px, vec2(0.5), tile_px - vec2(0.5));
+    int tile_bits[4] = { 0, 0, 0, 0 };
+    int tiles_used = (ss_mask_count + 23) / 24;
+    for (int t = 0; t < 4; t++) {
+        if (t >= tiles_used) { break; }
+        vec2 origin = vec2(float(t % cols), float(t / cols)) * tile_px;
+        vec4 cov = texture(ss_mask_coverage, (origin + local_px) / (tile_px * tiles));
+        tile_bits[t] = int(cov.r * 255.0 + 0.5)
+                     | (int(cov.g * 255.0 + 0.5) << 8)
+                     | (int(cov.b * 255.0 + 0.5) << 16);
+    }
     // `Invert` (mask_influence == 1) and `IncrementWrap` (mask_influence == 0)
     // are each their own inverse alone, but they do NOT commute, so replaying
     // both into one accumulator makes coverage depend on the order the writers
@@ -87,17 +108,15 @@ bool ss_mask_passes() {
     int count = 0;  // mask_influence == 0: covered where any overlap
     for (int i = 0; i < ss_mask_count; i++) {
         vec4 m = ss_mask_meta[i];
-        bool is_clipping = m.w > 0.5;
-        // Mask part masks parts drawn before it (rank < slot); a clipping
-        // writer masks parts drawn after it (rank > slot).
-        bool active = is_clipping ? (ss_mask_rank > m.x) : (ss_mask_rank < m.x);
+        // A writer holds its bit over an open interval of the tree sequence: a
+        // pure mask from the start of its own animation up to itself, a
+        // clipping writer from itself to the end of the tree.
+        bool active = ss_mask_rank > m.x && ss_mask_rank < m.y;
         if (!active) { continue; }
-        int bit = int(m.y + 0.5);
-        int chan = bit / 8;
-        int b = bit - chan * 8;
-        int byte_val = chan == 0 ? byte0 : (chan == 1 ? byte1 : (chan == 2 ? byte2 : byte3));
-        if (((byte_val >> b) & 1) == 0) { continue; }
-        if (m.z > 0.5) {
+        int bit = int(m.z + 0.5);
+        int tile = bit / 24;
+        if (((tile_bits[tile] >> (bit - tile * 24)) & 1) == 0) { continue; }
+        if (m.w > 0.5) {
             parity ^= 1; // invert (parity plane)
         } else {
             count += 1; // increment (counter plane)
