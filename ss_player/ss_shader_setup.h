@@ -158,11 +158,12 @@ const char* SS_SPOT_FS =
 
 // One render_mode line per GPU framebuffer blend variant. The four entries
 // correspond to SsBlendType::{Mix, Mul, Add, Sub} by enum value (0/1/2/3);
-// any other blend value falls back to Mix.
+// any other blend value falls back to Mix. Mul also defines SS_BLEND_MUL,
+// which ss_output_color needs to keep transparent texels out of the multiply.
 inline const char* partcolor_render_mode_str(int blend_idx_for_render_mode) {
     switch (blend_idx_for_render_mode) {
         case 0: return "render_mode blend_mix;\n";  // Mix
-        case 1: return "render_mode blend_mul;\n";  // Mul
+        case 1: return "render_mode blend_mul;\n#define SS_BLEND_MUL\n";  // Mul
         case 2: return "render_mode blend_add;\n";  // Add
         case 3: return "render_mode blend_sub;\n";  // Sub
         default: return "render_mode blend_mix;\n";

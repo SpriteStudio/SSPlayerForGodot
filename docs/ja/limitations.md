@@ -16,7 +16,7 @@
 ## 合成（ブレンド）モード
 
 > [!WARNING]
-> SpriteStudio のパーツ合成（ミキシング）モード全 12 種のうち、対応しているのは **Mix**・**Multiply**・**Add**・**Subtract** の 4 種のみです。残り 8 種 — **Mulalpha**・**Screen**・**Exclusion**・**Invert**・**Mul2**・**Div2**・**Screen2**・**Overlay2** — は **Mix** にフォールバックします。
+> SpriteStudio のパーツ合成（ミキシング）モード全 12 種のうち、対応しているのは **Mix**・**Multiply**・**Add**・**Subtract** の 4 種で、**Mulalpha** と **Mul2** は **Multiply** として描画されます。残り 6 種 — **Screen**・**Exclusion**・**Invert**・**Div2**・**Screen2**・**Overlay2** — は **Mix** にフォールバックします。
 
 本プラグインは中間レンダーターゲットを介さず Godot の `RenderingServer` キャンバスアイテムへ直接描画するため、パーツが使える合成モードは `CanvasItemMaterial` に対応づくものに限られます。未対応モードのパーツも描画自体はされますが、指定どおりではなく通常のアルファ合成で合成されます。これらのモードに依存した絵作りをしている場合は、出荷前に Godot 上で確認してください。
 

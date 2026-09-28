@@ -113,6 +113,14 @@ vec4 ss_output_color(vec4 c, float pma_flag) {
     if (!ss_mask_passes()) {
         discard;
     }
+#ifdef SS_BLEND_MUL
+    // blend_mul multiplies the backdrop by the source colour and never reads its
+    // alpha, so a transparent texel would still darken it by the colour it
+    // carries — black blocks wherever the atlas is empty but not white. Fading
+    // to white by alpha makes the result d * (1 - a + c * a).
+    return vec4(mix(vec3(1.0), c.rgb, c.a), c.a);
+#else
     return pma_flag > 0.5 ? vec4(c.rgb * c.a, c.a) : c;
+#endif
 }
 )GLSL"
