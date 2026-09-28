@@ -20,6 +20,14 @@ Both part types still occupy their place in the draw order, so an animation that
 
 The plugin draws straight to Godot's `RenderingServer` canvas item with no intermediate render target, so a part is limited to the blend modes that map onto a `CanvasItemMaterial`. A part set to an unsupported mode still draws — it just composites as ordinary alpha blending instead of the authored mode. If your artwork relies on one of the other modes, check it in Godot before shipping.
 
+## Differences from Other 2D Nodes
+
+The animation draws on canvas items of its own beneath the node, not on the node itself. Two things that work on a `Sprite2D` therefore work differently here.
+
+> [!NOTE]
+> - **Selecting in the 2D editor.** Clicking the artwork does not select the player. The 2D editor picks a node by the rectangle the node reports, and a node that reports none by its origin alone. Click near the origin, or select the node in the Scene dock; a box selection catches it when the box contains the origin. There are no resize handles either. Godot gives GDExtension nodes no way to report that rectangle, and the custom-module build behaves the same.
+> - **The node's Material.** A material assigned to the player has no effect — every part draws with the plugin's own shader — and the node shows a configuration warning while one is set. To run a shader over the whole animation, give the material to a `CanvasGroup` parent instead; see [A Shader Over the Whole Animation](workflow/tips.md#a-shader-over-the-whole-animation).
+
 ## Platforms & Export
 
 The plugin ships in two build variants — **GDExtension** and **custom module** — and both can be exported to every Godot target. Build and execution are actively verified on **Windows / macOS**; the other targets are supported but less frequently exercised. See [Build Guide](setup/build.md) for the export flow of each.
