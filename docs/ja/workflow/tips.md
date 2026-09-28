@@ -104,6 +104,29 @@ SS6 のリファレンス実装から移植された 13 種類が利用できま
 > [!NOTE]
 > `ss-circle` は展開のためにパーツの元矩形を必要とします。元矩形を持たないパーツ種別（Shape パーツなど）では何も描画されません。
 
+## アニメーション全体にシェーダを掛ける
+
+ノード自身の **Material**（`material`）は効きません。割り当てている間はノードに構成の警告が出ます。ノード自身は何も描かず、各パーツが専用のキャンバスアイテムにプラグインのシェーダで描画しているためです。
+
+キャラクター全体にシェーダを掛けたいとき（被弾時のフラッシュ、ディゾルブ、アウトラインなど）は、プレイヤーを [`CanvasGroup`](https://docs.godotengine.org/ja/stable/classes/class_canvasgroup.html) の子にして、マテリアルは `CanvasGroup` に割り当ててください。グループは子をいったん 1 枚の画像に描いてから、その画像を自分のマテリアルで描くため、シェーダはパーツごとではなく出来上がったキャラクターに掛かります。グループのシェーダはその画像をスクリーンテクスチャとして、アルファ乗算済みの色で読みます。
+
+```glsl
+shader_type canvas_item;
+
+uniform sampler2D screen_texture : hint_screen_texture, repeat_disable, filter_nearest;
+uniform float flash : hint_range(0.0, 1.0) = 0.0;
+
+void fragment() {
+    vec4 c = textureLod(screen_texture, SCREEN_UV, 0.0);
+    if (c.a > 0.0001) {
+        c.rgb /= c.a;
+    }
+    COLOR = vec4(mix(c.rgb, vec3(1.0), flash), c.a);
+}
+```
+
+`flash` はスクリプトから、またはグループのマテリアルに対する `AnimationPlayer` のトラックで動かします。`CanvasGroup` 1 つにつきオフスクリーン描画が 1 回増えるため、シーン全体を 1 つで包むのではなく、効果が要るキャラクターごとに 1 つずつ使ってください。
+
 ---
 
 ## SSAB と SSQB の使い分け

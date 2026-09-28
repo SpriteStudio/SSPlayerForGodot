@@ -57,6 +57,9 @@ SpriteStudioPlayer2D::SpriteStudioPlayer2D() {
         const Callable refresh(this, "notify_property_list_changed");
         AudioServer::get_singleton()->connect("bus_layout_changed", refresh);
         AudioServer::get_singleton()->connect("bus_renamed", refresh.unbind(3));
+        // Assigning `material` announces nothing but a property-list change,
+        // and the warning about it has to follow the assignment.
+        connect("property_list_changed", Callable(this, "update_configuration_warnings"));
     }
 }
 
@@ -835,6 +838,11 @@ PackedStringArray SpriteStudioPlayer2D::get_configuration_warnings() const {
         warnings.push_back(tr("Assign an SSABResource to the \"ssab\" property to play an animation."));
     } else if (getCurrentAnimation().is_empty()) {
         warnings.push_back(tr("Select an animation in the \"current_animation\" property."));
+    }
+    // The node draws nothing itself -- every part draws on a canvas item of its
+    // own, with the plugin's shader -- so a material set here reaches nothing.
+    if (get_material().is_valid()) {
+        warnings.push_back(tr("The \"material\" property has no effect on this node: every part draws with the plugin's own shader. To run a shader over the whole animation, make this node a child of a CanvasGroup and give the CanvasGroup the material."));
     }
     return warnings;
 }

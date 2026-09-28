@@ -18,6 +18,7 @@ void register_ss_translations() {
     // Warnings in node 2d
     ja_translation->add_message("Assign an SSABResource to the \"ssab\" property to play an animation.", "アニメーションを再生するには、\"ssab\" プロパティに SSABResource を割り当ててください。");
     ja_translation->add_message("Select an animation in the \"current_animation\" property.", "\"current_animation\" プロパティでアニメーションを選択してください。");
+    ja_translation->add_message("The \"material\" property has no effect on this node: every part draws with the plugin's own shader. To run a shader over the whole animation, make this node a child of a CanvasGroup and give the CanvasGroup the material.", "このノードでは \"material\" プロパティは効きません（各パーツはプラグイン独自のシェーダで描画されます）。アニメーション全体にシェーダを掛けるには、このノードを CanvasGroup の子にして、CanvasGroup にマテリアルを割り当ててください。");
 
     // Dock strings
     ja_translation->add_message("Add SpriteStudioPlayer2D", "SpriteStudioPlayer2Dを追加");
