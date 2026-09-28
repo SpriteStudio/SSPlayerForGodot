@@ -686,11 +686,7 @@ void SSImporter::_finish_fs_sync() {
 // Public entry points
 // --------------------------------------------------------------------------
 
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
 void SSImporter::queue_import(const PackedStringArray &p_sspj_files, const String &p_output_dir) {
-#else
-void SSImporter::queue_import(const Vector<String> &p_sspj_files, const String &p_output_dir) {
-#endif
     if (is_importing()) {
         WARN_PRINT("SSImporter: Already importing. Please wait.");
         return;
@@ -712,11 +708,7 @@ void SSImporter::queue_import(const Vector<String> &p_sspj_files, const String &
     _begin_convert_checked("Importing SSPJ:");
 }
 
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
 void SSImporter::queue_scan_and_import(const PackedStringArray &p_dirs, const PackedStringArray &p_loose_sspj, const String &p_output_dir) {
-#else
-void SSImporter::queue_scan_and_import(const Vector<String> &p_dirs, const Vector<String> &p_loose_sspj, const String &p_output_dir) {
-#endif
     if (is_importing()) {
         WARN_PRINT("SSImporter: Already importing. Please wait.");
         return;
