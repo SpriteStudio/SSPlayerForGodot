@@ -38,6 +38,25 @@ inline uint64_t make_partcolor_cache_key(uint32_t shader_id_hash, ss::format::Bl
     return ((uint64_t)shader_id_hash << 32) | (uint32_t)(int)blend_type;
 }
 
+// The framebuffer blend a part is drawn with — one of the four a canvas item's
+// render_mode can express, which is all partcolor_render_mode_str emits.
+// Mulalpha and Mul2 draw as Mul; the modes that need the backdrop as a blend
+// factor (Screen, Exclusion, Invert, ...) have no render_mode and draw as Mix.
+inline ss::format::BlendType gpu_blend_for(ss::format::BlendType blend_type) {
+    switch (blend_type) {
+        case ss::format::BlendType_Mix:
+        case ss::format::BlendType_Add:
+        case ss::format::BlendType_Sub:
+        case ss::format::BlendType_Mul:
+            return blend_type;
+        case ss::format::BlendType_Mulalpha:
+        case ss::format::BlendType_Mul2:
+            return ss::format::BlendType_Mul;
+        default:
+            return ss::format::BlendType_Mix;
+    }
+}
+
 // Round a desired pixel extent up to a power-of-two size class in
 // [MIN_DIM, MAX_DIM]. Quantizing makes the coverage viewport size change only
 // when the mask crosses a class boundary, so the render target is reused (no
@@ -2473,11 +2492,12 @@ void SsInternalPlayer::_free_per_part_canvas_items() {
 }
 
 Ref<ShaderMaterial> SsInternalPlayer::_acquire_per_part_material(uint32_t shader_id_hash, ss::format::BlendType blend_type) {
-    const uint64_t key = make_partcolor_cache_key(shader_id_hash, blend_type);
+    const ss::format::BlendType resolved = gpu_blend_for(blend_type);
+    const uint64_t key = make_partcolor_cache_key(shader_id_hash, resolved);
     PerPartMaterialPool& pool = _per_part_material_pools[key];
     if (pool.in_use >= pool.materials.size()) {
         Ref<ShaderMaterial> mat; mat.instantiate();
-        mat->set_shader(_ensure_partcolor_shader(shader_id_hash, blend_type));
+        mat->set_shader(_ensure_partcolor_shader(shader_id_hash, resolved));
         pool.materials.push_back(mat);
     }
     return pool.materials[pool.in_use++];
@@ -2572,21 +2592,8 @@ void SsInternalPlayer::_apply_per_part_uniforms(Ref<ShaderMaterial> mat, const f
 }
 
 void SsInternalPlayer::_apply_partcolor_material(RenderingServer* rs, RID ci, uint32_t shader_id_hash, ss::format::BlendType ss_blend) {
-    // Only Mix/Add/Sub/Mul are supported as GPU-side framebuffer blend modes
-    // here; any other batch blend_type falls back to Mix at the material level
-    // (docs/en/limitations.md lists the eight that do). The
-    // per-vertex CUSTOM0 still drives PartColor compositing regardless.
-    ss::format::BlendType resolved = ss_blend;
-    switch (ss_blend) {
-        case ss::format::BlendType_Mix:
-        case ss::format::BlendType_Add:
-        case ss::format::BlendType_Sub:
-        case ss::format::BlendType_Mul:
-            break;
-        default:
-            resolved = ss::format::BlendType_Mix;
-            break;
-    }
+    // The per-vertex CUSTOM0 drives PartColor compositing whatever the blend.
+    const ss::format::BlendType resolved = gpu_blend_for(ss_blend);
     const uint64_t key = make_partcolor_cache_key(shader_id_hash, resolved);
     if (!_partcolor_materials.has(key)) {
         Ref<ShaderMaterial> mat; mat.instantiate();

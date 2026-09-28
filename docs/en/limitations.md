@@ -16,7 +16,7 @@ Both part types still occupy their place in the draw order, so an animation that
 ## Blend Modes
 
 > [!WARNING]
-> Only four of SpriteStudio's twelve part blend (mixing) modes are honored — **Mix**, **Multiply**, **Add**, and **Subtract**. The other eight — **Mulalpha**, **Screen**, **Exclusion**, **Invert**, **Mul2**, **Div2**, **Screen2**, **Overlay2** — fall back to **Mix**.
+> Of SpriteStudio's twelve part blend (mixing) modes, four are honored — **Mix**, **Multiply**, **Add**, and **Subtract** — and **Mulalpha** and **Mul2** draw as **Multiply**. The other six — **Screen**, **Exclusion**, **Invert**, **Div2**, **Screen2**, **Overlay2** — fall back to **Mix**.
 
 The plugin draws straight to Godot's `RenderingServer` canvas item with no intermediate render target, so a part is limited to the blend modes that map onto a `CanvasItemMaterial`. A part set to an unsupported mode still draws — it just composites as ordinary alpha blending instead of the authored mode. If your artwork relies on one of the other modes, check it in Godot before shipping.
 

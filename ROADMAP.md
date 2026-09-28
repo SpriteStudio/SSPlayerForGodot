@@ -108,6 +108,46 @@ SpriteStudio Player for Godot leverages Godot's `CanvasItem` API and `Node2D` pa
 - **Done when**: a pack of one drawing part plus the mask that clips it draws the same mounted on an
   Instance part as it does played directly.
 
+## ☐/⛔ The six blend modes that draw as Mix (Player-only)
+
+- **Goal**: a part authored as Screen, Exclusion, Invert, Div2, Screen2 or Overlay2 composites in that mode
+  instead of as ordinary alpha blending.
+- **Key fact**: `gpu_blend_for` resolves every part's blend to one of the four a canvas item's `render_mode`
+  can express — Mix / Mul / Add / Sub; it also offers `blend_premul_alpha` and `blend_disabled`, and takes
+  no blend factors of its own. Mulalpha and Mul2 draw as Mul, the state the reference Player
+  (SSPlayerForWgpu's `blend_state`) and `ssplayer-pixi` give them, which no one has checked against the
+  Editor. The six left split two ways:
+  - **Backdrop as a factor** — Screen, Screen2 (which wgpu draws with Screen's state), Invert and Exclusion
+    take `1 − dst` as the source factor, which `render_mode` cannot say. Here the shader has to read the
+    backdrop (`hint_screen_texture`) and write the composite itself.
+  - **Undefined** — Div2 and Overlay2 have no formula with a source anywhere in the family. Every Player
+    draws them as Mix, and wgpu's roadmap blocks them on a formula, a fixture and agreement across the
+    Players; they stay Mix here until that lands.
+- **Why it earns a slot**: `SSProjectGenerator/fixtures/spine/downloaded/xiaoz_sspj` has 21 of its 510 parts
+  in Screen — light effects painted over a black ground — and Mix draws every one of them as a black panel
+  behind the character.
+- **Steps**:
+  1. Screen / Screen2 / Invert / Exclusion: a partcolor shader variant that samples `hint_screen_texture`
+     and writes the composite. Godot copies the back buffer for the first screen-reading item of a frame
+     only and later readers reuse that copy, so two overlapping Screen parts would each miss the other:
+     mark each such batch's canvas item with `canvas_item_set_copy_to_backbuffer` (what `BackBufferCopy`
+     does), its rect cut to the batch's bounds.
+     - **Cost**: one copy per such batch per frame, all of it on the GPU. `xiaoz`'s 21 Screen parts reach
+       the GPU as 11 batches on every frame of all three animations. Standing in 11 `BackBufferCopy` +
+       screen-reading quads for them over the rig, on an M4 Max at 1920×1080 under Vulkan: the rig alone
+       draws in 0.13–0.14 ms, with full-viewport copies in 0.94–1.29 ms, with 300×300 rect copies in
+       0.43–0.53 ms; CPU time does not move. Unmeasured: the Compatibility renderer, whose GPU timer reads
+       0 on macOS, and any tile-based mobile GPU, where each copy also ends and restarts the render pass.
+     - **Copy-free alternative for Screen / Screen2**: `blend_premul_alpha`, with the output alpha set to
+       `max(r, g, b)` of the premultiplied source — `s + d·(1 − max(s))` against the exact
+       `s + d·(1 − s)`. Exact for grey light; a coloured light darkens the backdrop's weaker channels
+       slightly. Untried. Invert and Exclusion have no such form, so they need the copy either way.
+     - Settle between the two on a mobile measurement.
+  2. Rewrite the *Blend Modes* section of `docs/en/limitations.md` and `docs/ja/limitations.md` to the modes
+     that remain.
+- **Done when**: `xiaoz`'s `亮小照_纯亮版` draws its light effects without the black panels and matches
+  wgpu's drawing of the same frame.
+
 ---
 
 ## 🕒 Deferred ("あとで")
