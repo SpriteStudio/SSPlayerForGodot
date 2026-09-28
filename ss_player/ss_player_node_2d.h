@@ -178,6 +178,10 @@ public:
     // Volume of built-in playback, linear [0,1]. Ignored when a backend is set.
     void set_audio_volume(float p_volume);
     float get_audio_volume() const;
+    // Bus the built-in voices play on, as AudioStreamPlayer.bus: a name the bus
+    // layout does not have plays on "Master". Ignored when a backend is set.
+    void set_audio_bus(const StringName &p_bus);
+    StringName get_audio_bus() const;
     // Optional override backend; when set, built-in playback is suppressed and
     // audio events are routed to it instead.
     void set_audio_backend(const Ref<SpriteStudioAudioBackend> &p_backend);
@@ -249,6 +253,7 @@ private:
     SsAudioController* _audio_controller = nullptr;
     bool _play_audio = true;
     float _audio_volume = 1.0f;
+    StringName _audio_bus = StringName("Master");
     Ref<SpriteStudioAudioBackend> _audio_backend;
 
     // Routes one audio event to the backend / built-in controller, applying the

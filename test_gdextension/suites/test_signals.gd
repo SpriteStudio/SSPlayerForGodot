@@ -174,6 +174,20 @@ func test_signal_emitted_carries_each_command_and_its_parameters() -> void:
 			near(float(e[1].get("pitch", -1.0)), 1.0, "and its pitch")
 
 
+## `audio_bus` is AudioStreamPlayer.bus for the built-in voices: it starts on
+## "Master", the one bus every layout has, and offers the layout's buses. Which
+## bus a voice then plays on needs the tree, which this runner does not have.
+func test_the_audio_bus_starts_on_master_and_offers_the_layout() -> void:
+	eq(player.get_audio_bus(), &"Master", "the default bus")
+	player.set_audio_bus(&"SFX")
+	eq(player.get_audio_bus(), &"SFX", "a bus name is kept as given")
+	var hint := ""
+	for prop in player.get_property_list():
+		if prop["name"] == "audio_bus":
+			hint = prop["hint_string"]
+	has(hint.split(","), "Master", "the inspector offers the layout's buses")
+
+
 ## Sound.ssab triggers MP3_44khz_mono_160kbps on `SE_looped` at frame 10, three
 ## plays, and WAV_16khz_mono_256kbps_s16 on `Speach` at frame 20. `audio` is the
 ## observation channel, so it fires with the node's own playback switched off.
