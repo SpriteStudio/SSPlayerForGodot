@@ -186,11 +186,14 @@ public:
     // `process_delta_time`). No-op when paused or in instance-child mode.
     void update(float delta_seconds);
 
-    // Transform / visibility on the root canvas item. The Node2D wrapper
-    // never calls these — the Node's own transform handles that. Used by
-    // parent SsInternalPlayer when this player is an Instance child.
+    // Transform / visibility / modulate on the root canvas item. The Node2D
+    // wrapper puts flip / offset in the transform and its self_modulate in the
+    // modulate, since the node's own canvas item draws nothing for either to
+    // reach; a parent SsInternalPlayer uses the transform and visibility to
+    // place an Instance child.
     void setRootTransform(const Transform2D& p_xf);
     void setRootVisible(bool p_visible);
+    void setRootModulate(const Color& p_modulate);
 
     // Effective local-unit -> on-screen-pixel scale of the owning Node2D
     // (global transform composed with the viewport/camera transform). The
@@ -353,6 +356,8 @@ private:
     Array _surface_arrays;
     Array _surface_empty_blend_shapes;
     Dictionary _surface_empty_lods;
+    // The PartColor stream as CUSTOM1 floats, converted from the caller's colours.
+    SsFloatArray _surface_custom1;
     // Per-batch canvas_item pool. Index == draw_batches[i] order. Recyclable
     // across frames; pool grows monotonically to peak batch count, unused
     // entries are hidden rather than freed.

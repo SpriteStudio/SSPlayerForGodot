@@ -724,6 +724,11 @@ void SsInternalPlayer::setRootVisible(bool p_visible) {
     rs->canvas_item_set_visible(_root_ci, p_visible);
 }
 
+void SsInternalPlayer::setRootModulate(const Color& p_modulate) {
+    RenderingServer* rs = RenderingServer::get_singleton();
+    rs->canvas_item_set_modulate(_root_ci, p_modulate);
+}
+
 void SsInternalPlayer::setCellMapOverrideTexture(uint32_t cellmap_name_hash, const Ref<Texture2D>& texture) {
     if (cellmap_name_hash == 0) return;
     if (texture.is_valid()) {
@@ -2614,13 +2619,34 @@ void SsInternalPlayer::_emit_partcolor_mesh(RenderingServer* rs, RID ci,
     if (_surface_arrays.size() != Mesh::ARRAY_MAX) {
         _surface_arrays.resize(Mesh::ARRAY_MAX);
     }
+    // The PartColor goes in CUSTOM1 and there is no COLOR stream, so the
+    // shader's COLOR is the canvas item's modulate alone (see ss_shader_setup.h).
+    // Quantised the way the engine quantises ARRAY_COLOR -- to 8 bits,
+    // truncated, with the product in double -- so a part draws exactly as it
+    // did when the colour rode in COLOR. Carried as floats rather than as
+    // RGBA8_UNORM, which would match ARRAY_COLOR byte for byte: the
+    // Compatibility renderer does not read an RGBA8 custom stream back
+    // correctly, and part colours lose their green and blue.
+    const int vertex_count = colors.size();
+    if (_surface_custom1.size() != vertex_count * 4) {
+        _surface_custom1.resize(vertex_count * 4);
+    }
+    const Color* src = colors.ptr();
+    float* dst = _surface_custom1.ptrw();
+    for (int i = 0; i < vertex_count; i++) {
+        const float channels[4] = { src[i].r, src[i].g, src[i].b, src[i].a };
+        for (int c = 0; c < 4; c++) {
+            dst[i * 4 + c] = float(uint8_t(CLAMP(channels[c] * 255.0, 0.0, 255.0))) / 255.0f;
+        }
+    }
     _surface_arrays[Mesh::ARRAY_VERTEX]  = verts;
     _surface_arrays[Mesh::ARRAY_TEX_UV]  = uvs;
-    _surface_arrays[Mesh::ARRAY_COLOR]   = colors;
     _surface_arrays[Mesh::ARRAY_CUSTOM0] = custom0;
+    _surface_arrays[Mesh::ARRAY_CUSTOM1] = _surface_custom1;
     _surface_arrays[Mesh::ARRAY_INDEX]   = indices;
-    // CUSTOM0 carries 4 floats per vertex (ARRAY_CUSTOM_RGBA_FLOAT).
-    const uint64_t flags = (uint64_t)Mesh::ARRAY_CUSTOM_RGBA_FLOAT << Mesh::ARRAY_FORMAT_CUSTOM0_SHIFT;
+    // CUSTOM0 and CUSTOM1 carry 4 floats per vertex each (ARRAY_CUSTOM_RGBA_FLOAT).
+    const uint64_t flags = ((uint64_t)Mesh::ARRAY_CUSTOM_RGBA_FLOAT << Mesh::ARRAY_FORMAT_CUSTOM0_SHIFT) |
+                           ((uint64_t)Mesh::ARRAY_CUSTOM_RGBA_FLOAT << Mesh::ARRAY_FORMAT_CUSTOM1_SHIFT);
 
     RID mesh_rid = _acquire_mesh_rid(rs);
     rs->mesh_add_surface_from_arrays(mesh_rid, RS_PRIMITIVE_TRIANGLES, _surface_arrays,
@@ -2632,8 +2658,8 @@ void SsInternalPlayer::_emit_partcolor_mesh(RenderingServer* rs, RID ci,
     // reused Array. mesh_add_surface_from_arrays has already copied the data.
     _surface_arrays[Mesh::ARRAY_VERTEX]  = Variant();
     _surface_arrays[Mesh::ARRAY_TEX_UV]  = Variant();
-    _surface_arrays[Mesh::ARRAY_COLOR]   = Variant();
     _surface_arrays[Mesh::ARRAY_CUSTOM0] = Variant();
+    _surface_arrays[Mesh::ARRAY_CUSTOM1] = Variant();
     _surface_arrays[Mesh::ARRAY_INDEX]   = Variant();
 }
 
