@@ -329,6 +329,40 @@ void for_each_dependency(const ss::format::SsAnimeBinary *p_binary, F &&p_fn) {
         }
     }
 }
+// The names inside a .ssab are written at conversion and resolved beside the
+// file, so a move cannot be followed by renaming anything. What the FileSystem
+// dock can be told is whether the move kept every dependency where the pack
+// looks for it. `p_path` is where the pack is now; `p_renames` maps each moved
+// file's old path to its new one, the pack itself included when it moved. A move
+// of the whole output folder keeps the layout and passes.
+Error check_dependencies_after_move(const String &p_path, const HashMap<String, String> &p_renames) {
+    Ref<SSABResource> ssab_file = memnew(SSABResource);
+    if (ssab_file->load_from_file(p_path) != OK) {
+        return OK; // Not a pack this can read; nothing to say about it.
+    }
+    String old_path = p_path;
+    for (const KeyValue<String, String> &E : p_renames) {
+        if (E.value == p_path) {
+            old_path = E.key;
+            break;
+        }
+    }
+    const String old_dir = old_path.get_base_dir();
+    const String new_dir = p_path.get_base_dir();
+    Error result = OK;
+    for_each_dependency(ssab_file->get_ss_anime_binary(), [&](const String &p_name, const char *) {
+        const String was = old_dir.path_join(p_name).simplify_path();
+        const String *moved_to = p_renames.getptr(was);
+        const String now = moved_to ? *moved_to : was;
+        const String expected = new_dir.path_join(p_name).simplify_path();
+        if (now != expected) {
+            WARN_PRINT(vformat("[SS] %s looks for \"%s\" beside itself, at %s, but it is now at %s. Move them together, or move it back.",
+                               p_path, p_name, expected, now));
+            result = ERR_CANT_RESOLVE;
+        }
+    });
+    return result;
+}
 } // namespace
 
 PackedStringArray SSABResource::get_dependency_paths(bool p_add_types) {
@@ -462,6 +496,21 @@ Ref<Resource> SSABResourceFormatLoader::load(const String &path,
 #endif
   return ssab_file;
 }
+
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+Error SSABResourceFormatLoader::_rename_dependencies(const String &path, const Dictionary &renames) const {
+  HashMap<String, String> map;
+  const Array keys = renames.keys();
+  for (int i = 0; i < keys.size(); i++) {
+    map[keys[i]] = renames[keys[i]];
+  }
+  return check_dependencies_after_move(path, map);
+}
+#else
+Error SSABResourceFormatLoader::rename_dependencies(const String &path, const HashMap<String, String> &renames) {
+  return check_dependencies_after_move(path, renames);
+}
+#endif
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
 PackedStringArray SSABResourceFormatLoader::_get_dependencies(const String &path, bool add_types) const {
