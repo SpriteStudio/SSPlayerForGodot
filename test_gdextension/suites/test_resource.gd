@@ -9,6 +9,8 @@ extends "res://test_base.gd"
 
 const BASIC := "res://ssab_generated/overall/Basic.ssab"
 const RINGO := "res://ssab_generated/Ringo/Ringo.ssab"
+const INSTANCE := "res://ssab_generated/overall/Instance.ssab"
+const SOUND := "res://ssab_generated/overall/Sound.ssab"
 
 var player: Node
 
@@ -21,6 +23,18 @@ func test_a_pack_loads_as_its_own_resource_type() -> void:
 	var res := load(BASIC)
 	ok(res != null, "load() returned something")
 	eq(res.get_class(), "SSABResource", "the pack's resource type")
+
+
+## Everything a pack resolves by name beside itself is a dependency: the atlas,
+## the sounds, the pack an Instance part plays. Reporting them is what lets a
+## dependency-based export mode ship them, and the FileSystem dock see them.
+func test_the_pack_reports_what_it_resolves_beside_itself() -> void:
+	eq(ResourceLoader.get_dependencies(RINGO), PackedStringArray(["res://ssab_generated/Ringo/Ringo.png"]),
+		"Ringo depends on its atlas")
+	has(ResourceLoader.get_dependencies(INSTANCE), "res://ssab_generated/overall/Instance_SourceAnime.ssab",
+		"an Instance part's pack")
+	has(ResourceLoader.get_dependencies(SOUND), "res://ssab_generated/overall/sound/test.mp3",
+		"a sound, in its subfolder")
 
 
 func test_the_pack_names_its_animations() -> void:

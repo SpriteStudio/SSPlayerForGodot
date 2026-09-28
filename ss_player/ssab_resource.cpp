@@ -282,6 +282,72 @@ String SSABResource::get_parent_dir() const {
     return this->_parent_dir;
 }
 
+namespace {
+// Every name a pack resolves beside itself, in one walk: `p_fn(name, type)`,
+// with the name relative to the pack's directory.
+template <typename F>
+void for_each_dependency(const ss::format::SsAnimeBinary *p_binary, F &&p_fn) {
+    if (auto cellmaps = p_binary->cellmaps()) {
+        for (uint32_t i = 0; i < cellmaps->size(); i++) {
+            auto cellmap = cellmaps->Get(i);
+            if (cellmap && cellmap->image_path()) {
+                p_fn(String::utf8(cellmap->image_path()->c_str()), "Texture2D");
+            }
+        }
+    }
+    if (auto textures = p_binary->external_textures()) {
+        for (uint32_t i = 0; i < textures->size(); i++) {
+            auto texture = textures->Get(i);
+            if (texture && texture->name()) {
+                p_fn(String::utf8(texture->name()->c_str()), "Texture2D");
+            }
+        }
+    }
+    if (auto sound_lists = p_binary->sound_lists()) {
+        for (uint32_t i = 0; i < sound_lists->size(); i++) {
+            auto sound_list = sound_lists->Get(i);
+            auto files = sound_list ? sound_list->table_data() : nullptr;
+            if (files == nullptr) {
+                continue;
+            }
+            for (uint32_t j = 0; j < files->size(); j++) {
+                auto file = files->Get(j);
+                if (file && file->file_path()) {
+                    p_fn(String::utf8(file->file_path()->c_str()), "AudioStream");
+                }
+            }
+        }
+    }
+    // The player looks an Instance part's pack up as `<anime pack>.ssab` beside
+    // this one, so that is the file it depends on.
+    if (auto instances = p_binary->external_instances()) {
+        for (uint32_t i = 0; i < instances->size(); i++) {
+            auto entry = instances->Get(i);
+            if (entry && entry->anime_pack_name() && entry->anime_pack_name()->size() > 0) {
+                p_fn(String::utf8(entry->anime_pack_name()->c_str()) + String(".ssab"), "SSABResource");
+            }
+        }
+    }
+}
+} // namespace
+
+PackedStringArray SSABResource::get_dependency_paths(bool p_add_types) {
+    PackedStringArray paths;
+    if (!is_valid()) {
+        return paths;
+    }
+    PackedStringArray seen;
+    for_each_dependency(get_ss_anime_binary(), [&](const String &p_name, const char *p_type) {
+        const String path = _parent_dir.path_join(p_name).simplify_path();
+        if (seen.has(path)) {
+            return;
+        }
+        seen.push_back(path);
+        paths.push_back(p_add_types ? path + String("::") + String(p_type) : path);
+    });
+    return paths;
+}
+
 const ss::format::SoundFile *SSABResource::_find_sound_file(uint32_t sound_list_name_hash,
                                                            uint32_t sound_name_hash) {
     if (!is_valid()) {
@@ -395,6 +461,27 @@ Ref<Resource> SSABResourceFormatLoader::load(const String &path,
     *error = OK;
 #endif
   return ssab_file;
+}
+
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+PackedStringArray SSABResourceFormatLoader::_get_dependencies(const String &path, bool add_types) const {
+#else
+void SSABResourceFormatLoader::get_dependencies(const String &path, List<String> *dependencies, bool add_types) {
+#endif
+  // A throwaway resource, read and verified but never cached: the editor asks
+  // this of every .ssab on every filesystem scan.
+  Ref<SSABResource> ssab_file = memnew(SSABResource);
+  PackedStringArray paths;
+  if (ssab_file->load_from_file(path) == OK) {
+    paths = ssab_file->get_dependency_paths(add_types);
+  }
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+  return paths;
+#else
+  for (const String &dependency : paths) {
+    dependencies->push_back(dependency);
+  }
+#endif
 }
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
