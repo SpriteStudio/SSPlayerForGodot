@@ -92,6 +92,8 @@ private:
     void _apply_button_icons();
     void _refresh_from_player();
     void _sync_playhead();
+    // Brings Loop and Speed in line with the player's properties.
+    void _sync_settings();
     void _set_controls_enabled(bool p_enabled);
     // Loop and Speed write properties the scene saves, so a change is an edit
     // of the scene: it goes through its undo history, which is also what marks
