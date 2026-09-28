@@ -14,13 +14,14 @@ SSEditorPlugin::SSEditorPlugin() {
 #else
 #include "editor/editor_interface.h"
 #include "editor/editor_node.h"
-#include "editor/scene/canvas_item_editor_plugin.h"
 #include "scene/gui/button.h"
 SSEditorPlugin::SSEditorPlugin(EditorNode *node) {
 }
 #endif
 
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
+// GDExtension cannot reach CanvasItemEditor, so both build shapes find its
+// viewport by class name. A rename in the engine disables the drop overlay
+// with a warning.
 static Control *_find_control_by_class(Node *p_root, const String &p_class_name) {
     if (p_root == nullptr) {
         return nullptr;
@@ -40,21 +41,14 @@ static Control *_find_control_by_class(Node *p_root, const String &p_class_name)
     }
     return nullptr;
 }
-#endif
 
 void SSEditorPlugin::_install_canvas_drop_overlay() {
     if (canvas_drop_overlay != nullptr) {
         return;
     }
 
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
     Control *base = EditorInterface::get_singleton()->get_base_control();
     Control *viewport_control = _find_control_by_class(base, "CanvasItemEditorViewport");
-#else
-    CanvasItemEditor *ce = CanvasItemEditor::get_singleton();
-    Control *viewport_control = ce ? ce->get_viewport_control() : nullptr;
-#endif
-
     if (viewport_control == nullptr) {
         WARN_PRINT("SSEditorPlugin: CanvasItemEditorViewport not found; .ssab drop-to-viewport disabled.");
         return;
