@@ -68,19 +68,16 @@ private:
 
   SSImporter *importer = nullptr;
 
-  // All files_dropped handlers we temporarily took over (e.g. other plugins'),
-  // preserved so non-SSPJ drops can be re-dispatched to every one of them.
+  // The window's files_dropped handlers that start_intercepting() took over.
+  // Chiefly the editor's own, which copies every OS-dropped file into the
+  // project wherever it lands: left connected, it would also copy an .sspj
+  // dropped on this dock into res://. Every drop this dock does not claim is
+  // handed to each of them directly.
   Vector<Callable> original_drop_handlers;
   bool is_intercepting = false;
-  bool is_reemitting = false;
 
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
   void _on_window_files_dropped(const PackedStringArray &p_files);
   void _perform_default_drop_logic(const PackedStringArray &p_files);
-#else
-  void _on_window_files_dropped(const Vector<String> &p_files);
-  void _perform_default_drop_logic(const Vector<String> &p_files);
-#endif
 
   Label *instruction_label = nullptr;
   Panel *drop_panel = nullptr;
@@ -139,11 +136,7 @@ private:
   // list at drop time; the importer emits them once the scan completes).
   void _on_importer_files_resolved(const PackedStringArray &p_paths);
   void _reconvert_sspj(const String &p_sspj_path);
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
   void _start_import(const PackedStringArray &p_sspj_files, const String &p_output_dir);
-#else
-  void _start_import(const Vector<String> &p_sspj_files, const String &p_output_dir);
-#endif
   void _load_settings();
   void _save_settings();
   void _ensure_output_dir_exists();

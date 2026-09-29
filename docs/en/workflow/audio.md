@@ -13,12 +13,13 @@ The converter copies the sound files referenced by the project next to the gener
 
 The voices are created on demand as **internal** children of the `SpriteStudioPlayer2D` node — they do not appear in the scene tree and are never saved with the scene — and they are pooled, so a finished voice is reused rather than freed and a busy animation does not churn nodes. `audio_volume` is a linear value converted to decibels on each voice.
 
-Three properties control it, all on `SpriteStudioPlayer2D`:
+Four properties control it, all on `SpriteStudioPlayer2D`:
 
 | Property | Type | Default | Description |
 | --- | --- | --- | --- |
 | `Play Audio` (`play_audio`) | bool | `true` | Whether the built-in player makes sound. Turn it off to handle audio entirely yourself through the `audio` signal |
 | `Audio Volume` (`audio_volume`) | float | `1.0` | Linear volume in `[0, 1]` applied to the built-in voices. Ignored when a backend is assigned |
+| `Audio Bus` (`audio_bus`) | StringName | `Master` | Bus the built-in voices play on, picked from the project's bus layout as on `AudioStreamPlayer`. A name the layout does not have plays on `Master`. Ignored when a backend is assigned |
 | `Audio Backend` (`audio_backend`) | `SpriteStudioAudioBackend` | *(none)* | Replaces the built-in player. See [Routing audio elsewhere](#routing-audio-elsewhere) |
 
 ```gdscript
@@ -106,7 +107,7 @@ func play_audio(payload: Dictionary, ssab: SSABResource, player: Node) -> void:
 Assign it in the inspector (drag the script onto `Audio Backend`, or save it as a `.tres`). One backend resource can serve any number of players — the node that fired the event arrives as `player`.
 
 > [!IMPORTANT]
-> **Assigning a backend always suppresses the built-in playback**, `audio_volume` included. The backend owns voice lifecycle and play counts completely; there is no partial hand-off. A backend that returns without doing anything for an event silences that event.
+> **Assigning a backend always suppresses the built-in playback**, `audio_volume` and `audio_bus` included. The backend owns voice lifecycle and play counts completely; there is no partial hand-off. A backend that returns without doing anything for an event silences that event.
 
 `play_audio` still gates the call, and the forward-only rule still applies — a backend is not invoked while playing backwards.
 

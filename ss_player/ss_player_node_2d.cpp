@@ -1,11 +1,13 @@
 #include "ss_player_node_2d.h"
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
+#include <godot_cpp/classes/audio_server.hpp>
 #include <godot_cpp/classes/engine.hpp>
 #include <godot_cpp/classes/viewport.hpp>
 #else
 #include "core/config/engine.h"
 #include "scene/main/viewport.h"
+#include "servers/audio/audio_server.h"
 #endif
 
 class SpriteStudioPlayer2D::_SignalSink : public SsPlayerEventSink {
@@ -48,6 +50,17 @@ SpriteStudioPlayer2D::SpriteStudioPlayer2D() {
     _internal->setEventSink(_sink);
     _internal->setSkipFrames(true);
     _internal->setSubFrameEnabled(false);
+    // A bus added, removed or renamed in the Audio panel changes the
+    // `audio_bus` list, as it does AudioStreamPlayer's. Only the inspector reads
+    // that list, so only the editor listens.
+    if (Engine::get_singleton()->is_editor_hint()) {
+        const Callable refresh(this, "notify_property_list_changed");
+        AudioServer::get_singleton()->connect("bus_layout_changed", refresh);
+        AudioServer::get_singleton()->connect("bus_renamed", refresh.unbind(3));
+        // Assigning `material` announces nothing but a property-list change,
+        // and the warning about it has to follow the assignment.
+        connect("property_list_changed", Callable(this, "update_configuration_warnings"));
+    }
 }
 
 SpriteStudioPlayer2D::~SpriteStudioPlayer2D() {
@@ -77,7 +90,7 @@ void SpriteStudioPlayer2D::setSSABResource(const Ref<SSABResource>& ssabRes) {
     _internal->setSSABResource(ssabRes);
     _apply_transport_settings();
 
-    NOTIFY_PROPERTY_LIST_CHANGED();
+    notify_property_list_changed();
     update_configuration_warnings();
 
     Ref<SSABResource> now = _internal->getSSABResource();
@@ -103,7 +116,7 @@ void SpriteStudioPlayer2D::_on_ssab_changed() {
             _internal->setCellMapOverrideTexture(hash, E.value);
         }
     }
-    NOTIFY_PROPERTY_LIST_CHANGED();
+    notify_property_list_changed();
     update_configuration_warnings();
 }
 
@@ -142,14 +155,7 @@ PackedStringArray SpriteStudioPlayer2D::get_cellmap_names() const {
     PackedStringArray names;
     Ref<SSABResource> res = _internal->getSSABResource();
     if (res.is_null()) return names;
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
     names = res->get_cellmap_names();
-#else
-    Vector<String> src = res->get_cellmap_names();
-    for (int i = 0; i < src.size(); i++) {
-        names.push_back(src[i]);
-    }
-#endif
     return names;
 }
 
@@ -157,14 +163,7 @@ PackedStringArray SpriteStudioPlayer2D::get_cell_names(const String& cellmap_nam
     PackedStringArray names;
     Ref<SSABResource> res = _internal->getSSABResource();
     if (res.is_null()) return names;
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
     names = res->get_cell_names(cellmap_name);
-#else
-    Vector<String> src = res->get_cell_names(cellmap_name);
-    for (int i = 0; i < src.size(); i++) {
-        names.push_back(src[i]);
-    }
-#endif
     return names;
 }
 
@@ -308,7 +307,7 @@ bool SpriteStudioPlayer2D::clear_all_part_overrides() {
 void SpriteStudioPlayer2D::setAnimation(const String& strName) {
     _internal->setAnimation(strName);
     _apply_transport_settings();
-    NOTIFY_PROPERTY_LIST_CHANGED();
+    notify_property_list_changed();
     update_configuration_warnings();
 }
 
@@ -350,7 +349,7 @@ void SpriteStudioPlayer2D::_handle_audio(const Dictionary& payload) {
     if (_audio_controller == nullptr) {
         _audio_controller = memnew(SsAudioController(this));
     }
-    _audio_controller->play(payload, getSSABResource(), _audio_backend.ptr(), _audio_volume);
+    _audio_controller->play(payload, getSSABResource(), _audio_backend.ptr(), _audio_volume, _audio_bus);
 }
 
 void SpriteStudioPlayer2D::set_play_audio(bool p_enabled) {
@@ -362,6 +361,11 @@ bool SpriteStudioPlayer2D::is_play_audio() const { return _play_audio; }
 
 void SpriteStudioPlayer2D::set_audio_volume(float p_volume) { _audio_volume = p_volume; }
 float SpriteStudioPlayer2D::get_audio_volume() const { return _audio_volume; }
+
+// Taken by each voice as it starts, as the volume is, so a change reaches the
+// next sound rather than the ones already playing.
+void SpriteStudioPlayer2D::set_audio_bus(const StringName& p_bus) { _audio_bus = p_bus; }
+StringName SpriteStudioPlayer2D::get_audio_bus() const { return _audio_bus; }
 
 void SpriteStudioPlayer2D::set_audio_backend(const Ref<SpriteStudioAudioBackend>& p_backend) {
     _audio_backend = p_backend;
@@ -427,6 +431,41 @@ void SpriteStudioPlayer2D::_push_host_viewport() {
     _internal->setHostViewport(vp ? vp->get_viewport_rid() : RID());
 }
 
+namespace {
+// CanvasItem's own rule for whose setting "parent node" means: the parent, if it
+// is a canvas item and this node is not top level.
+const CanvasItem* ss_parent_item(const CanvasItem* p_item) {
+    return p_item->is_set_as_top_level() ? nullptr : Object::cast_to<CanvasItem>(p_item->get_parent());
+}
+} // namespace
+
+void SpriteStudioPlayer2D::_resolve_texture_settings() {
+    int filter = TEXTURE_FILTER_PARENT_NODE;
+    for (const CanvasItem* item = this; item && filter == TEXTURE_FILTER_PARENT_NODE; item = ss_parent_item(item)) {
+        filter = item->get_texture_filter();
+    }
+    int repeat = TEXTURE_REPEAT_PARENT_NODE;
+    for (const CanvasItem* item = this; item && repeat == TEXTURE_REPEAT_PARENT_NODE; item = ss_parent_item(item)) {
+        repeat = item->get_texture_repeat();
+    }
+    // The server's enums number these as CanvasItem's do, with its "default" --
+    // the viewport's setting -- where CanvasItem has "parent node", which is
+    // what a chain that runs out of canvas items means.
+    _resolved_texture_filter = filter;
+    _resolved_texture_repeat = repeat;
+}
+
+void SpriteStudioPlayer2D::_push_canvas_item_defaults() {
+    _internal->setCanvasItemDefaults(_resolved_texture_filter, _resolved_texture_repeat, get_light_mask());
+}
+
+void SpriteStudioPlayer2D::_push_self_modulate() {
+    const Color self_modulate = get_self_modulate();
+    if (self_modulate == _pushed_self_modulate) return;
+    _pushed_self_modulate = self_modulate;
+    _internal->setRootModulate(self_modulate);
+}
+
 void SpriteStudioPlayer2D::set_animation_process_mode(AnimationProcessMode p_mode) {
     AnimationProcessMode mode = p_mode;
     if (_process_mode == mode) return;
@@ -458,6 +497,8 @@ SpriteStudioPlayer2D::AnimationProcessMode SpriteStudioPlayer2D::get_animation_p
 
 void SpriteStudioPlayer2D::advance(double p_delta) {
     _push_coverage_screen_scale();
+    _push_self_modulate();
+    _push_canvas_item_defaults();
     _internal->update(p_delta);
     // Same post-update contract as an automatic tick: world matrices are final,
     // so part attachments mirror their parts before anything draws.
@@ -568,6 +609,8 @@ void SpriteStudioPlayer2D::_bind_methods() {
     ClassDB::bind_method( D_METHOD( "is_play_audio" ), &SpriteStudioPlayer2D::is_play_audio );
     ClassDB::bind_method( D_METHOD( "set_audio_volume", "volume" ), &SpriteStudioPlayer2D::set_audio_volume );
     ClassDB::bind_method( D_METHOD( "get_audio_volume" ), &SpriteStudioPlayer2D::get_audio_volume );
+    ClassDB::bind_method( D_METHOD( "set_audio_bus", "bus" ), &SpriteStudioPlayer2D::set_audio_bus );
+    ClassDB::bind_method( D_METHOD( "get_audio_bus" ), &SpriteStudioPlayer2D::get_audio_bus );
     ClassDB::bind_method( D_METHOD( "set_audio_backend", "backend" ), &SpriteStudioPlayer2D::set_audio_backend );
     ClassDB::bind_method( D_METHOD( "get_audio_backend" ), &SpriteStudioPlayer2D::get_audio_backend );
 
@@ -694,6 +737,8 @@ void SpriteStudioPlayer2D::_bind_methods() {
     ADD_GROUP("Audio", "");
     ADD_PROPERTY(PropertyInfo(Variant::BOOL, "play_audio"), "set_play_audio", "is_play_audio");
     ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "audio_volume", PROPERTY_HINT_RANGE, "0,1,0.01"), "set_audio_volume", "get_audio_volume");
+    // The bus names come from the project's bus layout, in _validate_property.
+    ADD_PROPERTY(PropertyInfo(Variant::STRING_NAME, "audio_bus", PROPERTY_HINT_ENUM, ""), "set_audio_bus", "get_audio_bus");
     ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "audio_backend", PROPERTY_HINT_RESOURCE_TYPE, "SpriteStudioAudioBackend"), "set_audio_backend", "get_audio_backend");
 
     BIND_ENUM_CONSTANT(ANIMATION_PROCESS_PHYSICS);
@@ -773,11 +818,7 @@ void SpriteStudioPlayer2D::_get_property_list(List<PropertyInfo>* p_list) const 
         return;
     }
 
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
     PackedStringArray cellmap_names = res->get_cellmap_names();
-#else
-    Vector<String> cellmap_names = res->get_cellmap_names();
-#endif
     if (cellmap_names.size() == 0) {
         return;
     }
@@ -794,13 +835,20 @@ void SpriteStudioPlayer2D::_validate_property(PropertyInfo& p_property) const {
         // the bound resource. Left empty when no resource is assigned.
         Ref<SSABResource> res = _internal->getSSABResource();
         if (res.is_valid()) {
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
             PackedStringArray anim_names = res->get_animation_names();
-#else
-            Vector<String> anim_names = res->get_animation_names();
-#endif
             p_property.hint_string = String(",").join(anim_names);
         }
+        return;
+    }
+
+    if (p_property.name == StringName("audio_bus")) {
+        // The list AudioStreamPlayer.bus offers: the buses of the current layout.
+        AudioServer* audio = AudioServer::get_singleton();
+        PackedStringArray buses;
+        for (int i = 0; i < audio->get_bus_count(); i++) {
+            buses.push_back(audio->get_bus_name(i));
+        }
+        p_property.hint_string = String(",").join(buses);
         return;
     }
 
@@ -828,6 +876,11 @@ PackedStringArray SpriteStudioPlayer2D::get_configuration_warnings() const {
     } else if (getCurrentAnimation().is_empty()) {
         warnings.push_back(tr("Select an animation in the \"current_animation\" property."));
     }
+    // The node draws nothing itself -- every part draws on a canvas item of its
+    // own, with the plugin's shader -- so a material set here reaches nothing.
+    if (get_material().is_valid()) {
+        warnings.push_back(tr("The \"material\" property has no effect on this node: every part draws with the plugin's own shader. To run a shader over the whole animation, make this node a child of a CanvasGroup and give the CanvasGroup the material."));
+    }
     return warnings;
 }
 
@@ -847,6 +900,9 @@ void SpriteStudioPlayer2D::_notification(int p_notification) {
             // don't leave the InternalPlayer floating.
             _internal->setParentCanvasItem(get_canvas_item());
             _push_host_viewport();
+            _resolve_texture_settings();
+            _push_self_modulate();
+            _push_canvas_item_defaults();
             if (_process_mode == ANIMATION_PROCESS_PHYSICS) {
                 set_physics_process_internal(true);
             } else {
@@ -863,8 +919,11 @@ void SpriteStudioPlayer2D::_notification(int p_notification) {
         case NOTIFICATION_INTERNAL_PROCESS:
             // Pushed whichever mode is running: MANUAL does not advance the
             // animation here, but it still has to report its on-screen scale
-            // for the mask coverage pass.
+            // for the mask coverage pass, and self_modulate and the light mask
+            // still have to reach the parts.
             _push_coverage_screen_scale();
+            _push_self_modulate();
+            _push_canvas_item_defaults();
             if (_process_mode == ANIMATION_PROCESS_IDLE) {
                 _internal->update(get_process_delta_time());
                 // Post-update: world matrices are final this tick, so part
@@ -883,15 +942,19 @@ void SpriteStudioPlayer2D::_notification(int p_notification) {
         case NOTIFICATION_INTERNAL_PHYSICS_PROCESS:
             if (_process_mode == ANIMATION_PROCESS_PHYSICS) {
                 _push_coverage_screen_scale();
+                _push_self_modulate();
+                _push_canvas_item_defaults();
                 _internal->update(get_physics_process_delta_time());
                 emit_signal(SNAME("frame_updated"), _internal->getFrameNo());
             }
             if (_audio_controller) _audio_controller->tick();
             break;
         case NOTIFICATION_DRAW:
-            // The InternalPlayer handles the actual RenderingServer calls for
-            // its per-batch canvas items, but they are nested under our
-            // get_canvas_item() so we don't need to do anything here.
+            // The InternalPlayer draws on canvas items of its own, nested under
+            // ours, so there is nothing to draw here. A redraw is also how a
+            // texture filter or repeat change -- ours or an ancestor's -- arrives.
+            _resolve_texture_settings();
+            _push_canvas_item_defaults();
             break;
     }
 }

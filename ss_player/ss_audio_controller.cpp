@@ -1,8 +1,8 @@
 #include "ss_audio_controller.h"
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
+#include <godot_cpp/core/math.hpp>
 #include <godot_cpp/variant/array.hpp>
-#include <godot_cpp/variant/utility_functions.hpp>
 #else
 #include "core/math/math_funcs.h"
 #include "core/variant/array.h"
@@ -14,11 +14,7 @@ static float _volume_to_db(float v) {
     if (v <= 0.0f) {
         return -80.0f;
     }
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
-    return (float)UtilityFunctions::linear_to_db(v);
-#else
     return Math::linear_to_db(v);
-#endif
 }
 
 SsAudioController::~SsAudioController() {
@@ -26,18 +22,21 @@ SsAudioController::~SsAudioController() {
     // owner's node destruction; nothing to release here.
 }
 
-void SsAudioController::_start_voice(Voice &v, const Ref<AudioStream> &stream, float volume, int loop_num) {
+void SsAudioController::_start_voice(Voice &v, const Ref<AudioStream> &stream, float volume,
+                                     const StringName &bus, int loop_num) {
     AudioStreamPlayer *src = v.player;
     src->stop();
     src->set_stream(stream);
     src->set_volume_db(_volume_to_db(volume));
+    // Set on every start: a pooled player keeps the bus of the sound it last played.
+    src->set_bus(bus);
     src->play();
     v.loop_num = loop_num;
     v.plays_done = 1;   // first repetition now playing
 }
 
 void SsAudioController::play(const Dictionary &payload, const Ref<SSABResource> &ssab,
-                            SpriteStudioAudioBackend *backend, float volume) {
+                            SpriteStudioAudioBackend *backend, float volume, const StringName &bus) {
     // Override hook: hand the event off and skip built-in playback entirely
     // (the backend owns play-count / lifecycle). Dispatched via callv so a
     // GDScript subclass overriding play_audio is invoked.
@@ -78,7 +77,7 @@ void SsAudioController::play(const Dictionary &payload, const Ref<SSABResource> 
     if (v.player == nullptr) {
         return;
     }
-    _start_voice(v, stream, volume, loop_num);
+    _start_voice(v, stream, volume, bus, loop_num);
     _voices.push_back(v);
 }
 

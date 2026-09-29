@@ -192,11 +192,21 @@ public:
     // `process_delta_time`). No-op when paused or in instance-child mode.
     void update(float delta_seconds);
 
-    // Transform / visibility on the root canvas item. The Node2D wrapper
-    // never calls these — the Node's own transform handles that. Used by
-    // parent SsInternalPlayer when this player is an Instance child.
+    // Transform / visibility / modulate on the root canvas item. The Node2D
+    // wrapper puts flip / offset in the transform and its self_modulate in the
+    // modulate, since the node's own canvas item draws nothing for either to
+    // reach; a parent SsInternalPlayer uses the transform and visibility to
+    // place an Instance child.
     void setRootTransform(const Transform2D& p_xf);
     void setRootVisible(bool p_visible);
+    void setRootModulate(const Color& p_modulate);
+
+    // The owning CanvasItem's texture filter and repeat (resolved, so never
+    // "parent node": 0 is the viewport's default) and its light mask. Godot
+    // resolves these per node, and a canvas item created on the server starts
+    // at the defaults, so every canvas item this player draws on takes them from
+    // here -- Instance children included.
+    void setCanvasItemDefaults(int p_texture_filter, int p_texture_repeat, uint32_t p_light_mask);
 
     // Effective local-unit -> on-screen-pixel scale of the owning Node2D
     // (global transform composed with the viewport/camera transform). The
@@ -275,17 +285,10 @@ public:
     void redraw_pending_overrides();
 
 private:
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
     using SsVec2Array = PackedVector2Array;
     using SsColorArray = PackedColorArray;
     using SsIntArray = PackedInt32Array;
     using SsFloatArray = PackedFloat32Array;
-#else
-    using SsVec2Array = Vector<Vector2>;
-    using SsColorArray = Vector<Color>;
-    using SsIntArray = Vector<int>;
-    using SsFloatArray = Vector<float>;
-#endif
 
     // Root canvas item that all per-batch canvas items hang off. Created in
     // ctor, freed in dtor; transform / visibility / parent on this RID is
@@ -368,6 +371,14 @@ private:
     Array _surface_arrays;
     Array _surface_empty_blend_shapes;
     Dictionary _surface_empty_lods;
+    // State handed down by setCanvasItemDefaults, applied to each canvas item as
+    // it is created and to all of them when it changes.
+    int _texture_filter = 0;
+    int _texture_repeat = 0;
+    uint32_t _light_mask = 1;
+    void _apply_canvas_item_defaults(RID p_ci) const;
+    // The PartColor stream as CUSTOM1 floats, converted from the caller's colours.
+    SsFloatArray _surface_custom1;
     // Per-batch canvas_item pool. Index == draw_batches[i] order. Recyclable
     // across frames; pool grows monotonically to peak batch count, unused
     // entries are hidden rather than freed.

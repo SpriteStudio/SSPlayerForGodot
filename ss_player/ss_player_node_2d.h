@@ -178,6 +178,10 @@ public:
     // Volume of built-in playback, linear [0,1]. Ignored when a backend is set.
     void set_audio_volume(float p_volume);
     float get_audio_volume() const;
+    // Bus the built-in voices play on, as AudioStreamPlayer.bus: a name the bus
+    // layout does not have plays on "Master". Ignored when a backend is set.
+    void set_audio_bus(const StringName &p_bus);
+    StringName get_audio_bus() const;
     // Optional override backend; when set, built-in playback is suppressed and
     // audio events are routed to it instead.
     void set_audio_backend(const Ref<SpriteStudioAudioBackend> &p_backend);
@@ -249,6 +253,7 @@ private:
     SsAudioController* _audio_controller = nullptr;
     bool _play_audio = true;
     float _audio_volume = 1.0f;
+    StringName _audio_bus = StringName("Master");
     Ref<SpriteStudioAudioBackend> _audio_backend;
 
     // Routes one audio event to the backend / built-in controller, applying the
@@ -281,6 +286,21 @@ private:
     void _update_root_transform();
     void _push_coverage_screen_scale();
     void _push_host_viewport();
+    // self_modulate only reaches a canvas item's own draw commands, and this
+    // node has none: the parts hang off the internal root canvas item, so the
+    // value is mirrored there. Setting it tells the node nothing, so every tick
+    // compares against what was last pushed.
+    void _push_self_modulate();
+    // texture_filter / texture_repeat / light_mask likewise reach only the
+    // node's own canvas item, so the parts' canvas items are handed them.
+    // Filter and repeat -- this node's or an ancestor's -- arrive as a redraw,
+    // where they are resolved; the light mask tells the node nothing, so every
+    // tick passes it on and the core ignores what has not changed.
+    void _resolve_texture_settings();
+    void _push_canvas_item_defaults();
+    int _resolved_texture_filter = 0;
+    int _resolved_texture_repeat = 0;
+    Color _pushed_self_modulate = Color(1, 1, 1, 1);
 
     // Adapter that turns SsInternalPlayer event callbacks into Node-level
     // emit_signal calls. Lifetime tied to the Node; lives in the cpp file.

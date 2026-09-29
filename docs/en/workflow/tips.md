@@ -105,6 +105,29 @@ A part whose shader id is not in this list falls back to the default shader rath
 > [!NOTE]
 > `ss-circle` needs the part's source rectangle to unwrap. Part types that do not bind one — Shape parts, for instance — draw nothing under it.
 
+## A Shader Over the Whole Animation
+
+The node's own **Material** (`material`) has no effect, and the node shows a configuration warning while one is assigned. The node draws nothing itself: every part draws on a canvas item of its own, with the plugin's shader.
+
+To run a shader over the whole character — a hit flash, a dissolve, an outline — make the player a child of a [`CanvasGroup`](https://docs.godotengine.org/en/stable/classes/class_canvasgroup.html) and give the material to the `CanvasGroup`. The group draws its children into one image first and then draws that image through its material, so the shader works on the finished character rather than on each part. Its shader reads that image through the screen texture, with the colour premultiplied by alpha:
+
+```glsl
+shader_type canvas_item;
+
+uniform sampler2D screen_texture : hint_screen_texture, repeat_disable, filter_nearest;
+uniform float flash : hint_range(0.0, 1.0) = 0.0;
+
+void fragment() {
+    vec4 c = textureLod(screen_texture, SCREEN_UV, 0.0);
+    if (c.a > 0.0001) {
+        c.rgb /= c.a;
+    }
+    COLOR = vec4(mix(c.rgb, vec3(1.0), flash), c.a);
+}
+```
+
+Drive `flash` from a script or from an `AnimationPlayer` track on the group's material. Each `CanvasGroup` is an extra off-screen pass, so give one to each character that needs the effect rather than wrapping a whole scene in one.
+
 ---
 
 ## Choosing Between SSAB and SSQB

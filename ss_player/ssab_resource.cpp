@@ -4,6 +4,7 @@
 #include <godot_cpp/classes/file_access.hpp>
 #include <godot_cpp/core/error_macros.hpp>
 #else
+#include "core/core_bind.h"
 #include "core/error/error_list.h"
 #include "core/error/error_macros.h"
 #include "core/io/file_access.h"
@@ -122,13 +123,8 @@ int SSABResource::get_animation_count() {
   return ss_anime_binary->animations()->size();
 }
 
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
 PackedStringArray SSABResource::get_animation_names() {
     PackedStringArray vec;
-#else
-Vector<String> SSABResource::get_animation_names() {
-    Vector<String> vec;
-#endif
     if (!is_valid()) {
         return vec;
     }
@@ -142,13 +138,8 @@ Vector<String> SSABResource::get_animation_names() {
     return vec;
 }
 
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
 PackedStringArray SSABResource::get_cellmap_names() {
     PackedStringArray vec;
-#else
-Vector<String> SSABResource::get_cellmap_names() {
-    Vector<String> vec;
-#endif
     if (!is_valid()) {
         return vec;
     }
@@ -168,13 +159,8 @@ Vector<String> SSABResource::get_cellmap_names() {
     return vec;
 }
 
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
 PackedStringArray SSABResource::get_cell_names(const String &cellmap_name) {
     PackedStringArray vec;
-#else
-Vector<String> SSABResource::get_cell_names(const String &cellmap_name) {
-    Vector<String> vec;
-#endif
     if (!is_valid()) {
         return vec;
     }
@@ -296,6 +282,106 @@ String SSABResource::get_parent_dir() const {
     return this->_parent_dir;
 }
 
+namespace {
+// Every name a pack resolves beside itself, in one walk: `p_fn(name, type)`,
+// with the name relative to the pack's directory.
+template <typename F>
+void for_each_dependency(const ss::format::SsAnimeBinary *p_binary, F &&p_fn) {
+    if (auto cellmaps = p_binary->cellmaps()) {
+        for (uint32_t i = 0; i < cellmaps->size(); i++) {
+            auto cellmap = cellmaps->Get(i);
+            if (cellmap && cellmap->image_path()) {
+                p_fn(String::utf8(cellmap->image_path()->c_str()), "Texture2D");
+            }
+        }
+    }
+    if (auto textures = p_binary->external_textures()) {
+        for (uint32_t i = 0; i < textures->size(); i++) {
+            auto texture = textures->Get(i);
+            if (texture && texture->name()) {
+                p_fn(String::utf8(texture->name()->c_str()), "Texture2D");
+            }
+        }
+    }
+    if (auto sound_lists = p_binary->sound_lists()) {
+        for (uint32_t i = 0; i < sound_lists->size(); i++) {
+            auto sound_list = sound_lists->Get(i);
+            auto files = sound_list ? sound_list->table_data() : nullptr;
+            if (files == nullptr) {
+                continue;
+            }
+            for (uint32_t j = 0; j < files->size(); j++) {
+                auto file = files->Get(j);
+                if (file && file->file_path()) {
+                    p_fn(String::utf8(file->file_path()->c_str()), "AudioStream");
+                }
+            }
+        }
+    }
+    // The player looks an Instance part's pack up as `<anime pack>.ssab` beside
+    // this one, so that is the file it depends on.
+    if (auto instances = p_binary->external_instances()) {
+        for (uint32_t i = 0; i < instances->size(); i++) {
+            auto entry = instances->Get(i);
+            if (entry && entry->anime_pack_name() && entry->anime_pack_name()->size() > 0) {
+                p_fn(String::utf8(entry->anime_pack_name()->c_str()) + String(".ssab"), "SSABResource");
+            }
+        }
+    }
+}
+// The names inside a .ssab are written at conversion and resolved beside the
+// file, so a move cannot be followed by renaming anything. What the FileSystem
+// dock can be told is whether the move kept every dependency where the pack
+// looks for it. `p_path` is where the pack is now; `p_renames` maps each moved
+// file's old path to its new one, the pack itself included when it moved. A move
+// of the whole output folder keeps the layout and passes.
+Error check_dependencies_after_move(const String &p_path, const HashMap<String, String> &p_renames) {
+    Ref<SSABResource> ssab_file = memnew(SSABResource);
+    if (ssab_file->load_from_file(p_path) != OK) {
+        return OK; // Not a pack this can read; nothing to say about it.
+    }
+    String old_path = p_path;
+    for (const KeyValue<String, String> &E : p_renames) {
+        if (E.value == p_path) {
+            old_path = E.key;
+            break;
+        }
+    }
+    const String old_dir = old_path.get_base_dir();
+    const String new_dir = p_path.get_base_dir();
+    Error result = OK;
+    for_each_dependency(ssab_file->get_ss_anime_binary(), [&](const String &p_name, const char *) {
+        const String was = old_dir.path_join(p_name).simplify_path();
+        const String *moved_to = p_renames.getptr(was);
+        const String now = moved_to ? *moved_to : was;
+        const String expected = new_dir.path_join(p_name).simplify_path();
+        if (now != expected) {
+            WARN_PRINT(vformat("[SS] %s looks for \"%s\" beside itself, at %s, but it is now at %s. Move them together, or move it back.",
+                               p_path, p_name, expected, now));
+            result = ERR_CANT_RESOLVE;
+        }
+    });
+    return result;
+}
+} // namespace
+
+PackedStringArray SSABResource::get_dependency_paths(bool p_add_types) {
+    PackedStringArray paths;
+    if (!is_valid()) {
+        return paths;
+    }
+    PackedStringArray seen;
+    for_each_dependency(get_ss_anime_binary(), [&](const String &p_name, const char *p_type) {
+        const String path = _parent_dir.path_join(p_name).simplify_path();
+        if (seen.has(path)) {
+            return;
+        }
+        seen.push_back(path);
+        paths.push_back(p_add_types ? path + String("::") + String(p_type) : path);
+    });
+    return paths;
+}
+
 const ss::format::SoundFile *SSABResource::_find_sound_file(uint32_t sound_list_name_hash,
                                                            uint32_t sound_name_hash) {
     if (!is_valid()) {
@@ -336,11 +422,7 @@ Ref<AudioStream> SSABResource::get_sound_stream(uint32_t sound_list_name_hash, u
     const ss::format::SoundFile *file = _find_sound_file(sound_list_name_hash, sound_name_hash);
     if (file != nullptr && file->file_path() != nullptr) {
         String path = _parent_dir.path_join(String::utf8(file->file_path()->c_str()));
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
-        Ref<Resource> res = ResourceLoader::get_singleton()->load(path, "AudioStream", ResourceLoader::CACHE_MODE_REUSE);
-#else
-        Ref<Resource> res = ResourceLoader::load(path, "AudioStream", ResourceFormatLoader::CACHE_MODE_REUSE, nullptr);
-#endif
+        Ref<Resource> res = SsResourceLoader::get_singleton()->load(path, "AudioStream");
         stream = Ref<AudioStream>(res);
     }
 
@@ -413,6 +495,42 @@ Ref<Resource> SSABResourceFormatLoader::load(const String &path,
     *error = OK;
 #endif
   return ssab_file;
+}
+
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+Error SSABResourceFormatLoader::_rename_dependencies(const String &path, const Dictionary &renames) const {
+  HashMap<String, String> map;
+  const Array keys = renames.keys();
+  for (int i = 0; i < keys.size(); i++) {
+    map[keys[i]] = renames[keys[i]];
+  }
+  return check_dependencies_after_move(path, map);
+}
+#else
+Error SSABResourceFormatLoader::rename_dependencies(const String &path, const HashMap<String, String> &renames) {
+  return check_dependencies_after_move(path, renames);
+}
+#endif
+
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+PackedStringArray SSABResourceFormatLoader::_get_dependencies(const String &path, bool add_types) const {
+#else
+void SSABResourceFormatLoader::get_dependencies(const String &path, List<String> *dependencies, bool add_types) {
+#endif
+  // A throwaway resource, read and verified but never cached: the editor asks
+  // this of every .ssab on every filesystem scan.
+  Ref<SSABResource> ssab_file = memnew(SSABResource);
+  PackedStringArray paths;
+  if (ssab_file->load_from_file(path) == OK) {
+    paths = ssab_file->get_dependency_paths(add_types);
+  }
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+  return paths;
+#else
+  for (const String &dependency : paths) {
+    dependencies->push_back(dependency);
+  }
+#endif
 }
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION

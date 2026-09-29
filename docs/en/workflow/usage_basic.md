@@ -49,7 +49,7 @@ Once the node is selected, you can adjust various settings from Godot's Inspecto
 
 2. **In-Editor Preview**
    With the node selected, the **SpriteStudio** bottom panel appears. Use its transport controls (play from start / play from current / stop, the frame scrubber, and the **Loop** and **Speed** controls next to them) to **play the animation directly in the editor without running the game**. Keyboard shortcuts mirror the AnimationPlayer editor: **D** play from current, **Shift+D** play from start, **S** stop (active while the panel is visible).
-   Changes to parameters like `Frame No`, `Speed Scale`, and `Loop Count` are reflected in the preview in real-time, enabling quick adjustments.
+   Changes to parameters like `Frame No`, `Speed Scale`, and `Loop Count` are reflected in the preview in real-time, enabling quick adjustments. **Loop** sets `Loop Count` to `-1` (infinite) when on and to `1` when off, and **Speed** sets `Speed Scale`. Both are edits to the scene: they are saved with it and undone with Ctrl+Z, like the same change made in the Inspector.
 
 > [!TIP]
 > 

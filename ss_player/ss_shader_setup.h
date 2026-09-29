@@ -34,10 +34,14 @@
 //   Add (2): fSrc=1,   fDst=+r, fDstSrc=0   -> pixel + color * r
 //   Sub (3): fSrc=1,   fDst=-r, fDstSrc=0   -> pixel - color * r
 //
-// `partcolor_color` is captured into a dedicated varying because Godot's
-// canvas_item fragment stage modulates the built-in COLOR with the sampled
-// texture before user fragment() runs; reading COLOR in fragment would lose
-// the original PartColor.rgb.
+// The PartColor arrives in CUSTOM1, not COLOR (see `_emit_partcolor_mesh`):
+// Godot multiplies the canvas item's inherited modulate into COLOR before
+// vertex() runs, and the formula above uses PartColor.rgb as a target rather
+// than a multiplier, so the two cannot share one attribute. The meshes carry no
+// COLOR stream, so vertex() sees COLOR as the modulate alone and passes it on
+// as `ss_modulate`, which `ss_output_color()` applies last, the way Godot
+// applies it to any other canvas item. Both ride in varyings because the
+// fragment stage's COLOR already has the texture multiplied in.
 //
 // `ss_partcolor_blend()` applies the SS6 SDK PartColor compositing formula
 // (Common/Drawer/GLSL/default.fs:27). `ss_input_texture()` and
@@ -158,11 +162,12 @@ const char* SS_SPOT_FS =
 
 // One render_mode line per GPU framebuffer blend variant. The four entries
 // correspond to SsBlendType::{Mix, Mul, Add, Sub} by enum value (0/1/2/3);
-// any other blend value falls back to Mix.
+// any other blend value falls back to Mix. Mul also defines SS_BLEND_MUL,
+// which ss_output_color needs to keep transparent texels out of the multiply.
 inline const char* partcolor_render_mode_str(int blend_idx_for_render_mode) {
     switch (blend_idx_for_render_mode) {
         case 0: return "render_mode blend_mix;\n";  // Mix
-        case 1: return "render_mode blend_mul;\n";  // Mul
+        case 1: return "render_mode blend_mul;\n#define SS_BLEND_MUL\n";  // Mul
         case 2: return "render_mode blend_add;\n";  // Add
         case 3: return "render_mode blend_sub;\n";  // Sub
         default: return "render_mode blend_mix;\n";

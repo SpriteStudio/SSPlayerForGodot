@@ -202,7 +202,7 @@ Turning any of them OFF writes only the enabled components individually, like `R
 
 ### Notes
 
-- **The attachment controls the target's `visible`.** It is hidden automatically in the two cases below, and shown again automatically once the condition clears, so a visibility state you set yourself may be overwritten.
+- **The attachment hides the target in the two cases below, and shows it again once the condition clears.** It only ever shows a target it hid itself, so a target you hide yourself (`visible = false`) stays hidden. The one exception is a target you hide while the attachment already has it hidden: that one reappears when the condition clears.
     - The part name does not exist in the asset (always hidden, regardless of the `On Part Hidden` setting)
     - The part is hidden on this frame and `On Part Hidden` is `Hide Target`
 - Part names resolve against the parts of the `.ssab` the player itself has loaded. **Parts inside an Instance part (the child animation) cannot be specified** (the Instance part itself can).
@@ -298,3 +298,4 @@ Color and cell overrides conflict with the animation, so they take a `priority` 
 - Overrides live on the runtime, which owns their lifecycle. To keep a color or cell override across animation changes, set it with `OVERRIDE_PRIORITY_PERMANENT` rather than re-applying it after each change. A visibility override has no priority mode, so it has to be set again after an animation change.
 - Assigning a different `.ssab` resource clears every override, because part identity is lost.
 - Overrides do not reach parts **inside** an instance part (the child animation runs as a separate player). Force-hiding the instance part itself does stop its contents from being drawn.
+- To tint the **whole** animation rather than one part, use the node's `modulate` / `self_modulate`, as on any `CanvasItem`. They apply last — over part colors, color overrides and add-on shaders — and they reach the parts inside instance parts as well. `self_modulate` leaves child nodes, such as the content of a `SpriteStudioPartAttachment2D`, untouched, as it does on any node.

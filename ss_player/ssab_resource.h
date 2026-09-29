@@ -33,27 +33,17 @@ class SSABResource : public Resource {
 protected:
   static void _bind_methods();
 
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
   PackedByteArray binary;
-#else
-  Vector<uint8_t> binary;
-#endif
 
 public:
   Error load_from_file(const String &path);
   Error save_to_file(const String &path);
   bool is_valid() const;
   int get_animation_count();
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
   PackedStringArray get_animation_names();
   PackedStringArray get_cellmap_names();
   // Cell names inside a cellmap (for the per-part cell override API).
   PackedStringArray get_cell_names(const String &cellmap_name);
-#else
-  Vector<String> get_animation_names();
-  Vector<String> get_cellmap_names();
-  Vector<String> get_cell_names(const String &cellmap_name);
-#endif
 
   uint32_t get_cellmap_hash(const String &cellmap_name);
 
@@ -87,6 +77,16 @@ public:
   ss::format::AnimationData *find_animation_by_hash(uint32_t name_hash);
   String get_parent_dir() const;
 
+  // ---- Dependencies ------------------------------------------------------
+  // Everything the pack resolves by name beside itself: the cell map atlases,
+  // the texture-change targets, the sounds, and the packs its Instance parts
+  // play. As deduplicated res:// paths, each followed by "::<type>" when
+  // `p_add_types` is set — the form ResourceLoader.get_dependencies() returns,
+  // which the editor's dependency cache and the dependency-based export modes
+  // read. Nothing is loaded; the player still loads each one when it first
+  // needs it. Empty when no valid binary is held.
+  PackedStringArray get_dependency_paths(bool p_add_types);
+
   // ---- Audio (sound) resolution -----------------------------------------
   // The SSAB embeds a table of SoundLists (each a table of SoundFiles). An
   // audio event carries the (sound_list_name_hash, sound_name_hash) pair; these
@@ -103,7 +103,7 @@ public:
   Dictionary get_sound_info(uint32_t sound_list_name_hash, uint32_t sound_name_hash);
 
 #ifndef SPRITESTUDIO_GODOT_EXTENSION
-  virtual Error copy_from(const Ref<Resource> &p_resource);
+  Error copy_from(const Ref<Resource> &p_resource) override;
 #endif
 private:
     String _parent_dir;
@@ -139,10 +139,18 @@ public:
 
   Variant _load(const String &path, const String &original_path,
                 bool use_sub_threads, int32_t cache_mode) const override;
+
+  PackedStringArray _get_dependencies(const String &path, bool add_types) const override;
+
+  Error _rename_dependencies(const String &path, const Dictionary &renames) const override;
 #else
   Ref<Resource> load(const String &path, const String &original_path,
                      Error *error, bool use_sub_threads, float *progress,
                      CacheMode cache_mode) override;
+
+  void get_dependencies(const String &path, List<String> *dependencies, bool add_types = false) override;
+
+  Error rename_dependencies(const String &path, const HashMap<String, String> &renames) override;
 
   void get_recognized_extensions(List<String> *extensions) const override;
 

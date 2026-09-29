@@ -49,6 +49,11 @@ private:
     // part's affine is applied as it is, so skew and mirroring survive.
     bool _update_scale = false;
     HiddenBehavior _on_part_hidden = FOLLOW_ALWAYS;
+    // True while the target is hidden because this attachment hid it. Only
+    // then may it show the target again: a target hidden by anyone else — the
+    // user's own `visible = false` — stays hidden. Tied to the current target,
+    // so changing `remote_path` hands the old one back first.
+    bool _hid_target = false;
 
     SpriteStudioPlayer2D* _resolve_player() const;
     Node2D* _resolve_target();
@@ -56,6 +61,8 @@ private:
     void _disconnect_player();
     void _on_player_frame_updated(float frame_no);
     void _apply_transform(Node2D* p_target, const Transform2D& p_desired);
+    void _hide_target(Node2D* p_target);
+    void _show_target(Node2D* p_target);
 
 protected:
     void _notification(int p_what);

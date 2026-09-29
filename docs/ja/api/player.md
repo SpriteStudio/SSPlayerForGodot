@@ -52,7 +52,7 @@ func _ready() -> void:
 * `set_sub_frame_enabled(enabled: bool)` / `is_sub_frame_enabled() -> bool` (デフォルト: `false`)
 * `set_cellmap_texture(cellmap_name: String, texture: Texture2D)` / `get_cellmap_texture(cellmap_name: String) -> Texture2D`
 * `get_cellmap_names() -> PackedStringArray` / `get_cell_names(cellmap_name: String) -> PackedStringArray`: 割り当て済みの `SSABResource` から読んだ名前一覧（未割り当てなら空）。`set_part_cell_override()` に渡す名前を調べる用途です。まだプレーヤに載せていない `.ssab` を調べたい場合は [`SSABResource`](resource.md) 自身にも同じメソッドがあります。
-* `set_play_audio(enabled: bool)` / `is_play_audio() -> bool` (デフォルト: `true`)、`set_audio_volume(volume: float)` / `get_audio_volume() -> float`、`set_audio_backend(backend: SpriteStudioAudioBackend)` / `get_audio_backend() -> SpriteStudioAudioBackend`: 内蔵のサウンド再生。詳細は後述の [サウンド](#サウンド-audio) を参照してください。
+* `set_play_audio(enabled: bool)` / `is_play_audio() -> bool` (デフォルト: `true`)、`set_audio_volume(volume: float)` / `get_audio_volume() -> float`、`set_audio_bus(bus: StringName)` / `get_audio_bus() -> StringName` (デフォルト: `&"Master"`)、`set_audio_backend(backend: SpriteStudioAudioBackend)` / `get_audio_backend() -> SpriteStudioAudioBackend`: 内蔵のサウンド再生。詳細は後述の [サウンド](#サウンド-audio) を参照してください。
 
 ### `set_playback_direction` の引数
 
@@ -182,11 +182,12 @@ SpriteStudio 上でユーザーデータに設定した値が `Dictionary` と�
 | --- | --- | --- | --- |
 | `play_audio` | `bool` | `true` | 内蔵プレイヤーが音を鳴らすかどうか。`set_play_audio(false)` は再生中の内蔵ボイスも停止します |
 | `audio_volume` | `float` | `1.0` | 内蔵ボイスのリニア音量 (`[0, 1]`)。`audio_backend` を割り当てている間は無視されます |
+| `audio_bus` | `StringName` | `&"Master"` | 内蔵ボイスを流すバス。`AudioStreamPlayer.bus` と同じく、バスレイアウトに無い名前は `Master` で鳴ります。`audio_backend` を割り当てている間は無視されます |
 | `audio_backend` | `SpriteStudioAudioBackend` | *(なし)* | 内蔵プレイヤーを完全に置き換えます |
 
 ### `SpriteStudioAudioBackend`
 
-オーバーライド可能なメソッドを 1 つだけ持つ `Resource` のサブクラスです。`audio_backend` に割り当てると **内蔵再生は抑制されます**（`audio_volume` も含む）。ボイスのライフサイクルと再生回数の管理はバックエンド側の責務になります。
+オーバーライド可能なメソッドを 1 つだけ持つ `Resource` のサブクラスです。`audio_backend` に割り当てると **内蔵再生は抑制されます**（`audio_volume` と `audio_bus` も含む）。ボイスのライフサイクルと再生回数の管理はバックエンド側の責務になります。
 
 * `play_audio(payload: Dictionary, ssab: SSABResource, player: Node) -> void`: オーディオイベントごとに 1 回呼ばれます。`payload` は `audio` シグナルと同じ内容です。既定の実装は何もしません。
 

@@ -24,6 +24,7 @@
 using namespace godot;
 #else
 #include "core/config/project_settings.h"
+#include "core/core_bind.h"
 #include "core/io/dir_access.h"
 #include "core/io/config_file.h"
 #include "core/io/resource.h"
@@ -33,13 +34,7 @@ using namespace godot;
 #include "editor/settings/editor_settings.h"
 #include "scene/gui/button.h"
 #include "scene/gui/dialogs.h"
-#if VERSION_MAJOR >= 4
-    #if VERSION_MINOR >= 5
-    #include "editor/file_system/editor_file_system.h"
-    #else
-    #include "editor/editor_file_system.h"
-    #endif
-#endif
+#include "editor/file_system/editor_file_system.h"
 #endif
 
 #include "ssconverter.h"
@@ -614,11 +609,7 @@ void SSImporter::_enter_fs_sync() {
 }
 
 void SSImporter::_poll_fs_sync() {
-#if defined(SPRITESTUDIO_GODOT_EXTENSION) || (VERSION_MAJOR >= 4 && VERSION_MINOR >= 6)
     auto *efs = EditorInterface::get_singleton()->get_resource_filesystem();
-#else
-    auto *efs = EditorInterface::get_singleton()->get_resource_file_system();
-#endif
     if (!efs) {
         _finish_fs_sync();
         return;
@@ -686,11 +677,7 @@ void SSImporter::_finish_fs_sync() {
 // Public entry points
 // --------------------------------------------------------------------------
 
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
 void SSImporter::queue_import(const PackedStringArray &p_sspj_files, const String &p_output_dir) {
-#else
-void SSImporter::queue_import(const Vector<String> &p_sspj_files, const String &p_output_dir) {
-#endif
     if (is_importing()) {
         WARN_PRINT("SSImporter: Already importing. Please wait.");
         return;
@@ -712,11 +699,7 @@ void SSImporter::queue_import(const Vector<String> &p_sspj_files, const String &
     _begin_convert_checked("Importing SSPJ:");
 }
 
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
 void SSImporter::queue_scan_and_import(const PackedStringArray &p_dirs, const PackedStringArray &p_loose_sspj, const String &p_output_dir) {
-#else
-void SSImporter::queue_scan_and_import(const Vector<String> &p_dirs, const Vector<String> &p_loose_sspj, const String &p_output_dir) {
-#endif
     if (is_importing()) {
         WARN_PRINT("SSImporter: Already importing. Please wait.");
         return;
@@ -913,17 +896,7 @@ void SSImporter::_record_ssabs_in_dir(Dictionary &p_map, const String &p_dst_dir
 }
 
 void SSImporter::_refresh_cached_output(const String &p_output_path) {
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
-    if (!ResourceLoader::get_singleton()->has_cached(p_output_path)) {
-        return;
-    }
-    Ref<Resource> existing = ResourceLoader::get_singleton()->load(p_output_path, "", ResourceLoader::CACHE_MODE_REUSE);
-#else
-    if (!ResourceCache::has(p_output_path)) {
-        return;
-    }
-    Ref<Resource> existing = ResourceCache::get_ref(p_output_path);
-#endif
+    Ref<Resource> existing = SsResourceLoader::get_singleton()->get_cached_ref(p_output_path);
     if (existing.is_null()) {
         return;
     }

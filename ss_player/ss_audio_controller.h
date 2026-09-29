@@ -52,9 +52,10 @@ public:
 
     // Plays one audio event. `payload` is the Dictionary emitted by SsInternalPlayer
     // (part_index / sound_list_name_hash / sound_name_hash / sound_name / loop_num).
-    // `backend` is optional (nullptr => built-in playback). `volume` is linear [0,1].
+    // `backend` is optional (nullptr => built-in playback). `volume` is linear [0,1]
+    // and `bus` the AudioServer bus the voice plays on.
     void play(const Dictionary &payload, const Ref<SSABResource> &ssab,
-              SpriteStudioAudioBackend *backend, float volume);
+              SpriteStudioAudioBackend *backend, float volume, const StringName &bus);
 
     // Per-frame maintenance: replays finite-loop voices across their play edges
     // and reclaims finished voices back to the pool. Cheap no-op when idle.
@@ -76,7 +77,8 @@ private:
     Vector<Voice> _voices;             // active voices (one entry per in-flight sound)
     Vector<AudioStreamPlayer *> _pool; // idle players available for reuse
 
-    static void _start_voice(Voice &v, const Ref<AudioStream> &stream, float volume, int loop_num);
+    static void _start_voice(Voice &v, const Ref<AudioStream> &stream, float volume,
+                             const StringName &bus, int loop_num);
 
     AudioStreamPlayer *_rent();
     void _free(AudioStreamPlayer *player);

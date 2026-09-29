@@ -26,16 +26,8 @@ using namespace godot;
 #include "editor/settings/editor_settings.h"
 #include "scene/gui/dialogs.h"
 #include "scene/main/window.h"
-#if VERSION_MAJOR >= 4
 #include "servers/text/text_server.h"
-#endif
-#if VERSION_MAJOR >= 4
-    #if VERSION_MINOR >= 5
-    #include "editor/file_system/editor_file_system.h"
-    #else
-    #include "editor/editor_file_system.h"
-    #endif
-#endif
+#include "editor/file_system/editor_file_system.h"
 #endif
 
 #include "ss_clickable_label.h"
@@ -188,15 +180,7 @@ SSImportControl::SSImportControl() {
         SSClickableLabel *plugin_version = memnew(SSClickableLabel);
         plugin_version->set_text(String(SSPLAYER_VERSION_FULL));
         plugin_version->set_tooltip_text(String(SSPLAYER_VERSION_FULL));
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
         plugin_version->set_text_overrun_behavior(TextServer::OVERRUN_TRIM_ELLIPSIS);
-#else
-#if VERSION_MAJOR >= 4
-        plugin_version->set_text_overrun_behavior(TextServer::OVERRUN_TRIM_ELLIPSIS);
-#else
-        plugin_version->set_clip_text(true);
-#endif
-#endif
         plugin_version->set_h_size_flags(Control::SIZE_EXPAND_FILL);
         hbox_plugin->add_child(plugin_version);
 
@@ -212,15 +196,7 @@ SSImportControl::SSImportControl() {
         String text = String(v);
         clickable_label->set_text(text);
         clickable_label->set_tooltip_text(text);
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
         clickable_label->set_text_overrun_behavior(TextServer::OVERRUN_TRIM_ELLIPSIS);
-#else
-#if VERSION_MAJOR >= 4
-        clickable_label->set_text_overrun_behavior(TextServer::OVERRUN_TRIM_ELLIPSIS);
-#else
-        clickable_label->set_clip_text(true);
-#endif
-#endif
         clickable_label->set_h_size_flags(Control::SIZE_EXPAND_FILL);
         ss_converter_version_free((char *)v);
         v = nullptr;
@@ -268,8 +244,8 @@ void SSImportControl::start_intercepting() {
 #endif
 
     // Godot delivers OS file drops to every files_dropped handler and gives us
-    // no way to "consume" the event, so to claim SSPJ drops we temporarily take
-    // over ALL existing handlers and re-dispatch non-SSPJ drops back to them.
+    // no way to "consume" the event, so to claim SSPJ drops we take over ALL
+    // existing handlers and hand every drop we do not claim to them directly.
     original_drop_handlers.clear();
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
     for (int i = 0; i < connections.size(); i++) {
@@ -316,13 +292,7 @@ void SSImportControl::stop_intercepting() {
     original_drop_handlers.clear();
 }
 
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
 void SSImportControl::_on_window_files_dropped(const PackedStringArray &p_files) {
-#else
-void SSImportControl::_on_window_files_dropped(const Vector<String> &p_files) {
-#endif
-    if (is_reemitting) return;
-
     if (!is_visible_in_tree()) {
         _perform_default_drop_logic(p_files);
         return;
@@ -337,13 +307,8 @@ void SSImportControl::_on_window_files_dropped(const Vector<String> &p_files) {
 
         // Split the drop into directories (recursively scanned for .sspj) and
         // loose .sspj files.
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
         PackedStringArray sspj_files;
         PackedStringArray dirs;
-#else
-        Vector<String> sspj_files;
-        Vector<String> dirs;
-#endif
         for (int i = 0; i < p_files.size(); i++) {
             String file_path = p_files[i];
             if (DirAccess::dir_exists_absolute(file_path)) {
@@ -386,11 +351,7 @@ void SSImportControl::_on_window_files_dropped(const Vector<String> &p_files) {
     }
 }
 
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
 void SSImportControl::_start_import(const PackedStringArray &p_sspj_files, const String &p_output_dir) {
-#else
-void SSImportControl::_start_import(const Vector<String> &p_sspj_files, const String &p_output_dir) {
-#endif
     if (!importer) {
         ERR_PRINT("SSImportControl: importer is not set.");
         return;
@@ -403,33 +364,16 @@ void SSImportControl::_start_import(const Vector<String> &p_sspj_files, const St
     importer->queue_import(p_sspj_files, p_output_dir);
 }
 
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
 void SSImportControl::_perform_default_drop_logic(const PackedStringArray &p_files) {
-#else
-void SSImportControl::_perform_default_drop_logic(const Vector<String> &p_files) {
-#endif
-    Window *window = get_window();
-    if (!window || original_drop_handlers.is_empty()) return;
-
-    is_reemitting = true;
-
+    // Called directly rather than re-emitting files_dropped: a re-emit would
+    // also reach every handler connected after start_intercepting(), which
+    // already had this drop from the original emit.
     for (int i = 0; i < original_drop_handlers.size(); i++) {
         const Callable &handler = original_drop_handlers[i];
-        if (handler.is_valid() && !window->is_connected("files_dropped", handler)) {
-            window->connect("files_dropped", handler);
+        if (handler.is_valid()) {
+            handler.call(p_files);
         }
     }
-
-    window->emit_signal("files_dropped", p_files);
-
-    for (int i = 0; i < original_drop_handlers.size(); i++) {
-        const Callable &handler = original_drop_handlers[i];
-        if (handler.is_valid() && window->is_connected("files_dropped", handler)) {
-            window->disconnect("files_dropped", handler);
-        }
-    }
-
-    is_reemitting = false;
 }
 
 String SSImportControl::_normalize_output_dir(const String &p_text, String &r_reason) const {
@@ -580,11 +524,7 @@ void SSImportControl::_reconvert_sspj(const String &p_sspj_path) {
         return;
     }
 
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
     PackedStringArray files;
-#else
-    Vector<String> files;
-#endif
     files.push_back(p_sspj_path);
     String output_dir = _take_output_dir_for_import();
     if (output_dir.is_empty()) {
@@ -626,11 +566,7 @@ void SSImportControl::_show_recent_context_menu(const String &p_path) {
     recent_popup->add_separator();
     recent_popup->add_icon_item(icon_remove, tr("Remove from Recent"), RECENT_MENU_REMOVE);
 
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
     Vector2i mouse = DisplayServer::get_singleton()->mouse_get_position();
-#else
-    Vector2i mouse = DisplayServer::get_singleton()->mouse_get_position();
-#endif
     recent_popup->set_position(mouse);
     recent_popup->popup();
 }
@@ -798,11 +734,7 @@ void SSImportControl::_ensure_output_dir_exists() {
     if (da->dir_exists(path)) return;
     da->make_dir_recursive(path);
 
-#if defined(SPRITESTUDIO_GODOT_EXTENSION) || (VERSION_MAJOR >= 4 && VERSION_MINOR >= 6)
     auto *efs = EditorInterface::get_singleton()->get_resource_filesystem();
-#else
-    auto *efs = EditorInterface::get_singleton()->get_resource_file_system();
-#endif
     if (!efs) return;
     // Full scan: scan_sources()/scan_changes() are mtime-driven and do not
     // reliably notice a brand-new directory (parent-mtime granularity on

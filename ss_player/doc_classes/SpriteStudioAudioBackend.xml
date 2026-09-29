@@ -5,7 +5,7 @@
 	</brief_description>
 	<description>
 		By default [SpriteStudioPlayer2D] plays the sounds authored on audio parts through its own pooled [AudioStreamPlayer] voices. Assign a subclass of this resource to [member SpriteStudioPlayer2D.audio_backend] to take that over - for audio middleware, for a bus/attenuation setup of your own, or to keep every sound under one mixer.
-		Assigning a backend always suppresses the built-in playback, including [member SpriteStudioPlayer2D.audio_volume], so the backend fully owns voice lifecycle and play counts. It is invoked only while playback runs forward: reverse playback fires no audio at all, which is a runtime-wide limitation rather than a backend one.
+		Assigning a backend always suppresses the built-in playback, including [member SpriteStudioPlayer2D.audio_volume] and [member SpriteStudioPlayer2D.audio_bus], so the backend fully owns voice lifecycle and play counts. It is invoked only while playback runs forward: reverse playback fires no audio at all, which is a runtime-wide limitation rather than a backend one.
 		Subclass it in GDScript (or C++) and override [method play_audio]:
 		[codeblock]
 		# res://audio/my_backend.gd

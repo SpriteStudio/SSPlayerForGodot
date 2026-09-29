@@ -2,9 +2,8 @@
 
 Once your scene plays correctly in the editor, you export it like any other Godot project (**Project → Export…**). SpriteStudio Player for Godot runs in exported builds on every Godot target. There are only a few plugin-specific points to know.
 
-> [!IMPORTANT]
-> **Some export modes drop the generated assets.**
-> A `.ssab` reads its images, audio and Instance targets by *resolving paths at runtime*, so they never appear in the Godot editor's dependency graph. A dependency-based mode such as "Export selected scenes (and dependencies)" leaves them out, producing a build that **launches but shows no artwork**. See [Generated Assets and Packs](generated_assets.md#choosing-an-export-mode) for the details and the fix.
+> [!NOTE]
+> **A `.ssab` carries its images, audio and Instance targets as dependencies**, so the dependency-based export modes such as "Export selected scenes (and dependencies)" ship them too. What can still leave them out is an exclude filter; see [Generated Assets and Packs](generated_assets.md#choosing-an-export-mode).
 
 ## General
 

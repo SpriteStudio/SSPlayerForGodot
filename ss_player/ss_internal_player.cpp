@@ -11,7 +11,7 @@
 #include <godot_cpp/classes/resource_loader.hpp>
 #include <godot_cpp/variant/utility_functions.hpp>
 #else
-#include "core/io/resource_loader.h"
+#include "core/core_bind.h"
 #include "servers/rendering/rendering_server.h"
 #endif
 
@@ -36,6 +36,25 @@ static std::once_flag s_shader_catalog_init_flag;
 // HashMap keys stay scalar — Godot's default Hash<uint64_t> just works.
 inline uint64_t make_partcolor_cache_key(uint32_t shader_id_hash, ss::format::BlendType blend_type) {
     return ((uint64_t)shader_id_hash << 32) | (uint32_t)(int)blend_type;
+}
+
+// The framebuffer blend a part is drawn with — one of the four a canvas item's
+// render_mode can express, which is all partcolor_render_mode_str emits.
+// Mulalpha and Mul2 draw as Mul; the modes that need the backdrop as a blend
+// factor (Screen, Exclusion, Invert, ...) have no render_mode and draw as Mix.
+inline ss::format::BlendType gpu_blend_for(ss::format::BlendType blend_type) {
+    switch (blend_type) {
+        case ss::format::BlendType_Mix:
+        case ss::format::BlendType_Add:
+        case ss::format::BlendType_Sub:
+        case ss::format::BlendType_Mul:
+            return blend_type;
+        case ss::format::BlendType_Mulalpha:
+        case ss::format::BlendType_Mul2:
+            return ss::format::BlendType_Mul;
+        default:
+            return ss::format::BlendType_Mix;
+    }
 }
 
 // Round a desired pixel extent up to a power-of-two size class in
@@ -302,6 +321,7 @@ RID SsInternalPlayer::_ensure_batch_ci(int batch_idx) {
     while (_batch_canvas_items.size() <= batch_idx) {
         RID ci = rs->canvas_item_create();
         rs->canvas_item_set_parent(ci, _root_ci);
+        _apply_canvas_item_defaults(ci);
         _batch_canvas_items.push_back(ci);
     }
     return _batch_canvas_items[batch_idx];
@@ -712,6 +732,46 @@ void SsInternalPlayer::setRootVisible(bool p_visible) {
     rs->canvas_item_set_visible(_root_ci, p_visible);
 }
 
+void SsInternalPlayer::setRootModulate(const Color& p_modulate) {
+    RenderingServer* rs = RenderingServer::get_singleton();
+    rs->canvas_item_set_modulate(_root_ci, p_modulate);
+}
+
+void SsInternalPlayer::_apply_canvas_item_defaults(RID p_ci) const {
+    RenderingServer* rs = RenderingServer::get_singleton();
+    rs->canvas_item_set_default_texture_filter(p_ci, (RS_CANVAS_ITEM_TEXTURE_FILTER)_texture_filter);
+    rs->canvas_item_set_default_texture_repeat(p_ci, (RS_CANVAS_ITEM_TEXTURE_REPEAT)_texture_repeat);
+    rs->canvas_item_set_light_mask(p_ci, _light_mask);
+}
+
+void SsInternalPlayer::setCanvasItemDefaults(int p_texture_filter, int p_texture_repeat, uint32_t p_light_mask) {
+    if (_texture_filter == p_texture_filter && _texture_repeat == p_texture_repeat && _light_mask == p_light_mask) {
+        return;
+    }
+    _texture_filter = p_texture_filter;
+    _texture_repeat = p_texture_repeat;
+    _light_mask = p_light_mask;
+    // Pooled canvas items keep what was set on them, so the ones that exist are
+    // set here and new ones as they are created. The mask coverage items are left
+    // alone: they draw into their own viewport, which nothing lights.
+    for (int i = 0; i < _batch_canvas_items.size(); i++) {
+        _apply_canvas_item_defaults(_batch_canvas_items[i]);
+    }
+    for (int i = 0; i < _per_part_canvas_items.size(); i++) {
+        _apply_canvas_item_defaults(_per_part_canvas_items[i]);
+    }
+    for (const EffectSlotState& slot : _effect_slots) {
+        for (const RID& e_ci : slot.emitter_cis) {
+            _apply_canvas_item_defaults(e_ci);
+        }
+    }
+    for (uint32_t i = 0; i < _instance_children.size(); i++) {
+        if (_instance_children[i].player) {
+            _instance_children[i].player->setCanvasItemDefaults(p_texture_filter, p_texture_repeat, p_light_mask);
+        }
+    }
+}
+
 void SsInternalPlayer::setCellMapOverrideTexture(uint32_t cellmap_name_hash, const Ref<Texture2D>& texture) {
     if (cellmap_name_hash == 0) return;
     if (texture.is_valid()) {
@@ -724,12 +784,7 @@ void SsInternalPlayer::setCellMapOverrideTexture(uint32_t cellmap_name_hash, con
                     auto cellmap = a->cellmaps()->Get(i);
                     if (cellmap->name_hash() == cellmap_name_hash) {
                         String strImage = _ssabRes->get_parent_dir().path_join(String::utf8(cellmap->image_path()->c_str()));
-                        Ref<Texture2D> original_tex =
-                        #ifdef SPRITESTUDIO_GODOT_EXTENSION
-                        ResourceLoader::get_singleton()->load(strImage, "", ResourceLoader::CACHE_MODE_REUSE);
-                        #else
-                        ResourceLoader::load(strImage, "", ResourceFormatLoader::CACHE_MODE_REUSE, nullptr);
-                        #endif
+                        Ref<Texture2D> original_tex = SsResourceLoader::get_singleton()->load(strImage);
                         _textures[cellmap_name_hash] = original_tex;
                         return;
                     }
@@ -740,12 +795,7 @@ void SsInternalPlayer::setCellMapOverrideTexture(uint32_t cellmap_name_hash, con
                     auto etexture = a->external_textures()->Get(i);
                     if (etexture->name_hash() == cellmap_name_hash) {
                         String strImage = _ssabRes->get_parent_dir().path_join(String::utf8(etexture->name()->c_str()));
-                        Ref<Texture2D> original_tex =
-                        #ifdef SPRITESTUDIO_GODOT_EXTENSION
-                        ResourceLoader::get_singleton()->load(strImage, "", ResourceLoader::CACHE_MODE_REUSE);
-                        #else
-                        ResourceLoader::load(strImage, "", ResourceFormatLoader::CACHE_MODE_REUSE, nullptr);
-                        #endif
+                        Ref<Texture2D> original_tex = SsResourceLoader::get_singleton()->load(strImage);
                         _textures[cellmap_name_hash] = original_tex;
                         return;
                     }
@@ -769,12 +819,7 @@ void SsInternalPlayer::_loadTextures(const Ref<SSABResource>& ssabRes) {
         for (int i = 0; i < a->cellmaps()->size(); i++) {
             auto cellmap = a->cellmaps()->Get(i);
             String strImage = _ssabRes->get_parent_dir().path_join(String::utf8(cellmap->image_path()->c_str()));
-            Ref<Texture2D> texture =
-            #ifdef SPRITESTUDIO_GODOT_EXTENSION
-            ResourceLoader::get_singleton()->load(strImage, "", ResourceLoader::CACHE_MODE_REUSE);
-            #else
-            ResourceLoader::load(strImage, "", ResourceFormatLoader::CACHE_MODE_REUSE, nullptr);
-            #endif
+            Ref<Texture2D> texture = SsResourceLoader::get_singleton()->load(strImage);
             _textures[cellmap->name_hash()] = texture;
         }
     }
@@ -782,12 +827,7 @@ void SsInternalPlayer::_loadTextures(const Ref<SSABResource>& ssabRes) {
         for (int i = 0; i < a->external_textures()->size(); i++) {
             auto etexture = a->external_textures()->Get(i);
             String strImage = _ssabRes->get_parent_dir().path_join(String::utf8(etexture->name()->c_str()));
-            Ref<Texture2D> texture =
-            #ifdef SPRITESTUDIO_GODOT_EXTENSION
-            ResourceLoader::get_singleton()->load(strImage, "", ResourceLoader::CACHE_MODE_REUSE);
-            #else
-            ResourceLoader::load(strImage, "", ResourceFormatLoader::CACHE_MODE_REUSE, nullptr);
-            #endif
+            Ref<Texture2D> texture = SsResourceLoader::get_singleton()->load(strImage);
             _textures[etexture->name_hash()] = texture;
         }
     }
@@ -1932,12 +1972,7 @@ void SsInternalPlayer::_load_external_ssabs() {
         if (pack.is_empty() || loaded_packs.has(pack)) continue;
         loaded_packs.insert(pack);
         String path = parent_dir.path_join(pack + ".ssab");
-        Ref<Resource> res =
-        #ifdef SPRITESTUDIO_GODOT_EXTENSION
-            ResourceLoader::get_singleton()->load(path, "", ResourceLoader::CACHE_MODE_REUSE);
-        #else
-            ResourceLoader::load(path, "", ResourceFormatLoader::CACHE_MODE_REUSE, nullptr);
-        #endif
+        Ref<Resource> res = SsResourceLoader::get_singleton()->load(path);
         Ref<SSABResource> ssab = res;
         if (ssab.is_null()) {
             ERR_PRINT(vformat("[SS] external SSAB load failed: %s", path));
@@ -2038,6 +2073,8 @@ void SsInternalPlayer::_setup_instance_children() {
 
         SsInternalPlayer* child = memnew(SsInternalPlayer);
         child->setParentDriven(true);
+        // Before the resource: binding it draws, and that creates canvas items.
+        child->setCanvasItemDefaults(_texture_filter, _texture_repeat, _light_mask);
         child->setSubFrameEnabled(_sub_frame_enabled);
         // Hand the child the SSAB that actually contains the referenced
         // animation — may be `_ssabRes` itself or an external sibling.
@@ -2357,6 +2394,7 @@ void SsInternalPlayer::_emit_effect_slot(const DrawFrame& f, RID ci, int p_idx, 
         while ((uint32_t)slot.emitter_cis.size() <= drawn_cis) {
             RID e_ci = f.rs->canvas_item_create();
             f.rs->canvas_item_set_parent(e_ci, ci);
+            _apply_canvas_item_defaults(e_ci);
             slot.emitter_cis.push_back(e_ci);
         }
 
@@ -2560,11 +2598,12 @@ void SsInternalPlayer::_free_per_part_canvas_items() {
 }
 
 Ref<ShaderMaterial> SsInternalPlayer::_acquire_per_part_material(uint32_t shader_id_hash, ss::format::BlendType blend_type) {
-    const uint64_t key = make_partcolor_cache_key(shader_id_hash, blend_type);
+    const ss::format::BlendType resolved = gpu_blend_for(blend_type);
+    const uint64_t key = make_partcolor_cache_key(shader_id_hash, resolved);
     PerPartMaterialPool& pool = _per_part_material_pools[key];
     if (pool.in_use >= pool.materials.size()) {
         Ref<ShaderMaterial> mat; mat.instantiate();
-        mat->set_shader(_ensure_partcolor_shader(shader_id_hash, blend_type));
+        mat->set_shader(_ensure_partcolor_shader(shader_id_hash, resolved));
         pool.materials.push_back(mat);
     }
     return pool.materials[pool.in_use++];
@@ -2575,6 +2614,7 @@ RID SsInternalPlayer::_acquire_per_part_canvas_item() {
     if (_per_part_canvas_items_in_use >= _per_part_canvas_items.size()) {
         RID ci = rs->canvas_item_create();
         rs->canvas_item_set_parent(ci, _root_ci);
+        _apply_canvas_item_defaults(ci);
         _per_part_canvas_items.push_back(ci);
     }
     RID ci = _per_part_canvas_items[_per_part_canvas_items_in_use++];
@@ -2659,21 +2699,8 @@ void SsInternalPlayer::_apply_per_part_uniforms(Ref<ShaderMaterial> mat, const f
 }
 
 void SsInternalPlayer::_apply_partcolor_material(RenderingServer* rs, RID ci, uint32_t shader_id_hash, ss::format::BlendType ss_blend) {
-    // Only Mix/Add/Sub/Mul are supported as GPU-side framebuffer blend modes
-    // here; any other batch blend_type falls back to Mix at the material level
-    // (docs/en/limitations.md lists the eight that do). The
-    // per-vertex CUSTOM0 still drives PartColor compositing regardless.
-    ss::format::BlendType resolved = ss_blend;
-    switch (ss_blend) {
-        case ss::format::BlendType_Mix:
-        case ss::format::BlendType_Add:
-        case ss::format::BlendType_Sub:
-        case ss::format::BlendType_Mul:
-            break;
-        default:
-            resolved = ss::format::BlendType_Mix;
-            break;
-    }
+    // The per-vertex CUSTOM0 drives PartColor compositing whatever the blend.
+    const ss::format::BlendType resolved = gpu_blend_for(ss_blend);
     const uint64_t key = make_partcolor_cache_key(shader_id_hash, resolved);
     if (!_partcolor_materials.has(key)) {
         Ref<ShaderMaterial> mat; mat.instantiate();
@@ -2694,13 +2721,34 @@ void SsInternalPlayer::_emit_partcolor_mesh(RenderingServer* rs, RID ci,
     if (_surface_arrays.size() != Mesh::ARRAY_MAX) {
         _surface_arrays.resize(Mesh::ARRAY_MAX);
     }
+    // The PartColor goes in CUSTOM1 and there is no COLOR stream, so the
+    // shader's COLOR is the canvas item's modulate alone (see ss_shader_setup.h).
+    // Quantised the way the engine quantises ARRAY_COLOR -- to 8 bits,
+    // truncated, with the product in double -- so a part draws exactly as it
+    // did when the colour rode in COLOR. Carried as floats rather than as
+    // RGBA8_UNORM, which would match ARRAY_COLOR byte for byte: the
+    // Compatibility renderer does not read an RGBA8 custom stream back
+    // correctly, and part colours lose their green and blue.
+    const int vertex_count = colors.size();
+    if (_surface_custom1.size() != vertex_count * 4) {
+        _surface_custom1.resize(vertex_count * 4);
+    }
+    const Color* src = colors.ptr();
+    float* dst = _surface_custom1.ptrw();
+    for (int i = 0; i < vertex_count; i++) {
+        const float channels[4] = { src[i].r, src[i].g, src[i].b, src[i].a };
+        for (int c = 0; c < 4; c++) {
+            dst[i * 4 + c] = float(uint8_t(CLAMP(channels[c] * 255.0, 0.0, 255.0))) / 255.0f;
+        }
+    }
     _surface_arrays[Mesh::ARRAY_VERTEX]  = verts;
     _surface_arrays[Mesh::ARRAY_TEX_UV]  = uvs;
-    _surface_arrays[Mesh::ARRAY_COLOR]   = colors;
     _surface_arrays[Mesh::ARRAY_CUSTOM0] = custom0;
+    _surface_arrays[Mesh::ARRAY_CUSTOM1] = _surface_custom1;
     _surface_arrays[Mesh::ARRAY_INDEX]   = indices;
-    // CUSTOM0 carries 4 floats per vertex (ARRAY_CUSTOM_RGBA_FLOAT).
-    const uint64_t flags = (uint64_t)Mesh::ARRAY_CUSTOM_RGBA_FLOAT << Mesh::ARRAY_FORMAT_CUSTOM0_SHIFT;
+    // CUSTOM0 and CUSTOM1 carry 4 floats per vertex each (ARRAY_CUSTOM_RGBA_FLOAT).
+    const uint64_t flags = ((uint64_t)Mesh::ARRAY_CUSTOM_RGBA_FLOAT << Mesh::ARRAY_FORMAT_CUSTOM0_SHIFT) |
+                           ((uint64_t)Mesh::ARRAY_CUSTOM_RGBA_FLOAT << Mesh::ARRAY_FORMAT_CUSTOM1_SHIFT);
 
     RID mesh_rid = _acquire_mesh_rid(rs);
     rs->mesh_add_surface_from_arrays(mesh_rid, RS_PRIMITIVE_TRIANGLES, _surface_arrays,
@@ -2712,8 +2760,8 @@ void SsInternalPlayer::_emit_partcolor_mesh(RenderingServer* rs, RID ci,
     // reused Array. mesh_add_surface_from_arrays has already copied the data.
     _surface_arrays[Mesh::ARRAY_VERTEX]  = Variant();
     _surface_arrays[Mesh::ARRAY_TEX_UV]  = Variant();
-    _surface_arrays[Mesh::ARRAY_COLOR]   = Variant();
     _surface_arrays[Mesh::ARRAY_CUSTOM0] = Variant();
+    _surface_arrays[Mesh::ARRAY_CUSTOM1] = Variant();
     _surface_arrays[Mesh::ARRAY_INDEX]   = Variant();
 }
 

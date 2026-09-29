@@ -9,6 +9,7 @@
 #include <godot_cpp/classes/check_button.hpp>
 #include <godot_cpp/classes/control.hpp>
 #include <godot_cpp/classes/editor_interface.hpp>
+#include <godot_cpp/classes/editor_undo_redo_manager.hpp>
 #include <godot_cpp/classes/global_constants.hpp>
 #include <godot_cpp/classes/h_box_container.hpp>
 #include <godot_cpp/classes/h_slider.hpp>
@@ -26,6 +27,7 @@ using namespace godot;
 #include "core/os/keyboard.h"
 #include "core/variant/array.h"
 #include "editor/editor_interface.h"
+#include "editor/editor_undo_redo_manager.h"
 #include "scene/gui/box_container.h"
 #include "scene/gui/button.h"
 #include "scene/gui/check_button.h"
@@ -59,6 +61,12 @@ static Ref<Shortcut> _ss_make_shortcut(int p_keycode, bool p_shift) {
 
 SSPlaybackPanel::SSPlaybackPanel() {
     _build_ui();
+}
+
+void SSPlaybackPanel::_bind_methods() {
+    // Bound for the undo history, which calls it by name after an undo / redo
+    // of Loop or Speed has changed the value behind the panel's back.
+    ClassDB::bind_method(D_METHOD("_refresh_from_player"), &SSPlaybackPanel::_refresh_from_player);
 }
 
 void SSPlaybackPanel::_build_ui() {
@@ -239,12 +247,22 @@ void SSPlaybackPanel::_refresh_from_player() {
     _frame_spin->set_max(max_frame);
     _total_label->set_text("/ " + String::num_int64(max_frame));
 
-    _speed_spin->set_value(_player->getSpeedScale());
-    _loop_btn->set_pressed(_player->getLoopCount() != 1);
-
     _updating = false;
 
+    _sync_settings();
     _sync_playhead();
+}
+
+void SSPlaybackPanel::_sync_settings() {
+    const float speed = _player->getSpeedScale();
+    const bool looping = _player->getLoopCount() != 1;
+    if (_speed_spin->get_value() == speed && _loop_btn->is_pressed() == looping) {
+        return;
+    }
+    _updating = true;
+    _speed_spin->set_value(speed);
+    _loop_btn->set_pressed(looping);
+    _updating = false;
 }
 
 void SSPlaybackPanel::_sync_playhead() {
@@ -267,8 +285,14 @@ void SSPlaybackPanel::_notification(int p_what) {
             set_process_shortcut_input(true);
             break;
         case NOTIFICATION_PROCESS:
+            if (!_player) {
+                break;
+            }
+            // Speed and Loop show node properties that the inspector, an undo
+            // or a script can change without telling the panel.
+            _sync_settings();
             // Follow the playhead while the node animates in the editor.
-            if (_player && _player->isPlaying()) {
+            if (_player->isPlaying()) {
                 _sync_playhead();
             }
             break;
@@ -331,18 +355,31 @@ void SSPlaybackPanel::_on_stop_pressed() {
     _sync_playhead();
 }
 
+void SSPlaybackPanel::_commit_player_property(const String &p_action, const StringName &p_property,
+                                              const Variant &p_value, bool p_merge) {
+    EditorUndoRedoManager *undo_redo = EditorInterface::get_singleton()->get_editor_undo_redo();
+    undo_redo->create_action(p_action, p_merge ? UndoRedo::MERGE_ENDS : UndoRedo::MERGE_DISABLE);
+    // The player first: the action's history is taken from the first object,
+    // and the panel is no part of the scene, so it has to join the scene's.
+    undo_redo->add_do_property(_player, p_property, p_value);
+    undo_redo->add_undo_property(_player, p_property, _player->get(p_property));
+    undo_redo->add_do_method(this, "_refresh_from_player");
+    undo_redo->add_undo_method(this, "_refresh_from_player");
+    undo_redo->commit_action();
+}
+
 void SSPlaybackPanel::_on_loop_toggled(bool p_on) {
     if (_updating || !_player) {
         return;
     }
-    _player->setLoopCount(p_on ? -1 : 1);
+    _commit_player_property(tr("Set Loop Count"), "loop_count", p_on ? -1 : 1, false);
 }
 
 void SSPlaybackPanel::_on_speed_changed(double p_value) {
     if (_updating || !_player) {
         return;
     }
-    _player->setSpeedScale((float)p_value);
+    _commit_player_property(tr("Set Speed Scale"), "speed_scale", (float)p_value, true);
 }
 
 void SSPlaybackPanel::_on_slider_changed(double p_value) {

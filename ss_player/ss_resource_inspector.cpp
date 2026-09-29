@@ -17,7 +17,7 @@
 #include <godot_cpp/classes/project_settings.hpp>
 #include <godot_cpp/classes/resource.hpp>
 #include <godot_cpp/core/class_db.hpp>
-#include <godot_cpp/variant/utility_functions.hpp>
+#include <godot_cpp/core/print_string.hpp>
 #include <godot_cpp/classes/animation.hpp>
 #include <godot_cpp/classes/animation_library.hpp>
 #include <godot_cpp/classes/resource_saver.hpp>
@@ -25,6 +25,7 @@
 using namespace godot;
 #else
 #include "core/config/project_settings.h"
+#include "core/core_bind.h"
 #include "core/io/resource.h"
 #include "core/os/os.h"
 #include "editor/editor_interface.h"
@@ -33,15 +34,7 @@ using namespace godot;
 #include "scene/resources/animation.h"
 #include "scene/resources/animation_library.h"
 #include "core/io/resource_saver.h"
-#if VERSION_MAJOR >= 4
-    #if VERSION_MINOR >= 5
-    #include "editor/file_system/editor_file_system.h"
-    #else
-    #include "editor/editor_file_system.h"
-    #endif
-#else
-    #include "editor/editor_file_system.h"
-#endif
+#include "editor/file_system/editor_file_system.h"
 #endif
 
 void SSResourceInspectorPlugin::_bind_methods() {
@@ -156,11 +149,7 @@ void SSResourceInspectorPlugin::_on_generate_animation_library_pressed(const Str
     Ref<AnimationLibrary> library;
     library.instantiate();
 
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
     PackedStringArray anim_names = ssab->get_animation_names();
-#else
-    Vector<String> anim_names = ssab->get_animation_names();
-#endif
 
     for (int i = 0; i < anim_names.size(); i++) {
         String anim_name = anim_names[i];
@@ -206,24 +195,12 @@ void SSResourceInspectorPlugin::_on_generate_animation_library_pressed(const Str
     }
 
     String out_path = p_resource_path.get_basename() + "_anims.res";
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
-    Error err = ResourceSaver::get_singleton()->save(library, out_path);
-#else
-    Error err = ResourceSaver::save(library, out_path);
-#endif
+    Error err = SsResourceSaver::get_singleton()->save(library, out_path, SsResourceSaver::FLAG_NONE);
 
     if (err == OK) {
-#if defined(SPRITESTUDIO_GODOT_EXTENSION) || (VERSION_MAJOR >= 4 && VERSION_MINOR >= 6)
         auto *efs = EditorInterface::get_singleton()->get_resource_filesystem();
-#else
-        auto *efs = EditorInterface::get_singleton()->get_resource_file_system();
-#endif
         if (efs) efs->scan();
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
-        UtilityFunctions::print("Generated AnimationLibrary: " + out_path);
-#else
         print_line("Generated AnimationLibrary: " + out_path);
-#endif
     } else {
         ERR_PRINT("Failed to save AnimationLibrary to " + out_path);
     }
