@@ -85,28 +85,20 @@ SpriteStudio Player for Godot leverages Godot's `CanvasItem` API and `Node2D` pa
 - **Done when**: a demo screen puts a player inside a `VBoxContainer`, resizes with the window, receives
   `gui_input` on its own artwork, and changes animation as a `Button` is hovered and pressed.
 
-## ☐ A pure mask inside an Instance part (Player-only)
+## ☑ A pure mask inside an Instance part (Player-only)
 
-- **Goal**: a mask part written inside a sub-animation clips that sub-animation's own parts, the way it
-  does when the same pack is played directly.
-- **Key fact**: `_drawAnimation` calls `_render_mask_coverage` only when `!_parent_driven`, so an Instance
-  child never rasterises its own writers, and `_bubble_child_clip_writers` carries **clipping** writers up
-  and nothing else. A pure mask inside an instance is therefore dropped: the pack clips correctly played
-  on its own and draws unclipped through an Instance part. The SDK's `40_mask.md` §2-7 has a pure mask
-  closing *within* the sub-animation, so this is a gap rather than the design.
-- **Why it earns a slot**: a sub-animation is the only way SpriteStudio can express **more than one
-  independent clipping group** in one animation — scope is draw priority and nothing else, so a second
-  mask reaches the first one's targets. Adobe Animate's `Clpb` has no such limit and real exports carry
-  several, which is what holds the conversion in `SSProjectGenerator/ROADMAP.md`.
-- **Steps**:
-  1. Decide where the coverage comes from: a private pass for the child (a second borrowed target, and the
-     owner's UV transform no longer describing it), or the child's pure-mask writers bubbled into the
-     owner's coverage with a scope confined to the child's own draw-order window — `ss_mask_meta` carries
-     `(slot, bit, op, is_clipping)` today and would need the window as well.
-  2. Whichever it is, keep `§2-6`: the instance part's composed `mask_influence` / `visible_inside_mask`
-     still decide whether the *owner's* mask reaches in, independently of the child's own writers.
-- **Done when**: a pack of one drawing part plus the mask that clips it draws the same mounted on an
-  Instance part as it does played directly.
+- **Shipped.** The top-level player bakes every mask writer of its instance tree, at any depth, into its
+  one coverage bitmap, and places each on a sequence that numbers the whole tree in draw order: a pure mask
+  holds from the start of its own animation up to itself, a clipping writer from itself to the end of the
+  tree. A mask inside a sub-animation now clips that sub-animation's own parts, alongside the caller's
+  masks. An instance part's `mask_influence` / `visible_inside_mask` compose into its sub-animation one
+  level deep, whether or not the caller masks — which is what SpriteStudio 7.5 draws
+  (`InstancePropagationTired3` and its Hole-hidden / Hole-removed variants).
+- **Limit**: 96 writers across the tree (24 per tile of the bitmap, up to 4 tiles in the same texture, so a
+  tree past 24 trades coverage resolution rather than memory). An instance counts its writers each time it
+  is placed; past 96 the rest are ignored with a warning.
+- **Unblocks**: the Adobe Animate `Clpb` conversion in `SSProjectGenerator/ROADMAP.md`, which needs a
+  sub-animation per independent clipping group.
 
 ## ☐/⛔ The six blend modes that draw as Mix (Player-only)
 
