@@ -1723,28 +1723,34 @@ SsInternalPlayer::_child_mask_context(const ss::format::PartData* pd) const {
 SsInternalPlayer::PartMaskDecision
 SsInternalPlayer::_resolve_part_mask(const DrawFrame& f, int p_idx, uint16_t rank) const {
     PartMaskDecision d;
-    // A part is a mask target only where masking is honoured for this player —
-    // it has mask parts, or a caller's mask reaches it — or after an instance
-    // whose sub-animation left a clipping mask open.
-    const bool carried = _mask_carry_open_rank >= 0 && (int)rank > _mask_carry_open_rank;
-    if (!_mask_active() && !carried) return d;
-
     const auto* pm = f.binary ? f.binary->parts() : nullptr;
     const ss::format::PartData* pd =
         (pm && p_idx >= 0 && p_idx < (int)pm->size()) ? pm->Get(p_idx) : nullptr;
     const InheritedMaskContext c = _compose_mask_context(pd);
-    // A part opts out with mask_influence == 0, which the AND-chain has already
-    // folded in. For a clipping writer the *same* mask_influence is both its
-    // write op and its target flag, so mask_write must not
+    // A part opts out with mask_influence == 0, which the composition has
+    // already folded in. For a clipping writer the *same* mask_influence is both
+    // its write op and its target flag, so mask_write must not
     // force it to be a target: a mask_influence == 0 clipping part is opted out,
     // and its own colour is only clipped by *other* masks per its real influence.
     if (!c.influence) return d;
 
     d.visible_inside = c.visible_inside;
+    // A part that draws only inside a mask draws nowhere that no mask covers —
+    // even when the animation has no mask at all (SpriteStudio 7.5), so it is
+    // always tested. With no writer the test fails everywhere.
+    if (c.visible_inside) {
+        d.masked = true;
+        return d;
+    }
+    // Otherwise a part is a mask target only where masking is honoured for this
+    // player — it has mask parts, or a caller's mask reaches it — or after an
+    // instance whose sub-animation left a clipping mask open.
+    const bool carried = _mask_carry_open_rank >= 0 && (int)rank > _mask_carry_open_rank;
+    if (!_mask_active() && !carried) return d;
     // An instance child cannot tell yet which of the tree's writers reach it, so
     // every target runs the test. The owner knows them all: a part no writer
-    // covers passes the test unless it draws only inside a mask.
-    d.masked = _parent_driven || c.visible_inside || _mask_seq_covered(rank);
+    // covers would pass the test anyway.
+    d.masked = _parent_driven || _mask_seq_covered(rank);
     return d;
 }
 
