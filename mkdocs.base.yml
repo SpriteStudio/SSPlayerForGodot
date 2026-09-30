@@ -92,6 +92,10 @@ markdown_extensions:
   # and SSPlayerForWgpu already set this; SSPlayerForFlutter and SSPlayerForRenPy still do not, and
   # have the same unlinkable ja anchors this fixes.
   - toc:
+      # The "¶" beside each heading, so a reader can copy a link to a section. Listing
+      # `markdown_extensions` replaces Zensical's defaults wholesale, and the default `toc`
+      # is the one that carries this.
+      permalink: true
       slugify: !!python/object/apply:pymdownx.slugs.slugify
         kwds:
           case: lower
