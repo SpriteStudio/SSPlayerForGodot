@@ -346,64 +346,64 @@
 		</method>
 	</methods>
 	<members>
-		<member name="ssab" type="SSABResource">
+		<member name="ssab" type="SSABResource" setter="set_ssab_resource" getter="get_ssab_resource">
 			The SpriteStudio animation resource ([code].ssab[/code]) to play.
 		</member>
-		<member name="current_animation" type="String">
+		<member name="current_animation" type="String" setter="set_animation" getter="get_current_animation">
 			Name of the animation to play, chosen from the animations contained in [member ssab].
 		</member>
-		<member name="autoplay" type="bool" default="true">
+		<member name="autoplay" type="bool" setter="set_autoplay" getter="is_autoplay" default="true">
 			If [code]true[/code] (the default), the selected animation starts playing automatically when the scene runs. A node placed in a scene has no code calling [method play] for it, so it plays.
 			Turn it off for a node whose playback you drive yourself, or one that should hold its first frame as a pose. Note that autoplay starts at [constant Node.NOTIFICATION_READY], before an attached script's [method Node._ready] runs — so a script connecting [signal animation_started] there will not see the one autoplay fired.
 		</member>
-		<member name="offset" type="Vector2" default="Vector2(0, 0)">
+		<member name="offset" type="Vector2" setter="set_offset" getter="get_offset" default="Vector2(0, 0)">
 			The drawing offset of the animation. Useful for visually centering an animation without altering the node's Transform.
 		</member>
-		<member name="flip_h" type="bool" default="false">
+		<member name="flip_h" type="bool" setter="set_flip_h" getter="is_flipped_h" default="false">
 			If [code]true[/code], the animation is flipped horizontally.
 		</member>
-		<member name="flip_v" type="bool" default="false">
+		<member name="flip_v" type="bool" setter="set_flip_v" getter="is_flipped_v" default="false">
 			If [code]true[/code], the animation is flipped vertically.
 		</member>
-		<member name="animation_process_mode" type="int" enum="SpriteStudioPlayer2D.AnimationProcessMode" default="1">
+		<member name="animation_process_mode" type="int" setter="set_animation_process_mode" getter="get_animation_process_mode" enum="SpriteStudioPlayer2D.AnimationProcessMode" default="1">
 			Determines whether to advance the animation in [code]_physics_process[/code] ([constant ANIMATION_PROCESS_PHYSICS]) or [code]_process[/code] ([constant ANIMATION_PROCESS_IDLE]). Use Physics if the parent node moves using the physics engine to avoid jitter. [constant ANIMATION_PROCESS_MANUAL] stops the node advancing itself, leaving playback to [method advance].
 		</member>
-		<member name="animation_section_start" type="int">
+		<member name="animation_section_start" type="int" setter="set_animation_section_start" getter="get_animation_section_start">
 			First frame of the played section, inclusive. Setting it keeps [member animation_section_end]; use [method set_animation_section] to move both endpoints at once.
 		</member>
-		<member name="animation_section_end" type="int">
+		<member name="animation_section_end" type="int" setter="set_animation_section_end" getter="get_animation_section_end">
 			Last frame of the played section, inclusive. Setting it keeps [member animation_section_start]; use [method set_animation_section] to move both endpoints at once.
 		</member>
-		<member name="frame_no" type="float">
+		<member name="frame_no" type="float" setter="set_frame_no" getter="get_frame_no">
 			Where the playhead is, in frames. Fractional: sub-frame interpolation puts it between two authored frames, which is why it is not called [code]frame[/code] - [member AnimatedSprite2D.frame] is an integer index into a [SpriteFrames] set and means something else. Editor-only display. Can be keyframed from an [AnimationPlayer] to drive playback from a timeline.
 		</member>
-		<member name="speed_scale" type="float" default="1.0">
+		<member name="speed_scale" type="float" setter="set_speed_scale" getter="get_speed_scale" default="1.0">
 			Playback speed multiplier. [code]1.0[/code] is normal speed.
 		</member>
-		<member name="loop_count" type="int" default="-1">
+		<member name="loop_count" type="int" setter="set_loop_count" getter="get_loop_count" default="-1">
 			How many times to play the animation. [code]n[/code] plays [code]n[/code] cycles and stops, so [code]1[/code] plays it once; [code]-1[/code] loops forever, and [code]0[/code] is an alias for that rather than "no cycles" - the runtime normalizes everything at or below zero to [code]-1[/code].
 			Kept across [member current_animation] changes, because it is the node's own configuration - as are [member speed_scale], [member frame_skip_enabled], [member frame_rate] and the playback direction and style. Only the playback section is per-transition: frame indices mean nothing against a different clip.
 		</member>
-		<member name="frame_rate" type="int">
+		<member name="frame_rate" type="int" setter="set_frame_rate" getter="get_frame_rate">
 			Playback frame rate (FPS). Setting one overrides whatever the animation was authored at, and the override is kept across [member current_animation] changes; set it to [code]0[/code] to clear it and hand playback back to each clip's authored rate.
 			This is an [i]absolute[/i] rate where [member speed_scale] is a multiplier, so its effect depends on the clip: 60 against a 30fps animation is double speed, and against a 60fps one is none.
 		</member>
-		<member name="frame_skip_enabled" type="bool" default="true">
+		<member name="frame_skip_enabled" type="bool" setter="set_frame_skip_enabled" getter="is_frame_skip_enabled" default="true">
 			If [code]true[/code], frames may be skipped to keep real-time playback under load.
 		</member>
-		<member name="sub_frame_enabled" type="bool" default="false">
+		<member name="sub_frame_enabled" type="bool" setter="set_sub_frame_enabled" getter="is_sub_frame_enabled" default="false">
 			If [code]true[/code], interpolates between integer frames for smoother sub-frame playback.
 		</member>
-		<member name="play_audio" type="bool" default="true">
+		<member name="play_audio" type="bool" setter="set_play_audio" getter="is_play_audio" default="true">
 			If [code]true[/code], the built-in audio player plays the sounds emitted by the animation's audio parts. Set to [code]false[/code] to handle audio yourself via the [signal audio] signal. Audio is fired-and-forgotten: it plays only when its frame is passed during forward playback (reverse playback does not play sound), it is not resynced on seek, and it keeps playing while the animation is paused.
 		</member>
-		<member name="audio_volume" type="float" default="1.0">
+		<member name="audio_volume" type="float" setter="set_audio_volume" getter="get_audio_volume" default="1.0">
 			Volume of the built-in audio playback, as a linear value in [code][0, 1][/code]. Ignored when [member audio_backend] is set.
 		</member>
-		<member name="audio_bus" type="StringName" default="&amp;&quot;Master&quot;">
+		<member name="audio_bus" type="StringName" setter="set_audio_bus" getter="get_audio_bus" default="&amp;&quot;Master&quot;">
 			Bus the built-in audio voices play on, chosen from the project's audio bus layout as [member AudioStreamPlayer.bus] is. A name the layout does not have plays on [code]"Master"[/code]. Taken by each voice as it starts, so a change reaches the next sound rather than the ones already playing. Ignored when [member audio_backend] is set.
 		</member>
-		<member name="audio_backend" type="SpriteStudioAudioBackend">
+		<member name="audio_backend" type="SpriteStudioAudioBackend" setter="set_audio_backend" getter="get_audio_backend">
 			Optional override backend. When assigned, built-in playback is suppressed and each audio event is routed to the backend's [code]play_audio[/code] method instead (e.g. to drive audio middleware).
 		</member>
 	</members>
