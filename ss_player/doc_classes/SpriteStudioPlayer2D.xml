@@ -192,6 +192,28 @@
 				Returns [code]true[/code] when the part is hidden on the current frame, by the animation or by [method set_part_visibility_override]. Returns [code]false[/code] when the part is unknown.
 			</description>
 		</method>
+		<method name="is_part_skinned_mesh" qualifiers="const">
+			<return type="bool" />
+			<param index="0" name="part_name" type="String" />
+			<description>
+				Returns [code]true[/code] when the part is a skinned (bone-bound) mesh. Returns [code]false[/code] when it is not, or when the part is unknown.
+				A skinned mesh draws its vertices by skinning while the part's own transform stays near the setup pose, so it is a poor part to follow. [SpriteStudioPartAttachment2D] leaves such parts out of its [member SpriteStudioPartAttachment2D.part_name] suggestions and warns when one is named anyway.
+			</description>
+		</method>
+		<method name="get_canvas_size" qualifiers="const">
+			<return type="Vector2" />
+			<description>
+				Returns the canvas the current animation was authored in, in this node's units. Returns [code]Vector2(0, 0)[/code] when nothing is set up.
+				The canvas is authored [b]per animation[/b], not per asset, so a script that keeps the value should read it again when [signal animation_changed] is emitted. It is the box the artist composed in, not a measured bounding box: parts are free to draw outside it. For an animation other than the current one, see [method SSABResource.get_canvas_size].
+			</description>
+		</method>
+		<method name="get_canvas_rect" qualifiers="const">
+			<return type="Rect2" />
+			<description>
+				Returns the canvas of the current animation placed against this node's origin by the animation's pivot, in this node's local space with [member flip_h], [member flip_v] and [member offset] applied, as [method get_part_transform] does. Returns an empty [Rect2] when nothing is set up.
+				The pivot is where the origin sits inside the canvas. A character authored standing on the ground has its pivot on the canvas's bottom edge, so the rectangle lies entirely above the origin. See [method get_canvas_size] for what the canvas is, and is not.
+			</description>
+		</method>
 		<method name="set_part_color_override">
 			<return type="bool" />
 			<param index="0" name="part_name" type="String" />
