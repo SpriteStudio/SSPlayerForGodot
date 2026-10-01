@@ -239,7 +239,8 @@ echo "   every platform the matrix builds is present"
 # --- assemble -------------------------------------------------------------
 # The addon a user drops into their project: `addons/spritestudio/` with the
 # descriptor at its root, the binaries under bin/<platform>/, the editor icons
-# the [icons] section points at, and every licence the shipped binaries carry.
+# the [icons] section points at, every licence the shipped binaries carry, and
+# the documentation of this very commit.
 WORK="$ROOT_DIR/build/release-staging"
 ADDON="$WORK/addons/spritestudio"
 
@@ -267,6 +268,34 @@ cp "$ROOT_DIR/THIRD_PARTY_NOTICES.md" "$ADDON/licenses/"
 cp "$ROOT_DIR/licenses/Apache-2.0.txt" "$ADDON/licenses/"
 cp "$IN/$CANONICAL/licenses"/* "$ADDON/licenses/"
 echo "   licenses/ ($(ls -1 "$ADDON/licenses" | wc -l | tr -d ' ') files)"
+
+# The documentation, so what a user's tooling reads next to the binaries is the
+# documentation of those binaries -- not the site's, which is built from the
+# latest release and can be ahead. English only, as the Markdown source, with
+# the layout kept so the links between pages still resolve. README.md is the
+# front door; verify below checks every page it links to.
+#
+# Left out of docs/en/:
+#   assets/, stylesheets/   the screenshots and videos (tens of MB), and the CSS.
+#                           A page that shows a screenshot has a dangling image
+#                           link here, which README.md says.
+#   index.md                the site's home page (README.md is this folder's),
+#                           and it links to the two pages below.
+#   license.md, third_party_notices.md
+#                           one-line includes of files this folder already
+#                           carries as LICENSE.md and licenses/.
+# Everything else is taken by rule, not by list, so a page added to docs/en/
+# ships without anyone remembering to add it here.
+cp "$ROOT_DIR/misc/ADDON_README.md" "$ADDON/README.md"
+mkdir -p "$ADDON/docs"
+( cd "$ROOT_DIR/docs/en" && find . -name '*.md' | sort ) | while IFS= read -r rel; do
+  case "$rel" in
+    ./index.md|./license.md|./third_party_notices.md) continue ;;
+  esac
+  mkdir -p "$ADDON/docs/$(dirname "$rel")"
+  cp "$ROOT_DIR/docs/en/$rel" "$ADDON/docs/$rel"
+done
+echo "   README.md + docs/ ($(find "$ADDON/docs" -name '*.md' | wc -l | tr -d ' ') pages)"
 
 # Copied, not moved: unlike the workflow this replaces, the input tree survives,
 # so one download serves any number of attempts.
@@ -358,6 +387,31 @@ EOF
            THIRD-PARTY-LICENSES.ssruntime.md THIRD-PARTY-LICENSES.ssconverter.md runtime-LICENSE.md; do
     has "addons/spritestudio/licenses/$f" || fail "$ZIP is missing licenses/$f"
   done
+
+  # README.md is the front door to docs/. Every page it links to is looked up in
+  # the archive, read out of the archive rather than out of misc/, so renaming or
+  # dropping a page breaks this build instead of leaving a link that goes nowhere.
+  doclinks=0
+  missing_docs=0
+  if has "addons/spritestudio/README.md"; then
+    while IFS= read -r path; do
+      [ -n "$path" ] || continue
+      doclinks=$((doclinks + 1))
+      esc="$(printf '%s' "addons/spritestudio/${path}" | sed 's/[.[\*^$]/\\&/g')"
+      has "$esc" && continue
+      fail "README.md links to $path, which is not in $ZIP"
+      missing_docs=$((missing_docs + 1))
+    done <<EOF
+$(unzip -p "$OUT/$ZIP" addons/spritestudio/README.md | grep -o '](docs/[^)#]*' | sed 's/^](//')
+EOF
+    if [ "$doclinks" -eq 0 ]; then
+      fail "no docs/ links parsed out of README.md -- the check above proved nothing"
+    elif [ "$missing_docs" -eq 0 ]; then
+      echo "   README.md: all $doclinks pages it links to are in the archive"
+    fi
+  else
+    fail "$ZIP has no addons/spritestudio/README.md"
+  fi
 
   SYMLINKS="$(unzip -Z "$OUT/$ZIP" | grep -c '^l' || true)"
   echo "   $(printf '%s\n' "$ENTRIES" | wc -l | tr -d ' ') entries, $SYMLINKS symlink(s) stored"

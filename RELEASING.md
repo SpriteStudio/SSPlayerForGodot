@@ -27,7 +27,8 @@ always created as drafts — a human reviews the assets and the generated notes,
 the UI, choosing pre-release or latest there.
 
 `scripts/build-release.sh` is the package: the `addons/spritestudio/` folder a user drops into a
-project — the descriptor, the icons it points at, every licence the shipped binaries carry, and
+project — the descriptor, the icons it points at, every licence the shipped binaries carry, the
+documentation (`README.md` and the English pages under `docs/`, from the same commit), and
 `bin/<platform>/` for all six — then the zip and `SHA256SUMS`. `release.yml`'s package job **is**
 this script. It builds nothing, so it replays a matrix run in seconds:
 
@@ -40,7 +41,7 @@ Its check is the one nothing else in the pipeline does. `misc/spritestudio.gdext
 file per platform and build target — nineteen paths — plus three icons, and **Godot resolves them
 at load time**: a name that does not match what shipped fails no build and no zip, and the
 extension simply does not load, on that one platform, for whoever downloaded it. Every path in the
-descriptor is looked up inside the finished archive.
+descriptor is looked up inside the finished archive, and so is every page `README.md` links to.
 
 <br>
 
@@ -68,7 +69,8 @@ scripts/build-pages.sh serve=yes # 公開ツリー、両ロケール -> http://l
 `release/X.Y` ブランチからの既定のディスパッチは QA 用ビルドで、Release は作りません。Release は必ず下書きで作られます。人が asset と生成された notes を確認し、pre-release / latest を選んで UI から公開してください。
 
 `scripts/build-release.sh` がパッケージです。ユーザーがプロジェクトに置く `addons/spritestudio/`
-フォルダ — 記述子、そこが参照するアイコン、同梱バイナリのライセンス一式、6 プラットフォーム分の
+フォルダ — 記述子、そこが参照するアイコン、同梱バイナリのライセンス一式、ドキュメント（同じコミットの
+`README.md` と、`docs/` の英語ページ）、6 プラットフォーム分の
 `bin/<platform>/` — と、その zip および `SHA256SUMS` を作ります。`release.yml` のパッケージジョブはこのスクリプトです。ビルドは一切行わないので、マトリクス実行の成果物を数秒で流し直せます。
 
 ```bash
@@ -77,4 +79,4 @@ scripts/build-release.sh
 ```
 
 このスクリプトの検査は、パイプラインの他のどこもやっていないものです。
-`misc/spritestudio.gdextension` はプラットフォームとビルドターゲットごとにファイルを 1 つずつ、計 19 個のパスとアイコン 3 つを指名し、**Godot はそれをロード時に解決します**。実際に同梱された名前と食い違っていても、ビルドも zip も失敗しません。ダウンロードした人の、そのプラットフォームでだけ、拡張が読み込まれないだけです。記述子のすべてのパスを、出来上がったアーカイブの中で引き当てます。
+`misc/spritestudio.gdextension` はプラットフォームとビルドターゲットごとにファイルを 1 つずつ、計 19 個のパスとアイコン 3 つを指名し、**Godot はそれをロード時に解決します**。実際に同梱された名前と食い違っていても、ビルドも zip も失敗しません。ダウンロードした人の、そのプラットフォームでだけ、拡張が読み込まれないだけです。記述子のすべてのパスを、出来上がったアーカイブの中で引き当てます。`README.md` がリンクするページも同じように引き当てます。

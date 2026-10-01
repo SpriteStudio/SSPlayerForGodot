@@ -210,7 +210,8 @@ Write-Host "   every platform the matrix builds is present"
 # --- assemble --------------------------------------------------------------
 # The addon a user drops into their project: `addons/spritestudio/` with the
 # descriptor at its root, the binaries under bin/<platform>/, the editor icons
-# the [icons] section points at, and every licence the shipped binaries carry.
+# the [icons] section points at, every licence the shipped binaries carry, and
+# the documentation of this very commit.
 $work = "$rootDirectory/build/release-staging"
 $addon = "$work/addons/spritestudio"
 
@@ -240,6 +241,35 @@ Copy-Item -Force "$rootDirectory/THIRD_PARTY_NOTICES.md" "$addon/licenses/"
 Copy-Item -Force "$rootDirectory/licenses/Apache-2.0.txt" "$addon/licenses/"
 Copy-Item -Force "$in/$canonical/licenses/*" "$addon/licenses/"
 Write-Host "   licenses/ ($((Get-ChildItem "$addon/licenses").Count) files)"
+
+# The documentation, so what a user's tooling reads next to the binaries is the
+# documentation of those binaries -- not the site's, which is built from the
+# latest release and can be ahead. English only, as the Markdown source, with
+# the layout kept so the links between pages still resolve. README.md is the
+# front door; verify below checks every page it links to.
+#
+# Left out of docs/en/:
+#   assets/, stylesheets/   the screenshots and videos (tens of MB), and the CSS.
+#                           A page that shows a screenshot has a dangling image
+#                           link here, which README.md says.
+#   index.md                the site's home page (README.md is this folder's),
+#                           and it links to the two pages below.
+#   license.md, third_party_notices.md
+#                           one-line includes of files this folder already
+#                           carries as LICENSE.md and licenses/.
+# Everything else is taken by rule, not by list, so a page added to docs/en/
+# ships without anyone remembering to add it here.
+Copy-Item -Force "$rootDirectory/misc/ADDON_README.md" "$addon/README.md"
+$docsSource = (Resolve-Path "$rootDirectory/docs/en").Path
+$siteOnly = @("index.md", "license.md", "third_party_notices.md")
+foreach ($page in (Get-ChildItem -Path $docsSource -Recurse -File -Filter "*.md" | Sort-Object FullName)) {
+    $rel = $page.FullName.Substring($docsSource.Length).TrimStart('\', '/').Replace('\', '/')
+    if ($siteOnly -contains $rel) { continue }
+    $dest = "$addon/docs/$rel"
+    New-Item -ItemType Directory -Force -Path (Split-Path -Parent $dest) | Out-Null
+    Copy-Item -Force $page.FullName $dest
+}
+Write-Host "   README.md + docs/ ($((Get-ChildItem "$addon/docs" -Recurse -File -Filter "*.md").Count) pages)"
 
 # Copied, not moved: unlike the workflow this replaces, the input tree survives,
 # so one download serves any number of attempts.
@@ -339,6 +369,28 @@ if ($verify -eq "yes") {
         if (-not (Test-Entry "addons/spritestudio/licenses/$notice")) {
             $failed.Add("$zipName is missing licenses/$notice")
         }
+    }
+
+    # README.md is the front door to docs/. Every page it links to is looked up in
+    # the archive, read out of the archive rather than out of misc/, so renaming or
+    # dropping a page breaks this build instead of leaving a link that goes nowhere.
+    if (Test-Entry "addons/spritestudio/README.md") {
+        $readme = (& unzip -p "$out/$zipName" "addons/spritestudio/README.md") -join "`n"
+        $docLinks = @([regex]::Matches($readme, '\]\((docs/[^)#]*)') | ForEach-Object { $_.Groups[1].Value })
+        $missingDocs = 0
+        foreach ($path in $docLinks) {
+            if (-not (Test-Entry "addons/spritestudio/$path")) {
+                $failed.Add("README.md links to $path, which is not in $zipName")
+                $missingDocs++
+            }
+        }
+        if ($docLinks.Count -eq 0) {
+            $failed.Add("no docs/ links parsed out of README.md -- the check above proved nothing")
+        } elseif ($missingDocs -eq 0) {
+            Write-Host "   README.md: all $($docLinks.Count) pages it links to are in the archive"
+        }
+    } else {
+        $failed.Add("$zipName has no addons/spritestudio/README.md")
     }
 
     $symlinks = (& unzip -Z "$out/$zipName" | Where-Object { $_.StartsWith("l") }).Count
