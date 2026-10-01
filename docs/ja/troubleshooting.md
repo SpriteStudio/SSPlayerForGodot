@@ -38,6 +38,8 @@
 
 **Animation** ドロップダウンには実在する名前しか出ないので、これはスクリプトの `set_animation()` です。綴り間違いか、別のパックの名前を渡しているのが大半 — パック名も出しているのはそのためです。パックが実際に持っている一覧は `get_animation_names()` で取れます。
 
+確かめるのに `get_current_animation()` は使えません。`set_animation("wakl")` の後でも `"wakl"` を返し、`get_total_frames()` は直前のアニメーションの値のままです。スクリプトや CI で確かめるなら、名前をその一覧と照合する手順を [コマンドラインで再生を検証する](workflow/verify_playback.md) に載せています。
+
 ### `.ssab` が不正
 
 出力パネルの `[SS] … is not a usable SSAB: it carries no parts or no animations.` は、バイナリは読めたがパートまたはアニメーションを含んでいないという意味です。`.sspj` を再変換してください。ファイルが途中で切れているか、互換性のないコンバーターで生成された可能性が高いです。

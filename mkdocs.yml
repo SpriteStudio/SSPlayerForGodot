@@ -56,6 +56,7 @@ nav:
       - Generated Assets and Packs: workflow/generated_assets.md
   - ⚙️ Advanced Topics:
       - CLI Conversion & CI/CD: workflow/import.md
+      - Verifying Playback from the Command Line: workflow/verify_playback.md
       - Performance Tuning & Advanced Settings: workflow/tips.md
   - 📖 API Reference:
       - SpriteStudioPlayer2D: api/player.md
