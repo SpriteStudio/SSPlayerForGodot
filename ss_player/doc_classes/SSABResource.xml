@@ -42,13 +42,13 @@
 		<method name="get_animation_names">
 			<return type="PackedStringArray" />
 			<description>
-				Returns the name of every animation, in the order they appear in the binary. These are the values accepted by [member SpriteStudioPlayer2D.animation].
+				Returns the name of every animation, in the order they appear in the binary. These are the values accepted by [member SpriteStudioPlayer2D.current_animation].
 			</description>
 		</method>
 		<method name="get_cellmap_names">
 			<return type="PackedStringArray" />
 			<description>
-				Returns the name of every cellmap (texture atlas) the animation references. Each one corresponds to a [code]cellmaps/[/code] override slot in the inspector and to the [param cellmap_name] accepted by [method SpriteStudioPlayer2D.set_cellmap_texture].
+				Returns the name of every cellmap (texture atlas) the animation references. Each one corresponds to a [code]cellmaps/[/code] override slot in the inspector and to the [code]cellmap_name[/code] accepted by [method SpriteStudioPlayer2D.set_cellmap_texture].
 			</description>
 		</method>
 		<method name="get_cell_names">
