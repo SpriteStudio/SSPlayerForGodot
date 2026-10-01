@@ -84,8 +84,17 @@ plugins:
   # page beside its HTML, for readers who hand the docs to an AI assistant. Needs `site_url`,
   # which both locale configs set. `sections` takes globs relative to `docs_dir`, so one entry
   # covers every page in both locales and a new page is picked up without editing it.
+  # `markdown_description` opens both files. It is English for both locales: a per-locale text
+  # would move `llmstxt` into the locale files and split `plugins` across three files, which
+  # the sequence rule at the top forbids.
   - llmstxt:
       full_output: llms-full.txt
+      markdown_description: |
+        Godot player, editor-first: `setup/install` and `workflow/usage_basic` get a first
+        animation on screen. The class reference is `api/player` (the `SpriteStudioPlayer2D`
+        node) and `api/resource`; `workflow/usage_scripting` is the GDScript guide to playback
+        control and signals. `troubleshooting` is organised by cause rather than symptom, and
+        `limitations` lists what is not supported.
       sections:
         Docs:
           - "*.md"
