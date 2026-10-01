@@ -253,11 +253,12 @@ jobs:
 
       # scripts/build-release.sh IS the release package: the addons/spritestudio
       # folder a user drops into a project — the descriptor, the icons it points
-      # at, every licence the shipped binaries carry, and bin/<platform>/ for all
-      # six — then the zip and SHA256SUMS. Every option is spelled out so a
-      # release cannot change because a default did, and so this is the command a
-      # human runs locally, after `gh run download <this run> -D artifacts`, to
-      # reproduce this exact archive without rebuilding six platforms.
+      # at, every licence the shipped binaries carry, the documentation of this
+      # commit, and bin/<platform>/ for all six — then the zip and SHA256SUMS.
+      # Every option is spelled out so a release cannot change because a default
+      # did, and so this is the command a human runs locally, after `gh run
+      # download <this run> -D artifacts`, to reproduce this exact archive
+      # without rebuilding six platforms.
       #
       # Its check is the one nothing else does: spritestudio.gdextension names a
       # file per platform and build target, Godot resolves them at load time, and
