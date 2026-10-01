@@ -65,6 +65,8 @@ theme:
     - search.suggest
     - search.highlight
     - content.code.copy
+    # "Copy as Markdown" on every page. It fetches the Markdown the `llmstxt` plugin writes.
+    - content.action.copy
 
 plugins:
   # Search language follows `theme.language`, which each locale config sets, so there is no
