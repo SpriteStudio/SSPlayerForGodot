@@ -472,10 +472,10 @@
 		<constant name="COLOR_BLEND_SUB" value="3" enum="ColorBlendOperation">
 			Subtracts the override color from the part's color.
 		</constant>
-		<constant name="OVERRIDE_PRIORITY_NEXT_KEYFRAME" value="0" enum="OverridePriority">
+		<constant name="OVERRIDE_PRIORITY_OVERWRITE_ON_NEXT_KEYFRAME" value="0" enum="OverridePriority">
 			The override is dropped as soon as the animation next keys the attribute.
 		</constant>
-		<constant name="OVERRIDE_PRIORITY_UNTIL_ANIMATION_CHANGE" value="1" enum="OverridePriority">
+		<constant name="OVERRIDE_PRIORITY_HOLD_UNTIL_NEXT_ANIMATION" value="1" enum="OverridePriority">
 			The override is held until another animation is set up. This is the default.
 		</constant>
 		<constant name="OVERRIDE_PRIORITY_PERMANENT" value="2" enum="OverridePriority">
