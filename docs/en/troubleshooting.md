@@ -38,6 +38,8 @@ A name that is not in the pack leaves the node drawing nothing. The Output panel
 
 The **Animation** dropdown only offers real names, so this is a `set_animation()` in a script — usually a typo, or a name that belongs to a different pack, which is why the pack is named too. `get_animation_names()` lists what the pack actually has.
 
+Do not use `get_current_animation()` to find out: after `set_animation("wakl")` it returns `"wakl"` all the same, and `get_total_frames()` keeps reporting the previous animation. For a script or CI job, [Verifying Playback from the Command Line](workflow/verify_playback.md) checks the name against that list.
+
 ### The `.ssab` is invalid
 
 `[SS] … is not a usable SSAB: it carries no parts or no animations.` in the Output panel means the binary loaded but carries no parts or no animations. Reconvert the `.sspj`; the file is most likely truncated or from an incompatible converter version.

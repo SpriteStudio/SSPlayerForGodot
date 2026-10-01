@@ -62,6 +62,7 @@ nav:
       - 生成アセットの構成と配信: workflow/generated_assets.md
   - ⚙️ 高度なトピック:
       - CLI コンバートと CI/CD: workflow/import.md
+      - コマンドラインで再生を検証する: workflow/verify_playback.md
       - パフォーマンスチューニングと高度な設定: workflow/tips.md
   - 📖 API リファレンス:
       - SpriteStudioPlayer2D: api/player.md
