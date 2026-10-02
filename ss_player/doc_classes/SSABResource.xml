@@ -42,13 +42,13 @@
 		<method name="get_animation_names">
 			<return type="PackedStringArray" />
 			<description>
-				Returns the name of every animation, in the order they appear in the binary. These are the values accepted by [member SpriteStudioPlayer2D.animation].
+				Returns the name of every animation, in the order they appear in the binary. These are the values accepted by [member SpriteStudioPlayer2D.current_animation].
 			</description>
 		</method>
 		<method name="get_cellmap_names">
 			<return type="PackedStringArray" />
 			<description>
-				Returns the name of every cellmap (texture atlas) the animation references. Each one corresponds to a [code]cellmaps/[/code] override slot in the inspector and to the [param cellmap_name] accepted by [method SpriteStudioPlayer2D.set_cellmap_texture].
+				Returns the name of every cellmap (texture atlas) the animation references. Each one corresponds to a [code]cellmaps/[/code] override slot in the inspector and to the [code]cellmap_name[/code] accepted by [method SpriteStudioPlayer2D.set_cellmap_texture].
 			</description>
 		</method>
 		<method name="get_cell_names">
@@ -56,6 +56,22 @@
 			<param index="0" name="cellmap_name" type="String" />
 			<description>
 				Returns the names of the cells inside [param cellmap_name]. Returns an empty array when that cellmap does not exist.
+			</description>
+		</method>
+		<method name="get_canvas_size">
+			<return type="Vector2" />
+			<param index="0" name="anim_name" type="String" />
+			<description>
+				Returns the canvas the animation [param anim_name] was authored in. Returns [code]Vector2(0, 0)[/code] when the resource has no such animation.
+				[method SpriteStudioPlayer2D.get_canvas_size] offers the same for the animation a player is playing. This one addresses any animation of the asset by name, which is what a caller comparing them needs: the canvas is authored per animation, not per asset.
+			</description>
+		</method>
+		<method name="get_canvas_rect">
+			<return type="Rect2" />
+			<param index="0" name="anim_name" type="String" />
+			<description>
+				Returns the canvas of the animation [param anim_name] placed against the origin by the animation's pivot. Returns an empty [Rect2] when the resource has no such animation, or the animation carries no canvas or pivot.
+				Unlike [method SpriteStudioPlayer2D.get_canvas_rect], nothing of a player is applied: there is no [member SpriteStudioPlayer2D.flip_h], [member SpriteStudioPlayer2D.flip_v] or [member SpriteStudioPlayer2D.offset] here.
 			</description>
 		</method>
 		<method name="get_sound_stream">
