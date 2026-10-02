@@ -46,12 +46,15 @@ static Ref<SSQBResourceFormatSaver> ssqb_saver;
 
 void register_ss_player_types() {
 
+  // The format loaders and savers are internal: they are created and registered
+  // with the engine below and nothing else uses them, so they stay out of the
+  // class reference rather than sit there undocumented. The resources are the API.
   GDREGISTER_CLASS(SSABResource);
-  GDREGISTER_CLASS(SSABResourceFormatLoader);
-  GDREGISTER_CLASS(SSABResourceFormatSaver);
+  GDREGISTER_INTERNAL_CLASS(SSABResourceFormatLoader);
+  GDREGISTER_INTERNAL_CLASS(SSABResourceFormatSaver);
   GDREGISTER_CLASS(SSQBResource);
-  GDREGISTER_CLASS(SSQBResourceFormatLoader);
-  GDREGISTER_CLASS(SSQBResourceFormatSaver);
+  GDREGISTER_INTERNAL_CLASS(SSQBResourceFormatLoader);
+  GDREGISTER_INTERNAL_CLASS(SSQBResourceFormatSaver);
 
   ssab_loader = memnew(SSABResourceFormatLoader);
   ssab_saver = memnew(SSABResourceFormatSaver);

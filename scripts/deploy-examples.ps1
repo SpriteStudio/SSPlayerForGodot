@@ -3,10 +3,11 @@
 # Convert the SpriteStudio-SDK bundled test projects (tests/overall, tests/Ringo,
 # tests/Doll) into the .ssab assets the sample projects under examples/ load.
 #
-# Each sample project also carries a .ssplayer_sources.cfg pointing at the same
-# .sspj, so opening it in the Godot Editor regenerates the same output through the
-# import dock. This script is the headless equivalent -- ssab_generated/ is not
-# tracked in git, so use it to populate the samples without launching the editor.
+# Each sample project also carries a .ssplayer_sources.cfg naming the same .sspj,
+# and dropping that .sspj onto the import dock in the Godot Editor produces the same
+# output; opening a sample does not convert anything by itself. This script is the
+# headless equivalent -- ssab_generated/ is not tracked in git, so use it to
+# populate the samples without launching the editor.
 #
 # The dev_* sample projects are intentionally excluded: their sources config is
 # gitignored and set up by hand in the editor.
