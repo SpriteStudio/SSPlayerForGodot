@@ -95,6 +95,19 @@
 				Returns the total number of frames in the current animation.
 			</description>
 		</method>
+		<method name="set_frame_rate">
+			<return type="void" />
+			<param index="0" name="fps" type="int" />
+			<description>
+				Sets the playback frame rate, in frames per second. It overrides whatever the animation was authored at, and the override is kept across [member current_animation] changes. Pass [code]0[/code] to clear it and hand playback back to each clip's authored rate. See [member frame_rate].
+			</description>
+		</method>
+		<method name="get_frame_rate" qualifiers="const">
+			<return type="int" />
+			<description>
+				Returns the frame rate playback runs at: the rate set with [method set_frame_rate], or the current animation's authored rate while none is set. See [member frame_rate].
+			</description>
+		</method>
 		<method name="get_start_frame" qualifiers="const">
 			<return type="int" />
 			<description>
