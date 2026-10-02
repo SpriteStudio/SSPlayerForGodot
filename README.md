@@ -55,7 +55,7 @@ We provide two Quick Starts: one for quickly checking the operation using a samp
 2. **Get the repository**: Clone it with `--recurse-submodules`. The sample's source project lives in the `ss_player/SpriteStudio-SDK` submodule, and without it the sample has nothing to convert.
 3. **Download GDExtension**: Get the latest package from [Releases](https://github.com/cri-middleware/SSPlayerForGodot/releases) and extract it.
 4. **Prepare Sample**: Copy the extracted `addons` folder into the [examples/Ringo](./examples/Ringo) folder of this repository.
-5. **Check**: Open the [examples/Ringo](./examples/Ringo) project in Godot Engine. The add-on reads `.ssplayer_sources.cfg` and converts `Ringo.sspj` on first open — no `.ssab` is committed — then open `Ringo.tscn` to see the animation working.
+5. **Convert and check**: `ssab_generated/` is not committed, so the sample has no `.ssab` yet, and opening the project does not create one. Open the [examples/Ringo](./examples/Ringo) project in Godot Engine and drag `ss_player/SpriteStudio-SDK/tests/Ringo/Ringo.sspj` from your file manager onto the **SS Import** dock (see [Asset Import and Editor Integration](./docs/en/workflow/usage_asset_pipeline.md)); the sample's `.ssplayer_sources.cfg` already names `res://ssab_generated` as the output folder. Without the editor, `./scripts/deploy-examples.sh` (`deploy-examples.ps1` on Windows) converts every sample; it builds `ssconverter-cli`, so it needs a Rust toolchain. Then open `Ringo.tscn` to see the animation working.
 
 ### 2. Introduce to Your Project
 

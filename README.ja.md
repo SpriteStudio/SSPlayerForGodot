@@ -51,7 +51,7 @@
 2. **リポジトリの取得**: `--recurse-submodules` 付きでクローンします。サンプルの元プロジェクトは `ss_player/SpriteStudio-SDK` submodule にあり、これが無いとサンプルは変換対象を持ちません。
 3. **GDExtension の取得**: [Releases](https://github.com/cri-middleware/SSPlayerForGodot/releases) から最新パッケージをダウンロードし、展開します。
 4. **サンプルの準備**: 取得した `addons` フォルダを、本リポジトリの [examples/Ringo](./examples/Ringo) フォルダ内にコピーします。
-5. **確認**: Godot Engine で [examples/Ringo](./examples/Ringo) プロジェクトを開きます。アドオンが `.ssplayer_sources.cfg` を読んで初回起動時に `Ringo.sspj` を変換するため（`.ssab` は commit していません）、そのあと `Ringo.tscn` を開けばアニメーションの動作を確認できます。
+5. **変換と確認**: `ssab_generated/` は commit していないので、サンプルにはまだ `.ssab` がなく、プロジェクトを開いただけでは作られません。Godot Engine で [examples/Ringo](./examples/Ringo) プロジェクトを開き、`ss_player/SpriteStudio-SDK/tests/Ringo/Ringo.sspj` をファイルマネージャーから **SS Import** ドックへドラッグ＆ドロップして変換します（[アセットのインポートとエディタ連携](./docs/ja/workflow/usage_asset_pipeline.md) を参照）。サンプルの `.ssplayer_sources.cfg` は、出力先を `res://ssab_generated` に指定済みです。エディタを使わない場合は、`./scripts/deploy-examples.sh`（Windows では `deploy-examples.ps1`）が全サンプルを変換します。`ssconverter-cli` をビルドするので、Rust ツールチェーンが要ります。そのあと `Ringo.tscn` を開けば、アニメーションの動作を確認できます。
 
 ### 2. 自身のプロジェクトへ導入する
 
