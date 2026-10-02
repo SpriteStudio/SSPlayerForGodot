@@ -26,6 +26,8 @@ godot --headless --path . --import
 
 The first line matters. Without it Godot discovers the extension in the middle of the import and crashes on the way out (signal 11, exit status 134 with 4.7.2 on macOS); running `--import` a second time then exits 0, but a script or CI job should not depend on a crash. Naming the extension up front makes Godot load it at startup instead. Godot maintains that file itself afterwards, so this is only needed for a project it has never opened.
 
+The import also leaves two things in the project, because the SS Import Dock sets itself up whenever the editor starts: `.ssplayer_sources.cfg` at the project root, which holds the dock's settings and belongs in version control (see [Asset Import and Editor Integration](usage_asset_pipeline.md)), and the output folder it names, `ssab_generated/` by default, which is empty until something is converted. Neither means anything went wrong.
+
 ---
 
 ## Check 1: numbers

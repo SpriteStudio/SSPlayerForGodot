@@ -97,17 +97,23 @@ void initialize_ss_player_module(ModuleInitializationLevel level) {
 #ifdef TOOLS_ENABLED
   if (level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
 
-    GDREGISTER_CLASS(SSImporter);
-    GDREGISTER_CLASS(SSImportControl);
-    GDREGISTER_CLASS(SSFileSystemContextMenu);
-    GDREGISTER_CLASS(SSResourceInspectorPlugin);
-    GDREGISTER_CLASS(SSClickableLabel);
-    GDREGISTER_CLASS(SSProgressDialog);
-    GDREGISTER_CLASS(SSCanvasDropOverlay);
-    GDREGISTER_CLASS(SSPlaybackPanel);
+    // Internal, not GDREGISTER_CLASS: this is the editor's own UI, not scripting
+    // API. When it writes the class reference (`--doctool`) the engine builds a
+    // default instance of every exposed class, and the constructors here reach
+    // into the editor settings and the project's files -- which crashes when no
+    // editor is running. An internal class is left out of that, and out of the
+    // class reference, but is still created by the plugin as before.
+    GDREGISTER_INTERNAL_CLASS(SSImporter);
+    GDREGISTER_INTERNAL_CLASS(SSImportControl);
+    GDREGISTER_INTERNAL_CLASS(SSFileSystemContextMenu);
+    GDREGISTER_INTERNAL_CLASS(SSResourceInspectorPlugin);
+    GDREGISTER_INTERNAL_CLASS(SSClickableLabel);
+    GDREGISTER_INTERNAL_CLASS(SSProgressDialog);
+    GDREGISTER_INTERNAL_CLASS(SSCanvasDropOverlay);
+    GDREGISTER_INTERNAL_CLASS(SSPlaybackPanel);
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
-    GDREGISTER_CLASS(SSEditorPlugin);
+    GDREGISTER_INTERNAL_CLASS(SSEditorPlugin);
     EditorPlugins::add_by_type<SSEditorPlugin>();
 #else
     EditorNode::add_init_callback(editor_init_callback);
