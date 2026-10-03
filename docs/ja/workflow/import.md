@@ -42,4 +42,4 @@ SpriteStudio プロジェクト (`.sspj`) から Godot 用のアニメーショ�
 
 ## 高度なオプション
 
-`ssconverter-cli` には、変換時の挙動を制御するためのオプションが用意されています。詳細なオプション一覧や仕様については、SDK リポジトリの [cli/README.ja.md](https://github.com/cri-middleware/SpriteStudio-SDK/blob/main/cli/README.ja.md) を参照してください。
+`ssconverter-cli` には、変換時の挙動を制御するためのオプションが用意されています。詳細なオプション一覧や仕様については、SDK リポジトリの [cli/README.ja.md](https://github.com/cri-middleware/SpriteStudio-SDK/blob/HEAD/cli/README.ja.md) を参照してください。

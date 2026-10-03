@@ -44,4 +44,4 @@ By copying these generated files into any directory under your Godot project's `
 ## Advanced Options
 
 `ssconverter-cli` provides various options to control the conversion behavior.
-For a detailed list of options and specifications, please refer to [cli/README.md](https://github.com/cri-middleware/SpriteStudio-SDK/blob/main/cli/README.md) in the SDK repository.
+For a detailed list of options and specifications, please refer to [cli/README.md](https://github.com/cri-middleware/SpriteStudio-SDK/blob/HEAD/cli/README.md) in the SDK repository.
