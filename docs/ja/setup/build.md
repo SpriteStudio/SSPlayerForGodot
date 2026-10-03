@@ -124,7 +124,7 @@ $env:PYTHONUTF8=1
 | Linux            | `./scripts/release-gdextension-linux.sh`     | `arch` はホスト                              |
 | iOS              | `./scripts/release-gdextension-ios.sh`       | `template_debug` / `template_release` のみ   |
 | Android          | `./scripts/release-gdextension-android.sh`   | `arm32` / `arm64` / `x86_64` の3アーキ       |
-| Web              | `./scripts/release-gdextension-web.sh`       | `wasm32` (`threads=yes` / `threads=no`)      |
+| Web              | `./scripts/release-gdextension-web.sh`       | `wasm32`（`threads=no` のみ）                |
 
 ### カスタムモジュール組み込み Godot Engine
 
@@ -134,6 +134,7 @@ $env:PYTHONUTF8=1
 | macOS            | `./scripts/release-macos.sh`          | `arch=universal` 固定                         |
 | iOS              | `./scripts/release-ios.sh`            | `arch=arm64` (実機) と `arch=universal` (sim) |
 | Android          | `./scripts/release-android.sh`        | `arm32` / `arm64` / `x86_64` の3アーキ        |
+| Web              | `./scripts/release-web.sh`            | `wasm32`（`threads=no`）、`template_debug` / `template_release` のみ |
 
 > Linux 向けのカスタムモジュール用一括ビルドスクリプトは未整備です。`./scripts/build.sh platform=linux target=...` を `editor` / `template_debug` / `template_release` で個別に呼び出してください。
 
@@ -439,7 +440,7 @@ GDExtension の場合も、カスタムモジュールとほぼ同じ手順でC+
 
 ### 追加で必要なもの
 
-`libssruntime` を自前でビルドするための環境 (Rust ツールチェーン等) のセットアップ手順は [SpriteStudio-SDK の README](https://github.com/cri-middleware/SpriteStudio-SDK?tab=readme-ov-file#for-sdk-developers) を参照してください。
+`libssruntime` を自前でビルドするための環境 (Rust ツールチェーン等) のセットアップ手順は [SpriteStudio-SDK の README](https://github.com/cri-middleware/SpriteStudio-SDK/blob/HEAD/README.ja.md#%EF%B8%8F-sdk-開発者向け) を参照してください。
 
 FlatBuffers のヘッダを再生成する場合は別途 `flatc` (FlatBuffers コンパイラ) も必要です。
 

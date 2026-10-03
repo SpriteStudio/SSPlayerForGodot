@@ -32,7 +32,7 @@
 ### クイックリンク (日本語)
 - [インストール](./docs/ja/setup/install.md)
 - [基本的な使い方](./docs/ja/workflow/usage_basic.md)
-- [制限事項と対応範囲](./docs/ja/limitations.md)
+- [制約と適用範囲](./docs/ja/limitations.md)
 - [トラブルシューティング](./docs/ja/troubleshooting.md)
 - [v1.x からのマイグレーション](./docs/ja/migration_from_v1.md)
 

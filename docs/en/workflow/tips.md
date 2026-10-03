@@ -1,12 +1,12 @@
 # ⚡ Performance Tuning and Advanced Settings
 
-This section introduces settings and tips to extract maximum performance from SpriteStudioPlayerForGodot and perform advanced playback control.
+This section introduces settings and tips to extract maximum performance from SpriteStudio Player for Godot and perform advanced playback control.
 
 ## Performance and Quality Settings
 
-### Skip Frames Enabled
+### Frame Skip Enabled
 This setting is useful in environments with high rendering loads, such as mobile devices or scenes displaying a large number of characters.
-When the `Skip Frames Enabled` property of `SpriteStudioPlayer2D` is activated, if rendering processing is delayed, intermediate drawing is skipped to maintain the animation's playback speed (time progression within the game).
+When the `Frame Skip Enabled` property of `SpriteStudioPlayer2D` is activated, if rendering processing is delayed, intermediate drawing is skipped to maintain the animation's playback speed (time progression within the game).
 
 ### Sub Frame Enabled
 This is extremely effective when rendering on high-refresh-rate monitors (e.g., 144Hz) or when performing slow-motion effects within Godot.

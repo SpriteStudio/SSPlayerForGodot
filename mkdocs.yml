@@ -1,9 +1,3 @@
-# English site -- the default locale, so it builds to the site root and keeps the plain
-# `mkdocs.yml` name that the tooling looks for when no `-f` is given.
-#
-# Everything not listed here comes from mkdocs.base.yml. Before adding anything, read the
-# note there about sequences: `nav` and `extra.social` are defined in this file and in
-# mkdocs.ja.yml, and must never also appear in the base.
 INHERIT: ./mkdocs.base.yml
 
 docs_dir: docs/en
@@ -12,19 +6,11 @@ site_url: "https://cri-middleware.github.io/SSPlayerForGodot/"
 site_description: "A Godot Engine integration for SpriteStudio"
 
 theme:
-  # Drives the UI string translations and the `html lang` attribute.
   language: en
 
 extra:
-  # English builds to the site root, so the root of the whole multi-locale site is right
-  # here. The language selector adds this in front of its target; see
-  # overrides/partials/alternate.html.
   site_root_prefix: ""
-  # Footer icons. Keep to destinations that outlive any single release. Mirrored, with
-  # translated labels, in mkdocs.ja.yml - add or reorder an icon in both files.
   social:
-    # The family entry point. Every sibling site carries this as its first footer icon, so a
-    # reader who arrives here from a search can reach the portal and the other players.
     - icon: material/motion-play
       link: https://cri-middleware.github.io/SpriteStudio-Docs/
       name: SpriteStudio Docs
@@ -34,13 +20,10 @@ extra:
     - icon: material/web
       link: https://www.webtech.co.jp/spritestudio/
       name: SpriteStudio
-    # Keep the handle here in sync with `twitter:site` in overrides/main.html.
     - icon: fontawesome/brands/x-twitter
       link: https://x.com/spritestudio
       name: SpriteStudio on X
 
-# Paths are locale-relative and identical to the ones in mkdocs.ja.yml; only the labels
-# differ. When you add, move, or rename a page, edit both files.
 nav:
   - 🏠 Home: index.md
   - 🚀 Setup:

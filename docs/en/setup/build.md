@@ -126,7 +126,7 @@ These scripts do **not** fetch or build `libssruntime`, so [1. Prepare libssrunt
 | Linux    | `./scripts/release-gdextension-linux.sh`     | `arch` = host                                        |
 | iOS      | `./scripts/release-gdextension-ios.sh`       | Only `template_debug` / `template_release`           |
 | Android  | `./scripts/release-gdextension-android.sh`   | Three architectures: `arm32` / `arm64` / `x86_64`    |
-| Web      | `./scripts/release-gdextension-web.sh`       | `wasm32` (`threads=yes` / `threads=no`)              |
+| Web      | `./scripts/release-gdextension-web.sh`       | `wasm32`, `threads=no` only                          |
 
 ### Custom-module Godot Engine
 
@@ -136,6 +136,7 @@ These scripts do **not** fetch or build `libssruntime`, so [1. Prepare libssrunt
 | macOS    | `./scripts/release-macos.sh`          | Fixed at `arch=universal`                              |
 | iOS      | `./scripts/release-ios.sh`            | `arch=arm64` (device) and `arch=universal` (simulator) |
 | Android  | `./scripts/release-android.sh`        | Three architectures: `arm32` / `arm64` / `x86_64`      |
+| Web      | `./scripts/release-web.sh`            | `wasm32`, `threads=no`; only `template_debug` / `template_release` |
 
 > No batch release script is provided for the Linux custom module. Invoke `./scripts/build.sh platform=linux target=...` directly for each of `editor` / `template_debug` / `template_release`.
 
@@ -450,7 +451,7 @@ You can debug the C++ code for GDExtensions using almost the same steps as a cus
 
 ### Additional Requirements
 
-For setting up the environment to build `libssruntime` yourself (Rust toolchain, etc.), refer to the [SpriteStudio-SDK README](https://github.com/cri-middleware/SpriteStudio-SDK?tab=readme-ov-file#for-sdk-developers).
+For setting up the environment to build `libssruntime` yourself (Rust toolchain, etc.), refer to the [SpriteStudio-SDK README](https://github.com/cri-middleware/SpriteStudio-SDK/blob/HEAD/README.md#%EF%B8%8F-for-sdk-developers).
 
 If you also need to regenerate FlatBuffers headers, install `flatc` (the FlatBuffers compiler).
 
