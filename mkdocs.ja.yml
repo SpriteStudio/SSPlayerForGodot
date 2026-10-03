@@ -45,7 +45,7 @@ nav:
       - SpriteStudioPlayer2D: api/player.md
       - リソース管理クラス: api/resource.md
   - 🩺 トラブルシューティング: troubleshooting.md
-  - ⚠️ 仕様と制約事項: limitations.md
+  - ⚠️ 制約と適用範囲: limitations.md
   - 🔄 マイグレーションガイド: migration_from_v1.md
   - ⚖️ ライセンス:
       - ライセンス: license.md
