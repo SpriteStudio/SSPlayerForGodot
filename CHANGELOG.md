@@ -46,7 +46,8 @@ converted binaries (`.ssab`) instead of parsing `.sspj` at runtime. See the
   step, move, wave, noise, blur, pixelate, scatter, circle, spot) render natively, assigned in
   SpriteStudio with nothing to wire up in Godot.
 - **Builds**: GDExtension and custom module, for Windows, macOS, Linux, Android, iOS and
-  Web, targeting Godot 4.7.
+  Web, targeting Godot 4.7. The macOS frameworks are signed and notarized, and the iOS frameworks
+  signed.
 - **Documentation**: bilingual (EN/JA) documentation site, in-editor class reference and
   contribution guidelines.
 
@@ -54,7 +55,6 @@ converted binaries (`.ssab`) instead of parsing `.sspj` at runtime. See the
 - Text / bitmap font rendering is not yet validated.
 - Sequence playback is not implemented. `SSQBResource` loads `.ssqb` files, but no node
   consumes them yet.
-- macOS / iOS binaries are not code-signed.
 - Web builds are single-threaded only and require WebAssembly SIMD, plus an engine template
   built with `dlink_enabled=yes`.
 - For the playback constraints inherited from the shared runtime, see
