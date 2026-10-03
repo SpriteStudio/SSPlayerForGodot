@@ -14,7 +14,6 @@ SpriteStudio Player for Godot leverages Godot's `CanvasItem` API and `Node2D` pa
 
 ## Status legend
 
-- ☑ **Shipped** — implemented and documented; kept here for the record
 - ☐ **Ready** — Player-only, no SDK dependency; can start now
 - ⛔ **Blocked on SDK** — needs an `SpriteStudio-SDK/ROADMAP.md` phase first
 - 🕒 **Deferred ("あとで")** — intentionally postponed; detailed here so it can be picked up later
@@ -30,25 +29,6 @@ SpriteStudio Player for Godot leverages Godot's `CanvasItem` API and `Node2D` pa
   2. `SpriteStudioPlayer2D`: Add `bool play_range(const String& start_label, int start_offset, const String& end_label, int end_offset)` which seeks the start frame, sets the section, and starts playback.
   3. `SpriteStudioPlayer2D`: Add `bool play_by_index(int index)` to resolve `index` to a name and call `play()`.
 - **Done when**: A sample project triggers label-based playback via GDScript and stays within the loop range.
-
-## ☑ Tier 5 — Manual update / Custom delta (Player-only)
-
-- **Shipped.** `ANIMATION_PROCESS_MANUAL` stops the node advancing itself, and `advance(delta)` steps
-  playback and emits `frame_updated` exactly as an automatic tick does — so part attachments stay in
-  step. The node keeps its idle notification under `MANUAL` because fire-and-forget audio voices and
-  the mask coverage scale still need a per-frame tick.
-- **Note on Hierarchical Color**: SS6's `AdditionalColor` is natively covered by Godot's `CanvasItem::set_modulate()` and `self_modulate`. No custom work is needed here unless per-vertex multiplier logic specifically requires it.
-- **Documented in**: [Performance Tuning → Driving Playback Yourself](./docs/en/workflow/tips.md).
-
-## ☑ Tier 2 — Per-part runtime overrides (color / cell / visibility) (SDK Phase 2)
-
-- **Shipped.** The SDK's Override Layer API landed and the player wraps it: `set_part_color_override()`
-  (single colour and four-corner gradient), `set_part_cell_override()`, `set_part_visibility_override()`,
-  the matching `clear_*` calls, `clear_all_part_overrides()`, and a `*_by_index()` variant of each that
-  skips the name lookup. Priority modes (`NEXT_KEYFRAME` / `UNTIL_ANIMATION_CHANGE` / `PERMANENT`) are
-  exposed as constants.
-- **Documented in**: [Scripting & Events → Part Overrides](./docs/en/workflow/usage_scripting.md) and
-  [SpriteStudioPlayer2D](./docs/en/api/player.md).
 
 ## ☐/⛔ Tier 3 — Runtime material swap
 
@@ -84,21 +64,6 @@ SpriteStudio Player for Godot leverages Godot's `CanvasItem` API and `Node2D` pa
      string at runtime so a UI label can be localized.
 - **Done when**: a demo screen puts a player inside a `VBoxContainer`, resizes with the window, receives
   `gui_input` on its own artwork, and changes animation as a `Button` is hovered and pressed.
-
-## ☑ A pure mask inside an Instance part (Player-only)
-
-- **Shipped.** The top-level player bakes every mask writer of its instance tree, at any depth, into its
-  one coverage bitmap, and places each on a sequence that numbers the whole tree in draw order: a pure mask
-  holds from the start of its own animation up to itself, a clipping writer from itself to the end of the
-  tree. A mask inside a sub-animation now clips that sub-animation's own parts, alongside the caller's
-  masks. An instance part's `mask_influence` / `visible_inside_mask` compose into its sub-animation one
-  level deep, whether or not the caller masks — which is what SpriteStudio 7.5 draws
-  (`InstancePropagationTired3` and its Hole-hidden / Hole-removed variants).
-- **Limit**: 96 writers across the tree (24 per tile of the bitmap, up to 4 tiles in the same texture, so a
-  tree past 24 trades coverage resolution rather than memory). An instance counts its writers each time it
-  is placed; past 96 the rest are ignored with a warning.
-- **Unblocks**: the Adobe Animate `Clpb` conversion in `SSProjectGenerator/ROADMAP.md`, which needs a
-  sub-animation per independent clipping group.
 
 ## ☐/⛔ The six blend modes that draw as Mix (Player-only)
 
