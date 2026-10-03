@@ -502,7 +502,7 @@ When `.fbs` files in SpriteStudio-SDK have changed, regenerate the headers under
 
 ### Deploying the sample project assets
 
-The sample projects under `examples/` load `.ssab` assets converted from the SpriteStudio-SDK test projects. Regenerate them whenever an `ssab_generated/` directory is missing or the SDK version has changed. Opening a sample does not convert anything by itself. Each sample carries a `.ssplayer_sources.cfg` that names its output folder and its source `.sspj`, so dropping that `.sspj` onto the SS Import dock in the Godot Editor regenerates the assets there; the script below does the same thing headlessly.
+The sample projects under `examples/` load `.ssab` assets converted from the SpriteStudio-SDK test projects. Regenerate them whenever an `ssab_generated/` directory is missing or the SDK version has changed. Opening a sample does not convert anything by itself. Each sample carries a `.ssplayer_sources.cfg` that names its output folder and its source `.sspj`, so dropping that `.sspj` onto the SS Import dock in the Godot Editor regenerates the assets there; the script below does the same thing headlessly. It converts with `ssconverter-cli` built from the submodule, so unlike the dock it needs a Rust toolchain.
 
 **macOS / Linux**
 

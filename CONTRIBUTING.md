@@ -43,19 +43,19 @@ If you find a bug, please use the provided Issue Templates. Include:
 - Godot Engine 4.x
 - A C++ compiler (GCC, Clang, or MSVC)
 - Python 3 and SCons
-- A Rust toolchain (required to build the `libssruntime` runtime)
+- A Rust toolchain, only to build the runtime from the submodule (`build-runtime`) or to convert the samples without the editor (`deploy-examples`)
 - zsh (the build scripts use a `#!/usr/bin/env zsh` shebang)
 - `godot-cpp`, cloned into the repository root: `git clone https://github.com/godotengine/godot-cpp.git -b master` (it is not a submodule)
 
 For the complete build guide, see [docs/en/setup/build.md](./docs/en/setup/build.md).
 
 ### Build the Plugin
-To compile the Godot Extension, you must first build the Rust runtime from the SDK, and then compile the C++ extension using the provided build scripts:
+To compile the Godot Extension, put the SDK runtime in place first, then compile the C++ extension using the provided build scripts:
 
 **macOS / Linux:**
 ```bash
-# 1. Build the Rust runtime (Requires Rust installed)
-./scripts/build-runtime.sh
+# 1. Install the runtime: the SDK release pinned in scripts/SDK_VERSION.txt (no Rust needed)
+./scripts/download-sdk.sh
 
 # 2. Build the GDExtension
 ./scripts/build-extension.sh
@@ -63,14 +63,16 @@ To compile the Godot Extension, you must first build the Rust runtime from the S
 
 **Windows:**
 ```powershell
-# 1. Build the Rust runtime (Requires Rust installed)
-.\scripts\build-runtime.ps1
+# 1. Install the runtime: the SDK release pinned in scripts/SDK_VERSION.txt (no Rust needed)
+.\scripts\download-sdk.ps1
 
 # 2. Build the GDExtension
 .\scripts\build-extension.ps1
 ```
 
-Once built, open the `examples/Ringo` project in the Godot Editor to verify your changes.
+`build-runtime` builds the runtime from the submodule into the same `ss_player/runtime/` instead, and needs Rust: use it when changing the runtime itself, or while the pinned SDK release does not exist yet.
+
+Once built, open the `examples/Ringo` project in the Godot Editor to verify your changes. Its `.ssab` is not committed, so first drop `ss_player/SpriteStudio-SDK/tests/Ringo/Ringo.sspj` onto the **SS Import** dock.
 
 ### Test
 ```bash
@@ -78,6 +80,8 @@ Once built, open the `examples/Ringo` project in the Godot Editor to verify your
 ./scripts/deploy-examples.sh
 ./scripts/run-tests.sh      # the GDExtension build, driven from GDScript
 ```
+`deploy-examples` converts the fixtures with `ssconverter-cli` built from the submodule, so it needs Rust. Without it, open `test_gdextension` in the Godot Editor and drop the SDK's `tests/overall/overall.sspj` and `tests/Ringo/Ringo.sspj` onto the SS Import dock, which writes the same `ssab_generated/`.
+
 `run-tests.sh` needs a Godot binary — `godot=<path>`, else `$GODOT`, `godot-bin/`, then `PATH` — and refuses to start without the addon and the `.ssab` both installed, rather than skipping its way to a green run. **A green run is silent**: the suite ends with an `ENGINE` line counting the warnings and errors Godot itself printed, and anything it lists is a defect or a newly tolerated message. The verdict is the RESULT line, the marker after it, and that `ENGINE` line — not the exit code. Windows uses the `.ps1` variant of each script.
 
 ### Documentation
@@ -143,19 +147,19 @@ Godot Engineとのネイティブな統合と高いパフォーマンスを維�
 - Godot Engine 4.x
 - C++ コンパイラ (GCC, Clang, MSVC のいずれか)
 - Python 3 および SCons
-- Rust ツールチェイン (`libssruntime` ランタイムのビルドに必要です)
+- Rust ツールチェイン（submodule からランタイムをビルドする `build-runtime` と、エディタを使わずにサンプルを変換する `deploy-examples` でのみ必要です）
 - zsh (ビルドスクリプトは `#!/usr/bin/env zsh` を使用しています)
 - `godot-cpp`（submodule ではありません。リポジトリのルートに `git clone https://github.com/godotengine/godot-cpp.git -b master` で取得してください）
 
 完全なビルド手順については、[docs/ja/setup/build.md](./docs/ja/setup/build.md) を参照してください。
 
 ### ビルド方法
-提供されているスクリプトを使用して、まずSDKからRustランタイムをビルドし、次にGDExtensionをコンパイルします。
+提供されているスクリプトを使用して、まず SDK のランタイムを配置し、次に GDExtension をコンパイルします。
 
 **macOS / Linux:**
 ```bash
-# 1. Rustランタイムのビルド (Rust環境が必要です)
-./scripts/build-runtime.sh
+# 1. ランタイムの導入: scripts/SDK_VERSION.txt で固定した SDK リリース（Rust は不要）
+./scripts/download-sdk.sh
 
 # 2. GDExtensionのビルド
 ./scripts/build-extension.sh
@@ -163,14 +167,16 @@ Godot Engineとのネイティブな統合と高いパフォーマンスを維�
 
 **Windows:**
 ```powershell
-# 1. Rustランタイムのビルド (Rust環境が必要です)
-.\scripts\build-runtime.ps1
+# 1. ランタイムの導入: scripts/SDK_VERSION.txt で固定した SDK リリース（Rust は不要）
+.\scripts\download-sdk.ps1
 
 # 2. GDExtensionのビルド
 .\scripts\build-extension.ps1
 ```
 
-ビルド完了後、Godotエディタで `examples/Ringo` プロジェクトなどを開き、変更内容をテストしてください。
+`build-runtime` は、代わりに submodule からランタイムをビルドして同じ `ss_player/runtime/` に置きます。Rust が必要で、ランタイム自体を変更するときや、固定した SDK リリースがまだ存在しないときに使います。
+
+ビルド完了後、Godot エディタで `examples/Ringo` プロジェクトなどを開き、変更内容をテストしてください。`.ssab` はコミットしていないので、先に `ss_player/SpriteStudio-SDK/tests/Ringo/Ringo.sspj` を **SS Import** ドックへドロップしてください。
 
 ### テスト
 ```bash
@@ -178,6 +184,8 @@ Godot Engineとのネイティブな統合と高いパフォーマンスを維�
 ./scripts/deploy-examples.sh
 ./scripts/run-tests.sh      # GDExtension ビルドを GDScript から駆動
 ```
+`deploy-examples` は submodule からビルドした `ssconverter-cli` でフィクスチャを変換するため、Rust が必要です。Rust が無い場合は、Godot エディタで `test_gdextension` を開き、SDK の `tests/overall/overall.sspj` と `tests/Ringo/Ringo.sspj` を SS Import ドックへドロップしてください。同じ `ssab_generated/` が書き出されます。
+
 `run-tests.sh` は Godot バイナリを必要とします（`godot=<path>`、無ければ `$GODOT`、`godot-bin/`、最後に `PATH`）。addon と `.ssab` が揃っていなければ、スキップして緑にするのではなく起動を拒否します。**成功した実行は何も出力しません。** スイートの最後に Godot 自身が出した警告とエラーを数える `ENGINE` 行が出て、そこに並ぶものは不具合か新たに容認したメッセージのどちらかです。判定は終了コードではなく、RESULT 行とその後のマーカー、そしてこの `ENGINE` 行で行います。Windows は各スクリプトの `.ps1` 版を使ってください。
 
 ### ドキュメント

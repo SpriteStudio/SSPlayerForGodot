@@ -491,7 +491,7 @@ SpriteStudio-SDK の `.fbs` を変更した場合は、以下で `ss_player/form
 
 ### サンプルプロジェクトのアセット生成
 
-`examples/` 配下のサンプルは SpriteStudio-SDK のテストプロジェクトから変換した `.ssab` を読み込みます。`ssab_generated/` が無い場合や SDK のバージョンを更新した場合は再生成してください。サンプルを開いただけでは何も変換されません。各サンプルには出力先と変換元 `.sspj` を記した `.ssplayer_sources.cfg` があるため、その `.sspj` を Godot エディタの SS Import ドックへドロップすれば、そこへ再生成されます。以下のスクリプトは、それをエディタなしで実行します。
+`examples/` 配下のサンプルは SpriteStudio-SDK のテストプロジェクトから変換した `.ssab` を読み込みます。`ssab_generated/` が無い場合や SDK のバージョンを更新した場合は再生成してください。サンプルを開いただけでは何も変換されません。各サンプルには出力先と変換元 `.sspj` を記した `.ssplayer_sources.cfg` があるため、その `.sspj` を Godot エディタの SS Import ドックへドロップすれば、そこへ再生成されます。以下のスクリプトは、それをエディタなしで実行します。submodule からビルドした `ssconverter-cli` で変換するため、ドックと違って Rust ツールチェインが必要です。
 
 **macOS / Linux**
 
