@@ -19,8 +19,10 @@
     belongs to none of them goes where it will be seen to go stale.
 *   **Never commit inside the `ss_player/SpriteStudio-SDK` submodule.** A change the core needs is a pull
     request in the SDK repository, followed by a submodule bump here.
-*   **Playback semantics are the SDK's** — see [its AGENTS.md](./ss_player/SpriteStudio-SDK/AGENTS.md); do
-    not reimplement the rules it owns.
+*   **Playback and rendering semantics are the SDK's** — see
+    [its AGENTS.md](./ss_player/SpriteStudio-SDK/AGENTS.md) and the porting guide in
+    `ss_player/SpriteStudio-SDK/libs/ssruntime/docs/`; where the guide is silent, SSPlayerForWgpu's
+    behaviour decides. Do not reimplement the rules they own.
 *   **Code comments do not cite the SDK's porting guide** — no section numbers, page paths or quotes.
     Its sections move as it is revised and nothing checks a citation inside a comment; say what breaks
     if the code changes, and leave the rule to the guide.
