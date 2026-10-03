@@ -1,9 +1,3 @@
-# Issues are for bugs and feature requests. Everything else has a better home —
-# see SUPPORT.md, which these links mirror.
-#
-# One link the sibling players carry is deliberately absent: the shared
-# SpriteStudio core's issue tracker. SpriteStudio-SDK is not public, so it
-# would 404 for exactly the people who would follow it.
 blank_issues_enabled: false
 contact_links:
   - name: ❓ Question about how to use the player / 使い方の質問
