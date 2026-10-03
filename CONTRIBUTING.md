@@ -85,7 +85,15 @@ Once built, open the `examples/Ringo` project in the Godot Editor to verify your
 `run-tests.sh` needs a Godot binary — `godot=<path>`, else `$GODOT`, `godot-bin/`, then `PATH` — and refuses to start without the addon and the `.ssab` both installed, rather than skipping its way to a green run. **A green run is silent**: the suite ends with an `ENGINE` line counting the warnings and errors Godot itself printed, and anything it lists is a defect or a newly tolerated message. The verdict is the RESULT line, the marker after it, and that `ENGINE` line — not the exit code. Windows uses the `.ps1` variant of each script.
 
 ### Documentation
-Pages live as both `docs/en/<path>` and `docs/ja/<path>`; there is no fallback locale, so a page missing from one side is a nav entry pointing at nothing. Each locale also ships its own `docs/<locale>/assets/`, and asset paths are source-relative (`../assets/…`) **including inside raw `<video>` / `<img>` HTML**, which Zensical rewrites the same way it rewrites Markdown links. If you edit a page, build both locales before you finish — see [RELEASING.md](./RELEASING.md). Nothing builds the docs on a pull request, so that local build is the only gate.
+Pages live as both `docs/en/<path>` and `docs/ja/<path>`; there is no fallback locale, so a page missing from one side is a nav entry pointing at nothing. Each locale also ships its own `docs/<locale>/assets/`, and asset paths are source-relative (`../assets/…`) **including inside raw `<video>` / `<img>` HTML**, which Zensical rewrites the same way it rewrites Markdown links. If you edit a page, build both locales before you finish: nothing builds the docs on a pull request, so that local build is the only gate.
+
+```bash
+scripts/prepare-docs.sh          # once: .venv + the pins in docs/requirements.txt
+scripts/build-docs.sh            # English then Japanese, both --strict
+scripts/build-pages.sh serve=yes # the published tree, both locales -> http://localhost:8000/
+```
+
+Both locales, English first: it clears `site/`, which contains `site/ja`, so an English-only build leaves a stale Japanese site behind and a page you just broke still looks fine. `mkdocs.base.yml` sets `strict: true`; `zensical serve` validates nothing, `--strict` or not, and serves one locale at a time, so `build-pages.sh serve=yes` is the only way to see the language selector resolve. `pages.yml`'s build job **is** that script, so CI builds exactly what a local run with the same options builds. `.ps1` twins on Windows, `key=value` options and `--help` on both.
 
 ## Coding Standards
 
@@ -189,7 +197,15 @@ Godot Engineとのネイティブな統合と高いパフォーマンスを維�
 `run-tests.sh` は Godot バイナリを必要とします（`godot=<path>`、無ければ `$GODOT`、`godot-bin/`、最後に `PATH`）。addon と `.ssab` が揃っていなければ、スキップして緑にするのではなく起動を拒否します。**成功した実行は何も出力しません。** スイートの最後に Godot 自身が出した警告とエラーを数える `ENGINE` 行が出て、そこに並ぶものは不具合か新たに容認したメッセージのどちらかです。判定は終了コードではなく、RESULT 行とその後のマーカー、そしてこの `ENGINE` 行で行います。Windows は各スクリプトの `.ps1` 版を使ってください。
 
 ### ドキュメント
-ページは `docs/en/<path>` と `docs/ja/<path>` の両方に存在します。フォールバックロケールは無いため、片方に欠けたページは行き先の無い nav エントリになります。アセットもロケールごとに `docs/<locale>/assets/` を持ち、パスはソース相対（`../assets/…`）です。**生の `<video>` / `<img>` HTML の中でも同じ**で、Zensical は Markdown リンクと同じ規則で書き換えます。ページを編集したら、仕上げる前に両ロケールをビルドしてください（手順は [RELEASING.md](./RELEASING.md)）。プルリクエストでは docs はビルドされないため、手元のビルドが唯一のゲートです。
+ページは `docs/en/<path>` と `docs/ja/<path>` の両方に存在します。フォールバックロケールは無いため、片方に欠けたページは行き先の無い nav エントリになります。アセットもロケールごとに `docs/<locale>/assets/` を持ち、パスはソース相対（`../assets/…`）です。**生の `<video>` / `<img>` HTML の中でも同じ**で、Zensical は Markdown リンクと同じ規則で書き換えます。ページを編集したら、仕上げる前に両ロケールをビルドしてください。プルリクエストでは docs はビルドされないため、手元のビルドが唯一のゲートです。
+
+```bash
+scripts/prepare-docs.sh          # 一度だけ: .venv と docs/requirements.txt のピン
+scripts/build-docs.sh            # 英語 → 日本語の順に、どちらも --strict
+scripts/build-pages.sh serve=yes # 公開ツリー、両ロケール -> http://localhost:8000/
+```
+
+必ず両ロケールを、英語を先にビルドします。英語ビルドは `site/`（その中に `site/ja` がある）を消すため、英語だけビルドすると古い日本語サイトが残り、壊したページが無傷に見えます。`mkdocs.base.yml` が `strict: true` を設定します。`zensical serve` は `--strict` を付けても何も検証せず、1 ロケールずつしか配信しないため、言語セレクタの動作を確認できるのは `build-pages.sh serve=yes` だけです。`pages.yml` のビルドジョブはそのスクリプトなので、CI が建てるものは、同じオプションで手元で建てたものと一致します。Windows は `.ps1` 版を使い、どちらも `key=value` オプションと `--help` を取ります。
 
 ## コーディング規約
 

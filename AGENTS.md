@@ -12,9 +12,9 @@
     change that lands in one half is the defect this family produces most.
 *   **Never break a line between two Japanese characters**: Chrome draws that break as a visible space.
 *   **Finish by running this repository's checks**: the commands in [CONTRIBUTING.md](./CONTRIBUTING.md) —
-    build the extension, then `scripts/run-tests.sh`; for docs, the both-locale build in
-    [RELEASING.md](./RELEASING.md). Read what a run says it verified rather than its exit code — several
-    checks here pass, or skip themselves, when a prerequisite is missing.
+    build the extension, then `scripts/run-tests.sh`; for docs, the both-locale build it gives. Read what a
+    run says it verified rather than its exit code — several checks here pass, or skip themselves, when a
+    prerequisite is missing.
 *   **Do not restate here what another file owns.** The table below says which file that is; a fact that
     belongs to none of them goes where it will be seen to go stale.
 *   **Never commit inside the `ss_player/SpriteStudio-SDK` submodule.** A change the core needs is a pull
@@ -50,7 +50,7 @@ owns node lifecycle, resources and batch rendering.
 |---|---|
 | What the plugin does, how to install and use it | [README.md](./README.md), the [docs site](./docs/en/) |
 | How to build and test from a checkout | [CONTRIBUTING.md](./CONTRIBUTING.md), [Build Guide](./docs/en/setup/build.md) |
-| How the site is built and a release is cut | [RELEASING.md](./RELEASING.md), maintainers only |
+| How a release is cut | [RELEASING.md](./RELEASING.md), maintainers only |
 | What to build next, and what is out of scope | [ROADMAP.md](./ROADMAP.md) |
 | What each script does and takes | that script's `--help`, and its header comment |
 | Why the headless run seeds `.godot/extension_list.cfg` | the comment block in `scripts/run-tests.sh` |
