@@ -1,11 +1,13 @@
 {% extends "base.html" %}
 
 {#-
+  Identical in every repository that carries it: everything site-specific is read from the
+  mkdocs configs.
+
   `page.is_homepage` is never set by Zensical - it is undefined on every page, including
   the home page. The theme's own base.html branches on it to decide whether to append the
   site name to the title, so without a workaround the landing page renders as
-  "SpriteStudio Player for Godot - SpriteStudio Player for Godot" in the browser tab and in
-  every link preview.
+  "<site name> - <site name>" in the browser tab and in every link preview.
 
   `page.url` is populated, and is the empty string on the home page, so derive it from
   there. `page.is_homepage` is still consulted first: it is correct under MkDocs, and this
@@ -32,23 +34,17 @@
 {% endblock %}
 
 {#-
-  Open Graph / Twitter Card metadata.
+  Open Graph / Twitter Card metadata. The theme emits none of this on its own, so a link
+  shared into Slack, X, or Discord previews as a bare URL.
 
-  The theme emits none of this on its own, so a link shared into Slack, X, or Discord
-  previews as a bare URL.
+  No og:image yet - there is no SpriteStudio artwork to point at. Adding one means dropping
+  the file into docs/en/assets/ and docs/ja/assets/ and un-commenting the tag below. Until
+  then `summary` is the correct card type; `summary_large_image` without an image renders
+  as nothing.
 
-  One template serves both locales: `config.site_name`, `config.site_description` and
-  `config.theme.language` all come from whichever locale config is being built, so the ja
-  build gets Japanese cards without a second copy of this file.
-
-  No og:image yet - there is no SpriteStudio artwork in this repository to point at. Adding
-  one means dropping the file into docs/en/assets/ and docs/ja/assets/ - each locale has
-  its own assets directory - and un-commenting the tag below. Until then `summary` is the
-  correct card type; `summary_large_image` without an image renders as nothing.
-
-  Keep this template in sync with the copies in SpriteStudio-Docs and the sibling player
-  repos - it is deliberately generic, reading everything from config. Anything
-  player-specific belongs in the locale configs, not here.
+  The <style> styles the two GitHub callouts that are not built-in admonition types, the
+  way `mkdocs-callouts` did before Zensical parsed them natively: IMPORTANT as `tip`,
+  CAUTION as `warning`.
 -#}
 {% block extrahead %}
   {%- set og_description = page.meta.description if page.meta and page.meta.description else config.site_description -%}
@@ -64,6 +60,36 @@
   <meta name="twitter:site" content="@spritestudio">
   <meta name="twitter:title" content="{{ doc_title }}">
   <meta name="twitter:description" content="{{ og_description }}">
+  <style>
+    .md-typeset .admonition.important,
+    .md-typeset details.important {
+      background-color: #00bfa51a;
+    }
+    .md-typeset .important > .admonition-title::before,
+    .md-typeset .important > summary::before {
+      background-color: #00bfa5;
+      -webkit-mask-image: var(--md-admonition-icon--tip);
+              mask-image: var(--md-admonition-icon--tip);
+    }
+    .md-typeset .important > .admonition-title::after,
+    .md-typeset .important > summary::after {
+      color: #00bfa5;
+    }
+    .md-typeset .admonition.caution,
+    .md-typeset details.caution {
+      background-color: #ff91001a;
+    }
+    .md-typeset .caution > .admonition-title::before,
+    .md-typeset .caution > summary::before {
+      background-color: #ff9100;
+      -webkit-mask-image: var(--md-admonition-icon--warning);
+              mask-image: var(--md-admonition-icon--warning);
+    }
+    .md-typeset .caution > .admonition-title::after,
+    .md-typeset .caution > summary::after {
+      color: #ff9100;
+    }
+  </style>
 {% endblock %}
 
 {#-

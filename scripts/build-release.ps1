@@ -249,7 +249,7 @@ Write-Host "   licenses/ ($((Get-ChildItem "$addon/licenses").Count) files)"
 # front door; verify below checks every page it links to.
 #
 # Left out of docs/en/:
-#   assets/, stylesheets/   the screenshots and videos (tens of MB), and the CSS.
+#   assets/                 the screenshots and videos (tens of MB).
 #                           A page that shows a screenshot has a dangling image
 #                           link here, which README.md says.
 #   index.md                the site's home page (README.md is this folder's),

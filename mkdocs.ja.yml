@@ -1,35 +1,16 @@
-# Japanese site. Built with `zensical build -f mkdocs.ja.yml`, and always *after* the
-# English build: `site_dir` is nested inside it, and a build wipes its own output directory.
-#
-# Everything not listed here comes from mkdocs.base.yml. Before adding anything, read the
-# note there about sequences: `nav` and `extra.social` are defined in this file and in
-# mkdocs.yml, and must never also appear in the base.
 INHERIT: ./mkdocs.base.yml
 
 docs_dir: docs/ja
 site_dir: site/ja
-# Must carry the `ja/` suffix: this is what `page.canonical_url` and therefore the `og:url`
-# tag are built from. Inheriting the English `site_url` would advertise every Japanese page
-# under its English address.
 site_url: "https://cri-middleware.github.io/SSPlayerForGodot/ja/"
-# Feeds <meta name="description"> and the Open Graph tags on every ja page. Without it they
-# would inherit the English `site_description`.
 site_description: "SpriteStudio のアニメーションを Godot Engine で再生するプラグイン"
 
 theme:
-  # Drives the UI string translations, the `html lang` attribute, and -- because the search
-  # engine segments CJK text per locale -- Japanese word splitting in the search index.
   language: ja
 
 extra:
-  # This locale builds into site/ja, so the root of the whole multi-locale site is one level
-  # up. The language selector prepends this to its target; see
-  # overrides/partials/alternate.html.
   site_root_prefix: "../"
-  # Footer icon labels (title / aria-label). Mirrors `extra.social` in mkdocs.yml.
   social:
-    # ポータルへの戻り導線。全 Player サイトが 1 つ目のフッターアイコンとして持つ。
-    # 日本語ロケール（/ja/）を指すこと - 英語版に送るのは避ける。
     - icon: material/motion-play
       link: https://cri-middleware.github.io/SpriteStudio-Docs/ja/
       name: SpriteStudio Docs（ポータル）
@@ -43,10 +24,6 @@ extra:
       link: https://x.com/spritestudio
       name: X の SpriteStudio
 
-# The Japanese counterpart of the `nav` in mkdocs.yml -- same paths, translated labels.
-# This replaces the old `nav_translations` map: labels are written where they are used
-# instead of being looked up by their English string, so a renamed English title can no
-# longer silently leave the Japanese label untranslated.
 nav:
   - 🏠 ホーム: index.md
   - 🚀 セットアップ:
