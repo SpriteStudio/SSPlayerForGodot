@@ -2,7 +2,7 @@
 
 This is the **Godot Player** roadmap for SpriteStudio Player for Godot. It tracks the Godot-specific implementation tasks for capabilities exposed by the **Rust runtime/converter** (`SpriteStudio-SDK/ROADMAP.md`).
 
-Most items selectively bring worthwhile capabilities from the legacy SS6 players into this SS7-based Godot player — reimagined for SS7 and Godot's architecture, not ported verbatim.
+Most items selectively bring worthwhile capabilities from earlier SpriteStudio players into this Godot player — reimagined for Godot's architecture, not ported verbatim.
 
 ## Design principle — Godot-native integration
 
@@ -57,8 +57,7 @@ SpriteStudio Player for Godot leverages Godot's `CanvasItem` API and `Node2D` pa
   4. UI state binding — map `normal` / `hover` / `pressed` / `disabled` / `focused` to an animation or a
      label, driven by a `BaseButton`'s signals. Keep it properties on the node rather than a second node
      (*Avoid node bloat*).
-  5. The two part kinds authored for UI, neither of which draws today
-     (`ss_internal_player.cpp:1755`). **Nines** is the cheap one — the runtime hands over finished vertices
+  5. The two part kinds authored for UI, neither of which draws today. **Nines** is the cheap one — the runtime hands over finished vertices
      (`get_nines_*`), so it is a draw path and nothing more. **Text** arrives as a batch with no geometry
      plus the authored string: draw it through Godot's `Font` / `TextServer`, and allow substituting the
      string at runtime so a UI label can be localized.
