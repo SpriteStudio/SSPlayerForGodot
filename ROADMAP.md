@@ -4,14 +4,6 @@ This file lists unfinished work only. Technical constraints are in [Limitations]
 waits on the runtime is under *Needs SDK* and tracked in the
 [SDK ROADMAP](https://github.com/cri-middleware/SpriteStudio-SDK/blob/HEAD/ROADMAP.md).
 
-## Design principles
-
-SpriteStudio Player for Godot leverages Godot's `CanvasItem` API and `Node2D` paradigms. Features should be designed to fit Godot's idioms naturally:
-
-- **Use Godot's built-in systems:** Rely on `CanvasItem::set_modulate()` and tree inheritance rather than recreating hierarchical color systems. Use Godot's process modes and `Engine::get_time_scale()` instead of custom delta management where possible.
-- **Avoid node bloat:** Keep the core playback in `SsInternalPlayer` rendering directly via `RenderingServer` / `CanvasItem` draw calls. Only expose child Nodes (like `SpriteStudioPartAttachment2D`) when the user explicitly needs them.
-- **Naming and Style:** Use Godot's GDScript conventions for the public API (`snake_case` methods, proper property hints, Godot Signals for callbacks).
-
 ## Playback & rendering
 
 - [ ] **Motion blending / crossfade** — layer and cross-fade animations on one `SpriteStudioPlayer2D` through the

@@ -16,8 +16,10 @@ Please refer to [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md).
 ### Technical Constraints & Guiding Principles
 To maintain high performance and native integration with Godot Engine, please adhere to the following principles:
 
-- **Godot Idioms First:** Use Godot's built-in systems (`Node2D`, `CanvasItem` API, Signals) instead of recreating them. Let Godot handle the tree and transforms.
+- **Godot Idioms First:** Use Godot's built-in systems (`Node2D`, `CanvasItem` API, Signals) instead of recreating them. Let Godot handle the tree and transforms: rely on `CanvasItem::set_modulate()` and tree inheritance rather than a hierarchical color system of our own, and on Godot's process modes and `Engine::get_time_scale()` rather than custom delta management where possible.
 - **Performance in the Hot Path:** Avoid per-frame heap allocations during playback. Use the `DrawBatch` plans emitted by the runtime directly with Godot's `RenderingServer`.
+- **Avoid Node Bloat:** Keep the core playback in `SsInternalPlayer`, drawing directly through `RenderingServer` / `CanvasItem` draw calls. Expose child nodes (like `SpriteStudioPartAttachment2D`) only when the user explicitly needs them.
+- **Godot Naming:** Follow GDScript conventions for the public API — `snake_case` methods, proper property hints, and Godot signals for callbacks.
 - **SDK Separation:** The core playback logic resides in the `SpriteStudio-SDK` submodule (Rust). Changes to core logic should be directed to the SDK repository, while Godot-specific integrations belong in `ss_player/`.
 
 ### Reporting Bugs
@@ -114,8 +116,10 @@ SSPlayerForGodot にご関心をお寄せいただき、ありがとうござい
 ### 技術的制約と設計原則
 Godot Engineとのネイティブな統合と高いパフォーマンスを維持するため、以下の原則に従ってください。
 
-- **Godotのパラダイムを優先:** `Node2D` や `CanvasItem` API、シグナルなど、Godotの標準的な機能を積極的に活用してください。独自の実装を行うよりもGodotの設計に委ねることを優先します。
+- **Godotのパラダイムを優先:** `Node2D` や `CanvasItem` API、シグナルなど、Godotの標準的な機能を積極的に活用してください。独自の実装を行うよりもGodotの設計に委ねることを優先します。階層的なカラー計算を独自に持たずに `CanvasItem::set_modulate()` とツリーの継承に委ね、可能な範囲で独自のデルタ管理ではなく Godot のプロセスモードと `Engine::get_time_scale()` を使ってください。
 - **再生パスのパフォーマンス:** 再生中の毎フレームごとの動的なメモリ確保（ヒープアロケーション）は避けてください。Rustランタイムから提供される描画バッチ情報を直接 `RenderingServer` に渡すように実装されています。
+- **ノードを増やしすぎない:** コアの再生は `SsInternalPlayer` に置き、`RenderingServer` / `CanvasItem` の描画呼び出しで直接描画します。子ノード（`SpriteStudioPartAttachment2D` など）は、利用者が明示的に必要とする場合にだけ公開してください。
+- **Godot の命名規則:** 公開 API は GDScript の慣習に従ってください（`snake_case` のメソッド、適切なプロパティヒント、コールバックには Godot のシグナル）。
 - **SDKの分離:** コアのアニメーション計算ロジックは `SpriteStudio-SDK` サブモジュール(Rust)に存在します。アルゴリズムやコアロジックの修正はSDK側のリポジトリへ、Godot特有の実装は `ss_player/` へ行ってください。
 
 ### バグの報告
