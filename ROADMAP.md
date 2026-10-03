@@ -20,6 +20,16 @@ SpriteStudio Player for Godot leverages Godot's `CanvasItem` API and `Node2D` pa
 
 ---
 
+## ☐ Motion blending / crossfade (Player-only)
+
+- **Goal**: Layer and cross-fade animations on one `SpriteStudioPlayer2D` through the runtime's track stack.
+- **Status**: The runtime side is complete: the SDK's track stack ships, and its FFI (`ss_runtime_set_track_animation`
+  / `ss_runtime_crossfade` / `ss_runtime_add_track_source` / `ss_runtime_fade_track`) is exported by `libssruntime`.
+  Nothing in `ss_player/` calls it, and `SpriteStudioPlayer2D` has no track or crossfade method.
+- **Reference**: SpriteStudio Player for wgpu, the one official Player that surfaces it (`set_track_animation` /
+  `crossfade` / `fade_track` / …). The stems are in the SDK porting guide's `20_design/30_api_conventions.md`
+  (*Animation mixing*), and the design is its `50_features/10_animation_mixing.md`; spell them in `snake_case` here.
+
 ## ☐ Tier 4 — Label / frame-range / index playback (Player-only)
 
 - **Goal**: Play a named label range, start-offset, and play by animation index.
