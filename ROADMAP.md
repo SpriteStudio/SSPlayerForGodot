@@ -20,10 +20,10 @@ SpriteStudio Player for Godot leverages Godot's `CanvasItem` API and `Node2D` pa
   track or crossfade method; SpriteStudio Player for wgpu is the reference (`set_track_animation` / `crossfade` /
   `fade_track` / …), with the stems in the SDK porting guide's `20_design/30_api_conventions.md` (*Animation mixing*)
   and the design in its `50_features/10_animation_mixing.md`.
-- [ ] **Label, range and index playback** — play a named label range with a start and end offset, and play by animation
-  index. Labels already ride in the `.ssab` payload (`AnimationData.Labels`), so no SDK change is needed: resolve them
-  in `SsInternalPlayer` and add `play_range(start_label, start_offset, end_label, end_offset)` and
-  `play_by_index(index)` on `SpriteStudioPlayer2D`, over the existing `set_animation_section`.
+- [ ] **Label playback** — set the playback section by a start and an end label, each with an offset. Labels already
+  ride in the `.ssab` payload (`AnimationData.Labels`), so no SDK change is needed: resolve them in `SsInternalPlayer`
+  and add `set_animation_section_by_label(start_label, end_label, start_offset, end_offset)` on `SpriteStudioPlayer2D`,
+  beside the existing `set_animation_section`, under the stem the SDK's API conventions register.
 - [ ] **Six blend modes draw as Mix** — Screen, Exclusion, Invert, Div2, Screen2 and Overlay2 composite as ordinary
   alpha blending, because `gpu_blend_for` maps every blend to the four a canvas item's `render_mode` can express
   (Mix / Mul / Add / Sub; Mulalpha and Mul2 draw as Mul, as SpriteStudio Player for wgpu and `ssplayer-pixi` do, which
