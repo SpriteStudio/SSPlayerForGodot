@@ -216,7 +216,7 @@ Turning any of them OFF writes only the enabled components individually, like `R
 
 ## Part Overrides (Color / Cell / Visibility)
 
-Per-part runtime overrides let a script say "make this part this color / this cell / hidden **now**". An override wins over both the keyframe and any animation blending, so it does not have to fight the animation.
+Per-part runtime overrides let a script say "make this part this color / this cell / hidden **now**". An override wins over the keyframe, so it does not have to fight the animation.
 
 ```gdscript
 @onready var ss_player = $SpriteStudioPlayer2D
