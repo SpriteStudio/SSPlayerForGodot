@@ -234,7 +234,7 @@
 			<param index="2" name="blend_op" type="int" enum="SpriteStudioPlayer2D.ColorBlendOperation" default="0" />
 			<param index="3" name="priority" type="int" enum="SpriteStudioPlayer2D.OverridePriority" default="1" />
 			<description>
-				Tints one part with a single color, winning over both the keyframes and any animation blending. Applies to normal (image) parts; other part types ignore it silently and the call still returns [code]true[/code].
+				Tints one part with a single color, winning over the keyframes. Applies to normal (image) parts; other part types ignore it silently and the call still returns [code]true[/code].
 				Colors are read in the same 8-bit sRGB space as the authored Part Color and the runtime pre-multiplies alpha, so pass the color as authored. Returns [code]false[/code] when the part is unknown or the runtime rejects the call. See [enum ColorBlendOperation] and [enum OverridePriority].
 			</description>
 		</method>
