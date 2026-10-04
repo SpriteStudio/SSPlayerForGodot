@@ -31,8 +31,7 @@ struct MinMax2Builder;
 struct U8Color;
 struct U8ColorBuilder;
 
-struct SsCurve;
-struct SsCurveBuilder;
+struct KeyCurve;
 
 struct NoneValueEntry;
 struct NoneValueEntryBuilder;
@@ -187,44 +186,17 @@ struct PartDataBuilder;
 struct Label;
 struct LabelBuilder;
 
-struct PartAnimationDataCellValue;
-struct PartAnimationDataCellValueBuilder;
-
-struct PartAnimationDataFloatValue;
-struct PartAnimationDataFloatValueBuilder;
-
-struct PartAnimationDataIntValue;
-struct PartAnimationDataIntValueBuilder;
-
-struct PartAnimationDataUIntValue;
-struct PartAnimationDataUIntValueBuilder;
-
-struct PartAnimationDataBoolValue;
-struct PartAnimationDataBoolValueBuilder;
-
-struct PartAnimationDataPartColor;
-struct PartAnimationDataPartColorBuilder;
-
-struct PartAnimationDataShader;
-struct PartAnimationDataShaderBuilder;
-
-struct PartAnimationDataVertex;
-struct PartAnimationDataVertexBuilder;
-
 struct PartAnimationDataInstance;
 struct PartAnimationDataInstanceBuilder;
 
 struct PartAnimationDataEffect;
 struct PartAnimationDataEffectBuilder;
 
-struct PartAnimationDataVec2;
-struct PartAnimationDataVec2Builder;
-
-struct PartAnimationDataDeform;
-struct PartAnimationDataDeformBuilder;
-
 struct PartAnimationData;
 struct PartAnimationDataBuilder;
+
+struct Keyframes;
+struct KeyframesBuilder;
 
 struct AnimationData;
 struct AnimationDataBuilder;
@@ -1103,6 +1075,41 @@ bool VerifyPartType(::flatbuffers::VerifierTemplate<B> &verifier, const void *ob
 template <bool B = false>
 bool VerifyPartTypeVector(::flatbuffers::VerifierTemplate<B> &verifier, const ::flatbuffers::Vector<::flatbuffers::Offset<void>> *values, const ::flatbuffers::Vector<uint8_t> *types);
 
+FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(4) KeyCurve FLATBUFFERS_FINAL_CLASS {
+ private:
+  float start_time_;
+  float start_value_;
+  float end_time_;
+  float end_value_;
+
+ public:
+  KeyCurve()
+      : start_time_(0),
+        start_value_(0),
+        end_time_(0),
+        end_value_(0) {
+  }
+  KeyCurve(float _start_time, float _start_value, float _end_time, float _end_value)
+      : start_time_(::flatbuffers::EndianScalar(_start_time)),
+        start_value_(::flatbuffers::EndianScalar(_start_value)),
+        end_time_(::flatbuffers::EndianScalar(_end_time)),
+        end_value_(::flatbuffers::EndianScalar(_end_value)) {
+  }
+  float start_time() const {
+    return ::flatbuffers::EndianScalar(start_time_);
+  }
+  float start_value() const {
+    return ::flatbuffers::EndianScalar(start_value_);
+  }
+  float end_time() const {
+    return ::flatbuffers::EndianScalar(end_time_);
+  }
+  float end_value() const {
+    return ::flatbuffers::EndianScalar(end_value_);
+  }
+};
+FLATBUFFERS_STRUCT_END(KeyCurve, 16);
+
 struct Vec2 FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   typedef Vec2Builder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
@@ -1440,78 +1447,6 @@ inline ::flatbuffers::Offset<U8Color> CreateU8Color(
   builder_.add_g(g);
   builder_.add_r(r);
   builder_.add_a(a);
-  return builder_.Finish();
-}
-
-struct SsCurve FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
-  typedef SsCurveBuilder Builder;
-  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
-    VT_START_TIME = 4,
-    VT_START_VALUE = 6,
-    VT_END_TIME = 8,
-    VT_END_VALUE = 10
-  };
-  float start_time() const {
-    return GetField<float>(VT_START_TIME, 0.0f);
-  }
-  float start_value() const {
-    return GetField<float>(VT_START_VALUE, 0.0f);
-  }
-  float end_time() const {
-    return GetField<float>(VT_END_TIME, 0.0f);
-  }
-  float end_value() const {
-    return GetField<float>(VT_END_VALUE, 0.0f);
-  }
-  template <bool B = false>
-  bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
-    return VerifyTableStart(verifier) &&
-           VerifyField<float>(verifier, VT_START_TIME, 4) &&
-           VerifyField<float>(verifier, VT_START_VALUE, 4) &&
-           VerifyField<float>(verifier, VT_END_TIME, 4) &&
-           VerifyField<float>(verifier, VT_END_VALUE, 4) &&
-           verifier.EndTable();
-  }
-};
-
-struct SsCurveBuilder {
-  typedef SsCurve Table;
-  ::flatbuffers::FlatBufferBuilder &fbb_;
-  ::flatbuffers::uoffset_t start_;
-  void add_start_time(float start_time) {
-    fbb_.AddElement<float>(SsCurve::VT_START_TIME, start_time, 0.0f);
-  }
-  void add_start_value(float start_value) {
-    fbb_.AddElement<float>(SsCurve::VT_START_VALUE, start_value, 0.0f);
-  }
-  void add_end_time(float end_time) {
-    fbb_.AddElement<float>(SsCurve::VT_END_TIME, end_time, 0.0f);
-  }
-  void add_end_value(float end_value) {
-    fbb_.AddElement<float>(SsCurve::VT_END_VALUE, end_value, 0.0f);
-  }
-  explicit SsCurveBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
-        : fbb_(_fbb) {
-    start_ = fbb_.StartTable();
-  }
-  ::flatbuffers::Offset<SsCurve> Finish() {
-    const auto end = fbb_.EndTable(start_);
-    auto o = ::flatbuffers::Offset<SsCurve>(end);
-    return o;
-  }
-};
-
-inline ::flatbuffers::Offset<SsCurve> CreateSsCurve(
-    ::flatbuffers::FlatBufferBuilder &_fbb,
-    float start_time = 0.0f,
-    float start_value = 0.0f,
-    float end_time = 0.0f,
-    float end_value = 0.0f) {
-  SsCurveBuilder builder_(_fbb);
-  builder_.add_end_value(end_value);
-  builder_.add_end_time(end_time);
-  builder_.add_start_value(start_value);
-  builder_.add_start_time(start_time);
   return builder_.Finish();
 }
 
@@ -6437,643 +6372,6 @@ inline ::flatbuffers::Offset<Label> CreateLabelDirect(
       time);
 }
 
-struct PartAnimationDataCellValue FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
-  typedef PartAnimationDataCellValueBuilder Builder;
-  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
-    VT_INDEX = 4,
-    VT_VALUE = 6
-  };
-  uint16_t index() const {
-    return GetField<uint16_t>(VT_INDEX, 0);
-  }
-  bool KeyCompareLessThan(const PartAnimationDataCellValue * const o) const {
-    return index() < o->index();
-  }
-  int KeyCompareWithValue(uint16_t _index) const {
-    return static_cast<int>(index() > _index) - static_cast<int>(index() < _index);
-  }
-  const ss::format::PartAttributeCell *value() const {
-    return GetPointer<const ss::format::PartAttributeCell *>(VT_VALUE);
-  }
-  template <bool B = false>
-  bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
-    return VerifyTableStart(verifier) &&
-           VerifyField<uint16_t>(verifier, VT_INDEX, 2) &&
-           VerifyOffsetRequired(verifier, VT_VALUE) &&
-           verifier.VerifyTable(value()) &&
-           verifier.EndTable();
-  }
-};
-
-struct PartAnimationDataCellValueBuilder {
-  typedef PartAnimationDataCellValue Table;
-  ::flatbuffers::FlatBufferBuilder &fbb_;
-  ::flatbuffers::uoffset_t start_;
-  void add_index(uint16_t index) {
-    fbb_.AddElement<uint16_t>(PartAnimationDataCellValue::VT_INDEX, index, 0);
-  }
-  void add_value(::flatbuffers::Offset<ss::format::PartAttributeCell> value) {
-    fbb_.AddOffset(PartAnimationDataCellValue::VT_VALUE, value);
-  }
-  explicit PartAnimationDataCellValueBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
-        : fbb_(_fbb) {
-    start_ = fbb_.StartTable();
-  }
-  ::flatbuffers::Offset<PartAnimationDataCellValue> Finish() {
-    const auto end = fbb_.EndTable(start_);
-    auto o = ::flatbuffers::Offset<PartAnimationDataCellValue>(end);
-    fbb_.Required(o, PartAnimationDataCellValue::VT_VALUE);
-    return o;
-  }
-};
-
-inline ::flatbuffers::Offset<PartAnimationDataCellValue> CreatePartAnimationDataCellValue(
-    ::flatbuffers::FlatBufferBuilder &_fbb,
-    uint16_t index = 0,
-    ::flatbuffers::Offset<ss::format::PartAttributeCell> value = 0) {
-  PartAnimationDataCellValueBuilder builder_(_fbb);
-  builder_.add_value(value);
-  builder_.add_index(index);
-  return builder_.Finish();
-}
-
-struct PartAnimationDataFloatValue FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
-  typedef PartAnimationDataFloatValueBuilder Builder;
-  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
-    VT_INDEX = 4,
-    VT_INTERPOLATION = 6,
-    VT_VALUE = 8,
-    VT_CURVE = 10,
-    VT_EASING_RATE = 12
-  };
-  uint16_t index() const {
-    return GetField<uint16_t>(VT_INDEX, 0);
-  }
-  bool KeyCompareLessThan(const PartAnimationDataFloatValue * const o) const {
-    return index() < o->index();
-  }
-  int KeyCompareWithValue(uint16_t _index) const {
-    return static_cast<int>(index() > _index) - static_cast<int>(index() < _index);
-  }
-  ss::format::InterpolationType interpolation() const {
-    return static_cast<ss::format::InterpolationType>(GetField<uint8_t>(VT_INTERPOLATION, 0));
-  }
-  float value() const {
-    return GetField<float>(VT_VALUE, 0.0f);
-  }
-  const ss::format::SsCurve *curve() const {
-    return GetPointer<const ss::format::SsCurve *>(VT_CURVE);
-  }
-  float easing_rate() const {
-    return GetField<float>(VT_EASING_RATE, 0.0f);
-  }
-  template <bool B = false>
-  bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
-    return VerifyTableStart(verifier) &&
-           VerifyField<uint16_t>(verifier, VT_INDEX, 2) &&
-           VerifyField<uint8_t>(verifier, VT_INTERPOLATION, 1) &&
-           VerifyField<float>(verifier, VT_VALUE, 4) &&
-           VerifyOffset(verifier, VT_CURVE) &&
-           verifier.VerifyTable(curve()) &&
-           VerifyField<float>(verifier, VT_EASING_RATE, 4) &&
-           verifier.EndTable();
-  }
-};
-
-struct PartAnimationDataFloatValueBuilder {
-  typedef PartAnimationDataFloatValue Table;
-  ::flatbuffers::FlatBufferBuilder &fbb_;
-  ::flatbuffers::uoffset_t start_;
-  void add_index(uint16_t index) {
-    fbb_.AddElement<uint16_t>(PartAnimationDataFloatValue::VT_INDEX, index, 0);
-  }
-  void add_interpolation(ss::format::InterpolationType interpolation) {
-    fbb_.AddElement<uint8_t>(PartAnimationDataFloatValue::VT_INTERPOLATION, static_cast<uint8_t>(interpolation), 0);
-  }
-  void add_value(float value) {
-    fbb_.AddElement<float>(PartAnimationDataFloatValue::VT_VALUE, value, 0.0f);
-  }
-  void add_curve(::flatbuffers::Offset<ss::format::SsCurve> curve) {
-    fbb_.AddOffset(PartAnimationDataFloatValue::VT_CURVE, curve);
-  }
-  void add_easing_rate(float easing_rate) {
-    fbb_.AddElement<float>(PartAnimationDataFloatValue::VT_EASING_RATE, easing_rate, 0.0f);
-  }
-  explicit PartAnimationDataFloatValueBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
-        : fbb_(_fbb) {
-    start_ = fbb_.StartTable();
-  }
-  ::flatbuffers::Offset<PartAnimationDataFloatValue> Finish() {
-    const auto end = fbb_.EndTable(start_);
-    auto o = ::flatbuffers::Offset<PartAnimationDataFloatValue>(end);
-    return o;
-  }
-};
-
-inline ::flatbuffers::Offset<PartAnimationDataFloatValue> CreatePartAnimationDataFloatValue(
-    ::flatbuffers::FlatBufferBuilder &_fbb,
-    uint16_t index = 0,
-    ss::format::InterpolationType interpolation = ss::format::InterpolationType_None,
-    float value = 0.0f,
-    ::flatbuffers::Offset<ss::format::SsCurve> curve = 0,
-    float easing_rate = 0.0f) {
-  PartAnimationDataFloatValueBuilder builder_(_fbb);
-  builder_.add_easing_rate(easing_rate);
-  builder_.add_curve(curve);
-  builder_.add_value(value);
-  builder_.add_index(index);
-  builder_.add_interpolation(interpolation);
-  return builder_.Finish();
-}
-
-struct PartAnimationDataIntValue FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
-  typedef PartAnimationDataIntValueBuilder Builder;
-  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
-    VT_INDEX = 4,
-    VT_INTERPOLATION = 6,
-    VT_VALUE = 8,
-    VT_CURVE = 10,
-    VT_EASING_RATE = 12
-  };
-  uint16_t index() const {
-    return GetField<uint16_t>(VT_INDEX, 0);
-  }
-  bool KeyCompareLessThan(const PartAnimationDataIntValue * const o) const {
-    return index() < o->index();
-  }
-  int KeyCompareWithValue(uint16_t _index) const {
-    return static_cast<int>(index() > _index) - static_cast<int>(index() < _index);
-  }
-  ss::format::InterpolationType interpolation() const {
-    return static_cast<ss::format::InterpolationType>(GetField<uint8_t>(VT_INTERPOLATION, 0));
-  }
-  int32_t value() const {
-    return GetField<int32_t>(VT_VALUE, 0);
-  }
-  const ss::format::SsCurve *curve() const {
-    return GetPointer<const ss::format::SsCurve *>(VT_CURVE);
-  }
-  float easing_rate() const {
-    return GetField<float>(VT_EASING_RATE, 0.0f);
-  }
-  template <bool B = false>
-  bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
-    return VerifyTableStart(verifier) &&
-           VerifyField<uint16_t>(verifier, VT_INDEX, 2) &&
-           VerifyField<uint8_t>(verifier, VT_INTERPOLATION, 1) &&
-           VerifyField<int32_t>(verifier, VT_VALUE, 4) &&
-           VerifyOffset(verifier, VT_CURVE) &&
-           verifier.VerifyTable(curve()) &&
-           VerifyField<float>(verifier, VT_EASING_RATE, 4) &&
-           verifier.EndTable();
-  }
-};
-
-struct PartAnimationDataIntValueBuilder {
-  typedef PartAnimationDataIntValue Table;
-  ::flatbuffers::FlatBufferBuilder &fbb_;
-  ::flatbuffers::uoffset_t start_;
-  void add_index(uint16_t index) {
-    fbb_.AddElement<uint16_t>(PartAnimationDataIntValue::VT_INDEX, index, 0);
-  }
-  void add_interpolation(ss::format::InterpolationType interpolation) {
-    fbb_.AddElement<uint8_t>(PartAnimationDataIntValue::VT_INTERPOLATION, static_cast<uint8_t>(interpolation), 0);
-  }
-  void add_value(int32_t value) {
-    fbb_.AddElement<int32_t>(PartAnimationDataIntValue::VT_VALUE, value, 0);
-  }
-  void add_curve(::flatbuffers::Offset<ss::format::SsCurve> curve) {
-    fbb_.AddOffset(PartAnimationDataIntValue::VT_CURVE, curve);
-  }
-  void add_easing_rate(float easing_rate) {
-    fbb_.AddElement<float>(PartAnimationDataIntValue::VT_EASING_RATE, easing_rate, 0.0f);
-  }
-  explicit PartAnimationDataIntValueBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
-        : fbb_(_fbb) {
-    start_ = fbb_.StartTable();
-  }
-  ::flatbuffers::Offset<PartAnimationDataIntValue> Finish() {
-    const auto end = fbb_.EndTable(start_);
-    auto o = ::flatbuffers::Offset<PartAnimationDataIntValue>(end);
-    return o;
-  }
-};
-
-inline ::flatbuffers::Offset<PartAnimationDataIntValue> CreatePartAnimationDataIntValue(
-    ::flatbuffers::FlatBufferBuilder &_fbb,
-    uint16_t index = 0,
-    ss::format::InterpolationType interpolation = ss::format::InterpolationType_None,
-    int32_t value = 0,
-    ::flatbuffers::Offset<ss::format::SsCurve> curve = 0,
-    float easing_rate = 0.0f) {
-  PartAnimationDataIntValueBuilder builder_(_fbb);
-  builder_.add_easing_rate(easing_rate);
-  builder_.add_curve(curve);
-  builder_.add_value(value);
-  builder_.add_index(index);
-  builder_.add_interpolation(interpolation);
-  return builder_.Finish();
-}
-
-struct PartAnimationDataUIntValue FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
-  typedef PartAnimationDataUIntValueBuilder Builder;
-  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
-    VT_INDEX = 4,
-    VT_INTERPOLATION = 6,
-    VT_VALUE = 8
-  };
-  uint16_t index() const {
-    return GetField<uint16_t>(VT_INDEX, 0);
-  }
-  bool KeyCompareLessThan(const PartAnimationDataUIntValue * const o) const {
-    return index() < o->index();
-  }
-  int KeyCompareWithValue(uint16_t _index) const {
-    return static_cast<int>(index() > _index) - static_cast<int>(index() < _index);
-  }
-  ss::format::InterpolationType interpolation() const {
-    return static_cast<ss::format::InterpolationType>(GetField<uint8_t>(VT_INTERPOLATION, 0));
-  }
-  uint32_t value() const {
-    return GetField<uint32_t>(VT_VALUE, 0);
-  }
-  template <bool B = false>
-  bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
-    return VerifyTableStart(verifier) &&
-           VerifyField<uint16_t>(verifier, VT_INDEX, 2) &&
-           VerifyField<uint8_t>(verifier, VT_INTERPOLATION, 1) &&
-           VerifyField<uint32_t>(verifier, VT_VALUE, 4) &&
-           verifier.EndTable();
-  }
-};
-
-struct PartAnimationDataUIntValueBuilder {
-  typedef PartAnimationDataUIntValue Table;
-  ::flatbuffers::FlatBufferBuilder &fbb_;
-  ::flatbuffers::uoffset_t start_;
-  void add_index(uint16_t index) {
-    fbb_.AddElement<uint16_t>(PartAnimationDataUIntValue::VT_INDEX, index, 0);
-  }
-  void add_interpolation(ss::format::InterpolationType interpolation) {
-    fbb_.AddElement<uint8_t>(PartAnimationDataUIntValue::VT_INTERPOLATION, static_cast<uint8_t>(interpolation), 0);
-  }
-  void add_value(uint32_t value) {
-    fbb_.AddElement<uint32_t>(PartAnimationDataUIntValue::VT_VALUE, value, 0);
-  }
-  explicit PartAnimationDataUIntValueBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
-        : fbb_(_fbb) {
-    start_ = fbb_.StartTable();
-  }
-  ::flatbuffers::Offset<PartAnimationDataUIntValue> Finish() {
-    const auto end = fbb_.EndTable(start_);
-    auto o = ::flatbuffers::Offset<PartAnimationDataUIntValue>(end);
-    return o;
-  }
-};
-
-inline ::flatbuffers::Offset<PartAnimationDataUIntValue> CreatePartAnimationDataUIntValue(
-    ::flatbuffers::FlatBufferBuilder &_fbb,
-    uint16_t index = 0,
-    ss::format::InterpolationType interpolation = ss::format::InterpolationType_None,
-    uint32_t value = 0) {
-  PartAnimationDataUIntValueBuilder builder_(_fbb);
-  builder_.add_value(value);
-  builder_.add_index(index);
-  builder_.add_interpolation(interpolation);
-  return builder_.Finish();
-}
-
-struct PartAnimationDataBoolValue FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
-  typedef PartAnimationDataBoolValueBuilder Builder;
-  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
-    VT_INDEX = 4,
-    VT_VALUE = 6
-  };
-  uint16_t index() const {
-    return GetField<uint16_t>(VT_INDEX, 0);
-  }
-  bool KeyCompareLessThan(const PartAnimationDataBoolValue * const o) const {
-    return index() < o->index();
-  }
-  int KeyCompareWithValue(uint16_t _index) const {
-    return static_cast<int>(index() > _index) - static_cast<int>(index() < _index);
-  }
-  bool value() const {
-    return GetField<uint8_t>(VT_VALUE, 0) != 0;
-  }
-  template <bool B = false>
-  bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
-    return VerifyTableStart(verifier) &&
-           VerifyField<uint16_t>(verifier, VT_INDEX, 2) &&
-           VerifyField<uint8_t>(verifier, VT_VALUE, 1) &&
-           verifier.EndTable();
-  }
-};
-
-struct PartAnimationDataBoolValueBuilder {
-  typedef PartAnimationDataBoolValue Table;
-  ::flatbuffers::FlatBufferBuilder &fbb_;
-  ::flatbuffers::uoffset_t start_;
-  void add_index(uint16_t index) {
-    fbb_.AddElement<uint16_t>(PartAnimationDataBoolValue::VT_INDEX, index, 0);
-  }
-  void add_value(bool value) {
-    fbb_.AddElement<uint8_t>(PartAnimationDataBoolValue::VT_VALUE, static_cast<uint8_t>(value), 0);
-  }
-  explicit PartAnimationDataBoolValueBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
-        : fbb_(_fbb) {
-    start_ = fbb_.StartTable();
-  }
-  ::flatbuffers::Offset<PartAnimationDataBoolValue> Finish() {
-    const auto end = fbb_.EndTable(start_);
-    auto o = ::flatbuffers::Offset<PartAnimationDataBoolValue>(end);
-    return o;
-  }
-};
-
-inline ::flatbuffers::Offset<PartAnimationDataBoolValue> CreatePartAnimationDataBoolValue(
-    ::flatbuffers::FlatBufferBuilder &_fbb,
-    uint16_t index = 0,
-    bool value = false) {
-  PartAnimationDataBoolValueBuilder builder_(_fbb);
-  builder_.add_index(index);
-  builder_.add_value(value);
-  return builder_.Finish();
-}
-
-struct PartAnimationDataPartColor FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
-  typedef PartAnimationDataPartColorBuilder Builder;
-  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
-    VT_INDEX = 4,
-    VT_INTERPOLATION = 6,
-    VT_VALUE = 8,
-    VT_CURVE = 10,
-    VT_EASING_RATE = 12
-  };
-  uint16_t index() const {
-    return GetField<uint16_t>(VT_INDEX, 0);
-  }
-  bool KeyCompareLessThan(const PartAnimationDataPartColor * const o) const {
-    return index() < o->index();
-  }
-  int KeyCompareWithValue(uint16_t _index) const {
-    return static_cast<int>(index() > _index) - static_cast<int>(index() < _index);
-  }
-  ss::format::InterpolationType interpolation() const {
-    return static_cast<ss::format::InterpolationType>(GetField<uint8_t>(VT_INTERPOLATION, 0));
-  }
-  const ss::format::PartAttributePartColor *value() const {
-    return GetPointer<const ss::format::PartAttributePartColor *>(VT_VALUE);
-  }
-  const ss::format::SsCurve *curve() const {
-    return GetPointer<const ss::format::SsCurve *>(VT_CURVE);
-  }
-  float easing_rate() const {
-    return GetField<float>(VT_EASING_RATE, 0.0f);
-  }
-  template <bool B = false>
-  bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
-    return VerifyTableStart(verifier) &&
-           VerifyField<uint16_t>(verifier, VT_INDEX, 2) &&
-           VerifyField<uint8_t>(verifier, VT_INTERPOLATION, 1) &&
-           VerifyOffsetRequired(verifier, VT_VALUE) &&
-           verifier.VerifyTable(value()) &&
-           VerifyOffset(verifier, VT_CURVE) &&
-           verifier.VerifyTable(curve()) &&
-           VerifyField<float>(verifier, VT_EASING_RATE, 4) &&
-           verifier.EndTable();
-  }
-};
-
-struct PartAnimationDataPartColorBuilder {
-  typedef PartAnimationDataPartColor Table;
-  ::flatbuffers::FlatBufferBuilder &fbb_;
-  ::flatbuffers::uoffset_t start_;
-  void add_index(uint16_t index) {
-    fbb_.AddElement<uint16_t>(PartAnimationDataPartColor::VT_INDEX, index, 0);
-  }
-  void add_interpolation(ss::format::InterpolationType interpolation) {
-    fbb_.AddElement<uint8_t>(PartAnimationDataPartColor::VT_INTERPOLATION, static_cast<uint8_t>(interpolation), 0);
-  }
-  void add_value(::flatbuffers::Offset<ss::format::PartAttributePartColor> value) {
-    fbb_.AddOffset(PartAnimationDataPartColor::VT_VALUE, value);
-  }
-  void add_curve(::flatbuffers::Offset<ss::format::SsCurve> curve) {
-    fbb_.AddOffset(PartAnimationDataPartColor::VT_CURVE, curve);
-  }
-  void add_easing_rate(float easing_rate) {
-    fbb_.AddElement<float>(PartAnimationDataPartColor::VT_EASING_RATE, easing_rate, 0.0f);
-  }
-  explicit PartAnimationDataPartColorBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
-        : fbb_(_fbb) {
-    start_ = fbb_.StartTable();
-  }
-  ::flatbuffers::Offset<PartAnimationDataPartColor> Finish() {
-    const auto end = fbb_.EndTable(start_);
-    auto o = ::flatbuffers::Offset<PartAnimationDataPartColor>(end);
-    fbb_.Required(o, PartAnimationDataPartColor::VT_VALUE);
-    return o;
-  }
-};
-
-inline ::flatbuffers::Offset<PartAnimationDataPartColor> CreatePartAnimationDataPartColor(
-    ::flatbuffers::FlatBufferBuilder &_fbb,
-    uint16_t index = 0,
-    ss::format::InterpolationType interpolation = ss::format::InterpolationType_None,
-    ::flatbuffers::Offset<ss::format::PartAttributePartColor> value = 0,
-    ::flatbuffers::Offset<ss::format::SsCurve> curve = 0,
-    float easing_rate = 0.0f) {
-  PartAnimationDataPartColorBuilder builder_(_fbb);
-  builder_.add_easing_rate(easing_rate);
-  builder_.add_curve(curve);
-  builder_.add_value(value);
-  builder_.add_index(index);
-  builder_.add_interpolation(interpolation);
-  return builder_.Finish();
-}
-
-struct PartAnimationDataShader FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
-  typedef PartAnimationDataShaderBuilder Builder;
-  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
-    VT_INDEX = 4,
-    VT_INTERPOLATION = 6,
-    VT_VALUE = 8,
-    VT_CURVE = 10,
-    VT_EASING_RATE = 12
-  };
-  uint16_t index() const {
-    return GetField<uint16_t>(VT_INDEX, 0);
-  }
-  bool KeyCompareLessThan(const PartAnimationDataShader * const o) const {
-    return index() < o->index();
-  }
-  int KeyCompareWithValue(uint16_t _index) const {
-    return static_cast<int>(index() > _index) - static_cast<int>(index() < _index);
-  }
-  ss::format::InterpolationType interpolation() const {
-    return static_cast<ss::format::InterpolationType>(GetField<uint8_t>(VT_INTERPOLATION, 0));
-  }
-  const ss::format::PartAttributeShader *value() const {
-    return GetPointer<const ss::format::PartAttributeShader *>(VT_VALUE);
-  }
-  const ss::format::SsCurve *curve() const {
-    return GetPointer<const ss::format::SsCurve *>(VT_CURVE);
-  }
-  float easing_rate() const {
-    return GetField<float>(VT_EASING_RATE, 0.0f);
-  }
-  template <bool B = false>
-  bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
-    return VerifyTableStart(verifier) &&
-           VerifyField<uint16_t>(verifier, VT_INDEX, 2) &&
-           VerifyField<uint8_t>(verifier, VT_INTERPOLATION, 1) &&
-           VerifyOffsetRequired(verifier, VT_VALUE) &&
-           verifier.VerifyTable(value()) &&
-           VerifyOffset(verifier, VT_CURVE) &&
-           verifier.VerifyTable(curve()) &&
-           VerifyField<float>(verifier, VT_EASING_RATE, 4) &&
-           verifier.EndTable();
-  }
-};
-
-struct PartAnimationDataShaderBuilder {
-  typedef PartAnimationDataShader Table;
-  ::flatbuffers::FlatBufferBuilder &fbb_;
-  ::flatbuffers::uoffset_t start_;
-  void add_index(uint16_t index) {
-    fbb_.AddElement<uint16_t>(PartAnimationDataShader::VT_INDEX, index, 0);
-  }
-  void add_interpolation(ss::format::InterpolationType interpolation) {
-    fbb_.AddElement<uint8_t>(PartAnimationDataShader::VT_INTERPOLATION, static_cast<uint8_t>(interpolation), 0);
-  }
-  void add_value(::flatbuffers::Offset<ss::format::PartAttributeShader> value) {
-    fbb_.AddOffset(PartAnimationDataShader::VT_VALUE, value);
-  }
-  void add_curve(::flatbuffers::Offset<ss::format::SsCurve> curve) {
-    fbb_.AddOffset(PartAnimationDataShader::VT_CURVE, curve);
-  }
-  void add_easing_rate(float easing_rate) {
-    fbb_.AddElement<float>(PartAnimationDataShader::VT_EASING_RATE, easing_rate, 0.0f);
-  }
-  explicit PartAnimationDataShaderBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
-        : fbb_(_fbb) {
-    start_ = fbb_.StartTable();
-  }
-  ::flatbuffers::Offset<PartAnimationDataShader> Finish() {
-    const auto end = fbb_.EndTable(start_);
-    auto o = ::flatbuffers::Offset<PartAnimationDataShader>(end);
-    fbb_.Required(o, PartAnimationDataShader::VT_VALUE);
-    return o;
-  }
-};
-
-inline ::flatbuffers::Offset<PartAnimationDataShader> CreatePartAnimationDataShader(
-    ::flatbuffers::FlatBufferBuilder &_fbb,
-    uint16_t index = 0,
-    ss::format::InterpolationType interpolation = ss::format::InterpolationType_None,
-    ::flatbuffers::Offset<ss::format::PartAttributeShader> value = 0,
-    ::flatbuffers::Offset<ss::format::SsCurve> curve = 0,
-    float easing_rate = 0.0f) {
-  PartAnimationDataShaderBuilder builder_(_fbb);
-  builder_.add_easing_rate(easing_rate);
-  builder_.add_curve(curve);
-  builder_.add_value(value);
-  builder_.add_index(index);
-  builder_.add_interpolation(interpolation);
-  return builder_.Finish();
-}
-
-struct PartAnimationDataVertex FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
-  typedef PartAnimationDataVertexBuilder Builder;
-  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
-    VT_INDEX = 4,
-    VT_INTERPOLATION = 6,
-    VT_VALUE = 8,
-    VT_CURVE = 10,
-    VT_EASING_RATE = 12
-  };
-  uint16_t index() const {
-    return GetField<uint16_t>(VT_INDEX, 0);
-  }
-  bool KeyCompareLessThan(const PartAnimationDataVertex * const o) const {
-    return index() < o->index();
-  }
-  int KeyCompareWithValue(uint16_t _index) const {
-    return static_cast<int>(index() > _index) - static_cast<int>(index() < _index);
-  }
-  ss::format::InterpolationType interpolation() const {
-    return static_cast<ss::format::InterpolationType>(GetField<uint8_t>(VT_INTERPOLATION, 0));
-  }
-  const ss::format::PartAttributeVertex *value() const {
-    return GetPointer<const ss::format::PartAttributeVertex *>(VT_VALUE);
-  }
-  const ss::format::SsCurve *curve() const {
-    return GetPointer<const ss::format::SsCurve *>(VT_CURVE);
-  }
-  float easing_rate() const {
-    return GetField<float>(VT_EASING_RATE, 0.0f);
-  }
-  template <bool B = false>
-  bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
-    return VerifyTableStart(verifier) &&
-           VerifyField<uint16_t>(verifier, VT_INDEX, 2) &&
-           VerifyField<uint8_t>(verifier, VT_INTERPOLATION, 1) &&
-           VerifyOffsetRequired(verifier, VT_VALUE) &&
-           verifier.VerifyTable(value()) &&
-           VerifyOffset(verifier, VT_CURVE) &&
-           verifier.VerifyTable(curve()) &&
-           VerifyField<float>(verifier, VT_EASING_RATE, 4) &&
-           verifier.EndTable();
-  }
-};
-
-struct PartAnimationDataVertexBuilder {
-  typedef PartAnimationDataVertex Table;
-  ::flatbuffers::FlatBufferBuilder &fbb_;
-  ::flatbuffers::uoffset_t start_;
-  void add_index(uint16_t index) {
-    fbb_.AddElement<uint16_t>(PartAnimationDataVertex::VT_INDEX, index, 0);
-  }
-  void add_interpolation(ss::format::InterpolationType interpolation) {
-    fbb_.AddElement<uint8_t>(PartAnimationDataVertex::VT_INTERPOLATION, static_cast<uint8_t>(interpolation), 0);
-  }
-  void add_value(::flatbuffers::Offset<ss::format::PartAttributeVertex> value) {
-    fbb_.AddOffset(PartAnimationDataVertex::VT_VALUE, value);
-  }
-  void add_curve(::flatbuffers::Offset<ss::format::SsCurve> curve) {
-    fbb_.AddOffset(PartAnimationDataVertex::VT_CURVE, curve);
-  }
-  void add_easing_rate(float easing_rate) {
-    fbb_.AddElement<float>(PartAnimationDataVertex::VT_EASING_RATE, easing_rate, 0.0f);
-  }
-  explicit PartAnimationDataVertexBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
-        : fbb_(_fbb) {
-    start_ = fbb_.StartTable();
-  }
-  ::flatbuffers::Offset<PartAnimationDataVertex> Finish() {
-    const auto end = fbb_.EndTable(start_);
-    auto o = ::flatbuffers::Offset<PartAnimationDataVertex>(end);
-    fbb_.Required(o, PartAnimationDataVertex::VT_VALUE);
-    return o;
-  }
-};
-
-inline ::flatbuffers::Offset<PartAnimationDataVertex> CreatePartAnimationDataVertex(
-    ::flatbuffers::FlatBufferBuilder &_fbb,
-    uint16_t index = 0,
-    ss::format::InterpolationType interpolation = ss::format::InterpolationType_None,
-    ::flatbuffers::Offset<ss::format::PartAttributeVertex> value = 0,
-    ::flatbuffers::Offset<ss::format::SsCurve> curve = 0,
-    float easing_rate = 0.0f) {
-  PartAnimationDataVertexBuilder builder_(_fbb);
-  builder_.add_easing_rate(easing_rate);
-  builder_.add_curve(curve);
-  builder_.add_value(value);
-  builder_.add_index(index);
-  builder_.add_interpolation(interpolation);
-  return builder_.Finish();
-}
-
 struct PartAnimationDataInstance FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   typedef PartAnimationDataInstanceBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
@@ -7194,461 +6492,203 @@ inline ::flatbuffers::Offset<PartAnimationDataEffect> CreatePartAnimationDataEff
   return builder_.Finish();
 }
 
-struct PartAnimationDataVec2 FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
-  typedef PartAnimationDataVec2Builder Builder;
-  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
-    VT_INDEX = 4,
-    VT_INTERPOLATION = 6,
-    VT_VALUE = 8,
-    VT_CURVE = 10,
-    VT_EASING_RATE = 12
-  };
-  uint16_t index() const {
-    return GetField<uint16_t>(VT_INDEX, 0);
-  }
-  bool KeyCompareLessThan(const PartAnimationDataVec2 * const o) const {
-    return index() < o->index();
-  }
-  int KeyCompareWithValue(uint16_t _index) const {
-    return static_cast<int>(index() > _index) - static_cast<int>(index() < _index);
-  }
-  ss::format::InterpolationType interpolation() const {
-    return static_cast<ss::format::InterpolationType>(GetField<uint8_t>(VT_INTERPOLATION, 0));
-  }
-  const ss::format::Vec2 *value() const {
-    return GetPointer<const ss::format::Vec2 *>(VT_VALUE);
-  }
-  const ss::format::SsCurve *curve() const {
-    return GetPointer<const ss::format::SsCurve *>(VT_CURVE);
-  }
-  float easing_rate() const {
-    return GetField<float>(VT_EASING_RATE, 0.0f);
-  }
-  template <bool B = false>
-  bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
-    return VerifyTableStart(verifier) &&
-           VerifyField<uint16_t>(verifier, VT_INDEX, 2) &&
-           VerifyField<uint8_t>(verifier, VT_INTERPOLATION, 1) &&
-           VerifyOffsetRequired(verifier, VT_VALUE) &&
-           verifier.VerifyTable(value()) &&
-           VerifyOffset(verifier, VT_CURVE) &&
-           verifier.VerifyTable(curve()) &&
-           VerifyField<float>(verifier, VT_EASING_RATE, 4) &&
-           verifier.EndTable();
-  }
-};
-
-struct PartAnimationDataVec2Builder {
-  typedef PartAnimationDataVec2 Table;
-  ::flatbuffers::FlatBufferBuilder &fbb_;
-  ::flatbuffers::uoffset_t start_;
-  void add_index(uint16_t index) {
-    fbb_.AddElement<uint16_t>(PartAnimationDataVec2::VT_INDEX, index, 0);
-  }
-  void add_interpolation(ss::format::InterpolationType interpolation) {
-    fbb_.AddElement<uint8_t>(PartAnimationDataVec2::VT_INTERPOLATION, static_cast<uint8_t>(interpolation), 0);
-  }
-  void add_value(::flatbuffers::Offset<ss::format::Vec2> value) {
-    fbb_.AddOffset(PartAnimationDataVec2::VT_VALUE, value);
-  }
-  void add_curve(::flatbuffers::Offset<ss::format::SsCurve> curve) {
-    fbb_.AddOffset(PartAnimationDataVec2::VT_CURVE, curve);
-  }
-  void add_easing_rate(float easing_rate) {
-    fbb_.AddElement<float>(PartAnimationDataVec2::VT_EASING_RATE, easing_rate, 0.0f);
-  }
-  explicit PartAnimationDataVec2Builder(::flatbuffers::FlatBufferBuilder &_fbb)
-        : fbb_(_fbb) {
-    start_ = fbb_.StartTable();
-  }
-  ::flatbuffers::Offset<PartAnimationDataVec2> Finish() {
-    const auto end = fbb_.EndTable(start_);
-    auto o = ::flatbuffers::Offset<PartAnimationDataVec2>(end);
-    fbb_.Required(o, PartAnimationDataVec2::VT_VALUE);
-    return o;
-  }
-};
-
-inline ::flatbuffers::Offset<PartAnimationDataVec2> CreatePartAnimationDataVec2(
-    ::flatbuffers::FlatBufferBuilder &_fbb,
-    uint16_t index = 0,
-    ss::format::InterpolationType interpolation = ss::format::InterpolationType_None,
-    ::flatbuffers::Offset<ss::format::Vec2> value = 0,
-    ::flatbuffers::Offset<ss::format::SsCurve> curve = 0,
-    float easing_rate = 0.0f) {
-  PartAnimationDataVec2Builder builder_(_fbb);
-  builder_.add_easing_rate(easing_rate);
-  builder_.add_curve(curve);
-  builder_.add_value(value);
-  builder_.add_index(index);
-  builder_.add_interpolation(interpolation);
-  return builder_.Finish();
-}
-
-struct PartAnimationDataDeform FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
-  typedef PartAnimationDataDeformBuilder Builder;
-  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
-    VT_INDEX = 4,
-    VT_INTERPOLATION = 6,
-    VT_VALUE = 8,
-    VT_CURVE = 10,
-    VT_EASING_RATE = 12
-  };
-  uint16_t index() const {
-    return GetField<uint16_t>(VT_INDEX, 0);
-  }
-  bool KeyCompareLessThan(const PartAnimationDataDeform * const o) const {
-    return index() < o->index();
-  }
-  int KeyCompareWithValue(uint16_t _index) const {
-    return static_cast<int>(index() > _index) - static_cast<int>(index() < _index);
-  }
-  ss::format::InterpolationType interpolation() const {
-    return static_cast<ss::format::InterpolationType>(GetField<uint8_t>(VT_INTERPOLATION, 0));
-  }
-  const ss::format::PartAttributeDeform *value() const {
-    return GetPointer<const ss::format::PartAttributeDeform *>(VT_VALUE);
-  }
-  const ss::format::SsCurve *curve() const {
-    return GetPointer<const ss::format::SsCurve *>(VT_CURVE);
-  }
-  float easing_rate() const {
-    return GetField<float>(VT_EASING_RATE, 0.0f);
-  }
-  template <bool B = false>
-  bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
-    return VerifyTableStart(verifier) &&
-           VerifyField<uint16_t>(verifier, VT_INDEX, 2) &&
-           VerifyField<uint8_t>(verifier, VT_INTERPOLATION, 1) &&
-           VerifyOffsetRequired(verifier, VT_VALUE) &&
-           verifier.VerifyTable(value()) &&
-           VerifyOffset(verifier, VT_CURVE) &&
-           verifier.VerifyTable(curve()) &&
-           VerifyField<float>(verifier, VT_EASING_RATE, 4) &&
-           verifier.EndTable();
-  }
-};
-
-struct PartAnimationDataDeformBuilder {
-  typedef PartAnimationDataDeform Table;
-  ::flatbuffers::FlatBufferBuilder &fbb_;
-  ::flatbuffers::uoffset_t start_;
-  void add_index(uint16_t index) {
-    fbb_.AddElement<uint16_t>(PartAnimationDataDeform::VT_INDEX, index, 0);
-  }
-  void add_interpolation(ss::format::InterpolationType interpolation) {
-    fbb_.AddElement<uint8_t>(PartAnimationDataDeform::VT_INTERPOLATION, static_cast<uint8_t>(interpolation), 0);
-  }
-  void add_value(::flatbuffers::Offset<ss::format::PartAttributeDeform> value) {
-    fbb_.AddOffset(PartAnimationDataDeform::VT_VALUE, value);
-  }
-  void add_curve(::flatbuffers::Offset<ss::format::SsCurve> curve) {
-    fbb_.AddOffset(PartAnimationDataDeform::VT_CURVE, curve);
-  }
-  void add_easing_rate(float easing_rate) {
-    fbb_.AddElement<float>(PartAnimationDataDeform::VT_EASING_RATE, easing_rate, 0.0f);
-  }
-  explicit PartAnimationDataDeformBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
-        : fbb_(_fbb) {
-    start_ = fbb_.StartTable();
-  }
-  ::flatbuffers::Offset<PartAnimationDataDeform> Finish() {
-    const auto end = fbb_.EndTable(start_);
-    auto o = ::flatbuffers::Offset<PartAnimationDataDeform>(end);
-    fbb_.Required(o, PartAnimationDataDeform::VT_VALUE);
-    return o;
-  }
-};
-
-inline ::flatbuffers::Offset<PartAnimationDataDeform> CreatePartAnimationDataDeform(
-    ::flatbuffers::FlatBufferBuilder &_fbb,
-    uint16_t index = 0,
-    ss::format::InterpolationType interpolation = ss::format::InterpolationType_None,
-    ::flatbuffers::Offset<ss::format::PartAttributeDeform> value = 0,
-    ::flatbuffers::Offset<ss::format::SsCurve> curve = 0,
-    float easing_rate = 0.0f) {
-  PartAnimationDataDeformBuilder builder_(_fbb);
-  builder_.add_easing_rate(easing_rate);
-  builder_.add_curve(curve);
-  builder_.add_value(value);
-  builder_.add_index(index);
-  builder_.add_interpolation(interpolation);
-  return builder_.Finish();
-}
-
 struct PartAnimationData FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   typedef PartAnimationDataBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
-    VT_CELL_ARRAY = 4,
-    VT_POSITION_X_ARRAY = 6,
-    VT_POSITION_Y_ARRAY = 8,
-    VT_POSITION_Z_ARRAY = 10,
-    VT_ROTATION_X_ARRAY = 12,
-    VT_ROTATION_Y_ARRAY = 14,
-    VT_ROTATION_Z_ARRAY = 16,
-    VT_SCALE_X_ARRAY = 18,
-    VT_SCALE_Y_ARRAY = 20,
-    VT_LOCAL_SCALE_X_ARRAY = 22,
-    VT_LOCAL_SCALE_Y_ARRAY = 24,
-    VT_ALPHA_ARRAY = 26,
-    VT_LOCAL_ALPHA_ARRAY = 28,
-    VT_PRIORITY_ARRAY = 30,
-    VT_FLIP_H_ARRAY = 32,
-    VT_FLIP_V_ARRAY = 34,
-    VT_HIDE_ARRAY = 36,
-    VT_PART_COLOR_ARRAY = 38,
-    VT_SHADER_ARRAY = 40,
-    VT_VERTEX_ARRAY = 42,
-    VT_PIVOT_X_ARRAY = 44,
-    VT_PIVOT_Y_ARRAY = 46,
-    VT_ANCHOR_X_ARRAY = 48,
-    VT_ANCHOR_Y_ARRAY = 50,
-    VT_SIZE_X_ARRAY = 52,
-    VT_SIZE_Y_ARRAY = 54,
-    VT_IMG_FLIP_H_ARRAY = 56,
-    VT_IMG_FLIP_V_ARRAY = 58,
-    VT_UV_TRANSLATION_X_ARRAY = 60,
-    VT_UV_TRANSLATION_Y_ARRAY = 62,
-    VT_UV_ROTATION_Z_ARRAY = 64,
-    VT_UV_SCALE_X_ARRAY = 66,
-    VT_UV_SCALE_Y_ARRAY = 68,
-    VT_BOUNDING_RADIUS_ARRAY = 70,
-    VT_MASK_ARRAY = 72,
-    VT_SKEW_ARRAY = 74,
-    VT_DEFORM_ARRAY = 76,
-    VT_TEXTURE_ARRAY = 78
+    VT_CELL_KEYS = 4,
+    VT_POSITION_X_KEYS = 6,
+    VT_POSITION_Y_KEYS = 8,
+    VT_POSITION_Z_KEYS = 10,
+    VT_ROTATION_X_KEYS = 12,
+    VT_ROTATION_Y_KEYS = 14,
+    VT_ROTATION_Z_KEYS = 16,
+    VT_SCALE_X_KEYS = 18,
+    VT_SCALE_Y_KEYS = 20,
+    VT_LOCAL_SCALE_X_KEYS = 22,
+    VT_LOCAL_SCALE_Y_KEYS = 24,
+    VT_ALPHA_KEYS = 26,
+    VT_LOCAL_ALPHA_KEYS = 28,
+    VT_PRIORITY_KEYS = 30,
+    VT_FLIP_H_KEYS = 32,
+    VT_FLIP_V_KEYS = 34,
+    VT_HIDE_KEYS = 36,
+    VT_PART_COLOR_KEYS = 38,
+    VT_SHADER_KEYS = 40,
+    VT_VERTEX_KEYS = 42,
+    VT_PIVOT_X_KEYS = 44,
+    VT_PIVOT_Y_KEYS = 46,
+    VT_ANCHOR_X_KEYS = 48,
+    VT_ANCHOR_Y_KEYS = 50,
+    VT_SIZE_X_KEYS = 52,
+    VT_SIZE_Y_KEYS = 54,
+    VT_IMG_FLIP_H_KEYS = 56,
+    VT_IMG_FLIP_V_KEYS = 58,
+    VT_UV_TRANSLATION_X_KEYS = 60,
+    VT_UV_TRANSLATION_Y_KEYS = 62,
+    VT_UV_ROTATION_Z_KEYS = 64,
+    VT_UV_SCALE_X_KEYS = 66,
+    VT_UV_SCALE_Y_KEYS = 68,
+    VT_BOUNDING_RADIUS_KEYS = 70,
+    VT_MASK_KEYS = 72,
+    VT_SKEW_KEYS = 74,
+    VT_DEFORM_KEYS = 76,
+    VT_TEXTURE_KEYS = 78
   };
-  const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataCellValue>> *cell_array() const {
-    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataCellValue>> *>(VT_CELL_ARRAY);
+  uint32_t cell_keys() const {
+    return GetField<uint32_t>(VT_CELL_KEYS, 4294967295);
   }
-  const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *position_x_array() const {
-    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *>(VT_POSITION_X_ARRAY);
+  uint32_t position_x_keys() const {
+    return GetField<uint32_t>(VT_POSITION_X_KEYS, 4294967295);
   }
-  const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *position_y_array() const {
-    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *>(VT_POSITION_Y_ARRAY);
+  uint32_t position_y_keys() const {
+    return GetField<uint32_t>(VT_POSITION_Y_KEYS, 4294967295);
   }
-  const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *position_z_array() const {
-    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *>(VT_POSITION_Z_ARRAY);
+  uint32_t position_z_keys() const {
+    return GetField<uint32_t>(VT_POSITION_Z_KEYS, 4294967295);
   }
-  const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *rotation_x_array() const {
-    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *>(VT_ROTATION_X_ARRAY);
+  uint32_t rotation_x_keys() const {
+    return GetField<uint32_t>(VT_ROTATION_X_KEYS, 4294967295);
   }
-  const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *rotation_y_array() const {
-    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *>(VT_ROTATION_Y_ARRAY);
+  uint32_t rotation_y_keys() const {
+    return GetField<uint32_t>(VT_ROTATION_Y_KEYS, 4294967295);
   }
-  const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *rotation_z_array() const {
-    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *>(VT_ROTATION_Z_ARRAY);
+  uint32_t rotation_z_keys() const {
+    return GetField<uint32_t>(VT_ROTATION_Z_KEYS, 4294967295);
   }
-  const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *scale_x_array() const {
-    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *>(VT_SCALE_X_ARRAY);
+  uint32_t scale_x_keys() const {
+    return GetField<uint32_t>(VT_SCALE_X_KEYS, 4294967295);
   }
-  const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *scale_y_array() const {
-    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *>(VT_SCALE_Y_ARRAY);
+  uint32_t scale_y_keys() const {
+    return GetField<uint32_t>(VT_SCALE_Y_KEYS, 4294967295);
   }
-  const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *local_scale_x_array() const {
-    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *>(VT_LOCAL_SCALE_X_ARRAY);
+  uint32_t local_scale_x_keys() const {
+    return GetField<uint32_t>(VT_LOCAL_SCALE_X_KEYS, 4294967295);
   }
-  const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *local_scale_y_array() const {
-    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *>(VT_LOCAL_SCALE_Y_ARRAY);
+  uint32_t local_scale_y_keys() const {
+    return GetField<uint32_t>(VT_LOCAL_SCALE_Y_KEYS, 4294967295);
   }
-  const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *alpha_array() const {
-    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *>(VT_ALPHA_ARRAY);
+  uint32_t alpha_keys() const {
+    return GetField<uint32_t>(VT_ALPHA_KEYS, 4294967295);
   }
-  const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *local_alpha_array() const {
-    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *>(VT_LOCAL_ALPHA_ARRAY);
+  uint32_t local_alpha_keys() const {
+    return GetField<uint32_t>(VT_LOCAL_ALPHA_KEYS, 4294967295);
   }
-  const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataIntValue>> *priority_array() const {
-    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataIntValue>> *>(VT_PRIORITY_ARRAY);
+  uint32_t priority_keys() const {
+    return GetField<uint32_t>(VT_PRIORITY_KEYS, 4294967295);
   }
-  const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataBoolValue>> *flip_h_array() const {
-    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataBoolValue>> *>(VT_FLIP_H_ARRAY);
+  uint32_t flip_h_keys() const {
+    return GetField<uint32_t>(VT_FLIP_H_KEYS, 4294967295);
   }
-  const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataBoolValue>> *flip_v_array() const {
-    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataBoolValue>> *>(VT_FLIP_V_ARRAY);
+  uint32_t flip_v_keys() const {
+    return GetField<uint32_t>(VT_FLIP_V_KEYS, 4294967295);
   }
-  const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataBoolValue>> *hide_array() const {
-    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataBoolValue>> *>(VT_HIDE_ARRAY);
+  uint32_t hide_keys() const {
+    return GetField<uint32_t>(VT_HIDE_KEYS, 4294967295);
   }
-  const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataPartColor>> *part_color_array() const {
-    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataPartColor>> *>(VT_PART_COLOR_ARRAY);
+  uint32_t part_color_keys() const {
+    return GetField<uint32_t>(VT_PART_COLOR_KEYS, 4294967295);
   }
-  const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataShader>> *shader_array() const {
-    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataShader>> *>(VT_SHADER_ARRAY);
+  uint32_t shader_keys() const {
+    return GetField<uint32_t>(VT_SHADER_KEYS, 4294967295);
   }
-  const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataVertex>> *vertex_array() const {
-    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataVertex>> *>(VT_VERTEX_ARRAY);
+  uint32_t vertex_keys() const {
+    return GetField<uint32_t>(VT_VERTEX_KEYS, 4294967295);
   }
-  const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *pivot_x_array() const {
-    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *>(VT_PIVOT_X_ARRAY);
+  uint32_t pivot_x_keys() const {
+    return GetField<uint32_t>(VT_PIVOT_X_KEYS, 4294967295);
   }
-  const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *pivot_y_array() const {
-    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *>(VT_PIVOT_Y_ARRAY);
+  uint32_t pivot_y_keys() const {
+    return GetField<uint32_t>(VT_PIVOT_Y_KEYS, 4294967295);
   }
-  const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *anchor_x_array() const {
-    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *>(VT_ANCHOR_X_ARRAY);
+  uint32_t anchor_x_keys() const {
+    return GetField<uint32_t>(VT_ANCHOR_X_KEYS, 4294967295);
   }
-  const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *anchor_y_array() const {
-    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *>(VT_ANCHOR_Y_ARRAY);
+  uint32_t anchor_y_keys() const {
+    return GetField<uint32_t>(VT_ANCHOR_Y_KEYS, 4294967295);
   }
-  const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *size_x_array() const {
-    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *>(VT_SIZE_X_ARRAY);
+  uint32_t size_x_keys() const {
+    return GetField<uint32_t>(VT_SIZE_X_KEYS, 4294967295);
   }
-  const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *size_y_array() const {
-    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *>(VT_SIZE_Y_ARRAY);
+  uint32_t size_y_keys() const {
+    return GetField<uint32_t>(VT_SIZE_Y_KEYS, 4294967295);
   }
-  const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataBoolValue>> *img_flip_h_array() const {
-    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataBoolValue>> *>(VT_IMG_FLIP_H_ARRAY);
+  uint32_t img_flip_h_keys() const {
+    return GetField<uint32_t>(VT_IMG_FLIP_H_KEYS, 4294967295);
   }
-  const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataBoolValue>> *img_flip_v_array() const {
-    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataBoolValue>> *>(VT_IMG_FLIP_V_ARRAY);
+  uint32_t img_flip_v_keys() const {
+    return GetField<uint32_t>(VT_IMG_FLIP_V_KEYS, 4294967295);
   }
-  const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *uv_translation_x_array() const {
-    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *>(VT_UV_TRANSLATION_X_ARRAY);
+  uint32_t uv_translation_x_keys() const {
+    return GetField<uint32_t>(VT_UV_TRANSLATION_X_KEYS, 4294967295);
   }
-  const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *uv_translation_y_array() const {
-    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *>(VT_UV_TRANSLATION_Y_ARRAY);
+  uint32_t uv_translation_y_keys() const {
+    return GetField<uint32_t>(VT_UV_TRANSLATION_Y_KEYS, 4294967295);
   }
-  const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *uv_rotation_z_array() const {
-    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *>(VT_UV_ROTATION_Z_ARRAY);
+  uint32_t uv_rotation_z_keys() const {
+    return GetField<uint32_t>(VT_UV_ROTATION_Z_KEYS, 4294967295);
   }
-  const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *uv_scale_x_array() const {
-    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *>(VT_UV_SCALE_X_ARRAY);
+  uint32_t uv_scale_x_keys() const {
+    return GetField<uint32_t>(VT_UV_SCALE_X_KEYS, 4294967295);
   }
-  const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *uv_scale_y_array() const {
-    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *>(VT_UV_SCALE_Y_ARRAY);
+  uint32_t uv_scale_y_keys() const {
+    return GetField<uint32_t>(VT_UV_SCALE_Y_KEYS, 4294967295);
   }
-  const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *bounding_radius_array() const {
-    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *>(VT_BOUNDING_RADIUS_ARRAY);
+  uint32_t bounding_radius_keys() const {
+    return GetField<uint32_t>(VT_BOUNDING_RADIUS_KEYS, 4294967295);
   }
-  const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *mask_array() const {
-    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *>(VT_MASK_ARRAY);
+  uint32_t mask_keys() const {
+    return GetField<uint32_t>(VT_MASK_KEYS, 4294967295);
   }
-  const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataVec2>> *skew_array() const {
-    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataVec2>> *>(VT_SKEW_ARRAY);
+  uint32_t skew_keys() const {
+    return GetField<uint32_t>(VT_SKEW_KEYS, 4294967295);
   }
-  const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataDeform>> *deform_array() const {
-    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataDeform>> *>(VT_DEFORM_ARRAY);
+  uint32_t deform_keys() const {
+    return GetField<uint32_t>(VT_DEFORM_KEYS, 4294967295);
   }
-  const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataUIntValue>> *texture_array() const {
-    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataUIntValue>> *>(VT_TEXTURE_ARRAY);
+  uint32_t texture_keys() const {
+    return GetField<uint32_t>(VT_TEXTURE_KEYS, 4294967295);
   }
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyOffset(verifier, VT_CELL_ARRAY) &&
-           verifier.VerifyVector(cell_array()) &&
-           verifier.VerifyVectorOfTables(cell_array()) &&
-           VerifyOffset(verifier, VT_POSITION_X_ARRAY) &&
-           verifier.VerifyVector(position_x_array()) &&
-           verifier.VerifyVectorOfTables(position_x_array()) &&
-           VerifyOffset(verifier, VT_POSITION_Y_ARRAY) &&
-           verifier.VerifyVector(position_y_array()) &&
-           verifier.VerifyVectorOfTables(position_y_array()) &&
-           VerifyOffset(verifier, VT_POSITION_Z_ARRAY) &&
-           verifier.VerifyVector(position_z_array()) &&
-           verifier.VerifyVectorOfTables(position_z_array()) &&
-           VerifyOffset(verifier, VT_ROTATION_X_ARRAY) &&
-           verifier.VerifyVector(rotation_x_array()) &&
-           verifier.VerifyVectorOfTables(rotation_x_array()) &&
-           VerifyOffset(verifier, VT_ROTATION_Y_ARRAY) &&
-           verifier.VerifyVector(rotation_y_array()) &&
-           verifier.VerifyVectorOfTables(rotation_y_array()) &&
-           VerifyOffset(verifier, VT_ROTATION_Z_ARRAY) &&
-           verifier.VerifyVector(rotation_z_array()) &&
-           verifier.VerifyVectorOfTables(rotation_z_array()) &&
-           VerifyOffset(verifier, VT_SCALE_X_ARRAY) &&
-           verifier.VerifyVector(scale_x_array()) &&
-           verifier.VerifyVectorOfTables(scale_x_array()) &&
-           VerifyOffset(verifier, VT_SCALE_Y_ARRAY) &&
-           verifier.VerifyVector(scale_y_array()) &&
-           verifier.VerifyVectorOfTables(scale_y_array()) &&
-           VerifyOffset(verifier, VT_LOCAL_SCALE_X_ARRAY) &&
-           verifier.VerifyVector(local_scale_x_array()) &&
-           verifier.VerifyVectorOfTables(local_scale_x_array()) &&
-           VerifyOffset(verifier, VT_LOCAL_SCALE_Y_ARRAY) &&
-           verifier.VerifyVector(local_scale_y_array()) &&
-           verifier.VerifyVectorOfTables(local_scale_y_array()) &&
-           VerifyOffset(verifier, VT_ALPHA_ARRAY) &&
-           verifier.VerifyVector(alpha_array()) &&
-           verifier.VerifyVectorOfTables(alpha_array()) &&
-           VerifyOffset(verifier, VT_LOCAL_ALPHA_ARRAY) &&
-           verifier.VerifyVector(local_alpha_array()) &&
-           verifier.VerifyVectorOfTables(local_alpha_array()) &&
-           VerifyOffset(verifier, VT_PRIORITY_ARRAY) &&
-           verifier.VerifyVector(priority_array()) &&
-           verifier.VerifyVectorOfTables(priority_array()) &&
-           VerifyOffset(verifier, VT_FLIP_H_ARRAY) &&
-           verifier.VerifyVector(flip_h_array()) &&
-           verifier.VerifyVectorOfTables(flip_h_array()) &&
-           VerifyOffset(verifier, VT_FLIP_V_ARRAY) &&
-           verifier.VerifyVector(flip_v_array()) &&
-           verifier.VerifyVectorOfTables(flip_v_array()) &&
-           VerifyOffset(verifier, VT_HIDE_ARRAY) &&
-           verifier.VerifyVector(hide_array()) &&
-           verifier.VerifyVectorOfTables(hide_array()) &&
-           VerifyOffset(verifier, VT_PART_COLOR_ARRAY) &&
-           verifier.VerifyVector(part_color_array()) &&
-           verifier.VerifyVectorOfTables(part_color_array()) &&
-           VerifyOffset(verifier, VT_SHADER_ARRAY) &&
-           verifier.VerifyVector(shader_array()) &&
-           verifier.VerifyVectorOfTables(shader_array()) &&
-           VerifyOffset(verifier, VT_VERTEX_ARRAY) &&
-           verifier.VerifyVector(vertex_array()) &&
-           verifier.VerifyVectorOfTables(vertex_array()) &&
-           VerifyOffset(verifier, VT_PIVOT_X_ARRAY) &&
-           verifier.VerifyVector(pivot_x_array()) &&
-           verifier.VerifyVectorOfTables(pivot_x_array()) &&
-           VerifyOffset(verifier, VT_PIVOT_Y_ARRAY) &&
-           verifier.VerifyVector(pivot_y_array()) &&
-           verifier.VerifyVectorOfTables(pivot_y_array()) &&
-           VerifyOffset(verifier, VT_ANCHOR_X_ARRAY) &&
-           verifier.VerifyVector(anchor_x_array()) &&
-           verifier.VerifyVectorOfTables(anchor_x_array()) &&
-           VerifyOffset(verifier, VT_ANCHOR_Y_ARRAY) &&
-           verifier.VerifyVector(anchor_y_array()) &&
-           verifier.VerifyVectorOfTables(anchor_y_array()) &&
-           VerifyOffset(verifier, VT_SIZE_X_ARRAY) &&
-           verifier.VerifyVector(size_x_array()) &&
-           verifier.VerifyVectorOfTables(size_x_array()) &&
-           VerifyOffset(verifier, VT_SIZE_Y_ARRAY) &&
-           verifier.VerifyVector(size_y_array()) &&
-           verifier.VerifyVectorOfTables(size_y_array()) &&
-           VerifyOffset(verifier, VT_IMG_FLIP_H_ARRAY) &&
-           verifier.VerifyVector(img_flip_h_array()) &&
-           verifier.VerifyVectorOfTables(img_flip_h_array()) &&
-           VerifyOffset(verifier, VT_IMG_FLIP_V_ARRAY) &&
-           verifier.VerifyVector(img_flip_v_array()) &&
-           verifier.VerifyVectorOfTables(img_flip_v_array()) &&
-           VerifyOffset(verifier, VT_UV_TRANSLATION_X_ARRAY) &&
-           verifier.VerifyVector(uv_translation_x_array()) &&
-           verifier.VerifyVectorOfTables(uv_translation_x_array()) &&
-           VerifyOffset(verifier, VT_UV_TRANSLATION_Y_ARRAY) &&
-           verifier.VerifyVector(uv_translation_y_array()) &&
-           verifier.VerifyVectorOfTables(uv_translation_y_array()) &&
-           VerifyOffset(verifier, VT_UV_ROTATION_Z_ARRAY) &&
-           verifier.VerifyVector(uv_rotation_z_array()) &&
-           verifier.VerifyVectorOfTables(uv_rotation_z_array()) &&
-           VerifyOffset(verifier, VT_UV_SCALE_X_ARRAY) &&
-           verifier.VerifyVector(uv_scale_x_array()) &&
-           verifier.VerifyVectorOfTables(uv_scale_x_array()) &&
-           VerifyOffset(verifier, VT_UV_SCALE_Y_ARRAY) &&
-           verifier.VerifyVector(uv_scale_y_array()) &&
-           verifier.VerifyVectorOfTables(uv_scale_y_array()) &&
-           VerifyOffset(verifier, VT_BOUNDING_RADIUS_ARRAY) &&
-           verifier.VerifyVector(bounding_radius_array()) &&
-           verifier.VerifyVectorOfTables(bounding_radius_array()) &&
-           VerifyOffset(verifier, VT_MASK_ARRAY) &&
-           verifier.VerifyVector(mask_array()) &&
-           verifier.VerifyVectorOfTables(mask_array()) &&
-           VerifyOffset(verifier, VT_SKEW_ARRAY) &&
-           verifier.VerifyVector(skew_array()) &&
-           verifier.VerifyVectorOfTables(skew_array()) &&
-           VerifyOffset(verifier, VT_DEFORM_ARRAY) &&
-           verifier.VerifyVector(deform_array()) &&
-           verifier.VerifyVectorOfTables(deform_array()) &&
-           VerifyOffset(verifier, VT_TEXTURE_ARRAY) &&
-           verifier.VerifyVector(texture_array()) &&
-           verifier.VerifyVectorOfTables(texture_array()) &&
+           VerifyField<uint32_t>(verifier, VT_CELL_KEYS, 4) &&
+           VerifyField<uint32_t>(verifier, VT_POSITION_X_KEYS, 4) &&
+           VerifyField<uint32_t>(verifier, VT_POSITION_Y_KEYS, 4) &&
+           VerifyField<uint32_t>(verifier, VT_POSITION_Z_KEYS, 4) &&
+           VerifyField<uint32_t>(verifier, VT_ROTATION_X_KEYS, 4) &&
+           VerifyField<uint32_t>(verifier, VT_ROTATION_Y_KEYS, 4) &&
+           VerifyField<uint32_t>(verifier, VT_ROTATION_Z_KEYS, 4) &&
+           VerifyField<uint32_t>(verifier, VT_SCALE_X_KEYS, 4) &&
+           VerifyField<uint32_t>(verifier, VT_SCALE_Y_KEYS, 4) &&
+           VerifyField<uint32_t>(verifier, VT_LOCAL_SCALE_X_KEYS, 4) &&
+           VerifyField<uint32_t>(verifier, VT_LOCAL_SCALE_Y_KEYS, 4) &&
+           VerifyField<uint32_t>(verifier, VT_ALPHA_KEYS, 4) &&
+           VerifyField<uint32_t>(verifier, VT_LOCAL_ALPHA_KEYS, 4) &&
+           VerifyField<uint32_t>(verifier, VT_PRIORITY_KEYS, 4) &&
+           VerifyField<uint32_t>(verifier, VT_FLIP_H_KEYS, 4) &&
+           VerifyField<uint32_t>(verifier, VT_FLIP_V_KEYS, 4) &&
+           VerifyField<uint32_t>(verifier, VT_HIDE_KEYS, 4) &&
+           VerifyField<uint32_t>(verifier, VT_PART_COLOR_KEYS, 4) &&
+           VerifyField<uint32_t>(verifier, VT_SHADER_KEYS, 4) &&
+           VerifyField<uint32_t>(verifier, VT_VERTEX_KEYS, 4) &&
+           VerifyField<uint32_t>(verifier, VT_PIVOT_X_KEYS, 4) &&
+           VerifyField<uint32_t>(verifier, VT_PIVOT_Y_KEYS, 4) &&
+           VerifyField<uint32_t>(verifier, VT_ANCHOR_X_KEYS, 4) &&
+           VerifyField<uint32_t>(verifier, VT_ANCHOR_Y_KEYS, 4) &&
+           VerifyField<uint32_t>(verifier, VT_SIZE_X_KEYS, 4) &&
+           VerifyField<uint32_t>(verifier, VT_SIZE_Y_KEYS, 4) &&
+           VerifyField<uint32_t>(verifier, VT_IMG_FLIP_H_KEYS, 4) &&
+           VerifyField<uint32_t>(verifier, VT_IMG_FLIP_V_KEYS, 4) &&
+           VerifyField<uint32_t>(verifier, VT_UV_TRANSLATION_X_KEYS, 4) &&
+           VerifyField<uint32_t>(verifier, VT_UV_TRANSLATION_Y_KEYS, 4) &&
+           VerifyField<uint32_t>(verifier, VT_UV_ROTATION_Z_KEYS, 4) &&
+           VerifyField<uint32_t>(verifier, VT_UV_SCALE_X_KEYS, 4) &&
+           VerifyField<uint32_t>(verifier, VT_UV_SCALE_Y_KEYS, 4) &&
+           VerifyField<uint32_t>(verifier, VT_BOUNDING_RADIUS_KEYS, 4) &&
+           VerifyField<uint32_t>(verifier, VT_MASK_KEYS, 4) &&
+           VerifyField<uint32_t>(verifier, VT_SKEW_KEYS, 4) &&
+           VerifyField<uint32_t>(verifier, VT_DEFORM_KEYS, 4) &&
+           VerifyField<uint32_t>(verifier, VT_TEXTURE_KEYS, 4) &&
            verifier.EndTable();
   }
 };
@@ -7657,119 +6697,119 @@ struct PartAnimationDataBuilder {
   typedef PartAnimationData Table;
   ::flatbuffers::FlatBufferBuilder &fbb_;
   ::flatbuffers::uoffset_t start_;
-  void add_cell_array(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataCellValue>>> cell_array) {
-    fbb_.AddOffset(PartAnimationData::VT_CELL_ARRAY, cell_array);
+  void add_cell_keys(uint32_t cell_keys) {
+    fbb_.AddElement<uint32_t>(PartAnimationData::VT_CELL_KEYS, cell_keys, 4294967295);
   }
-  void add_position_x_array(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>>> position_x_array) {
-    fbb_.AddOffset(PartAnimationData::VT_POSITION_X_ARRAY, position_x_array);
+  void add_position_x_keys(uint32_t position_x_keys) {
+    fbb_.AddElement<uint32_t>(PartAnimationData::VT_POSITION_X_KEYS, position_x_keys, 4294967295);
   }
-  void add_position_y_array(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>>> position_y_array) {
-    fbb_.AddOffset(PartAnimationData::VT_POSITION_Y_ARRAY, position_y_array);
+  void add_position_y_keys(uint32_t position_y_keys) {
+    fbb_.AddElement<uint32_t>(PartAnimationData::VT_POSITION_Y_KEYS, position_y_keys, 4294967295);
   }
-  void add_position_z_array(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>>> position_z_array) {
-    fbb_.AddOffset(PartAnimationData::VT_POSITION_Z_ARRAY, position_z_array);
+  void add_position_z_keys(uint32_t position_z_keys) {
+    fbb_.AddElement<uint32_t>(PartAnimationData::VT_POSITION_Z_KEYS, position_z_keys, 4294967295);
   }
-  void add_rotation_x_array(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>>> rotation_x_array) {
-    fbb_.AddOffset(PartAnimationData::VT_ROTATION_X_ARRAY, rotation_x_array);
+  void add_rotation_x_keys(uint32_t rotation_x_keys) {
+    fbb_.AddElement<uint32_t>(PartAnimationData::VT_ROTATION_X_KEYS, rotation_x_keys, 4294967295);
   }
-  void add_rotation_y_array(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>>> rotation_y_array) {
-    fbb_.AddOffset(PartAnimationData::VT_ROTATION_Y_ARRAY, rotation_y_array);
+  void add_rotation_y_keys(uint32_t rotation_y_keys) {
+    fbb_.AddElement<uint32_t>(PartAnimationData::VT_ROTATION_Y_KEYS, rotation_y_keys, 4294967295);
   }
-  void add_rotation_z_array(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>>> rotation_z_array) {
-    fbb_.AddOffset(PartAnimationData::VT_ROTATION_Z_ARRAY, rotation_z_array);
+  void add_rotation_z_keys(uint32_t rotation_z_keys) {
+    fbb_.AddElement<uint32_t>(PartAnimationData::VT_ROTATION_Z_KEYS, rotation_z_keys, 4294967295);
   }
-  void add_scale_x_array(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>>> scale_x_array) {
-    fbb_.AddOffset(PartAnimationData::VT_SCALE_X_ARRAY, scale_x_array);
+  void add_scale_x_keys(uint32_t scale_x_keys) {
+    fbb_.AddElement<uint32_t>(PartAnimationData::VT_SCALE_X_KEYS, scale_x_keys, 4294967295);
   }
-  void add_scale_y_array(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>>> scale_y_array) {
-    fbb_.AddOffset(PartAnimationData::VT_SCALE_Y_ARRAY, scale_y_array);
+  void add_scale_y_keys(uint32_t scale_y_keys) {
+    fbb_.AddElement<uint32_t>(PartAnimationData::VT_SCALE_Y_KEYS, scale_y_keys, 4294967295);
   }
-  void add_local_scale_x_array(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>>> local_scale_x_array) {
-    fbb_.AddOffset(PartAnimationData::VT_LOCAL_SCALE_X_ARRAY, local_scale_x_array);
+  void add_local_scale_x_keys(uint32_t local_scale_x_keys) {
+    fbb_.AddElement<uint32_t>(PartAnimationData::VT_LOCAL_SCALE_X_KEYS, local_scale_x_keys, 4294967295);
   }
-  void add_local_scale_y_array(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>>> local_scale_y_array) {
-    fbb_.AddOffset(PartAnimationData::VT_LOCAL_SCALE_Y_ARRAY, local_scale_y_array);
+  void add_local_scale_y_keys(uint32_t local_scale_y_keys) {
+    fbb_.AddElement<uint32_t>(PartAnimationData::VT_LOCAL_SCALE_Y_KEYS, local_scale_y_keys, 4294967295);
   }
-  void add_alpha_array(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>>> alpha_array) {
-    fbb_.AddOffset(PartAnimationData::VT_ALPHA_ARRAY, alpha_array);
+  void add_alpha_keys(uint32_t alpha_keys) {
+    fbb_.AddElement<uint32_t>(PartAnimationData::VT_ALPHA_KEYS, alpha_keys, 4294967295);
   }
-  void add_local_alpha_array(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>>> local_alpha_array) {
-    fbb_.AddOffset(PartAnimationData::VT_LOCAL_ALPHA_ARRAY, local_alpha_array);
+  void add_local_alpha_keys(uint32_t local_alpha_keys) {
+    fbb_.AddElement<uint32_t>(PartAnimationData::VT_LOCAL_ALPHA_KEYS, local_alpha_keys, 4294967295);
   }
-  void add_priority_array(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataIntValue>>> priority_array) {
-    fbb_.AddOffset(PartAnimationData::VT_PRIORITY_ARRAY, priority_array);
+  void add_priority_keys(uint32_t priority_keys) {
+    fbb_.AddElement<uint32_t>(PartAnimationData::VT_PRIORITY_KEYS, priority_keys, 4294967295);
   }
-  void add_flip_h_array(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataBoolValue>>> flip_h_array) {
-    fbb_.AddOffset(PartAnimationData::VT_FLIP_H_ARRAY, flip_h_array);
+  void add_flip_h_keys(uint32_t flip_h_keys) {
+    fbb_.AddElement<uint32_t>(PartAnimationData::VT_FLIP_H_KEYS, flip_h_keys, 4294967295);
   }
-  void add_flip_v_array(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataBoolValue>>> flip_v_array) {
-    fbb_.AddOffset(PartAnimationData::VT_FLIP_V_ARRAY, flip_v_array);
+  void add_flip_v_keys(uint32_t flip_v_keys) {
+    fbb_.AddElement<uint32_t>(PartAnimationData::VT_FLIP_V_KEYS, flip_v_keys, 4294967295);
   }
-  void add_hide_array(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataBoolValue>>> hide_array) {
-    fbb_.AddOffset(PartAnimationData::VT_HIDE_ARRAY, hide_array);
+  void add_hide_keys(uint32_t hide_keys) {
+    fbb_.AddElement<uint32_t>(PartAnimationData::VT_HIDE_KEYS, hide_keys, 4294967295);
   }
-  void add_part_color_array(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataPartColor>>> part_color_array) {
-    fbb_.AddOffset(PartAnimationData::VT_PART_COLOR_ARRAY, part_color_array);
+  void add_part_color_keys(uint32_t part_color_keys) {
+    fbb_.AddElement<uint32_t>(PartAnimationData::VT_PART_COLOR_KEYS, part_color_keys, 4294967295);
   }
-  void add_shader_array(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataShader>>> shader_array) {
-    fbb_.AddOffset(PartAnimationData::VT_SHADER_ARRAY, shader_array);
+  void add_shader_keys(uint32_t shader_keys) {
+    fbb_.AddElement<uint32_t>(PartAnimationData::VT_SHADER_KEYS, shader_keys, 4294967295);
   }
-  void add_vertex_array(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataVertex>>> vertex_array) {
-    fbb_.AddOffset(PartAnimationData::VT_VERTEX_ARRAY, vertex_array);
+  void add_vertex_keys(uint32_t vertex_keys) {
+    fbb_.AddElement<uint32_t>(PartAnimationData::VT_VERTEX_KEYS, vertex_keys, 4294967295);
   }
-  void add_pivot_x_array(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>>> pivot_x_array) {
-    fbb_.AddOffset(PartAnimationData::VT_PIVOT_X_ARRAY, pivot_x_array);
+  void add_pivot_x_keys(uint32_t pivot_x_keys) {
+    fbb_.AddElement<uint32_t>(PartAnimationData::VT_PIVOT_X_KEYS, pivot_x_keys, 4294967295);
   }
-  void add_pivot_y_array(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>>> pivot_y_array) {
-    fbb_.AddOffset(PartAnimationData::VT_PIVOT_Y_ARRAY, pivot_y_array);
+  void add_pivot_y_keys(uint32_t pivot_y_keys) {
+    fbb_.AddElement<uint32_t>(PartAnimationData::VT_PIVOT_Y_KEYS, pivot_y_keys, 4294967295);
   }
-  void add_anchor_x_array(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>>> anchor_x_array) {
-    fbb_.AddOffset(PartAnimationData::VT_ANCHOR_X_ARRAY, anchor_x_array);
+  void add_anchor_x_keys(uint32_t anchor_x_keys) {
+    fbb_.AddElement<uint32_t>(PartAnimationData::VT_ANCHOR_X_KEYS, anchor_x_keys, 4294967295);
   }
-  void add_anchor_y_array(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>>> anchor_y_array) {
-    fbb_.AddOffset(PartAnimationData::VT_ANCHOR_Y_ARRAY, anchor_y_array);
+  void add_anchor_y_keys(uint32_t anchor_y_keys) {
+    fbb_.AddElement<uint32_t>(PartAnimationData::VT_ANCHOR_Y_KEYS, anchor_y_keys, 4294967295);
   }
-  void add_size_x_array(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>>> size_x_array) {
-    fbb_.AddOffset(PartAnimationData::VT_SIZE_X_ARRAY, size_x_array);
+  void add_size_x_keys(uint32_t size_x_keys) {
+    fbb_.AddElement<uint32_t>(PartAnimationData::VT_SIZE_X_KEYS, size_x_keys, 4294967295);
   }
-  void add_size_y_array(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>>> size_y_array) {
-    fbb_.AddOffset(PartAnimationData::VT_SIZE_Y_ARRAY, size_y_array);
+  void add_size_y_keys(uint32_t size_y_keys) {
+    fbb_.AddElement<uint32_t>(PartAnimationData::VT_SIZE_Y_KEYS, size_y_keys, 4294967295);
   }
-  void add_img_flip_h_array(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataBoolValue>>> img_flip_h_array) {
-    fbb_.AddOffset(PartAnimationData::VT_IMG_FLIP_H_ARRAY, img_flip_h_array);
+  void add_img_flip_h_keys(uint32_t img_flip_h_keys) {
+    fbb_.AddElement<uint32_t>(PartAnimationData::VT_IMG_FLIP_H_KEYS, img_flip_h_keys, 4294967295);
   }
-  void add_img_flip_v_array(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataBoolValue>>> img_flip_v_array) {
-    fbb_.AddOffset(PartAnimationData::VT_IMG_FLIP_V_ARRAY, img_flip_v_array);
+  void add_img_flip_v_keys(uint32_t img_flip_v_keys) {
+    fbb_.AddElement<uint32_t>(PartAnimationData::VT_IMG_FLIP_V_KEYS, img_flip_v_keys, 4294967295);
   }
-  void add_uv_translation_x_array(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>>> uv_translation_x_array) {
-    fbb_.AddOffset(PartAnimationData::VT_UV_TRANSLATION_X_ARRAY, uv_translation_x_array);
+  void add_uv_translation_x_keys(uint32_t uv_translation_x_keys) {
+    fbb_.AddElement<uint32_t>(PartAnimationData::VT_UV_TRANSLATION_X_KEYS, uv_translation_x_keys, 4294967295);
   }
-  void add_uv_translation_y_array(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>>> uv_translation_y_array) {
-    fbb_.AddOffset(PartAnimationData::VT_UV_TRANSLATION_Y_ARRAY, uv_translation_y_array);
+  void add_uv_translation_y_keys(uint32_t uv_translation_y_keys) {
+    fbb_.AddElement<uint32_t>(PartAnimationData::VT_UV_TRANSLATION_Y_KEYS, uv_translation_y_keys, 4294967295);
   }
-  void add_uv_rotation_z_array(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>>> uv_rotation_z_array) {
-    fbb_.AddOffset(PartAnimationData::VT_UV_ROTATION_Z_ARRAY, uv_rotation_z_array);
+  void add_uv_rotation_z_keys(uint32_t uv_rotation_z_keys) {
+    fbb_.AddElement<uint32_t>(PartAnimationData::VT_UV_ROTATION_Z_KEYS, uv_rotation_z_keys, 4294967295);
   }
-  void add_uv_scale_x_array(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>>> uv_scale_x_array) {
-    fbb_.AddOffset(PartAnimationData::VT_UV_SCALE_X_ARRAY, uv_scale_x_array);
+  void add_uv_scale_x_keys(uint32_t uv_scale_x_keys) {
+    fbb_.AddElement<uint32_t>(PartAnimationData::VT_UV_SCALE_X_KEYS, uv_scale_x_keys, 4294967295);
   }
-  void add_uv_scale_y_array(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>>> uv_scale_y_array) {
-    fbb_.AddOffset(PartAnimationData::VT_UV_SCALE_Y_ARRAY, uv_scale_y_array);
+  void add_uv_scale_y_keys(uint32_t uv_scale_y_keys) {
+    fbb_.AddElement<uint32_t>(PartAnimationData::VT_UV_SCALE_Y_KEYS, uv_scale_y_keys, 4294967295);
   }
-  void add_bounding_radius_array(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>>> bounding_radius_array) {
-    fbb_.AddOffset(PartAnimationData::VT_BOUNDING_RADIUS_ARRAY, bounding_radius_array);
+  void add_bounding_radius_keys(uint32_t bounding_radius_keys) {
+    fbb_.AddElement<uint32_t>(PartAnimationData::VT_BOUNDING_RADIUS_KEYS, bounding_radius_keys, 4294967295);
   }
-  void add_mask_array(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>>> mask_array) {
-    fbb_.AddOffset(PartAnimationData::VT_MASK_ARRAY, mask_array);
+  void add_mask_keys(uint32_t mask_keys) {
+    fbb_.AddElement<uint32_t>(PartAnimationData::VT_MASK_KEYS, mask_keys, 4294967295);
   }
-  void add_skew_array(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataVec2>>> skew_array) {
-    fbb_.AddOffset(PartAnimationData::VT_SKEW_ARRAY, skew_array);
+  void add_skew_keys(uint32_t skew_keys) {
+    fbb_.AddElement<uint32_t>(PartAnimationData::VT_SKEW_KEYS, skew_keys, 4294967295);
   }
-  void add_deform_array(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataDeform>>> deform_array) {
-    fbb_.AddOffset(PartAnimationData::VT_DEFORM_ARRAY, deform_array);
+  void add_deform_keys(uint32_t deform_keys) {
+    fbb_.AddElement<uint32_t>(PartAnimationData::VT_DEFORM_KEYS, deform_keys, 4294967295);
   }
-  void add_texture_array(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataUIntValue>>> texture_array) {
-    fbb_.AddOffset(PartAnimationData::VT_TEXTURE_ARRAY, texture_array);
+  void add_texture_keys(uint32_t texture_keys) {
+    fbb_.AddElement<uint32_t>(PartAnimationData::VT_TEXTURE_KEYS, texture_keys, 4294967295);
   }
   explicit PartAnimationDataBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
@@ -7784,204 +6824,323 @@ struct PartAnimationDataBuilder {
 
 inline ::flatbuffers::Offset<PartAnimationData> CreatePartAnimationData(
     ::flatbuffers::FlatBufferBuilder &_fbb,
-    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataCellValue>>> cell_array = 0,
-    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>>> position_x_array = 0,
-    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>>> position_y_array = 0,
-    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>>> position_z_array = 0,
-    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>>> rotation_x_array = 0,
-    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>>> rotation_y_array = 0,
-    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>>> rotation_z_array = 0,
-    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>>> scale_x_array = 0,
-    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>>> scale_y_array = 0,
-    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>>> local_scale_x_array = 0,
-    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>>> local_scale_y_array = 0,
-    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>>> alpha_array = 0,
-    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>>> local_alpha_array = 0,
-    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataIntValue>>> priority_array = 0,
-    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataBoolValue>>> flip_h_array = 0,
-    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataBoolValue>>> flip_v_array = 0,
-    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataBoolValue>>> hide_array = 0,
-    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataPartColor>>> part_color_array = 0,
-    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataShader>>> shader_array = 0,
-    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataVertex>>> vertex_array = 0,
-    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>>> pivot_x_array = 0,
-    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>>> pivot_y_array = 0,
-    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>>> anchor_x_array = 0,
-    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>>> anchor_y_array = 0,
-    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>>> size_x_array = 0,
-    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>>> size_y_array = 0,
-    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataBoolValue>>> img_flip_h_array = 0,
-    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataBoolValue>>> img_flip_v_array = 0,
-    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>>> uv_translation_x_array = 0,
-    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>>> uv_translation_y_array = 0,
-    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>>> uv_rotation_z_array = 0,
-    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>>> uv_scale_x_array = 0,
-    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>>> uv_scale_y_array = 0,
-    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>>> bounding_radius_array = 0,
-    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>>> mask_array = 0,
-    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataVec2>>> skew_array = 0,
-    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataDeform>>> deform_array = 0,
-    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAnimationDataUIntValue>>> texture_array = 0) {
+    uint32_t cell_keys = 4294967295,
+    uint32_t position_x_keys = 4294967295,
+    uint32_t position_y_keys = 4294967295,
+    uint32_t position_z_keys = 4294967295,
+    uint32_t rotation_x_keys = 4294967295,
+    uint32_t rotation_y_keys = 4294967295,
+    uint32_t rotation_z_keys = 4294967295,
+    uint32_t scale_x_keys = 4294967295,
+    uint32_t scale_y_keys = 4294967295,
+    uint32_t local_scale_x_keys = 4294967295,
+    uint32_t local_scale_y_keys = 4294967295,
+    uint32_t alpha_keys = 4294967295,
+    uint32_t local_alpha_keys = 4294967295,
+    uint32_t priority_keys = 4294967295,
+    uint32_t flip_h_keys = 4294967295,
+    uint32_t flip_v_keys = 4294967295,
+    uint32_t hide_keys = 4294967295,
+    uint32_t part_color_keys = 4294967295,
+    uint32_t shader_keys = 4294967295,
+    uint32_t vertex_keys = 4294967295,
+    uint32_t pivot_x_keys = 4294967295,
+    uint32_t pivot_y_keys = 4294967295,
+    uint32_t anchor_x_keys = 4294967295,
+    uint32_t anchor_y_keys = 4294967295,
+    uint32_t size_x_keys = 4294967295,
+    uint32_t size_y_keys = 4294967295,
+    uint32_t img_flip_h_keys = 4294967295,
+    uint32_t img_flip_v_keys = 4294967295,
+    uint32_t uv_translation_x_keys = 4294967295,
+    uint32_t uv_translation_y_keys = 4294967295,
+    uint32_t uv_rotation_z_keys = 4294967295,
+    uint32_t uv_scale_x_keys = 4294967295,
+    uint32_t uv_scale_y_keys = 4294967295,
+    uint32_t bounding_radius_keys = 4294967295,
+    uint32_t mask_keys = 4294967295,
+    uint32_t skew_keys = 4294967295,
+    uint32_t deform_keys = 4294967295,
+    uint32_t texture_keys = 4294967295) {
   PartAnimationDataBuilder builder_(_fbb);
-  builder_.add_texture_array(texture_array);
-  builder_.add_deform_array(deform_array);
-  builder_.add_skew_array(skew_array);
-  builder_.add_mask_array(mask_array);
-  builder_.add_bounding_radius_array(bounding_radius_array);
-  builder_.add_uv_scale_y_array(uv_scale_y_array);
-  builder_.add_uv_scale_x_array(uv_scale_x_array);
-  builder_.add_uv_rotation_z_array(uv_rotation_z_array);
-  builder_.add_uv_translation_y_array(uv_translation_y_array);
-  builder_.add_uv_translation_x_array(uv_translation_x_array);
-  builder_.add_img_flip_v_array(img_flip_v_array);
-  builder_.add_img_flip_h_array(img_flip_h_array);
-  builder_.add_size_y_array(size_y_array);
-  builder_.add_size_x_array(size_x_array);
-  builder_.add_anchor_y_array(anchor_y_array);
-  builder_.add_anchor_x_array(anchor_x_array);
-  builder_.add_pivot_y_array(pivot_y_array);
-  builder_.add_pivot_x_array(pivot_x_array);
-  builder_.add_vertex_array(vertex_array);
-  builder_.add_shader_array(shader_array);
-  builder_.add_part_color_array(part_color_array);
-  builder_.add_hide_array(hide_array);
-  builder_.add_flip_v_array(flip_v_array);
-  builder_.add_flip_h_array(flip_h_array);
-  builder_.add_priority_array(priority_array);
-  builder_.add_local_alpha_array(local_alpha_array);
-  builder_.add_alpha_array(alpha_array);
-  builder_.add_local_scale_y_array(local_scale_y_array);
-  builder_.add_local_scale_x_array(local_scale_x_array);
-  builder_.add_scale_y_array(scale_y_array);
-  builder_.add_scale_x_array(scale_x_array);
-  builder_.add_rotation_z_array(rotation_z_array);
-  builder_.add_rotation_y_array(rotation_y_array);
-  builder_.add_rotation_x_array(rotation_x_array);
-  builder_.add_position_z_array(position_z_array);
-  builder_.add_position_y_array(position_y_array);
-  builder_.add_position_x_array(position_x_array);
-  builder_.add_cell_array(cell_array);
+  builder_.add_texture_keys(texture_keys);
+  builder_.add_deform_keys(deform_keys);
+  builder_.add_skew_keys(skew_keys);
+  builder_.add_mask_keys(mask_keys);
+  builder_.add_bounding_radius_keys(bounding_radius_keys);
+  builder_.add_uv_scale_y_keys(uv_scale_y_keys);
+  builder_.add_uv_scale_x_keys(uv_scale_x_keys);
+  builder_.add_uv_rotation_z_keys(uv_rotation_z_keys);
+  builder_.add_uv_translation_y_keys(uv_translation_y_keys);
+  builder_.add_uv_translation_x_keys(uv_translation_x_keys);
+  builder_.add_img_flip_v_keys(img_flip_v_keys);
+  builder_.add_img_flip_h_keys(img_flip_h_keys);
+  builder_.add_size_y_keys(size_y_keys);
+  builder_.add_size_x_keys(size_x_keys);
+  builder_.add_anchor_y_keys(anchor_y_keys);
+  builder_.add_anchor_x_keys(anchor_x_keys);
+  builder_.add_pivot_y_keys(pivot_y_keys);
+  builder_.add_pivot_x_keys(pivot_x_keys);
+  builder_.add_vertex_keys(vertex_keys);
+  builder_.add_shader_keys(shader_keys);
+  builder_.add_part_color_keys(part_color_keys);
+  builder_.add_hide_keys(hide_keys);
+  builder_.add_flip_v_keys(flip_v_keys);
+  builder_.add_flip_h_keys(flip_h_keys);
+  builder_.add_priority_keys(priority_keys);
+  builder_.add_local_alpha_keys(local_alpha_keys);
+  builder_.add_alpha_keys(alpha_keys);
+  builder_.add_local_scale_y_keys(local_scale_y_keys);
+  builder_.add_local_scale_x_keys(local_scale_x_keys);
+  builder_.add_scale_y_keys(scale_y_keys);
+  builder_.add_scale_x_keys(scale_x_keys);
+  builder_.add_rotation_z_keys(rotation_z_keys);
+  builder_.add_rotation_y_keys(rotation_y_keys);
+  builder_.add_rotation_x_keys(rotation_x_keys);
+  builder_.add_position_z_keys(position_z_keys);
+  builder_.add_position_y_keys(position_y_keys);
+  builder_.add_position_x_keys(position_x_keys);
+  builder_.add_cell_keys(cell_keys);
   return builder_.Finish();
 }
 
-inline ::flatbuffers::Offset<PartAnimationData> CreatePartAnimationDataDirect(
+struct Keyframes FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef KeyframesBuilder Builder;
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
+    VT_RUNS = 4,
+    VT_FRAME = 6,
+    VT_INTERPOLATION = 8,
+    VT_CURVE = 10,
+    VT_VALUE = 12,
+    VT_CURVES = 14,
+    VT_EASING_RATES = 16,
+    VT_CELLS = 18,
+    VT_PART_COLORS = 20,
+    VT_SHADERS = 22,
+    VT_VERTICES = 24,
+    VT_SKEWS = 26,
+    VT_DEFORMS = 28
+  };
+  const ::flatbuffers::Vector<uint32_t> *runs() const {
+    return GetPointer<const ::flatbuffers::Vector<uint32_t> *>(VT_RUNS);
+  }
+  const ::flatbuffers::Vector<uint16_t> *frame() const {
+    return GetPointer<const ::flatbuffers::Vector<uint16_t> *>(VT_FRAME);
+  }
+  const ::flatbuffers::Vector<uint8_t> *interpolation() const {
+    return GetPointer<const ::flatbuffers::Vector<uint8_t> *>(VT_INTERPOLATION);
+  }
+  const ::flatbuffers::Vector<uint16_t> *curve() const {
+    return GetPointer<const ::flatbuffers::Vector<uint16_t> *>(VT_CURVE);
+  }
+  const ::flatbuffers::Vector<uint32_t> *value() const {
+    return GetPointer<const ::flatbuffers::Vector<uint32_t> *>(VT_VALUE);
+  }
+  const ::flatbuffers::Vector<const ss::format::KeyCurve *> *curves() const {
+    return GetPointer<const ::flatbuffers::Vector<const ss::format::KeyCurve *> *>(VT_CURVES);
+  }
+  const ::flatbuffers::Vector<float> *easing_rates() const {
+    return GetPointer<const ::flatbuffers::Vector<float> *>(VT_EASING_RATES);
+  }
+  const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAttributeCell>> *cells() const {
+    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAttributeCell>> *>(VT_CELLS);
+  }
+  const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAttributePartColor>> *part_colors() const {
+    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAttributePartColor>> *>(VT_PART_COLORS);
+  }
+  const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAttributeShader>> *shaders() const {
+    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAttributeShader>> *>(VT_SHADERS);
+  }
+  const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAttributeVertex>> *vertices() const {
+    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAttributeVertex>> *>(VT_VERTICES);
+  }
+  const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::Vec2>> *skews() const {
+    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::Vec2>> *>(VT_SKEWS);
+  }
+  const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAttributeDeform>> *deforms() const {
+    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAttributeDeform>> *>(VT_DEFORMS);
+  }
+  template <bool B = false>
+  bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyOffsetRequired(verifier, VT_RUNS) &&
+           verifier.VerifyVector(runs()) &&
+           VerifyOffsetRequired(verifier, VT_FRAME) &&
+           verifier.VerifyVector(frame()) &&
+           VerifyOffsetRequired(verifier, VT_INTERPOLATION) &&
+           verifier.VerifyVector(interpolation()) &&
+           VerifyOffsetRequired(verifier, VT_CURVE) &&
+           verifier.VerifyVector(curve()) &&
+           VerifyOffsetRequired(verifier, VT_VALUE) &&
+           verifier.VerifyVector(value()) &&
+           VerifyOffsetRequired(verifier, VT_CURVES) &&
+           verifier.VerifyVector(curves()) &&
+           VerifyOffsetRequired(verifier, VT_EASING_RATES) &&
+           verifier.VerifyVector(easing_rates()) &&
+           VerifyOffsetRequired(verifier, VT_CELLS) &&
+           verifier.VerifyVector(cells()) &&
+           verifier.VerifyVectorOfTables(cells()) &&
+           VerifyOffsetRequired(verifier, VT_PART_COLORS) &&
+           verifier.VerifyVector(part_colors()) &&
+           verifier.VerifyVectorOfTables(part_colors()) &&
+           VerifyOffsetRequired(verifier, VT_SHADERS) &&
+           verifier.VerifyVector(shaders()) &&
+           verifier.VerifyVectorOfTables(shaders()) &&
+           VerifyOffsetRequired(verifier, VT_VERTICES) &&
+           verifier.VerifyVector(vertices()) &&
+           verifier.VerifyVectorOfTables(vertices()) &&
+           VerifyOffsetRequired(verifier, VT_SKEWS) &&
+           verifier.VerifyVector(skews()) &&
+           verifier.VerifyVectorOfTables(skews()) &&
+           VerifyOffsetRequired(verifier, VT_DEFORMS) &&
+           verifier.VerifyVector(deforms()) &&
+           verifier.VerifyVectorOfTables(deforms()) &&
+           verifier.EndTable();
+  }
+};
+
+struct KeyframesBuilder {
+  typedef Keyframes Table;
+  ::flatbuffers::FlatBufferBuilder &fbb_;
+  ::flatbuffers::uoffset_t start_;
+  void add_runs(::flatbuffers::Offset<::flatbuffers::Vector<uint32_t>> runs) {
+    fbb_.AddOffset(Keyframes::VT_RUNS, runs);
+  }
+  void add_frame(::flatbuffers::Offset<::flatbuffers::Vector<uint16_t>> frame) {
+    fbb_.AddOffset(Keyframes::VT_FRAME, frame);
+  }
+  void add_interpolation(::flatbuffers::Offset<::flatbuffers::Vector<uint8_t>> interpolation) {
+    fbb_.AddOffset(Keyframes::VT_INTERPOLATION, interpolation);
+  }
+  void add_curve(::flatbuffers::Offset<::flatbuffers::Vector<uint16_t>> curve) {
+    fbb_.AddOffset(Keyframes::VT_CURVE, curve);
+  }
+  void add_value(::flatbuffers::Offset<::flatbuffers::Vector<uint32_t>> value) {
+    fbb_.AddOffset(Keyframes::VT_VALUE, value);
+  }
+  void add_curves(::flatbuffers::Offset<::flatbuffers::Vector<const ss::format::KeyCurve *>> curves) {
+    fbb_.AddOffset(Keyframes::VT_CURVES, curves);
+  }
+  void add_easing_rates(::flatbuffers::Offset<::flatbuffers::Vector<float>> easing_rates) {
+    fbb_.AddOffset(Keyframes::VT_EASING_RATES, easing_rates);
+  }
+  void add_cells(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAttributeCell>>> cells) {
+    fbb_.AddOffset(Keyframes::VT_CELLS, cells);
+  }
+  void add_part_colors(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAttributePartColor>>> part_colors) {
+    fbb_.AddOffset(Keyframes::VT_PART_COLORS, part_colors);
+  }
+  void add_shaders(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAttributeShader>>> shaders) {
+    fbb_.AddOffset(Keyframes::VT_SHADERS, shaders);
+  }
+  void add_vertices(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAttributeVertex>>> vertices) {
+    fbb_.AddOffset(Keyframes::VT_VERTICES, vertices);
+  }
+  void add_skews(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::Vec2>>> skews) {
+    fbb_.AddOffset(Keyframes::VT_SKEWS, skews);
+  }
+  void add_deforms(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAttributeDeform>>> deforms) {
+    fbb_.AddOffset(Keyframes::VT_DEFORMS, deforms);
+  }
+  explicit KeyframesBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  ::flatbuffers::Offset<Keyframes> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = ::flatbuffers::Offset<Keyframes>(end);
+    fbb_.Required(o, Keyframes::VT_RUNS);
+    fbb_.Required(o, Keyframes::VT_FRAME);
+    fbb_.Required(o, Keyframes::VT_INTERPOLATION);
+    fbb_.Required(o, Keyframes::VT_CURVE);
+    fbb_.Required(o, Keyframes::VT_VALUE);
+    fbb_.Required(o, Keyframes::VT_CURVES);
+    fbb_.Required(o, Keyframes::VT_EASING_RATES);
+    fbb_.Required(o, Keyframes::VT_CELLS);
+    fbb_.Required(o, Keyframes::VT_PART_COLORS);
+    fbb_.Required(o, Keyframes::VT_SHADERS);
+    fbb_.Required(o, Keyframes::VT_VERTICES);
+    fbb_.Required(o, Keyframes::VT_SKEWS);
+    fbb_.Required(o, Keyframes::VT_DEFORMS);
+    return o;
+  }
+};
+
+inline ::flatbuffers::Offset<Keyframes> CreateKeyframes(
     ::flatbuffers::FlatBufferBuilder &_fbb,
-    std::vector<::flatbuffers::Offset<ss::format::PartAnimationDataCellValue>> *cell_array = nullptr,
-    std::vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *position_x_array = nullptr,
-    std::vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *position_y_array = nullptr,
-    std::vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *position_z_array = nullptr,
-    std::vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *rotation_x_array = nullptr,
-    std::vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *rotation_y_array = nullptr,
-    std::vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *rotation_z_array = nullptr,
-    std::vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *scale_x_array = nullptr,
-    std::vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *scale_y_array = nullptr,
-    std::vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *local_scale_x_array = nullptr,
-    std::vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *local_scale_y_array = nullptr,
-    std::vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *alpha_array = nullptr,
-    std::vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *local_alpha_array = nullptr,
-    std::vector<::flatbuffers::Offset<ss::format::PartAnimationDataIntValue>> *priority_array = nullptr,
-    std::vector<::flatbuffers::Offset<ss::format::PartAnimationDataBoolValue>> *flip_h_array = nullptr,
-    std::vector<::flatbuffers::Offset<ss::format::PartAnimationDataBoolValue>> *flip_v_array = nullptr,
-    std::vector<::flatbuffers::Offset<ss::format::PartAnimationDataBoolValue>> *hide_array = nullptr,
-    std::vector<::flatbuffers::Offset<ss::format::PartAnimationDataPartColor>> *part_color_array = nullptr,
-    std::vector<::flatbuffers::Offset<ss::format::PartAnimationDataShader>> *shader_array = nullptr,
-    std::vector<::flatbuffers::Offset<ss::format::PartAnimationDataVertex>> *vertex_array = nullptr,
-    std::vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *pivot_x_array = nullptr,
-    std::vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *pivot_y_array = nullptr,
-    std::vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *anchor_x_array = nullptr,
-    std::vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *anchor_y_array = nullptr,
-    std::vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *size_x_array = nullptr,
-    std::vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *size_y_array = nullptr,
-    std::vector<::flatbuffers::Offset<ss::format::PartAnimationDataBoolValue>> *img_flip_h_array = nullptr,
-    std::vector<::flatbuffers::Offset<ss::format::PartAnimationDataBoolValue>> *img_flip_v_array = nullptr,
-    std::vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *uv_translation_x_array = nullptr,
-    std::vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *uv_translation_y_array = nullptr,
-    std::vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *uv_rotation_z_array = nullptr,
-    std::vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *uv_scale_x_array = nullptr,
-    std::vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *uv_scale_y_array = nullptr,
-    std::vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *bounding_radius_array = nullptr,
-    std::vector<::flatbuffers::Offset<ss::format::PartAnimationDataFloatValue>> *mask_array = nullptr,
-    std::vector<::flatbuffers::Offset<ss::format::PartAnimationDataVec2>> *skew_array = nullptr,
-    std::vector<::flatbuffers::Offset<ss::format::PartAnimationDataDeform>> *deform_array = nullptr,
-    std::vector<::flatbuffers::Offset<ss::format::PartAnimationDataUIntValue>> *texture_array = nullptr) {
-  auto cell_array__ = cell_array ? _fbb.CreateVectorOfSortedTables<ss::format::PartAnimationDataCellValue>(cell_array) : 0;
-  auto position_x_array__ = position_x_array ? _fbb.CreateVectorOfSortedTables<ss::format::PartAnimationDataFloatValue>(position_x_array) : 0;
-  auto position_y_array__ = position_y_array ? _fbb.CreateVectorOfSortedTables<ss::format::PartAnimationDataFloatValue>(position_y_array) : 0;
-  auto position_z_array__ = position_z_array ? _fbb.CreateVectorOfSortedTables<ss::format::PartAnimationDataFloatValue>(position_z_array) : 0;
-  auto rotation_x_array__ = rotation_x_array ? _fbb.CreateVectorOfSortedTables<ss::format::PartAnimationDataFloatValue>(rotation_x_array) : 0;
-  auto rotation_y_array__ = rotation_y_array ? _fbb.CreateVectorOfSortedTables<ss::format::PartAnimationDataFloatValue>(rotation_y_array) : 0;
-  auto rotation_z_array__ = rotation_z_array ? _fbb.CreateVectorOfSortedTables<ss::format::PartAnimationDataFloatValue>(rotation_z_array) : 0;
-  auto scale_x_array__ = scale_x_array ? _fbb.CreateVectorOfSortedTables<ss::format::PartAnimationDataFloatValue>(scale_x_array) : 0;
-  auto scale_y_array__ = scale_y_array ? _fbb.CreateVectorOfSortedTables<ss::format::PartAnimationDataFloatValue>(scale_y_array) : 0;
-  auto local_scale_x_array__ = local_scale_x_array ? _fbb.CreateVectorOfSortedTables<ss::format::PartAnimationDataFloatValue>(local_scale_x_array) : 0;
-  auto local_scale_y_array__ = local_scale_y_array ? _fbb.CreateVectorOfSortedTables<ss::format::PartAnimationDataFloatValue>(local_scale_y_array) : 0;
-  auto alpha_array__ = alpha_array ? _fbb.CreateVectorOfSortedTables<ss::format::PartAnimationDataFloatValue>(alpha_array) : 0;
-  auto local_alpha_array__ = local_alpha_array ? _fbb.CreateVectorOfSortedTables<ss::format::PartAnimationDataFloatValue>(local_alpha_array) : 0;
-  auto priority_array__ = priority_array ? _fbb.CreateVectorOfSortedTables<ss::format::PartAnimationDataIntValue>(priority_array) : 0;
-  auto flip_h_array__ = flip_h_array ? _fbb.CreateVectorOfSortedTables<ss::format::PartAnimationDataBoolValue>(flip_h_array) : 0;
-  auto flip_v_array__ = flip_v_array ? _fbb.CreateVectorOfSortedTables<ss::format::PartAnimationDataBoolValue>(flip_v_array) : 0;
-  auto hide_array__ = hide_array ? _fbb.CreateVectorOfSortedTables<ss::format::PartAnimationDataBoolValue>(hide_array) : 0;
-  auto part_color_array__ = part_color_array ? _fbb.CreateVectorOfSortedTables<ss::format::PartAnimationDataPartColor>(part_color_array) : 0;
-  auto shader_array__ = shader_array ? _fbb.CreateVectorOfSortedTables<ss::format::PartAnimationDataShader>(shader_array) : 0;
-  auto vertex_array__ = vertex_array ? _fbb.CreateVectorOfSortedTables<ss::format::PartAnimationDataVertex>(vertex_array) : 0;
-  auto pivot_x_array__ = pivot_x_array ? _fbb.CreateVectorOfSortedTables<ss::format::PartAnimationDataFloatValue>(pivot_x_array) : 0;
-  auto pivot_y_array__ = pivot_y_array ? _fbb.CreateVectorOfSortedTables<ss::format::PartAnimationDataFloatValue>(pivot_y_array) : 0;
-  auto anchor_x_array__ = anchor_x_array ? _fbb.CreateVectorOfSortedTables<ss::format::PartAnimationDataFloatValue>(anchor_x_array) : 0;
-  auto anchor_y_array__ = anchor_y_array ? _fbb.CreateVectorOfSortedTables<ss::format::PartAnimationDataFloatValue>(anchor_y_array) : 0;
-  auto size_x_array__ = size_x_array ? _fbb.CreateVectorOfSortedTables<ss::format::PartAnimationDataFloatValue>(size_x_array) : 0;
-  auto size_y_array__ = size_y_array ? _fbb.CreateVectorOfSortedTables<ss::format::PartAnimationDataFloatValue>(size_y_array) : 0;
-  auto img_flip_h_array__ = img_flip_h_array ? _fbb.CreateVectorOfSortedTables<ss::format::PartAnimationDataBoolValue>(img_flip_h_array) : 0;
-  auto img_flip_v_array__ = img_flip_v_array ? _fbb.CreateVectorOfSortedTables<ss::format::PartAnimationDataBoolValue>(img_flip_v_array) : 0;
-  auto uv_translation_x_array__ = uv_translation_x_array ? _fbb.CreateVectorOfSortedTables<ss::format::PartAnimationDataFloatValue>(uv_translation_x_array) : 0;
-  auto uv_translation_y_array__ = uv_translation_y_array ? _fbb.CreateVectorOfSortedTables<ss::format::PartAnimationDataFloatValue>(uv_translation_y_array) : 0;
-  auto uv_rotation_z_array__ = uv_rotation_z_array ? _fbb.CreateVectorOfSortedTables<ss::format::PartAnimationDataFloatValue>(uv_rotation_z_array) : 0;
-  auto uv_scale_x_array__ = uv_scale_x_array ? _fbb.CreateVectorOfSortedTables<ss::format::PartAnimationDataFloatValue>(uv_scale_x_array) : 0;
-  auto uv_scale_y_array__ = uv_scale_y_array ? _fbb.CreateVectorOfSortedTables<ss::format::PartAnimationDataFloatValue>(uv_scale_y_array) : 0;
-  auto bounding_radius_array__ = bounding_radius_array ? _fbb.CreateVectorOfSortedTables<ss::format::PartAnimationDataFloatValue>(bounding_radius_array) : 0;
-  auto mask_array__ = mask_array ? _fbb.CreateVectorOfSortedTables<ss::format::PartAnimationDataFloatValue>(mask_array) : 0;
-  auto skew_array__ = skew_array ? _fbb.CreateVectorOfSortedTables<ss::format::PartAnimationDataVec2>(skew_array) : 0;
-  auto deform_array__ = deform_array ? _fbb.CreateVectorOfSortedTables<ss::format::PartAnimationDataDeform>(deform_array) : 0;
-  auto texture_array__ = texture_array ? _fbb.CreateVectorOfSortedTables<ss::format::PartAnimationDataUIntValue>(texture_array) : 0;
-  return ss::format::CreatePartAnimationData(
+    ::flatbuffers::Offset<::flatbuffers::Vector<uint32_t>> runs = 0,
+    ::flatbuffers::Offset<::flatbuffers::Vector<uint16_t>> frame = 0,
+    ::flatbuffers::Offset<::flatbuffers::Vector<uint8_t>> interpolation = 0,
+    ::flatbuffers::Offset<::flatbuffers::Vector<uint16_t>> curve = 0,
+    ::flatbuffers::Offset<::flatbuffers::Vector<uint32_t>> value = 0,
+    ::flatbuffers::Offset<::flatbuffers::Vector<const ss::format::KeyCurve *>> curves = 0,
+    ::flatbuffers::Offset<::flatbuffers::Vector<float>> easing_rates = 0,
+    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAttributeCell>>> cells = 0,
+    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAttributePartColor>>> part_colors = 0,
+    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAttributeShader>>> shaders = 0,
+    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAttributeVertex>>> vertices = 0,
+    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::Vec2>>> skews = 0,
+    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::PartAttributeDeform>>> deforms = 0) {
+  KeyframesBuilder builder_(_fbb);
+  builder_.add_deforms(deforms);
+  builder_.add_skews(skews);
+  builder_.add_vertices(vertices);
+  builder_.add_shaders(shaders);
+  builder_.add_part_colors(part_colors);
+  builder_.add_cells(cells);
+  builder_.add_easing_rates(easing_rates);
+  builder_.add_curves(curves);
+  builder_.add_value(value);
+  builder_.add_curve(curve);
+  builder_.add_interpolation(interpolation);
+  builder_.add_frame(frame);
+  builder_.add_runs(runs);
+  return builder_.Finish();
+}
+
+inline ::flatbuffers::Offset<Keyframes> CreateKeyframesDirect(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    const std::vector<uint32_t> *runs = nullptr,
+    const std::vector<uint16_t> *frame = nullptr,
+    const std::vector<uint8_t> *interpolation = nullptr,
+    const std::vector<uint16_t> *curve = nullptr,
+    const std::vector<uint32_t> *value = nullptr,
+    const std::vector<ss::format::KeyCurve> *curves = nullptr,
+    const std::vector<float> *easing_rates = nullptr,
+    const std::vector<::flatbuffers::Offset<ss::format::PartAttributeCell>> *cells = nullptr,
+    const std::vector<::flatbuffers::Offset<ss::format::PartAttributePartColor>> *part_colors = nullptr,
+    const std::vector<::flatbuffers::Offset<ss::format::PartAttributeShader>> *shaders = nullptr,
+    const std::vector<::flatbuffers::Offset<ss::format::PartAttributeVertex>> *vertices = nullptr,
+    const std::vector<::flatbuffers::Offset<ss::format::Vec2>> *skews = nullptr,
+    const std::vector<::flatbuffers::Offset<ss::format::PartAttributeDeform>> *deforms = nullptr) {
+  auto runs__ = runs ? _fbb.CreateVector<uint32_t>(*runs) : 0;
+  auto frame__ = frame ? _fbb.CreateVector<uint16_t>(*frame) : 0;
+  auto interpolation__ = interpolation ? _fbb.CreateVector<uint8_t>(*interpolation) : 0;
+  auto curve__ = curve ? _fbb.CreateVector<uint16_t>(*curve) : 0;
+  auto value__ = value ? _fbb.CreateVector<uint32_t>(*value) : 0;
+  auto curves__ = curves ? _fbb.CreateVectorOfStructs<ss::format::KeyCurve>(*curves) : 0;
+  auto easing_rates__ = easing_rates ? _fbb.CreateVector<float>(*easing_rates) : 0;
+  auto cells__ = cells ? _fbb.CreateVector<::flatbuffers::Offset<ss::format::PartAttributeCell>>(*cells) : 0;
+  auto part_colors__ = part_colors ? _fbb.CreateVector<::flatbuffers::Offset<ss::format::PartAttributePartColor>>(*part_colors) : 0;
+  auto shaders__ = shaders ? _fbb.CreateVector<::flatbuffers::Offset<ss::format::PartAttributeShader>>(*shaders) : 0;
+  auto vertices__ = vertices ? _fbb.CreateVector<::flatbuffers::Offset<ss::format::PartAttributeVertex>>(*vertices) : 0;
+  auto skews__ = skews ? _fbb.CreateVector<::flatbuffers::Offset<ss::format::Vec2>>(*skews) : 0;
+  auto deforms__ = deforms ? _fbb.CreateVector<::flatbuffers::Offset<ss::format::PartAttributeDeform>>(*deforms) : 0;
+  return ss::format::CreateKeyframes(
       _fbb,
-      cell_array__,
-      position_x_array__,
-      position_y_array__,
-      position_z_array__,
-      rotation_x_array__,
-      rotation_y_array__,
-      rotation_z_array__,
-      scale_x_array__,
-      scale_y_array__,
-      local_scale_x_array__,
-      local_scale_y_array__,
-      alpha_array__,
-      local_alpha_array__,
-      priority_array__,
-      flip_h_array__,
-      flip_v_array__,
-      hide_array__,
-      part_color_array__,
-      shader_array__,
-      vertex_array__,
-      pivot_x_array__,
-      pivot_y_array__,
-      anchor_x_array__,
-      anchor_y_array__,
-      size_x_array__,
-      size_y_array__,
-      img_flip_h_array__,
-      img_flip_v_array__,
-      uv_translation_x_array__,
-      uv_translation_y_array__,
-      uv_rotation_z_array__,
-      uv_scale_x_array__,
-      uv_scale_y_array__,
-      bounding_radius_array__,
-      mask_array__,
-      skew_array__,
-      deform_array__,
-      texture_array__);
+      runs__,
+      frame__,
+      interpolation__,
+      curve__,
+      value__,
+      curves__,
+      easing_rates__,
+      cells__,
+      part_colors__,
+      shaders__,
+      vertices__,
+      skews__,
+      deforms__);
 }
 
 struct AnimationData FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
@@ -8460,7 +7619,8 @@ struct SsAnimeBinary FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
     VT_FONT_BITMAPS = 20,
     VT_EXTERNAL_TEXTURES = 22,
     VT_EXTERNAL_INSTANCES = 24,
-    VT_EMBEDDED_ASSETS = 26
+    VT_EMBEDDED_ASSETS = 26,
+    VT_KEYFRAMES = 28
   };
   uint32_t version() const {
     return GetField<uint32_t>(VT_VERSION, 0);
@@ -8498,6 +7658,9 @@ struct SsAnimeBinary FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
   const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::EmbeddedAsset>> *embedded_assets() const {
     return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<ss::format::EmbeddedAsset>> *>(VT_EMBEDDED_ASSETS);
   }
+  const ss::format::Keyframes *keyframes() const {
+    return GetPointer<const ss::format::Keyframes *>(VT_KEYFRAMES);
+  }
   template <bool B = false>
   bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
     return VerifyTableStart(verifier) &&
@@ -8532,6 +7695,8 @@ struct SsAnimeBinary FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
            VerifyOffset(verifier, VT_EMBEDDED_ASSETS) &&
            verifier.VerifyVector(embedded_assets()) &&
            verifier.VerifyVectorOfTables(embedded_assets()) &&
+           VerifyOffsetRequired(verifier, VT_KEYFRAMES) &&
+           verifier.VerifyTable(keyframes()) &&
            verifier.EndTable();
   }
 };
@@ -8576,6 +7741,9 @@ struct SsAnimeBinaryBuilder {
   void add_embedded_assets(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::EmbeddedAsset>>> embedded_assets) {
     fbb_.AddOffset(SsAnimeBinary::VT_EMBEDDED_ASSETS, embedded_assets);
   }
+  void add_keyframes(::flatbuffers::Offset<ss::format::Keyframes> keyframes) {
+    fbb_.AddOffset(SsAnimeBinary::VT_KEYFRAMES, keyframes);
+  }
   explicit SsAnimeBinaryBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
     start_ = fbb_.StartTable();
@@ -8586,6 +7754,7 @@ struct SsAnimeBinaryBuilder {
     fbb_.Required(o, SsAnimeBinary::VT_NAME);
     fbb_.Required(o, SsAnimeBinary::VT_PARTS);
     fbb_.Required(o, SsAnimeBinary::VT_ANIMATIONS);
+    fbb_.Required(o, SsAnimeBinary::VT_KEYFRAMES);
     return o;
   }
 };
@@ -8603,8 +7772,10 @@ inline ::flatbuffers::Offset<SsAnimeBinary> CreateSsAnimeBinary(
     ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::FontBitmap>>> font_bitmaps = 0,
     ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::ExternalTexture>>> external_textures = 0,
     ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::ExternalInstance>>> external_instances = 0,
-    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::EmbeddedAsset>>> embedded_assets = 0) {
+    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<ss::format::EmbeddedAsset>>> embedded_assets = 0,
+    ::flatbuffers::Offset<ss::format::Keyframes> keyframes = 0) {
   SsAnimeBinaryBuilder builder_(_fbb);
+  builder_.add_keyframes(keyframes);
   builder_.add_embedded_assets(embedded_assets);
   builder_.add_external_instances(external_instances);
   builder_.add_external_textures(external_textures);
@@ -8633,7 +7804,8 @@ inline ::flatbuffers::Offset<SsAnimeBinary> CreateSsAnimeBinaryDirect(
     std::vector<::flatbuffers::Offset<ss::format::FontBitmap>> *font_bitmaps = nullptr,
     std::vector<::flatbuffers::Offset<ss::format::ExternalTexture>> *external_textures = nullptr,
     const std::vector<::flatbuffers::Offset<ss::format::ExternalInstance>> *external_instances = nullptr,
-    std::vector<::flatbuffers::Offset<ss::format::EmbeddedAsset>> *embedded_assets = nullptr) {
+    std::vector<::flatbuffers::Offset<ss::format::EmbeddedAsset>> *embedded_assets = nullptr,
+    ::flatbuffers::Offset<ss::format::Keyframes> keyframes = 0) {
   auto name__ = name ? _fbb.CreateString(name) : 0;
   auto parts__ = parts ? _fbb.CreateVector<::flatbuffers::Offset<ss::format::PartData>>(*parts) : 0;
   auto animations__ = animations ? _fbb.CreateVector<::flatbuffers::Offset<ss::format::AnimationData>>(*animations) : 0;
@@ -8657,7 +7829,8 @@ inline ::flatbuffers::Offset<SsAnimeBinary> CreateSsAnimeBinaryDirect(
       font_bitmaps__,
       external_textures__,
       external_instances__,
-      embedded_assets__);
+      embedded_assets__,
+      keyframes);
 }
 
 template <bool B>
