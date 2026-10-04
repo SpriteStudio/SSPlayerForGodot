@@ -96,16 +96,6 @@ graph LR
 
 Build and execution have been verified on Windows / macOS.
 
-## Samples
-
-Sample projects based on SDK test projects are available under the `examples/` folder in the repository.
-
-- [Ringo](https://github.com/cri-middleware/SSPlayerForGodot/tree/main/examples/Ringo) — Basic quickstart test for Ringo
-- [Scripting](https://github.com/cri-middleware/SSPlayerForGodot/tree/main/examples/Scripting) — GDScript example for controlling animations and signals
-- [Override_Ringo](https://github.com/cri-middleware/SSPlayerForGodot/tree/main/examples/Override_Ringo) — Attribute/material override example
-- [overall](https://github.com/cri-middleware/SSPlayerForGodot/tree/main/examples/overall) — Comprehensive functional test (Custom Module)
-- [overall_gdextension](https://github.com/cri-middleware/SSPlayerForGodot/tree/main/examples/overall_gdextension) — Comprehensive functional test (GDExtension)
-
 ## Related Repositories
 
 - [SpriteStudio Docs](https://cri-middleware.github.io/SpriteStudio-Docs/) — the documentation portal for the SDK and its official players.
