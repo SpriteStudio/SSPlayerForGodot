@@ -9,6 +9,7 @@ compile_commands.json
 /ss_player/runtime/include
 /ss_player/runtime/libs
 /ss_player/runtime/*.md
+/ss_player/runtime/VERSION
 /scripts/.sdk-cache/
 # deploy-examples.* writes these, and the editor's source sync regenerates them
 # from each project's .ssplayer_sources.cfg. Build output, never a source file.
