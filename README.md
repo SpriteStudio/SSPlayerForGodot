@@ -40,35 +40,17 @@ Everything after that (scripting, signals, per-part overrides) is the same path 
 [documentation](./docs/en/index.md).
 **Working on the Player, or the Rust runtime under it?** [CONTRIBUTING.md](./CONTRIBUTING.md) and the [Build Guide](./docs/en/setup/build.md).
 
-We provide two Quick Starts: one for quickly checking the operation using a sample project, and another for setting up your own project. Projects have to be authored in **SpriteStudio 7.5 or later**.
+You need a 4.7-series Godot editor from the [official site](https://godotengine.org/download/). Projects have to be authored in **SpriteStudio 7.5 or later**.
 
-### 1. Check Operation with Sample
+> 🚧 **This generation is not released yet.** [Releases](https://github.com/cri-middleware/SSPlayerForGodot/releases) currently carries only the **1.x** plugin, which has neither `SSABResource` nor `SpriteStudioPlayer2D` — both arrived with 7.x. Until the first 7.x release, build the add-on from a checkout with the [Build Guide](./docs/en/setup/build.md).
 
-> 🚧 **This generation is not released yet.** [Releases](https://github.com/cri-middleware/SSPlayerForGodot/releases) currently carries only the **1.x** plugin, which cannot open the samples on this branch — they use `SSABResource` and `SpriteStudioPlayer2D`, both of which arrived with 7.x. Until the first 7.x release, build the extension from this checkout with the [Build Guide](./docs/en/setup/build.md), then continue from step 3.
-
-1. **Get Godot Engine**: Download a 4.7-series editor from the [official site](https://godotengine.org/download/).
-2. **Get the repository**: Clone it with `--recurse-submodules`. The sample's source project lives in the `ss_player/SpriteStudio-SDK` submodule, and without it the sample has nothing to convert.
-3. **Download GDExtension**: Get the latest package from [Releases](https://github.com/cri-middleware/SSPlayerForGodot/releases) and extract it.
-4. **Prepare Sample**: Copy the extracted `addons` folder into the [examples/Ringo](./examples/Ringo) folder of this repository.
-5. **Convert and check**: `ssab_generated/` is not committed, so the sample has no `.ssab` yet, and opening the project does not create one. Open the [examples/Ringo](./examples/Ringo) project in Godot Engine and drag `ss_player/SpriteStudio-SDK/tests/Ringo/Ringo.sspj` from your file manager onto the **SS Import** dock (see [Asset Import and Editor Integration](./docs/en/workflow/usage_asset_pipeline.md)); the sample's `.ssplayer_sources.cfg` already names `res://ssab_generated` as the output folder. Without the editor, `./scripts/deploy-examples.sh` (`deploy-examples.ps1` on Windows) converts every sample; it builds `ssconverter-cli`, so it needs a Rust toolchain. Then open `Ringo.tscn` to see the animation working.
-
-### 2. Introduce to Your Project
-
-1. **Install**: Copy the `addons` folder into your Godot project root.
-2. **Import**: Drag & drop your `.sspj` onto the Godot editor to convert it to `.ssab`.
+1. **Install**: Download the latest package from [Releases](https://github.com/cri-middleware/SSPlayerForGodot/releases), extract it, and copy its `addons` folder into your Godot project root.
+2. **Import**: Drag your `.sspj` from your file manager onto the **SS Import** dock to convert it to `.ssab` (see [Asset Import and Editor Integration](./docs/en/workflow/usage_asset_pipeline.md)).
 3. **Play**: Add a `SpriteStudioPlayer2D` node and assign the `.ssab` to its `Ssab` property.
 
+No `.sspj` of your own yet? SpriteStudio's [official sample data](https://www.webtech.co.jp/help/ja/spritestudio7/download/sample/) works as-is — the page is in Japanese, the downloads are not. [Ringo](https://www.webtech.co.jp/help/ja/spritestudio7/download/sample/#ringo) is a good character to start with, and [Particle](https://www.webtech.co.jp/help/ja/spritestudio7/download/sample/#Perticle_sample) a good one for effects.
+
 For more details, see the [Installation Guide](./docs/en/setup/install.md).
-
-## 🎬 Samples
-
-Sample projects based on SDK test projects are available under the [examples folder](./examples/).
-
-- [Ringo](./examples/Ringo) — Basic quickstart test for Ringo
-- [Scripting](./examples/Scripting) — GDScript example for controlling animations and signals
-- [Override_Ringo](./examples/Override_Ringo) — Attribute/material override example
-- [overall](./examples/overall) — Comprehensive functional test (Custom Module)
-- [overall_gdextension](./examples/overall_gdextension) — Comprehensive functional test (GDExtension)
 
 ## 🔗 Related Repositories
 

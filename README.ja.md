@@ -38,35 +38,17 @@
 **ゲームで使う場合**はこのまま下へ。アドオンを入れる → `.sspj` をエディタに D&D → ノードを置く。その先（スクリプト制御、シグナル、パーツ単位の上書き）も同じ道の続きで、[ドキュメント](./docs/ja/index.md)にあります。
 **Player 自体や、その下の Rust ランタイムを変更する場合**は [CONTRIBUTING.md](./CONTRIBUTING.md) と[ビルドガイド](./docs/ja/setup/build.md)へ。
 
-初めての方向けに、サンプルプロジェクトを使用した動作確認と、ご自身のプロジェクトへ導入する手順の2つを用意しています。対応するのは **SpriteStudio 7.5 以上**で作成されたプロジェクトです。
+[公式サイト](https://godotengine.org/download/) から 4.7 系の Godot エディタを用意してください。対応するのは **SpriteStudio 7.5 以上**で作成されたプロジェクトです。
 
-### 1. サンプルで動作確認する
+> 🚧 **この世代はまだリリースされていません。** [Releases](https://github.com/cri-middleware/SSPlayerForGodot/releases) にあるのは **1.x** 系のプラグインのみで、`SSABResource` も `SpriteStudioPlayer2D` もありません（どちらも 7.x で入ったクラスです）。7.x の初回リリースまでは、[ビルドガイド](./docs/ja/setup/build.md) に従ってチェックアウトからアドオンをビルドしてください。
 
-> 🚧 **この世代はまだリリースされていません。** [Releases](https://github.com/cri-middleware/SSPlayerForGodot/releases) にあるのは **1.x** 系のプラグインのみで、本ブランチのサンプルは開けません（`SSABResource` と `SpriteStudioPlayer2D` はいずれも 7.x で入ったクラスです）。7.x の初回リリースまでは、[ビルドガイド](./docs/ja/setup/build.md) に従ってこのチェックアウトから拡張をビルドし、手順 3 から続けてください。
-
-1. **Godot Engine の準備**: [公式サイト](https://godotengine.org/download/) から 4.7 系のエディタをダウンロードします。
-2. **リポジトリの取得**: `--recurse-submodules` 付きでクローンします。サンプルの元プロジェクトは `ss_player/SpriteStudio-SDK` submodule にあり、これが無いとサンプルは変換対象を持ちません。
-3. **GDExtension の取得**: [Releases](https://github.com/cri-middleware/SSPlayerForGodot/releases) から最新パッケージをダウンロードし、展開します。
-4. **サンプルの準備**: 取得した `addons` フォルダを、本リポジトリの [examples/Ringo](./examples/Ringo) フォルダ内にコピーします。
-5. **変換と確認**: `ssab_generated/` は commit していないので、サンプルにはまだ `.ssab` がなく、プロジェクトを開いただけでは作られません。Godot Engine で [examples/Ringo](./examples/Ringo) プロジェクトを開き、`ss_player/SpriteStudio-SDK/tests/Ringo/Ringo.sspj` をファイルマネージャーから **SS Import** ドックへドラッグ＆ドロップして変換します（[アセットのインポートとエディタ連携](./docs/ja/workflow/usage_asset_pipeline.md) を参照）。サンプルの `.ssplayer_sources.cfg` は、出力先を `res://ssab_generated` に指定済みです。エディタを使わない場合は、`./scripts/deploy-examples.sh`（Windows では `deploy-examples.ps1`）が全サンプルを変換します。`ssconverter-cli` をビルドするので、Rust ツールチェーンが要ります。そのあと `Ringo.tscn` を開けば、アニメーションの動作を確認できます。
-
-### 2. 自身のプロジェクトへ導入する
-
-1. **配置**: 取得した `addons` フォルダを、ご自身の Godot プロジェクトのルートにコピーします。
-2. **インポート**: `.sspj` を Godot エディタにドラッグ＆ドロップして `.ssab` へ変換します。
+1. **配置**: [Releases](https://github.com/cri-middleware/SSPlayerForGodot/releases) から最新パッケージをダウンロードして展開し、`addons` フォルダをご自身の Godot プロジェクトのルートにコピーします。
+2. **インポート**: `.sspj` をファイルマネージャーから **SS Import** ドックへドラッグ＆ドロップして `.ssab` へ変換します（[アセットのインポートとエディタ連携](./docs/ja/workflow/usage_asset_pipeline.md) を参照）。
 3. **再生**: `SpriteStudioPlayer2D` ノードを追加し、`Ssab` プロパティに生成された `.ssab` を指定します。
 
+SpriteStudio のデータが手元に無くても始められます。[公式のサンプルデータ](https://www.webtech.co.jp/help/ja/spritestudio7/download/sample/)がそのまま使えます。キャラクターなら [Ringo](https://www.webtech.co.jp/help/ja/spritestudio7/download/sample/#ringo)、エフェクトを含むものなら [パーティクル](https://www.webtech.co.jp/help/ja/spritestudio7/download/sample/#Perticle_sample) が手頃です。
+
 詳細は [インストールガイド](./docs/ja/setup/install.md) を参照してください。
-
-## 🎬 サンプル
-
-[examples フォルダ](./examples/) に SDK のテストプロジェクトに基づいたサンプルプロジェクトがあります。
-
-- [Ringo](./examples/Ringo) — Ringo用の基本クイックスタートテスト
-- [Scripting](./examples/Scripting) — GDScriptを用いたアニメーション制御やシグナル受信のサンプル
-- [Override_Ringo](./examples/Override_Ringo) — アトリビュート・マテリアルのオーバーライドサンプル
-- [overall](./examples/overall) — 総合的な機能テスト（カスタムモジュール版）
-- [overall_gdextension](./examples/overall_gdextension) — 総合的な機能テスト（GDExtension版）
 
 ## 🔗 関連リポジトリ
 

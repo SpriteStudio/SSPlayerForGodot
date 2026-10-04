@@ -94,16 +94,6 @@ graph LR
 
 Windows / macOS でのビルドおよび実行を確認しています。
 
-## サンプル
-
-リポジトリの `examples/` フォルダに SDK のテストプロジェクトに基づいたサンプルプロジェクトがあります。
-
-- [Ringo](https://github.com/cri-middleware/SSPlayerForGodot/tree/main/examples/Ringo) — Ringo用の基本クイックスタートテスト
-- [Scripting](https://github.com/cri-middleware/SSPlayerForGodot/tree/main/examples/Scripting) — GDScriptを用いたアニメーション制御やシグナル受信のサンプル
-- [Override_Ringo](https://github.com/cri-middleware/SSPlayerForGodot/tree/main/examples/Override_Ringo) — アトリビュート・マテリアルのオーバーライドサンプル
-- [overall](https://github.com/cri-middleware/SSPlayerForGodot/tree/main/examples/overall) — 総合的な機能テスト（カスタムモジュール版）
-- [overall_gdextension](https://github.com/cri-middleware/SSPlayerForGodot/tree/main/examples/overall_gdextension) — 総合的な機能テスト（GDExtension版）
-
 ## 関連リポジトリ
 
 - [SpriteStudio Docs](https://cri-middleware.github.io/SpriteStudio-Docs/ja/) — SDK と公式 Player のドキュメントポータル。
