@@ -10,16 +10,11 @@ A high-performance extension plugin (GDExtension / Custom Module) for playing an
 
 ## ✨ Why use SpriteStudio with Godot?
 
-- **Unmatched Versatility: From Characters to UI and Effects**
-  Unlike character-specific tools, you can author everything from character animations using mesh deformation to UI transitions and rich particle effects, all within a single dedicated editor. It maximizes the expressive power of your raster images.
-- **Build "Entire Scenes" including Backgrounds and Effects**
-  Beyond animating individual characters, you can construct entire "cutscenes" or "full screen" presentations—combining characters, backgrounds, effects, and UI—directly in the editor, and play them back as a single animation in Godot.
-- **Cross-Engine Visual Consistency**
-  Pose, interpolation, deformation and draw order are computed by an independent core runtime shared with every official player, so the structural "visual deviations" that come from an engine's own specifications do not occur — those match across engines. Blend modes and part colours are carried as intent and reproduced as faithfully as the host's rendering layer allows, so they are best-effort rather than identical; masking, text and audio are Godot's own. Sub-frame interpolation ensures smooth rendering even at high refresh rates.
-- **Natural Integration as a Godot "Node" and Conflict Avoidance**
-  `SpriteStudioPlayer2D` seamlessly integrates into your Godot scenes as a standard node, allowing easy control from GDScript without bloating the Node tree. At the same time, the animation data itself is separated from the scene, preventing Git conflicts during team development.
-- **Extreme Performance via Zero-copy Loading and SIMD**
-  By converting your data into optimized binaries (`.ssab` / FlatBuffers) for use, parsing load is reduced to zero at runtime, allowing instant playback from memory. By fully utilizing SIMD in internal calculations, it achieves maximum animation playback performance with minimal CPU and memory overhead, ensuring smooth operation even in mobile environments or games rendering massive numbers of characters.
+- **Bring your characters to life.** Breathing and blinking, swaying hair and clothes, flashy slash and magic effects — the motion is built visually in a dedicated editor (SpriteStudio) with bone rigs, mesh deformation and particles, and Godot just plays it. Nothing to rebuild by hand in `AnimationPlayer`.
+- **Not just characters — effects, UI and whole scenes.** Combine characters, backgrounds, effects and UI into a cutscene or a full-screen sequence in the editor, and play it in Godot as a single animation.
+- **Just another node.** `SpriteStudioPlayer2D` sits in your scene like any other node and is controlled from GDScript. The animation lives in its own file rather than inside the scene, so teammates don't collide over scene merges in Git.
+- **A seamless SpriteStudio ⇄ Godot round trip.** Drop a `.sspj` onto the SS Import Dock and it is converted inside the editor. To tweak it, click **Open SSPJ** in the Inspector, save in SpriteStudio, then click **Reconvert** — no manual export step.
+- **Zero-parse loading, SIMD playback.** `.ssab` is a FlatBuffers binary read in place, so loading involves no parsing, and poses are computed by a SIMD-optimised Rust core — light enough for mobile and for scenes with many characters. Turn on **sub-frame interpolation** and motion follows high-refresh-rate displays.
 
 ## 📚 Documentation
 
