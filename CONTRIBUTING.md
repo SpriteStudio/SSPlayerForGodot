@@ -93,7 +93,7 @@ scripts/build-docs.sh            # English then Japanese, both --strict
 scripts/build-pages.sh serve=yes # the published tree, both locales -> http://localhost:8000/
 ```
 
-Both locales, English first: it clears `site/`, which contains `site/ja`, so an English-only build leaves a stale Japanese site behind and a page you just broke still looks fine. `mkdocs.base.yml` sets `strict: true`; `zensical serve` validates nothing, `--strict` or not, and serves one locale at a time, so `build-pages.sh serve=yes` is the only way to see the language selector resolve. `pages.yml`'s build job **is** that script, so CI builds exactly what a local run with the same options builds. `.ps1` twins on Windows, `key=value` options and `--help` on both.
+Both locales, English first: it clears `site/`, which contains `site/ja`, so an English-only build leaves no Japanese site at all. `mkdocs.base.yml` sets `strict: true`; `zensical serve` validates nothing, `--strict` or not, and serves one locale at a time, so `build-pages.sh serve=yes` is the only way to see the language selector resolve. `pages.yml`'s build job **is** that script, so CI builds exactly what a local run with the same options builds. `.ps1` twins on Windows, `key=value` options and `--help` on both.
 
 ## Coding Standards
 
@@ -205,7 +205,7 @@ scripts/build-docs.sh            # 英語 → 日本語の順に、どちらも 
 scripts/build-pages.sh serve=yes # 公開ツリー、両ロケール -> http://localhost:8000/
 ```
 
-必ず両ロケールを、英語を先にビルドします。英語ビルドは `site/`（その中に `site/ja` がある）を消すため、英語だけビルドすると古い日本語サイトが残り、壊したページが無傷に見えます。`mkdocs.base.yml` が `strict: true` を設定します。`zensical serve` は `--strict` を付けても何も検証せず、1 ロケールずつしか配信しないため、言語セレクタの動作を確認できるのは `build-pages.sh serve=yes` だけです。`pages.yml` のビルドジョブはそのスクリプトなので、CI が建てるものは、同じオプションで手元で建てたものと一致します。Windows は `.ps1` 版を使い、どちらも `key=value` オプションと `--help` を取ります。
+必ず両ロケールを、英語を先にビルドします。英語ビルドは `site/`（その中に `site/ja` がある）を消すため、英語だけビルドすると日本語サイトは残らず消えます。`mkdocs.base.yml` が `strict: true` を設定します。`zensical serve` は `--strict` を付けても何も検証せず、1 ロケールずつしか配信しないため、言語セレクタの動作を確認できるのは `build-pages.sh serve=yes` だけです。`pages.yml` のビルドジョブはそのスクリプトなので、CI が建てるものは、同じオプションで手元で建てたものと一致します。Windows は `.ps1` 版を使い、どちらも `key=value` オプションと `--help` を取ります。
 
 ## コーディング規約
 
