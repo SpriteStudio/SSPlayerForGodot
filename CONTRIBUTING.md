@@ -1,5 +1,8 @@
 # Contributing to SSPlayerForGodot
 
+> [!IMPORTANT]
+> We are not accepting pull requests until a Contributor License Agreement (CLA) is in place. Issues remain open for bug reports and requests.
+
 Thank you for your interest in contributing to SSPlayerForGodot! We welcome all kinds of contributions, including bug reports, feature requests, documentation improvements, and code contributions.
 
 ## Table of Contents
@@ -111,6 +114,9 @@ By contributing to this project, you agree that your contributions will be licen
 ---
 
 # SSPlayerForGodot への貢献について
+
+> [!IMPORTANT]
+> コントリビューターライセンス契約（CLA）の準備が整うまで、プルリクエストは受け付けていません。バグ報告や要望は引き続き Issue で受け付けています。
 
 SSPlayerForGodot にご関心をお寄せいただき、ありがとうございます！ バグ報告、機能提案、ドキュメントの改善、コードの提供など、あらゆる形での貢献を歓迎します。
 
