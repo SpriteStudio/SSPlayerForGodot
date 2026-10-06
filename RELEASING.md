@@ -77,8 +77,8 @@ Then dispatch the release workflow from the branch. With `upload_release` left f
 
 ```bash
 BRANCH=$(git branch --show-current | grep '^release/')
-git push origin "${BRANCH:?}"
-RUN=$(gh workflow run release.yml --ref "${BRANCH:?}" | sed 's|.*/||')
+git push origin "${BRANCH:?}" &&
+  RUN=$(gh workflow run release.yml --ref "${BRANCH:?}" | sed 's|.*/||')
 gh run watch "${RUN:?}" --exit-status
 gh run view "${RUN:?}" --log | grep -E 'not set|Skipping' | grep -v 'echo '   # must print nothing
 ```
@@ -109,8 +109,8 @@ gh pr merge "${BRANCH:?}" --merge
 Then tag `main`. The tag is read from `ss_player/VERSION.txt` rather than typed, because nothing else compares the two, and it goes on the merge commit only when its tree is the branch's, which `git diff` confirms by printing nothing:
 
 ```bash
-git switch main && git pull --ff-only
-git diff --stat --exit-code HEAD^2 HEAD &&
+git switch main && git pull --ff-only &&
+  git diff --stat --exit-code HEAD^2 HEAD &&
   TAG=$(cat ss_player/VERSION.txt) &&
   git tag -a "$TAG" -m "$TAG" && git push origin "$TAG"
 ```
@@ -147,8 +147,8 @@ Merge `main` into `develop`. After a patch release this conflicts where `develop
 ```bash
 git fetch origin --tags
 TAG=$(git describe --exact-match --tags --match 'v[0-9]*' origin/main)
-git switch develop && git pull --ff-only
-git merge --no-ff origin/main && git push origin develop
+git switch develop && git pull --ff-only &&
+  git merge --no-ff origin/main && git push origin develop
 git push origin --delete "release/$(echo "${TAG:?}" | sed 's/^v//' | cut -d. -f1,2)"
 ```
 
@@ -180,9 +180,9 @@ git push origin ":refs/tags/${TAG:?}" && git tag -d "${TAG:?}"
 
 ```bash
 RUN=<run-id>
-git checkout "$(gh run view "${RUN:?}" --json headSha -q .headSha)"
-gh run download "${RUN:?}" -D artifacts
-scripts/build-release.sh
+git checkout "$(gh run view "${RUN:?}" --json headSha -q .headSha)" &&
+  gh run download "${RUN:?}" -D artifacts &&
+  scripts/build-release.sh
 ```
 
 Its check is the one nothing else in the pipeline does. `misc/spritestudio.gdextension` names a file per platform and build target — nineteen paths — plus three icons, and **Godot resolves them at load time**: a name that does not match what shipped fails no build and no zip, and the extension simply does not load, on that one platform, for whoever downloaded it. Every path in the descriptor is looked up inside the finished archive, and so is every page `README.md` links to.
@@ -270,8 +270,8 @@ gh pr create -B main -H "${BRANCH:?}" --title "Release $(cat ss_player/VERSION.t
 
 ```bash
 BRANCH=$(git branch --show-current | grep '^release/')
-git push origin "${BRANCH:?}"
-RUN=$(gh workflow run release.yml --ref "${BRANCH:?}" | sed 's|.*/||')
+git push origin "${BRANCH:?}" &&
+  RUN=$(gh workflow run release.yml --ref "${BRANCH:?}" | sed 's|.*/||')
 gh run watch "${RUN:?}" --exit-status
 gh run view "${RUN:?}" --log | grep -E 'not set|Skipping' | grep -v 'echo '   # 何も出力されないこと
 ```
@@ -302,8 +302,8 @@ gh pr merge "${BRANCH:?}" --merge
 続けて `main` にタグを打ちます。タグは手で打たず `ss_player/VERSION.txt` から読みます。この 2 つを照らし合わせるものが他に無いためです。タグはマージコミットのツリーがブランチと同じときにだけ打たれます。`git diff` が何も出力しないことがその確認です。
 
 ```bash
-git switch main && git pull --ff-only
-git diff --stat --exit-code HEAD^2 HEAD &&
+git switch main && git pull --ff-only &&
+  git diff --stat --exit-code HEAD^2 HEAD &&
   TAG=$(cat ss_player/VERSION.txt) &&
   git tag -a "$TAG" -m "$TAG" && git push origin "$TAG"
 ```
@@ -340,8 +340,8 @@ gh run watch "${RUN:?}" --exit-status             # run が出るまで RUN は�
 ```bash
 git fetch origin --tags
 TAG=$(git describe --exact-match --tags --match 'v[0-9]*' origin/main)
-git switch develop && git pull --ff-only
-git merge --no-ff origin/main && git push origin develop
+git switch develop && git pull --ff-only &&
+  git merge --no-ff origin/main && git push origin develop
 git push origin --delete "release/$(echo "${TAG:?}" | sed 's/^v//' | cut -d. -f1,2)"
 ```
 
@@ -373,9 +373,9 @@ git push origin ":refs/tags/${TAG:?}" && git tag -d "${TAG:?}"
 
 ```bash
 RUN=<run-id>
-git checkout "$(gh run view "${RUN:?}" --json headSha -q .headSha)"
-gh run download "${RUN:?}" -D artifacts
-scripts/build-release.sh
+git checkout "$(gh run view "${RUN:?}" --json headSha -q .headSha)" &&
+  gh run download "${RUN:?}" -D artifacts &&
+  scripts/build-release.sh
 ```
 
 このスクリプトの検査は、パイプラインの他のどこもやっていないものです。`misc/spritestudio.gdextension` はプラットフォームとビルドターゲットごとにファイルを 1 つずつ、計 19 個のパスとアイコン 3 つを指名し、**Godot はそれをロード時に解決します**。実際に同梱された名前と食い違っていても、ビルドも zip も失敗しません。ダウンロードした人の、そのプラットフォームでだけ、拡張が読み込まれないだけです。記述子のすべてのパスを、出来上がったアーカイブの中で引き当てます。`README.md` がリンクするページも同じように引き当てます。
