@@ -4,7 +4,7 @@ Maintainers only. Contributors do not run any of this — see [CONTRIBUTING.md](
 
 ## Cutting a release
 
-Anyone with the Write role on this repository can cut a release: every step is a branch, a pull request, a tag, a workflow run or a Release, and the signing credentials are organization secrets, so nothing depends on whose machine runs it beyond the two checks in step 3 that no CI covers. You need `git` and `gh` (run `gh auth login` once), plus the toolchain in [CONTRIBUTING.md](./CONTRIBUTING.md) for those checks. The commands are bash; on Windows, run them in Git Bash.
+Anyone with the Write role on this repository can cut a release: every step is a branch, a pull request, a tag, a workflow run or a Release, and the signing credentials are organization secrets, so nothing depends on whose machine runs it beyond the two checks in step 3 that no CI covers. You need `git` and `gh` 2.87 or later (run `gh auth login` once), plus the toolchain in [CONTRIBUTING.md](./CONTRIBUTING.md) for those checks. The commands are bash; on Windows, run them in Git Bash.
 
 A release is a tag on `main`, pushed first and built second. The version is written in one place, `ss_player/VERSION.txt`, and it holds the tag itself — `v7.0.0-beta.1` — which the build stamps, without the `v`, into the binaries. What a Release carries is the GDExtension add-on, `ssplayer-godot-extension-<godot>.zip` for the Godot API that `release.yml` builds against; the custom-module engine is built from source by whoever uses it. The SDK it ships is pinned on its own, in `scripts/SDK_VERSION.txt`. Branches follow git-flow: `develop` integrates, `main` holds released commits only, and `release/X.Y` lives for one release — cut from `develop` for a new `X.Y`, or from the line's latest tag for a patch, and deleted once the release is out.
 
@@ -45,14 +45,14 @@ Open the pull request into `main`; its CI builds the GDExtension for Linux and t
 ```bash
 git push -u origin "$BRANCH"
 gh pr create -B main --title "Release v$VERSION" --body ""
-gh workflow run release.yml --ref "$BRANCH"
-gh run watch                                      # the run takes a few seconds to appear
+RUN=$(gh workflow run release.yml --ref "$BRANCH" | sed 's|.*/||')
+gh run watch "${RUN:?}" --exit-status
 ```
 
 A missing signing secret does not fail the macOS and iOS jobs: they skip signing or notarization, say so in the log, and pass. In this run and in step 5, this must print nothing:
 
 ```bash
-gh run view <run-id> --log | grep -E 'not set|Skipping' | grep -v 'echo '   # <run-id>: the one gh run watch shows
+gh run view "${RUN:?}" --log | grep -E 'not set|Skipping' | grep -v 'echo '
 ```
 
 Two things no CI runs, so run them on the branch: the headless test suite (the Test section of [CONTRIBUTING.md](./CONTRIBUTING.md)) and a build of the custom-module engine (2-B in the [build guide](./docs/en/setup/build.md)).
@@ -74,8 +74,8 @@ git tag -a "$TAG" -m "$TAG" && git push origin "$TAG"
 Dispatch from the tag. The run builds again and creates a **draft** Release carrying the add-on zip, `SHA256SUMS` and generated notes; nothing is public yet. `upload_release=true` from anything but a `v*` tag fails the run rather than skipping the Release quietly. Check the signing as in step 3.
 
 ```bash
-gh workflow run release.yml --ref "$TAG" -f upload_release=true
-gh run watch
+RUN=$(gh workflow run release.yml --ref "${TAG:?}" -f upload_release=true | sed 's|.*/||')
+gh run watch "${RUN:?}" --exit-status
 ```
 
 ### 6. Publish
@@ -83,7 +83,8 @@ gh run watch
 Open the draft on the [Releases](https://github.com/SpriteStudio/SSPlayerForGodot/releases) page, check that the add-on zip and `SHA256SUMS` are attached, edit the notes, choose **Set as a pre-release** or **Set as the latest release** (a tag with a `-` can be either), and **Publish release**. Publishing also starts `pages.yml`, which deploys the [documentation site](https://cri-middleware.github.io/SSPlayerForGodot/). Watch the run through, then open the site: a failed run leaves the Release published and the site as it was. Once the cause is fixed, re-run it; a re-run builds the same tag.
 
 ```bash
-gh run watch                                      # pages.yml; the run takes a few seconds to appear
+RUN=$(gh run list -w pages.yml -b "${TAG:?}" -L 1 --json databaseId -q '.[0].databaseId')
+gh run watch "${RUN:?}" --exit-status             # RUN is empty for the few seconds before the run appears
 ```
 
 ### 7. Merge back
@@ -125,7 +126,7 @@ Its check is the one nothing else in the pipeline does. `misc/spritestudio.gdext
 
 ## リリースの手順
 
-このリポジトリの Write ロールを持つ人なら誰でもリリースできます。どの手順もブランチ・プルリクエスト・タグ・ワークフローの実行・Release のいずれかで、署名の資格情報は組織の Secret なので、CI が受け持たない手順 3 の 2 つの確認を除けば、誰の手元で実行しても結果は変わりません。必要なのは `git` と `gh`（最初に一度 `gh auth login`）で、その 2 つの確認には [CONTRIBUTING.md](./CONTRIBUTING.md) のツールチェーンも要ります。コマンドは bash で書いています。Windows では Git Bash で実行してください。
+このリポジトリの Write ロールを持つ人なら誰でもリリースできます。どの手順もブランチ・プルリクエスト・タグ・ワークフローの実行・Release のいずれかで、署名の資格情報は組織の Secret なので、CI が受け持たない手順 3 の 2 つの確認を除けば、誰の手元で実行しても結果は変わりません。必要なのは `git` と `gh` 2.87 以降（最初に一度 `gh auth login`）で、その 2 つの確認には [CONTRIBUTING.md](./CONTRIBUTING.md) のツールチェーンも要ります。コマンドは bash で書いています。Windows では Git Bash で実行してください。
 
 リリースは `main` 上のタグです。先にタグを push し、ビルドはその後です。バージョンが書かれているのは `ss_player/VERSION.txt` の 1 か所だけで、中身はタグそのもの（`v7.0.0-beta.1`）です。ビルドは `v` を除いた値をバイナリに刻みます。Release に載るのは GDExtension のアドオン、`release.yml` がビルドする Godot API 向けの `ssplayer-godot-extension-<godot>.zip` です。custom module 版のエンジンは、使う人がソースからビルドします。同梱する SDK のバージョンはこれとは別で、`scripts/SDK_VERSION.txt` で固定します。ブランチは git-flow です。`develop` が統合ブランチで、`main` にはリリース済みのコミットだけが入ります。`release/X.Y` は 1 回のリリースの間だけ使います。新しい `X.Y` なら `develop` から、パッチならその系統の最新のタグから切り、リリースが済んだら消します。
 
@@ -166,14 +167,14 @@ git commit -m "chore(release): v$VERSION"
 ```bash
 git push -u origin "$BRANCH"
 gh pr create -B main --title "Release v$VERSION" --body ""
-gh workflow run release.yml --ref "$BRANCH"
-gh run watch                                      # run が一覧に出るまで数秒かかる
+RUN=$(gh workflow run release.yml --ref "$BRANCH" | sed 's|.*/||')
+gh run watch "${RUN:?}" --exit-status
 ```
 
 署名の Secret が欠けていても macOS と iOS のジョブは失敗しません。署名や公証を飛ばし、その旨をログに出して成功します。この run と手順 5 の run で、次のコマンドが何も出力しないことを確認してください。
 
 ```bash
-gh run view <run-id> --log | grep -E 'not set|Skipping' | grep -v 'echo '   # <run-id> は gh run watch が表示するもの
+gh run view "${RUN:?}" --log | grep -E 'not set|Skipping' | grep -v 'echo '
 ```
 
 どの CI も実行しないものが 2 つあるので、ブランチ上で実行してください。ヘッドレスのテストスイート（[CONTRIBUTING.md](./CONTRIBUTING.md) のテストの節）と、custom module 版エンジンのビルド（[ビルドガイド](./docs/ja/setup/build.md)の 2-B）です。
@@ -195,8 +196,8 @@ git tag -a "$TAG" -m "$TAG" && git push origin "$TAG"
 タグからワークフローを実行します。もう一度ビルドし、アドオンの zip と `SHA256SUMS`、自動生成のリリースノートを持つ**下書き**の Release を作ります。まだ何も公開されていません。`v*` タグ以外からの `upload_release=true` は、Release を黙って飛ばさずに実行を失敗させます。署名は手順 3 と同じように確認します。
 
 ```bash
-gh workflow run release.yml --ref "$TAG" -f upload_release=true
-gh run watch
+RUN=$(gh workflow run release.yml --ref "${TAG:?}" -f upload_release=true | sed 's|.*/||')
+gh run watch "${RUN:?}" --exit-status
 ```
 
 ### 6. 公開
@@ -204,7 +205,8 @@ gh run watch
 [Releases](https://github.com/SpriteStudio/SSPlayerForGodot/releases) ページで下書きを開き、アドオンの zip と `SHA256SUMS` が添付されていることを確かめ、リリースノートを編集し、**Set as a pre-release** か **Set as the latest release** を選んで（`-` を含むタグはどちらも選べます）、**Publish release** を押します。公開すると `pages.yml` が動き、[ドキュメントサイト](https://cri-middleware.github.io/SSPlayerForGodot/) をデプロイします。run を最後まで見届けてから、サイトを開いて確かめます。run が失敗しても Release は公開されたままで、サイトは元のまま残ります。原因を直したら run を再実行します。再実行は同じタグをビルドします。
 
 ```bash
-gh run watch                                      # pages.yml。run が一覧に出るまで数秒かかる
+RUN=$(gh run list -w pages.yml -b "${TAG:?}" -L 1 --json databaseId -q '.[0].databaseId')
+gh run watch "${RUN:?}" --exit-status             # run が一覧に出るまでの数秒間は RUN が空になる
 ```
 
 ### 7. develop へ戻す
