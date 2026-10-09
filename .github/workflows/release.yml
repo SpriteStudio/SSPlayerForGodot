@@ -1,8 +1,8 @@
 name: release gdextension
-# workflow_dispatch のみ。
-# 既定 (upload_release=false) はビルドのみ (release/X.Y ブランチ上の QA 用)。
-# Release の作成は v* タグ ref 上で upload_release=true を付けた明示的な
-# dispatch のみ。
+# workflow_dispatch のみ。ref で役割が決まる。
+# ブランチからの実行はビルドのみ (release/X.Y ブランチ上の QA 用)。
+# v* タグからの実行は、upload_release (既定 true) で下書きの Release も作る。
+# タグにすでに Release があれば、下書きでも公開済みでも触れない。
 on:
   workflow_dispatch:
     inputs:
@@ -14,11 +14,9 @@ on:
         default: "4.7"
         description: "Target Godot API version"
       upload_release:
-        # 既定でビルドのみ行い、true を指定した場合だけ Release を作成する
-        # (v* タグの ref 上で実行したときのみ有効)。
-        description: 'Upload to GitHub Release (only effective on a v* tag ref)'
+        description: 'Draft the GitHub Release, to publish by hand. Only from a v* tag that has no Release yet; from a branch the run is a build.'
         required: false
-        default: false
+        default: true
         type: boolean
 
 env:
@@ -280,19 +278,33 @@ jobs:
           # build fails, in a step that has nothing to do with the release.
           retention-days: 7
 
-      # A release is a tag that was pushed first and dispatched from second, so
-      # asking to upload from anything else is an operator error, not a mode.
-      # Failing beats the silent skip this used to do: a dispatch meant to cut a
-      # release should not report success and quietly produce no Release. Leave
-      # upload_release=false to build the extension off a branch.
-      - name: Refuse to release from a non-tag ref
-        if: inputs.upload_release && !startsWith(github.ref, 'refs/tags/v')
+      # The ref decides what the run is: a v* tag is a release, anything else is
+      # a build, kept on the run and drafting nothing. A tag that already has a
+      # Release, draft or published, keeps it as it is, so a run from an old tag
+      # rebuilds without touching the files people have downloaded and checked
+      # against its SHA256SUMS. To have a Release made again, delete it first.
+      - name: Decide on the GitHub Release
+        id: release
+        if: inputs.upload_release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: |
-          echo "::error::upload_release=true needs a v* tag. Push the tag first, then dispatch this workflow from it (Use workflow from → the tag)."
-          exit 1
+          case "$GITHUB_REF" in
+            refs/tags/v*) ;;
+            *) echo "::notice::${GITHUB_REF_NAME} is not a v* tag — a build, no Release."; exit 0 ;;
+          esac
+          if out="$(gh release view "$GITHUB_REF_NAME" --json isDraft 2>&1)"; then
+            echo "::notice::${GITHUB_REF_NAME} already has a Release — left as it is. Delete it to have it made again."
+          elif [ "$out" = "release not found" ]; then
+            echo "draft=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "$out"
+            exit 1
+          fi
 
       - name: Create GitHub Release
-        if: inputs.upload_release
+        if: steps.release.outputs.draft == 'true'
         uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
           files: |
