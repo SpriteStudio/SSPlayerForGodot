@@ -186,12 +186,6 @@ struct PartDataBuilder;
 struct Label;
 struct LabelBuilder;
 
-struct PartAnimationDataInstance;
-struct PartAnimationDataInstanceBuilder;
-
-struct PartAnimationDataEffect;
-struct PartAnimationDataEffectBuilder;
-
 struct PartAnimationData;
 struct PartAnimationDataBuilder;
 
@@ -6370,126 +6364,6 @@ inline ::flatbuffers::Offset<Label> CreateLabelDirect(
       name_hash,
       name__,
       time);
-}
-
-struct PartAnimationDataInstance FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
-  typedef PartAnimationDataInstanceBuilder Builder;
-  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
-    VT_INDEX = 4,
-    VT_VALUE = 6
-  };
-  uint16_t index() const {
-    return GetField<uint16_t>(VT_INDEX, 0);
-  }
-  bool KeyCompareLessThan(const PartAnimationDataInstance * const o) const {
-    return index() < o->index();
-  }
-  int KeyCompareWithValue(uint16_t _index) const {
-    return static_cast<int>(index() > _index) - static_cast<int>(index() < _index);
-  }
-  const ss::format::PartAttributeInstance *value() const {
-    return GetPointer<const ss::format::PartAttributeInstance *>(VT_VALUE);
-  }
-  template <bool B = false>
-  bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
-    return VerifyTableStart(verifier) &&
-           VerifyField<uint16_t>(verifier, VT_INDEX, 2) &&
-           VerifyOffsetRequired(verifier, VT_VALUE) &&
-           verifier.VerifyTable(value()) &&
-           verifier.EndTable();
-  }
-};
-
-struct PartAnimationDataInstanceBuilder {
-  typedef PartAnimationDataInstance Table;
-  ::flatbuffers::FlatBufferBuilder &fbb_;
-  ::flatbuffers::uoffset_t start_;
-  void add_index(uint16_t index) {
-    fbb_.AddElement<uint16_t>(PartAnimationDataInstance::VT_INDEX, index, 0);
-  }
-  void add_value(::flatbuffers::Offset<ss::format::PartAttributeInstance> value) {
-    fbb_.AddOffset(PartAnimationDataInstance::VT_VALUE, value);
-  }
-  explicit PartAnimationDataInstanceBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
-        : fbb_(_fbb) {
-    start_ = fbb_.StartTable();
-  }
-  ::flatbuffers::Offset<PartAnimationDataInstance> Finish() {
-    const auto end = fbb_.EndTable(start_);
-    auto o = ::flatbuffers::Offset<PartAnimationDataInstance>(end);
-    fbb_.Required(o, PartAnimationDataInstance::VT_VALUE);
-    return o;
-  }
-};
-
-inline ::flatbuffers::Offset<PartAnimationDataInstance> CreatePartAnimationDataInstance(
-    ::flatbuffers::FlatBufferBuilder &_fbb,
-    uint16_t index = 0,
-    ::flatbuffers::Offset<ss::format::PartAttributeInstance> value = 0) {
-  PartAnimationDataInstanceBuilder builder_(_fbb);
-  builder_.add_value(value);
-  builder_.add_index(index);
-  return builder_.Finish();
-}
-
-struct PartAnimationDataEffect FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
-  typedef PartAnimationDataEffectBuilder Builder;
-  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
-    VT_INDEX = 4,
-    VT_VALUE = 6
-  };
-  uint16_t index() const {
-    return GetField<uint16_t>(VT_INDEX, 0);
-  }
-  bool KeyCompareLessThan(const PartAnimationDataEffect * const o) const {
-    return index() < o->index();
-  }
-  int KeyCompareWithValue(uint16_t _index) const {
-    return static_cast<int>(index() > _index) - static_cast<int>(index() < _index);
-  }
-  const ss::format::PartAttributeEffect *value() const {
-    return GetPointer<const ss::format::PartAttributeEffect *>(VT_VALUE);
-  }
-  template <bool B = false>
-  bool Verify(::flatbuffers::VerifierTemplate<B> &verifier) const {
-    return VerifyTableStart(verifier) &&
-           VerifyField<uint16_t>(verifier, VT_INDEX, 2) &&
-           VerifyOffsetRequired(verifier, VT_VALUE) &&
-           verifier.VerifyTable(value()) &&
-           verifier.EndTable();
-  }
-};
-
-struct PartAnimationDataEffectBuilder {
-  typedef PartAnimationDataEffect Table;
-  ::flatbuffers::FlatBufferBuilder &fbb_;
-  ::flatbuffers::uoffset_t start_;
-  void add_index(uint16_t index) {
-    fbb_.AddElement<uint16_t>(PartAnimationDataEffect::VT_INDEX, index, 0);
-  }
-  void add_value(::flatbuffers::Offset<ss::format::PartAttributeEffect> value) {
-    fbb_.AddOffset(PartAnimationDataEffect::VT_VALUE, value);
-  }
-  explicit PartAnimationDataEffectBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
-        : fbb_(_fbb) {
-    start_ = fbb_.StartTable();
-  }
-  ::flatbuffers::Offset<PartAnimationDataEffect> Finish() {
-    const auto end = fbb_.EndTable(start_);
-    auto o = ::flatbuffers::Offset<PartAnimationDataEffect>(end);
-    fbb_.Required(o, PartAnimationDataEffect::VT_VALUE);
-    return o;
-  }
-};
-
-inline ::flatbuffers::Offset<PartAnimationDataEffect> CreatePartAnimationDataEffect(
-    ::flatbuffers::FlatBufferBuilder &_fbb,
-    uint16_t index = 0,
-    ::flatbuffers::Offset<ss::format::PartAttributeEffect> value = 0) {
-  PartAnimationDataEffectBuilder builder_(_fbb);
-  builder_.add_value(value);
-  builder_.add_index(index);
-  return builder_.Finish();
 }
 
 struct PartAnimationData FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
