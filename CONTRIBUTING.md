@@ -73,7 +73,7 @@ To compile the Godot Extension, put the SDK runtime in place first, then compile
 .\scripts\build-extension.ps1
 ```
 
-`build-runtime` builds the runtime from the submodule into the same `ss_player/runtime/` instead, and needs Rust: use it when changing the runtime itself, or while the pinned SDK release does not exist yet.
+`build-runtime` builds the runtime from the submodule into the same `ss_player/runtime/` instead, and needs Rust: use it when changing the runtime itself.
 
 Once built, open the `examples/Ringo` project in the Godot Editor to verify your changes. Its `.ssab` is not committed, so first drop `ss_player/SpriteStudio-SDK/tests/Ringo/Ringo.sspj` onto the **SS Import** dock. The other projects under `examples/` — `Scripting` (GDScript control and signals), `Override_Ringo` (per-part overrides), and `overall` / `overall_gdextension` (the verification projects, custom module and GDExtension) — are filled the same way from the SDK's `tests/`, or all at once by `deploy-examples` below.
 
@@ -188,7 +188,7 @@ Godot Engineとのネイティブな統合と高いパフォーマンスを維�
 .\scripts\build-extension.ps1
 ```
 
-`build-runtime` は、代わりに submodule からランタイムをビルドして同じ `ss_player/runtime/` に置きます。Rust が必要で、ランタイム自体を変更するときや、固定した SDK リリースがまだ存在しないときに使います。
+`build-runtime` は、代わりに submodule からランタイムをビルドして同じ `ss_player/runtime/` に置きます。Rust が必要で、ランタイム自体を変更するときに使います。
 
 ビルド完了後、Godot エディタで `examples/Ringo` プロジェクトなどを開き、変更内容をテストしてください。`.ssab` はコミットしていないので、先に `ss_player/SpriteStudio-SDK/tests/Ringo/Ringo.sspj` を **SS Import** ドックへドロップしてください。`examples/` にはほかに `Scripting`（GDScript による制御とシグナル）、`Override_Ringo`（パーツ単位の上書き）、`overall` / `overall_gdextension`（検証用。カスタムモジュール版と GDExtension 版）があり、同じように SDK の `tests/` から変換するか、下の `deploy-examples` でまとめて用意します。
 

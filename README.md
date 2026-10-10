@@ -20,11 +20,11 @@ A high-performance extension plugin (GDExtension / Custom Module) for playing an
 
 Comprehensive documentation is available in the `docs/` folder — the data-flow diagram, key features and supported versions are all there:
 
-- [**Documentation site (hosted)**](https://cri-middleware.github.io/SSPlayerForGodot/) — 🚧 live after the first release
+- [**Documentation site (hosted)**](https://cri-middleware.github.io/SSPlayerForGodot/)
 - [**Documentation (English)**](./docs/en/index.md)
 - [**ドキュメント (日本語)**](./docs/ja/index.md)
-- [**For AI assistants**](https://cri-middleware.github.io/SSPlayerForGodot/llms.txt) — these docs as Markdown: `llms.txt` indexes the pages and `llms-full.txt` holds all of them in one file — 🚧 live after the first release
-- [**SpriteStudio Docs (portal)**](https://cri-middleware.github.io/SpriteStudio-Docs/) — the SDK and every official player in one place — 🚧 live after the first release
+- [**For AI assistants**](https://cri-middleware.github.io/SSPlayerForGodot/llms.txt) — these docs as Markdown: `llms.txt` indexes the pages and `llms-full.txt` holds all of them in one file
+- [**SpriteStudio Docs (portal)**](https://cri-middleware.github.io/SpriteStudio-Docs/) — the SDK and every official player in one place
 
 ### Quick Links (English)
 - [Installation](./docs/en/setup/install.md)
@@ -42,9 +42,7 @@ Everything after that (scripting, signals, per-part overrides) is the same path 
 
 You need a 4.7-series Godot editor from the [official site](https://godotengine.org/download/). Projects have to be authored in **SpriteStudio 7.5 or later**.
 
-> 🚧 **This generation is not released yet.** [Releases](https://github.com/cri-middleware/SSPlayerForGodot/releases) currently carries only the **1.x** plugin, which has neither `SSABResource` nor `SpriteStudioPlayer2D` — both arrived with 7.x. Until the first 7.x release, build the add-on from a checkout with the [Build Guide](./docs/en/setup/build.md).
-
-1. **Install**: Download the latest package from [Releases](https://github.com/cri-middleware/SSPlayerForGodot/releases), extract it, and copy its `addons` folder into your Godot project root.
+1. **Install**: On [Releases](https://github.com/cri-middleware/SSPlayerForGodot/releases), open the newest Release whose tag starts with `v7` and download `ssplayer-godot-extension-<Godot version>.zip` from its **Assets** — Releases whose tag starts with `v1` are the 1.x plugin, which has neither `SSABResource` nor `SpriteStudioPlayer2D`. Extract it, and copy its `addons` folder into your Godot project root.
 2. **Import**: Drag your `.sspj` from your file manager onto the **SS Import** dock to convert it to `.ssab` (see [Asset Import and Editor Integration](./docs/en/workflow/usage_asset_pipeline.md)).
 3. **Play**: Add a `SpriteStudioPlayer2D` node and assign the `.ssab` to its `Ssab` property.
 

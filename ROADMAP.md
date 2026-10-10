@@ -19,14 +19,13 @@ waits on the runtime is under *Needs SDK* and tracked in the
 - [ ] **Six blend modes draw as Mix** — Screen, Exclusion, Invert, Div2, Screen2 and Overlay2 composite as ordinary
   alpha blending, because `gpu_blend_for` maps every blend to the four a canvas item's `render_mode` can express
   (Mix / Mul / Add / Sub; Mulalpha and Mul2 draw as Mul, as SpriteStudio Player for wgpu and `ssplayer-pixi` do, which
-  no one has checked against the Editor). A converted Spine rig with 21 of its 510 parts in Screen — light effects over
-  a black ground — draws each as a black panel; the check is that its light-effect animation draws without the
-  panels and matches wgpu's drawing of the same frame.
+  no one has checked against the Editor). A part in Screen — a light effect over a black ground — draws as a black
+  panel; the check is that such an animation draws without the panels and matches wgpu's drawing of the same frame.
   - [ ] **Screen / Screen2 / Invert / Exclusion** — these take `1 − dst` as the source factor, which `render_mode`
     cannot say, so a partcolor shader variant has to sample `hint_screen_texture` and write the composite. Godot
     copies the back buffer only for the first screen-reading item of a frame, so mark each such batch's canvas item
     with `canvas_item_set_copy_to_backbuffer`, its rect cut to the batch's bounds: one GPU copy per batch per frame,
-    about half a millisecond on the rig above on a desktop GPU under Vulkan; the Compatibility renderer and
+    about half a millisecond for 21 Screen parts on a desktop GPU under Vulkan; the Compatibility renderer and
     tile-based mobile GPUs are unmeasured.
   - [ ] **Copy-free Screen / Screen2** — `blend_premul_alpha` with the output alpha set to `max(r, g, b)` of the
     premultiplied source: exact for grey light, slightly darkens a coloured light's weaker channels, untried. Invert
