@@ -12,6 +12,7 @@ strict: true
 theme:
   name: material
   custom_dir: overrides
+  favicon: assets/favicon.svg
   icon:
     logo: simple/godotengine
   palette:
