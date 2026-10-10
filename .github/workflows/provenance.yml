@@ -17,17 +17,14 @@ jobs:
         with:
           python-version: '3.13'
 
-      - name: Install the scanners
-        run: pip install scanoss==1.54.2 scancode-toolkit==32.5.0
+      - name: Install ScanCode
+        run: pip install scancode-toolkit==32.5.0
 
       - name: Export the tracked files
         run: |
           git archive -o "$RUNNER_TEMP/tracked.tar" HEAD
           mkdir "$RUNNER_TEMP/src" "$RUNNER_TEMP/out"
           tar -xf "$RUNNER_TEMP/tracked.tar" -C "$RUNNER_TEMP/src"
-
-      - name: SCANOSS
-        run: scanoss-py scan --no-wfp-output --threads 1 -o "$RUNNER_TEMP/out/scanoss.json" "$RUNNER_TEMP/src"
 
       - name: ScanCode
         run: scancode -c -l -n 4 --quiet --strip-root --json-pp "$RUNNER_TEMP/out/scancode.json" "$RUNNER_TEMP/src"
@@ -36,13 +33,6 @@ jobs:
         working-directory: ${{ runner.temp }}/out
         run: |
           {
-            echo '## SCANOSS'
-            echo
-            echo '| File | Match | Lines | Component | Source file | Source lines |'
-            echo '| --- | --- | --- | --- | --- | --- |'
-            jq -r 'to_entries[] | .key as $f | .value[] | select(.id != "none")
-              | "| `\($f)` | \(.id) \(.matched) | \(.lines) | [\(.component) \(.version)](\(.url)) | `\(.file)` | \(.oss_lines) |"' scanoss.json
-            echo
             echo '## ScanCode'
             echo
             echo '| File | Copyright holders | License |'
