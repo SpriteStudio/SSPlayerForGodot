@@ -42,7 +42,7 @@ Everything after that (scripting, signals, per-part overrides) is the same path 
 
 You need a 4.7-series Godot editor from the [official site](https://godotengine.org/download/). Projects have to be authored in **SpriteStudio 7.5 or later**.
 
-1. **Install**: On [Releases](https://github.com/cri-middleware/SSPlayerForGodot/releases), open the newest Release whose tag starts with `v7` and download `ssplayer-godot-extension-4.7.zip` from its **Assets** — Releases whose tag starts with `v1` are the 1.x plugin, which has neither `SSABResource` nor `SpriteStudioPlayer2D`. Extract it, and copy its `addons` folder into your Godot project root.
+1. **Install**: On [Releases](https://github.com/cri-middleware/SSPlayerForGodot/releases), open the newest Release whose tag starts with `v7` and download `ssplayer-godot-extension-<Godot version>.zip` from its **Assets** — Releases whose tag starts with `v1` are the 1.x plugin, which has neither `SSABResource` nor `SpriteStudioPlayer2D`. Extract it, and copy its `addons` folder into your Godot project root.
 2. **Import**: Drag your `.sspj` from your file manager onto the **SS Import** dock to convert it to `.ssab` (see [Asset Import and Editor Integration](./docs/en/workflow/usage_asset_pipeline.md)).
 3. **Play**: Add a `SpriteStudioPlayer2D` node and assign the `.ssab` to its `Ssab` property.
 

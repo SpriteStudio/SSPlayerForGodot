@@ -40,7 +40,7 @@
 
 [公式サイト](https://godotengine.org/download/) から 4.7 系の Godot エディタを用意してください。対応するのは **SpriteStudio 7.5 以上**で作成されたプロジェクトです。
 
-1. **配置**: [Releases](https://github.com/cri-middleware/SSPlayerForGodot/releases) で、タグが `v7` で始まる最新の Release を開き、**Assets** から `ssplayer-godot-extension-4.7.zip` をダウンロードします（タグが `v1` で始まる Release は 1.x 系のプラグインで、`SSABResource` も `SpriteStudioPlayer2D` もありません）。展開して、`addons` フォルダをご自身の Godot プロジェクトのルートにコピーします。
+1. **配置**: [Releases](https://github.com/cri-middleware/SSPlayerForGodot/releases) で、タグが `v7` で始まる最新の Release を開き、**Assets** から `ssplayer-godot-extension-<Godot のバージョン>.zip` をダウンロードします（タグが `v1` で始まる Release は 1.x 系のプラグインで、`SSABResource` も `SpriteStudioPlayer2D` もありません）。展開して、`addons` フォルダをご自身の Godot プロジェクトのルートにコピーします。
 2. **インポート**: `.sspj` をファイルマネージャーから **SS Import** ドックへドラッグ＆ドロップして `.ssab` へ変換します（[アセットのインポートとエディタ連携](./docs/ja/workflow/usage_asset_pipeline.md) を参照）。
 3. **再生**: `SpriteStudioPlayer2D` ノードを追加し、`Ssab` プロパティに生成された `.ssab` を指定します。
 
