@@ -10,7 +10,7 @@ A release is a tag on `main`, pushed first and built second. The version is writ
 
 Every block runs as written in a new shell: it works out what it needs from the checkout, git and GitHub. Two values are set by hand, written as placeholders to fill in: `<version>`, the version being released, as in `7.0.1`, in steps 1 and 2; and `<sdk-tag>`, the SpriteStudio-SDK release it ships, as in `v7.0.0`, in step 2. Left as they are, the line stops with a syntax error. A value that would not stop a command by itself when empty is read as `${VAR:?}`: an empty `SDK_TAG` would pin no SDK, and an empty `RUN` would let the signing check in step 3 print nothing and pass.
 
-An agent can run every block, but two steps are a person's to decide: the merge in step 4, which puts the release on `main`, and step 6, which publishes it for good.
+An agent can run every block, but a person sorts the scan's matches in step 3, and two steps are a person's to decide: the merge in step 4, which puts the release on `main`, and step 6, which publishes it for good.
 
 ### 1. Branch
 
@@ -86,6 +86,17 @@ gh run view "${RUN:?}" --log | grep -E 'not set|Skipping' | grep -v 'echo '   # 
 A missing signing secret does not fail the macOS and iOS jobs: they skip signing or notarization, say so in the log, and pass. The block's last command looks for that, here and in step 5, and must print nothing. If it prints anything, no change on the branch fixes it: the organization's signing secrets are not reaching this repository. An organization owner decides which repositories they reach, and on GitHub Free they cannot reach a private one. Dispatch again once they do; in step 5, delete the draft first.
 
 Two things no CI runs, so run them on the branch: the headless test suite (the Test section of [CONTRIBUTING.md](./CONTRIBUTING.md)) and a build of the custom-module engine (2-B in the [build guide](./docs/en/setup/build.md)). Neither needs a person once the toolchain is in place, but the suite's verdict is its `RESULT` line, the marker after it and its `ENGINE` line, not its exit code.
+
+Last, scan the branch for code copied from others. `provenance.yml` runs SCANOSS, which matches the tracked files against public open-source code by sending their fingerprints rather than the code, and ScanCode, which finds copyright and license notices. It keeps both reports and a summary of what they found on the run (`provenance`); the block downloads them into `qa/<run ID>` and prints the summary. **A person sorts the matches.** A match with the earlier SpriteStudio Players and SDK is our own code. A match with a library this repository bundles must be listed in `THIRD_PARTY_NOTICES.md`. Anything else is rewritten, unless its license, read at its source, is compatible with BSD-3-Clause and the code keeps the notice that license asks for. After any change on the branch, run the block again.
+
+```bash
+BRANCH=$(git branch --show-current | grep '^release/')
+git push origin "${BRANCH:?}" &&
+  RUN=$(gh workflow run provenance.yml --ref "${BRANCH:?}" | sed 's|.*/||')
+gh run watch "${RUN:?}" --exit-status &&
+  gh run download "${RUN:?}" -n provenance -D "qa/$RUN" &&
+  cat "qa/$RUN/summary.md"
+```
 
 ### 4. Merge and tag
 
@@ -203,7 +214,7 @@ Its check is the one nothing else in the pipeline does. `misc/spritestudio.gdext
 
 どのブロックも、新しいシェルで書かれたとおりに実行できます。必要なものはチェックアウト・git・GitHub から求めます。手で設定する値は 2 つで、埋めるプレースホルダとして書いてあります。手順 1 と 2 の `<version>` はリリースするバージョン（`7.0.1` など）、手順 2 の `<sdk-tag>` は同梱する SpriteStudio-SDK のリリース（`v7.0.0` など）です。埋めずに実行すると、その行は構文エラーで止まります。空でもそれだけでは止まらない値は `${VAR:?}` で読みます。`SDK_TAG` が空だと SDK を何も固定せず、`RUN` が空だと手順 3 の署名の確認が何も出力せずに通ってしまうためです。
 
-どのブロックもエージェントに実行させられますが、2 つの手順は人が判断します。リリースを `main` に入れる手順 4 のマージと、取り消せない公開を行う手順 6 です。
+どのブロックもエージェントに実行させられますが、手順 3 の照合の一致は人が仕分け、2 つの手順は人が判断します。リリースを `main` に入れる手順 4 のマージと、取り消せない公開を行う手順 6 です。
 
 ### 1. ブランチ
 
@@ -279,6 +290,17 @@ gh run view "${RUN:?}" --log | grep -E 'not set|Skipping' | grep -v 'echo '   # 
 署名の Secret が欠けていても macOS と iOS のジョブは失敗しません。署名や公証を飛ばし、その旨をログに出して成功します。ブロックの最後のコマンドはそれを探すもので、ここでも手順 5 でも何も出力されてはいけません。何か出力されたら、ブランチをどう変えても直りません。組織の署名用 Secret がこのリポジトリに届いていません。どのリポジトリに届けるかは組織のオーナーが決めますが、GitHub Free では private のリポジトリには届けられません。届くようになったら実行し直してください。手順 5 では先に下書きを消します。
 
 どの CI も実行しないものが 2 つあるので、ブランチ上で実行してください。ヘッドレスのテストスイート（[CONTRIBUTING.md](./CONTRIBUTING.md) のテストの節）と、custom module 版エンジンのビルド（[ビルドガイド](./docs/ja/setup/build.md)の 2-B）です。ツールチェーンが揃っていればどちらも人の手は要りませんが、スイートの判定は終了コードではなく、`RESULT` の行、その後のマーカー、`ENGINE` の行で行います。
+
+最後に、他者のコードを写した箇所が無いかを、ブランチで照合します。`provenance.yml` は SCANOSS と ScanCode を実行します。SCANOSS は、追跡しているファイルを公開されているオープンソースのコードと照合します。送るのはコードではなく指紋です。ScanCode は、著作権表示とライセンスの記述を見つけます。2 つの報告と、見つかったものの一覧は run に残ります（`provenance`）。ブロックはそれを `qa/<run ID>` にダウンロードし、一覧を表示します。**一致は人が仕分けます。** 以前の SpriteStudio の Player・SDK との一致は、自社のコードです。このリポジトリが同梱するライブラリとの一致は、`THIRD_PARTY_NOTICES.md` に載っていなければなりません。それ以外は書き直します。残せるのは、出所で確かめたライセンスが BSD-3-Clause と両立し、そのライセンスが求める表示をコードに残すときだけです。ブランチを変えたら、このブロックをもう一度実行します。
+
+```bash
+BRANCH=$(git branch --show-current | grep '^release/')
+git push origin "${BRANCH:?}" &&
+  RUN=$(gh workflow run provenance.yml --ref "${BRANCH:?}" | sed 's|.*/||')
+gh run watch "${RUN:?}" --exit-status &&
+  gh run download "${RUN:?}" -n provenance -D "qa/$RUN" &&
+  cat "qa/$RUN/summary.md"
+```
 
 ### 4. マージとタグ
 
