@@ -20,11 +20,11 @@
 
 詳細な使い方は `docs/` フォルダ内のドキュメントにあります。データフロー図・主な機能・対応バージョンもそちらです。
 
-- [**ドキュメントサイト (ホスト版)**](https://cri-middleware.github.io/SSPlayerForGodot/ja/) — 🚧 初回リリース後に公開
+- [**ドキュメントサイト (ホスト版)**](https://cri-middleware.github.io/SSPlayerForGodot/ja/)
 - [**ドキュメント (日本語)**](./docs/ja/index.md)
 - [**Documentation (English)**](./docs/en/index.md)
-- [**AI アシスタント向け**](https://cri-middleware.github.io/SSPlayerForGodot/ja/llms.txt) — このドキュメントを Markdown で提供します。`llms.txt` はページの目次、`llms-full.txt` は全ページを 1 ファイルにまとめたものです — 🚧 初回リリース後に公開
-- [**SpriteStudio Docs（ポータル）**](https://cri-middleware.github.io/SpriteStudio-Docs/ja/) — SDK と全公式 Player の入口 — 🚧 初回リリース後に公開
+- [**AI アシスタント向け**](https://cri-middleware.github.io/SSPlayerForGodot/ja/llms.txt) — このドキュメントを Markdown で提供します。`llms.txt` はページの目次、`llms-full.txt` は全ページを 1 ファイルにまとめたものです
+- [**SpriteStudio Docs（ポータル）**](https://cri-middleware.github.io/SpriteStudio-Docs/ja/) — SDK と全公式 Player の入口
 
 ### クイックリンク (日本語)
 - [インストール](./docs/ja/setup/install.md)
@@ -40,9 +40,7 @@
 
 [公式サイト](https://godotengine.org/download/) から 4.7 系の Godot エディタを用意してください。対応するのは **SpriteStudio 7.5 以上**で作成されたプロジェクトです。
 
-> 🚧 **この世代はまだリリースされていません。** [Releases](https://github.com/cri-middleware/SSPlayerForGodot/releases) にあるのは **1.x** 系のプラグインのみで、`SSABResource` も `SpriteStudioPlayer2D` もありません（どちらも 7.x で入ったクラスです）。7.x の初回リリースまでは、[ビルドガイド](./docs/ja/setup/build.md) に従ってチェックアウトからアドオンをビルドしてください。
-
-1. **配置**: [Releases](https://github.com/cri-middleware/SSPlayerForGodot/releases) から最新パッケージをダウンロードして展開し、`addons` フォルダをご自身の Godot プロジェクトのルートにコピーします。
+1. **配置**: [Releases](https://github.com/cri-middleware/SSPlayerForGodot/releases) で、タグが `v7` で始まる最新の Release を開き、**Assets** から `ssplayer-godot-extension-4.7.zip` をダウンロードします（タグが `v1` で始まる Release は 1.x 系のプラグインで、`SSABResource` も `SpriteStudioPlayer2D` もありません）。展開して、`addons` フォルダをご自身の Godot プロジェクトのルートにコピーします。
 2. **インポート**: `.sspj` をファイルマネージャーから **SS Import** ドックへドラッグ＆ドロップして `.ssab` へ変換します（[アセットのインポートとエディタ連携](./docs/ja/workflow/usage_asset_pipeline.md) を参照）。
 3. **再生**: `SpriteStudioPlayer2D` ノードを追加し、`Ssab` プロパティに生成された `.ssab` を指定します。
 
