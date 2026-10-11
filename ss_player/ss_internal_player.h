@@ -478,6 +478,11 @@ private:
         // canvas_item pool — texture lookup happens at draw time via
         // `cellmap_hash` returned per draw command.
         void* effect_slot = nullptr;
+        // This frame's step (`_step_effect_slots`), taken for every slot before
+        // the draw walks the draw order and read back when the part's Effect
+        // batch comes up. The plan stays valid until the slot's next step.
+        bool step_visible = false;
+        const uint8_t* step_plan = nullptr;
         Vector<RID> emitter_cis;
         // What each of `emitter_cis` draws, by the same index.
         LocalVector<SsDynamicMesh> emitter_meshes;
@@ -888,6 +893,7 @@ private:
     // in `_update_instance_children` (sim phase), so this is positioning
     // only — no event scanning, no playback config, no frame stepping.
     void _emit_instance_slot(const DrawFrame& f, RID ci, int p_idx, const float* slot_matrix);
+    void _step_effect_slots(const DrawFrame& f);
     void _emit_effect_slot(const DrawFrame& f, RID ci, int p_idx, const float* slot_matrix);
 
     int _build_normal(const DrawFrame& f, int p_idx,

@@ -1902,6 +1902,8 @@ void SsInternalPlayer::_drawAnimation(float frame_no, float delta_seconds, bool 
         if (_instance_children[i].player) _instance_children[i].player->setRootVisible(false);
     }
 
+    _step_effect_slots(f);
+
     // Per-frame draw-order counter: batch CIs and per-part CIs draw in the
     // order they are emitted (rank order), not in CI-pool allocation order.
     _draw_seq = 0;
@@ -2316,6 +2318,33 @@ void SsInternalPlayer::_emit_instance_slot(const DrawFrame& f, RID ci, int p_idx
     }
 }
 
+void SsInternalPlayer::_step_effect_slots(const DrawFrame& f) {
+    // Every slot, every frame, whether or not its part is in this frame's draw
+    // order: a hidden effect part has no Effect batch, and stepping only the
+    // drawn ones froze an independently playing effect for as long as its part
+    // was hidden. The draw then reads each step back (`_emit_effect_slot`).
+    //
+    // All per-slot effect lifecycle — event resolution, transition edges,
+    // accumulator, dead-effect skip, simulator update, emitter resource
+    // resolution, particle quad emission — runs inside ss_effect_slot_step.
+    // The returned EffectDrawPlan carries everything Godot needs to draw:
+    // commands keyed by cellmap_hash + blend, plus flat verts/uvs/colors/indices.
+    // _currentAnimationData is null whenever _fetchAnimation bailed out; the
+    // effect simulator still needs a sane frame rate to step with.
+    const float fps = (_currentAnimationData && _currentAnimationData->fps() > 0)
+                      ? (float)_currentAnimationData->fps() : 60.0f;
+    for (uint32_t i = 0; i < _effect_slots.size(); i++) {
+        EffectSlotState& slot = _effect_slots[i];
+        if (!slot.effect_slot) continue;
+        const ss_effect_event_info ev = ss_runtime_get_active_effect_event(runtime_ctx, i);
+        const ss_effect_step_result step = ss_effect_slot_step(
+            slot.effect_slot, ev, f.frame_no, f.delta_seconds, fps, f.parent_looped,
+            /*y_flip*/ true, /*vert_stride*/ 2);
+        slot.step_visible = step.visible;
+        slot.step_plan = step.draw_plan_buf;
+    }
+}
+
 void SsInternalPlayer::_emit_effect_slot(const DrawFrame& f, RID ci, int p_idx, const float* slot_matrix) {
     if (p_idx < 0 || (uint32_t)p_idx >= _effect_slots.size()) return;
     EffectSlotState& slot = _effect_slots[p_idx];
@@ -2324,26 +2353,13 @@ void SsInternalPlayer::_emit_effect_slot(const DrawFrame& f, RID ci, int p_idx, 
         return;
     }
 
-    // All per-slot effect lifecycle — event resolution, transition edges,
-    // accumulator, dead-effect skip, simulator update, emitter resource
-    // resolution, particle quad emission — runs inside ss_effect_slot_step.
-    // The returned EffectDrawPlan carries everything Godot needs to draw:
-    // commands keyed by cellmap_hash + blend, plus flat verts/uvs/colors/indices.
-    const ss_effect_event_info ev = ss_runtime_get_active_effect_event(runtime_ctx, (uint32_t)p_idx);
-    // _currentAnimationData is null whenever _fetchAnimation bailed out; the
-    // effect simulator still needs a sane frame rate to step with.
-    const float fps = (_currentAnimationData && _currentAnimationData->fps() > 0)
-                      ? (float)_currentAnimationData->fps() : 60.0f;
-    const ss_effect_step_result step = ss_effect_slot_step(
-        slot.effect_slot, ev, f.frame_no, f.delta_seconds, fps, f.parent_looped,
-        /*y_flip*/ true, /*vert_stride*/ 2);
-    if (!step.visible) {
+    if (!slot.step_visible) {
         f.rs->canvas_item_set_visible(ci, false);
         return;
     }
     f.rs->canvas_item_set_visible(ci, true);
 
-    const auto* plan = ss::runtime::GetEffectDrawPlan(step.draw_plan_buf);
+    const auto* plan = ss::runtime::GetEffectDrawPlan(slot.step_plan);
     if (!plan) {
         f.rs->canvas_item_clear(ci);
         return;
