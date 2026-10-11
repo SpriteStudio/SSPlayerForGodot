@@ -50,6 +50,7 @@ void register_ss_player_types() {
   // with the engine below and nothing else uses them, so they stay out of the
   // class reference rather than sit there undocumented. The resources are the API.
   GDREGISTER_CLASS(SSABResource);
+  GDREGISTER_INTERNAL_CLASS(SsParsedSsab);
   GDREGISTER_INTERNAL_CLASS(SSABResourceFormatLoader);
   GDREGISTER_INTERNAL_CLASS(SSABResourceFormatSaver);
   GDREGISTER_CLASS(SSQBResource);

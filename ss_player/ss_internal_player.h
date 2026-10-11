@@ -429,13 +429,16 @@ private:
     uint32_t _animationSelectedHash = 0;
     const ss::format::AnimationData* _currentAnimationData = nullptr;
     void* runtime_ctx = nullptr;
-    void* runtime_res = nullptr;
+    // The parse `runtime_ctx` is bound to, shared with every other player of
+    // the same buffer. Held until the runtime has let go of it (re-bound, reset
+    // or destroyed), since it keeps the borrowed bytes alive.
+    Ref<SsParsedSsab> _parsed;
     // Set whenever the assigned SSAB (or its buffer) changes, cleared once
-    // `_fetchAnimation` has re-borrowed and re-bound it. An animation change
+    // `_fetchAnimation` has re-bound it. An animation change
     // within the same SSAB must NOT re-bind: binding drops every part override,
     // including the Permanent-priority ones documented to survive it.
     bool _res_rebind_pending = true;
-    // `_ssabRes` generation at the time `runtime_res` borrowed its buffer. A
+    // `_ssabRes` generation at the time `_parsed` borrowed its buffer. A
     // mismatch means the resource reloaded in place and the borrow (plus
     // `_currentAnimationData`, which points into it) dangles.
     uint32_t _borrowed_generation = 0;

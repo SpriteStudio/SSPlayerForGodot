@@ -27,6 +27,28 @@ using namespace godot;
 
 #include "format/ssab.h"
 
+// The runtime's parse of one SSABResource buffer, shared by every player bound
+// to that buffer: the parse builds every played animation's caches, and a
+// player's runtime only reads it. It holds the bytes it borrowed, so a player
+// still bound to it after the resource takes new bytes (a re-import) keeps
+// reading the old ones until it re-binds, and they go with the last such player.
+class SsParsedSsab : public RefCounted {
+  GDCLASS(SsParsedSsab, RefCounted);
+
+protected:
+  static void _bind_methods() {}
+
+public:
+  ~SsParsedSsab();
+  // The runtime resource handle, for binding and for creating effect slots.
+  void *get_handle() const { return _handle; }
+
+private:
+  friend class SSABResource;
+  PackedByteArray _bytes;
+  void *_handle = nullptr;
+};
+
 class SSABResource : public Resource {
   GDCLASS(SSABResource, Resource);
 
@@ -73,6 +95,10 @@ public:
   // get_data_ptr() compare it to spot an in-place reload; the pointer alone
   // won't do, since a same-sized buffer often re-allocates at the same address.
   uint32_t get_generation() const { return _generation; }
+  // The runtime's parse of the current buffer, made on first use and shared by
+  // every player bound to it; a new buffer gets a new one. Invalid when the
+  // runtime cannot read the bytes.
+  Ref<SsParsedSsab> get_parsed();
   ss::format::AnimationData *find_animation(const String &name);
   ss::format::AnimationData *find_animation_by_hash(uint32_t name_hash);
   String get_parent_dir() const;
@@ -113,6 +139,8 @@ private:
     mutable int8_t _valid_cache = -1;
     // Bumped alongside `_valid_cache`; see get_generation().
     uint32_t _generation = 0;
+    // See get_parsed(). Dropped wherever `binary` is replaced.
+    Ref<SsParsedSsab> _parsed;
     // The actual verification; is_valid() is the cached front-end.
     bool _verify_binary() const;
     // (sound_list_name_hash << 32 | sound_name_hash) -> loaded AudioStream.

@@ -147,3 +147,55 @@ func test_an_unbound_player_has_no_canvas() -> void:
 	var res := load(RINGO)
 	eq(res.get_canvas_size("no such animation"), Vector2.ZERO, "an unknown animation")
 	eq(res.get_canvas_rect("no such animation"), Rect2(), "an unknown animation's box")
+
+
+## Players of one pack share the runtime's parse of it: the SSABResource holds
+## it, and each player's runtime binds it. What one player sets stays on its own
+## runtime, and the parse outlives every player still bound to it.
+func test_an_override_stays_on_the_player_that_set_it() -> void:
+	var a := make_player(RINGO)
+	var b := make_player(RINGO)
+	for p in [a, b]:
+		p.set_animation("walk")
+		p.play()
+	var dt := 1.0 / maxf(1.0, float(a.get_frame_rate()))
+	var part: String = a.get_part_names()[1]
+	ok(a.set_part_visibility_override(part, true), "the override was accepted")
+	a.advance(dt)
+	b.advance(dt)
+	ok(a.is_part_hidden(part), "hidden on the player that set it")
+	not_ok(b.is_part_hidden(part), "visible on another player of the same pack")
+
+
+func test_a_player_of_the_pack_plays_on_when_another_goes() -> void:
+	var kept := make_player(RINGO)
+	var gone := make_player(RINGO)
+	for p in [kept, gone]:
+		p.set_animation("walk")
+		p.play()
+	var dt := 1.0 / maxf(1.0, float(kept.get_frame_rate()))
+	kept.advance(dt)
+	gone.advance(dt)
+	root.remove_child(gone)
+	gone.free()
+	for i in 3:
+		kept.advance(dt)
+	near(kept.get_frame_no(), 4.0, "the one left keeps playing", 0.001)
+
+
+## A re-import replaces the pack's bytes in place. A player bound to the old
+## parse reads the old bytes until its next update re-binds it to the new one.
+func test_a_pack_reloaded_in_place_keeps_its_players_playing() -> void:
+	var res: Resource = load(RINGO)
+	var p := make_player(RINGO)
+	p.set_animation("walk")
+	p.play()
+	var dt := 1.0 / maxf(1.0, float(p.get_frame_rate()))
+	p.advance(dt)
+	eq(res.load_from_file(RINGO), OK, "the pack reloaded in place")
+	p.advance(dt)
+	eq(p.get_current_animation(), "walk", "the player kept its animation")
+	p.play()
+	for i in 3:
+		p.advance(dt)
+	near(p.get_frame_no(), 3.0, "and plays from the new bytes", 0.001)
