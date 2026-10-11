@@ -289,10 +289,7 @@ SsInternalPlayer::~SsInternalPlayer() {
         ss_runtime_destroy(runtime_ctx);
         runtime_ctx = nullptr;
     }
-    if (runtime_res != nullptr) {
-        ss_resource_destroy(runtime_res);
-        runtime_res = nullptr;
-    }
+    _parsed.unref();
 }
 
 void SsInternalPlayer::_reconfigure() {
@@ -2001,7 +1998,7 @@ void SsInternalPlayer::_load_external_ssabs() {
 }
 
 bool SsInternalPlayer::_subtree_borrow_stale() const {
-    if (!_ssabRes.is_null() && runtime_res != nullptr &&
+    if (!_ssabRes.is_null() && _parsed.is_valid() &&
         _ssabRes->get_generation() != _borrowed_generation) {
         return true;
     }
@@ -2127,7 +2124,7 @@ void SsInternalPlayer::_clear_effect_slots() {
 
 void SsInternalPlayer::_setup_effect_slots() {
     _clear_effect_slots();
-    if (_ssabRes.is_null() || runtime_res == nullptr) return;
+    if (_ssabRes.is_null() || _parsed.is_null()) return;
     auto binary = _ssabRes->get_ss_anime_binary();
     if (!binary || !binary->parts()) return;
 
@@ -2144,7 +2141,7 @@ void SsInternalPlayer::_setup_effect_slots() {
         if (!pt) continue;
 
         const uint32_t seed = (uint32_t)i ^ pt->ref_effect_name_hash();
-        void* effect_slot = ss_effect_slot_create(runtime_res, pt->ref_effect_name_hash(), seed);
+        void* effect_slot = ss_effect_slot_create(_parsed->get_handle(), pt->ref_effect_name_hash(), seed);
         if (!effect_slot) {
             // The hash is all the authored reference carries -- the effect's name
             // is not in the part -- so it stays in the message, next to the part
@@ -3479,10 +3476,8 @@ void SsInternalPlayer::_fetchAnimation() {
         _clear_batch_canvas_items();
         _free_per_part_canvas_items();
         _free_mask_targets();
-        if (runtime_res != nullptr) {
-            ss_resource_destroy(runtime_res);
-            runtime_res = nullptr;
-        }
+        // Reset has unbound the runtime, so the parse can go.
+        _parsed.unref();
         return;
     }
 
@@ -3504,22 +3499,17 @@ void SsInternalPlayer::_fetchAnimation() {
     // Permanent-priority overrides are documented to persist (the runtime's
     // setup step keeps them). Re-binding here made every `animation = ...`
     // discard them.
-    if (_res_rebind_pending || runtime_res == nullptr) {
-        if (runtime_res != nullptr) {
-            ss_resource_destroy(runtime_res);
-            runtime_res = nullptr;
-        }
-
-        // Borrow (do not copy) the resource's buffer to keep loading zero-copy.
-        // The buffer must remain valid and unmodified until runtime_res is
-        // destroyed; every resource change re-creates this borrow.
-        runtime_res = ss_resource_create_borrow(_ssabRes->get_data_ptr(), _ssabRes->get_data_size());
-        if (runtime_res == nullptr) {
+    if (_res_rebind_pending || _parsed.is_null()) {
+        // The resource's parse of its current buffer, shared with every other
+        // player of it (and the instance children that play from it); a buffer
+        // replaced in place gets a new one.
+        Ref<SsParsedSsab> parsed = _ssabRes->get_parsed();
+        if (parsed.is_null()) {
             ERR_PRINT(vformat("[SS] %s: the runtime could not read these %d bytes as an SSAB. Re-convert the .sspj it came from.", ssab_label(_ssabRes), _ssabRes->get_data_size()));
             return;
         }
 
-        bool binded = ss_runtime_bind_resource(runtime_ctx, runtime_res);
+        bool binded = ss_runtime_bind_resource(runtime_ctx, parsed->get_handle());
         if (!binded) {
             // TODO: append
             // `ss_runtime_error_message(ss_runtime_get_last_error(runtime_ctx))`
@@ -3530,6 +3520,8 @@ void SsInternalPlayer::_fetchAnimation() {
             ERR_PRINT(vformat("[SS] %s: the runtime read the SSAB but would not bind it.", ssab_label(_ssabRes)));
             return;
         }
+        // The previous parse goes only now that the runtime is bound to this one.
+        _parsed = parsed;
         _res_rebind_pending = false;
         // Which incarnation of the buffer this borrow refers to.
         _borrowed_generation = _ssabRes->get_generation();

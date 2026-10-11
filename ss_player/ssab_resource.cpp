@@ -1,5 +1,6 @@
 
 #include "ssab_resource.h"
+#include "ssruntime.h"
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
 #include <godot_cpp/classes/file_access.hpp>
 #include <godot_cpp/core/error_macros.hpp>
@@ -78,6 +79,7 @@ Error SSABResource::load_from_file(const String &path) {
   // `binary` reassigned or cleared, invalidate outstanding borrows too.
   _valid_cache = -1;
   _generation++;
+  _parsed.unref();
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
   binary = FileAccess::get_file_as_bytes(path);
   if (binary.size() == 0) {
@@ -212,6 +214,32 @@ const ss::format::SsAnimeBinary *SSABResource::get_ss_anime_binary() {
         return nullptr;
     }
     return ss::format::GetSsAnimeBinary(this->binary.ptr());
+}
+
+SsParsedSsab::~SsParsedSsab() {
+  // Every player lets go of its reference only after its runtime and effect
+  // slots have let go of the resource, so this handle is the last one: the
+  // resource goes here, and the bytes it borrowed go after it.
+  if (_handle) {
+    ss_resource_destroy(_handle);
+  }
+}
+
+Ref<SsParsedSsab> SSABResource::get_parsed() {
+  if (_parsed.is_null()) {
+    Ref<SsParsedSsab> parsed;
+    parsed.instantiate();
+    // Borrow (do not copy) to keep loading zero-copy. The holder's own
+    // reference to the buffer keeps it valid and unmodified for as long as the
+    // parse lives: `binary` is only ever replaced, never written in place.
+    parsed->_bytes = binary;
+    parsed->_handle = ss_resource_create_borrow(parsed->_bytes.ptr(), parsed->_bytes.size());
+    if (!parsed->_handle) {
+      return Ref<SsParsedSsab>();
+    }
+    _parsed = parsed;
+  }
+  return _parsed;
 }
 
 const uint8_t *SSABResource::get_data_ptr() {
@@ -463,6 +491,7 @@ Error SSABResource::copy_from(const Ref<Resource> &p_resource) {
   // This path emits no "changed", so the generation is the only signal a
   // borrower gets that its buffer was replaced.
   _generation++;
+  _parsed.unref();
   return OK;
 }
 #endif
