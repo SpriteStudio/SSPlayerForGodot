@@ -57,8 +57,8 @@ owns node lifecycle, resources and batch rendering.
 
 ## Invariants
 
-*   **Release every Rust-allocated handle.** `SsState` and its siblings come back from the C-API owned; the
-    matching `*_release` is the only thing that frees them.
+*   **Release every Rust-allocated handle.** The runtime, resource, converter and slot handles come back
+    from the C-API owned; the matching `ss_*_destroy` is the only thing that frees them.
 *   **No per-frame allocations in the playback hot path.** Render from the `DrawBatch` plans the runtime
     emits, as they are.
 *   **`scripts/SDK_VERSION.txt` pins the SDK release**, and the binaries in `ss_player/runtime/` must be
