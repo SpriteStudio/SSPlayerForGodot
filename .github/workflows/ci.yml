@@ -47,11 +47,15 @@ jobs:
         include:
           - name: 🐧 Linux (GCC)
             platform: linux
+            pr-target: editor
+            pr-options: ''
             module-target: editor
             module-options: ''
 
           - name: 🌐 Web (wasm32)
             platform: web
+            pr-target: template_debug
+            pr-options: arch=wasm32 threads=no
             module-target: template_release
             module-options: arch=wasm32 threads=no
 
@@ -130,15 +134,22 @@ jobs:
           platform: ${{ matrix.platform }}
           os: ubuntu-latest
 
+      # A pull request builds one target, the one that compiles the most of
+      # ss_player: the editor on Linux, template_debug on the Web, which has no
+      # editor. The weekly tier builds every target the release scripts ship;
+      # the SCons cache it saves holds them all, so a PR's target restores from
+      # it, and a cold PR (godot-cpp moved, or a new month) compiles godot-cpp
+      # once instead of two or three times.
       - name: Build
         env:
           SCONS_CACHE: ~/.scons_cache
+          ALL_TARGETS: ${{ github.event_name != 'pull_request' || github.base_ref == 'main' }}
         run: |
           mkdir -p ~/.scons_cache
-          if [ "${{ matrix.platform }}" = "linux" ]; then
-            ./scripts/release-gdextension-linux.sh
-          elif [ "${{ matrix.platform }}" = "web" ]; then
-            ./scripts/release-gdextension-web.sh
+          if [ "$ALL_TARGETS" = true ]; then
+            ./scripts/release-gdextension-${{ matrix.platform }}.sh
+          else
+            ./scripts/build-extension.sh platform=${{ matrix.platform }} compiledb=no target=${{ matrix.pr-target }} ${{ matrix.pr-options }}
           fi
 
       - name: Save the SCons cache
