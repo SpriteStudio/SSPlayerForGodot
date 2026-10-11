@@ -65,7 +65,7 @@ git commit -m "chore(release): $(cat ss_player/VERSION.txt)"
 
 ### 3. Pull request, QA build and local checks
 
-Open the pull request into `main`; its CI builds the GDExtension for Linux and the Web.
+Open the pull request into `main`; its CI builds the GDExtension and the custom-module engine for all six platforms, and the documentation site.
 
 ```bash
 BRANCH=$(git branch --show-current | grep '^release/')
@@ -73,7 +73,7 @@ git push -u origin "${BRANCH:?}"
 gh pr create -B main -H "${BRANCH:?}" --title "Release $(cat ss_player/VERSION.txt)" --body ""
 ```
 
-Then dispatch the release workflow from the branch. A run from a branch builds all six platforms, signs the macOS and iOS binaries, assembles the add-on and checks it, keeps the result on the run (`ssplayer-godot-release-dist-<godot>`), and creates no Release. Fix anything on the branch and run this block again, until the run, the pull request's CI and the two checks below all pass.
+Then dispatch the release workflow from the branch. A run from a branch builds all six platforms, signs the macOS and iOS binaries, assembles the add-on and checks it, keeps the result on the run (`ssplayer-godot-release-dist-<godot>`), and creates no Release. Fix anything on the branch and run this block again, until the run, the pull request's CI and the test suite below all pass.
 
 ```bash
 BRANCH=$(git branch --show-current | grep '^release/')
@@ -85,7 +85,7 @@ gh run view "${RUN:?}" --log | grep -E 'not set|Skipping' | grep -v 'echo '   # 
 
 A missing signing secret does not fail the macOS and iOS jobs: they skip signing or notarization, say so in the log, and pass. The block's last command looks for that, here and in step 5, and must print nothing. If it prints anything, no change on the branch fixes it: the organization's signing secrets are not reaching this repository. An organization owner decides which repositories they reach, and on GitHub Free they cannot reach a private one. Dispatch again once they do; in step 5, delete the draft first.
 
-Two things no CI runs, so run them on the branch: the headless test suite (the Test section of [CONTRIBUTING.md](./CONTRIBUTING.md)) and a build of the custom-module engine (2-B in the [build guide](./docs/en/setup/build.md)). Neither needs a person once the toolchain is in place, but the suite's verdict is its `RESULT` line, the marker after it and its `ENGINE` line, not its exit code.
+One thing no CI runs, so run it on the branch: the headless test suite (the Test section of [CONTRIBUTING.md](./CONTRIBUTING.md)). It needs no person once the toolchain is in place, but its verdict is its `RESULT` line, the marker after it and its `ENGINE` line, not its exit code.
 
 Last, scan the branch for code copied from others. `scripts/scan-snippets.sh` matches the files tracked at `HEAD` against public open-source code with SCANOSS, sending their fingerprints rather than the code; it writes its report to `qa/scanoss-<commit>.json` and prints the matches. It runs on this machine, and needs Python 3: SCANOSS's free service limits calls per address, and GitHub's runners share addresses it has often limited already. `provenance.yml` runs ScanCode, which finds copyright and license notices, and keeps its report and a summary on the run (`provenance`); the block downloads them into `qa/<run ID>` and prints the summary. **A person sorts the matches.** A match with the earlier SpriteStudio Players and SDK is our own code. A match with a library this repository bundles must be listed in `THIRD_PARTY_NOTICES.md`. Anything else is rewritten, unless its license, read at its source, is compatible with BSD-3-Clause and the code keeps the notice that license asks for. After any change on the branch, run the block again.
 
@@ -270,7 +270,7 @@ git commit -m "chore(release): $(cat ss_player/VERSION.txt)"
 
 ### 3. プルリクエスト、QA ビルド、手元での確認
 
-`main` へのプルリクエストを作ります。その CI が GDExtension を Linux と Web 向けにビルドします。
+`main` へのプルリクエストを作ります。その CI が、6 プラットフォームすべての GDExtension と custom module 版エンジン、ドキュメントサイトをビルドします。
 
 ```bash
 BRANCH=$(git branch --show-current | grep '^release/')
@@ -278,7 +278,7 @@ git push -u origin "${BRANCH:?}"
 gh pr create -B main -H "${BRANCH:?}" --title "Release $(cat ss_player/VERSION.txt)" --body ""
 ```
 
-続けて、ブランチからリリースワークフローを実行します。ブランチからの実行では、6 プラットフォームすべてをビルドし、macOS と iOS のバイナリに署名し、アドオンを組み立てて検査し、結果を run に残し（`ssplayer-godot-release-dist-<godot>`）、Release は作りません。問題があればブランチで直し、このブロックをもう一度実行します。run、プルリクエストの CI、下の 2 つの確認がすべて通るまで繰り返します。
+続けて、ブランチからリリースワークフローを実行します。ブランチからの実行では、6 プラットフォームすべてをビルドし、macOS と iOS のバイナリに署名し、アドオンを組み立てて検査し、結果を run に残し（`ssplayer-godot-release-dist-<godot>`）、Release は作りません。問題があればブランチで直し、このブロックをもう一度実行します。run、プルリクエストの CI、下のテストスイートがすべて通るまで繰り返します。
 
 ```bash
 BRANCH=$(git branch --show-current | grep '^release/')
@@ -290,7 +290,7 @@ gh run view "${RUN:?}" --log | grep -E 'not set|Skipping' | grep -v 'echo '   # 
 
 署名の Secret が欠けていても macOS と iOS のジョブは失敗しません。署名や公証を飛ばし、その旨をログに出して成功します。ブロックの最後のコマンドはそれを探すもので、ここでも手順 5 でも何も出力されてはいけません。何か出力されたら、ブランチをどう変えても直りません。組織の署名用 Secret がこのリポジトリに届いていません。どのリポジトリに届けるかは組織のオーナーが決めますが、GitHub Free では private のリポジトリには届けられません。届くようになったら実行し直してください。手順 5 では先に下書きを消します。
 
-どの CI も実行しないものが 2 つあるので、ブランチ上で実行してください。ヘッドレスのテストスイート（[CONTRIBUTING.md](./CONTRIBUTING.md) のテストの節）と、custom module 版エンジンのビルド（[ビルドガイド](./docs/ja/setup/build.md)の 2-B）です。ツールチェーンが揃っていればどちらも人の手は要りませんが、スイートの判定は終了コードではなく、`RESULT` の行、その後のマーカー、`ENGINE` の行で行います。
+どの CI も実行しないものが 1 つあるので、ブランチ上で実行してください。ヘッドレスのテストスイート（[CONTRIBUTING.md](./CONTRIBUTING.md) のテストの節）です。ツールチェーンが揃っていれば人の手は要りませんが、判定は終了コードではなく、`RESULT` の行、その後のマーカー、`ENGINE` の行で行います。
 
 最後に、他者のコードを写した箇所が無いかを、ブランチで照合します。`scripts/scan-snippets.sh` は、`HEAD` で追跡しているファイルを、SCANOSS で公開されているオープンソースのコードと照合します。送るのはコードではなく指紋です。報告を `qa/scanoss-<commit>.json` に書き、一致を表示します。このスクリプトは手元で実行し、Python 3 が要ります。SCANOSS の無料のサービスはアドレスごとに回数を制限していて、GitHub のランナーはすでに制限されたアドレスを共有していることが多いためです。`provenance.yml` は ScanCode で著作権表示とライセンスの記述を見つけ、報告と一覧を run に残します（`provenance`）。ブロックはそれを `qa/<run ID>` にダウンロードし、一覧を表示します。**一致は人が仕分けます。** 以前の SpriteStudio の Player・SDK との一致は、自社のコードです。このリポジトリが同梱するライブラリとの一致は、`THIRD_PARTY_NOTICES.md` に載っていなければなりません。それ以外は書き直します。残せるのは、出所で確かめたライセンスが BSD-3-Clause と両立し、そのライセンスが求める表示をコードに残すときだけです。ブランチを変えたら、このブロックをもう一度実行します。
 

@@ -2,7 +2,9 @@ name: CI
 
 # Two tiers, as in SpriteStudio-SDK. Every pull request builds the GDExtension for
 # Linux and Web. The weekly run, a dispatch and the release PR (release/X.Y into
-# main) also build it for Windows, macOS, iOS and Android.
+# main) also build it for Windows, macOS, iOS and Android, and build the
+# custom-module engine on all six (Godot itself with ss_player compiled in, one
+# target each).
 on:
   pull_request:
     paths-ignore:
@@ -33,15 +35,22 @@ jobs:
   extension:
     name: ${{ matrix.name }}
     runs-on: ubuntu-latest
+    # A cold custom-module build, which this job runs off pull requests, takes
+    # most of this.
+    timeout-minutes: 120
     strategy:
       fail-fast: false
       matrix:
         include:
           - name: 🐧 Linux (GCC)
             platform: linux
+            module-target: editor
+            module-options: ''
 
           - name: 🌐 Web (wasm32)
             platform: web
+            module-target: template_release
+            module-options: arch=wasm32 threads=no
 
     defaults:
       run:
@@ -130,12 +139,23 @@ jobs:
           path: ~/.scons_cache
           key: ${{ runner.os }}-${{ matrix.platform }}-scons-${{ steps.scons.outputs.month }}-${{ github.sha }}
 
-  # The weekly tier. `github.base_ref == 'main'` is the release PR: under
-  # git-flow only release/X.Y is merged into main.
+      # The weekly tier. `github.base_ref == 'main'` is the release PR: under
+      # git-flow only release/X.Y is merged into main.
+      - name: Build the custom module
+        if: github.event_name != 'pull_request' || github.base_ref == 'main'
+        uses: ./.github/actions/build-module
+        with:
+          platform: ${{ matrix.platform }}
+          target: ${{ matrix.module-target }}
+          options: ${{ matrix.module-options }}
+
   platforms:
     name: ${{ matrix.name }}
     if: github.event_name != 'pull_request' || github.base_ref == 'main'
     runs-on: ${{ matrix.os }}
+    # A cold custom-module build takes most of this; Windows' editor is the
+    # longest, near an hour.
+    timeout-minutes: 120
     strategy:
       fail-fast: false
       matrix:
@@ -143,18 +163,26 @@ jobs:
           - name: 🏁 Windows (x86_64, MSVC)
             os: windows-latest
             platform: windows
+            module-target: editor
+            module-options: ''
 
           - name: 🍎 macOS (universal)
             os: macos-latest
             platform: macos
+            module-target: editor
+            module-options: ''
 
           - name: 🤖 Android (arm64)
             os: ubuntu-latest
             platform: android
+            module-target: template_release
+            module-options: arch=arm64
 
           - name: 🍏 iOS (arm64)
             os: macos-latest
             platform: ios
+            module-target: template_release
+            module-options: arch=arm64 ios_simulator=no
 
     defaults:
       run:
@@ -275,3 +303,10 @@ jobs:
         with:
           path: ~/.scons_cache
           key: ${{ runner.os }}-${{ matrix.platform }}-scons-${{ steps.scons.outputs.month }}-${{ github.sha }}
+
+      - name: Build the custom module
+        uses: ./.github/actions/build-module
+        with:
+          platform: ${{ matrix.platform }}
+          target: ${{ matrix.module-target }}
+          options: ${{ matrix.module-options }}
