@@ -55,6 +55,10 @@ jobs:
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
           workspaces: "ss_player/SpriteStudio-SDK"
+          # The key is the job id and the runner OS, which linux and web share.
+          # Without the platform they would share one cache: only the first to
+          # finish could save it, and the other would restore its target dir.
+          key: ${{ matrix.platform }}
 
       - name: Install Nightly Rust (Web only)
         if: matrix.platform == 'web'
