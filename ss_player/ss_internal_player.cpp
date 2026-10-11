@@ -2319,7 +2319,9 @@ void SsInternalPlayer::_step_effect_slots(const DrawFrame& f) {
     // Every slot, every frame, whether or not its part is in this frame's draw
     // order: a hidden effect part has no Effect batch, and stepping only the
     // drawn ones froze an independently playing effect for as long as its part
-    // was hidden. The draw then reads each step back (`_emit_effect_slot`).
+    // was hidden. A hidden part's slot steps with `draw` off, which moves its
+    // clock and builds no plan. The draw then reads each step back
+    // (`_emit_effect_slot`).
     //
     // All per-slot effect lifecycle — event resolution, transition edges,
     // accumulator, dead-effect skip, simulator update, emitter resource
@@ -2330,13 +2332,16 @@ void SsInternalPlayer::_step_effect_slots(const DrawFrame& f) {
     // effect simulator still needs a sane frame rate to step with.
     const float fps = (_currentAnimationData && _currentAnimationData->fps() > 0)
                       ? (float)_currentAnimationData->fps() : 60.0f;
+    const auto* parts = f.frameData->parts();
     for (uint32_t i = 0; i < _effect_slots.size(); i++) {
         EffectSlotState& slot = _effect_slots[i];
         if (!slot.effect_slot) continue;
         const ss_effect_event_info ev = ss_runtime_get_active_effect_event(runtime_ctx, i);
+        // The runtime leaves a hidden part out of the draw order.
+        const bool draw = parts && i < parts->size() && !parts->Get(i)->hide();
         const ss_effect_step_result step = ss_effect_slot_step(
             slot.effect_slot, ev, f.frame_no, f.delta_seconds, fps, f.parent_looped,
-            /*y_flip*/ true, /*vert_stride*/ 2);
+            /*y_flip*/ true, /*vert_stride*/ 2, draw);
         slot.step_visible = step.visible;
         slot.step_plan = step.draw_plan_buf;
     }
