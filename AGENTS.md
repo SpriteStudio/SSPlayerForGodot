@@ -2,82 +2,53 @@
 
 ## Operating rules
 
-*   Keep changes scoped to the requested task. Unrequested hardening is a suggestion, not a commit; a defect
-    you actually hit in the code you touched is not — fix it, or say plainly why you did not.
-*   Do not commit, push, or open PRs unless the user explicitly asks.
-*   Before editing, read enough surrounding context to understand callers and invariants, the ones below
-    included. If the read tool truncated a file, read the remaining ranges first.
-*   Follow the existing style of the file you touch (naming, type usage, control flow, error handling).
-*   **Anything that exists twice changes twice** — a page and its translation, a `.sh` and its `.ps1`. A
-    change that lands in one half is the defect this family produces most.
-*   **Never break a line between two Japanese characters**: Chrome draws that break as a visible space.
-*   **Finish by running this repository's checks**: the commands in [CONTRIBUTING.md](./CONTRIBUTING.md) —
-    build the extension, then `scripts/run-tests.sh`; for docs, the both-locale build it gives. Read what a
-    run says it verified rather than its exit code — several checks here pass, or skip themselves, when a
-    prerequisite is missing.
-*   **Do not restate here what another file owns.** The table below says which file that is; a fact that
-    belongs to none of them goes where it will be seen to go stale.
-*   **Never commit inside the `ss_player/SpriteStudio-SDK` submodule.** A change the core needs is a pull
-    request in the SDK repository, followed by a submodule bump here.
-*   **Playback and rendering semantics are the SDK's** — see
-    [its AGENTS.md](./ss_player/SpriteStudio-SDK/AGENTS.md) and the porting guide in
-    `ss_player/SpriteStudio-SDK/libs/ssruntime/docs/`; where the guide is silent, SSPlayerForWgpu's
-    behaviour decides. Do not reimplement the rules they own.
-*   **Code comments do not cite the SDK's porting guide** — no section numbers, page paths or quotes.
-    Its sections move as it is revised and nothing checks a citation inside a comment; say what breaks
-    if the code changes, and leave the rule to the guide.
-*   **Never quote or include `godot` or `godot-cpp` source** in responses or suggestions; they are external
-    dependencies.
+*   **Unrequested hardening is a suggestion, not a commit.** A defect you hit in code you touched is not:
+    fix it, or say why you did not.
+*   **Anything that exists twice changes twice** — a page and its translation, a `.sh` and its `.ps1`.
+    Missing one half is this family's most common defect.
+*   **Never break a line between two Japanese characters**; Chrome renders the break as a space.
+*   **Finish with this repository's checks**: build the extension, then `scripts/run-tests.sh`, and for docs
+    the both-locale build — all in [CONTRIBUTING.md](./CONTRIBUTING.md). Read what a run says it verified,
+    not its exit code — several checks pass, or skip themselves, without a prerequisite.
+*   **Do not restate what another file owns**; the table below says which file. A fact no file owns goes
+    where its staleness will be noticed.
+*   **Never commit inside the `ss_player/SpriteStudio-SDK` submodule.** A core change is an SDK pull
+    request, then a submodule bump here.
+*   **Playback and rendering semantics are the SDK's**: its
+    [AGENTS.md](./ss_player/SpriteStudio-SDK/AGENTS.md) and the porting guide in
+    `ss_player/SpriteStudio-SDK/libs/ssruntime/docs/`. Where the guide is silent, SSPlayerForWgpu
+    decides. Do not reimplement either.
+*   **Code comments never cite the porting guide** (sections, paths, quotes): it moves, and nothing checks
+    the citation. Say what breaks instead.
 
 ## What this repo is
 
-A Godot integration for SpriteStudio: a C++ `SpriteStudioPlayer2D` node, buildable either as a
-**GDExtension** or as a **custom module**, driving the Rust `libssruntime` over a C-API to play
-`.ssab` binaries. `.sspj` projects are converted at import time with `libssconverter`. The C++ side
-owns node lifecycle, resources and batch rendering.
-
-| Path | Role |
-|---|---|
-| `ss_player/` | C++ source: node bindings, editor import dock, FFI wrappers. |
-| `ss_player/runtime/` | Binary artifacts (`libssruntime`, `libssconverter`) and FFI headers. |
-| `ss_player/format/` | FlatBuffers-generated headers. |
-| `ss_player/SpriteStudio-SDK/` | Submodule: the Rust runtime and converter. |
-| `test_gdextension/` | The headless GDScript suite. Not a sample, and not under `examples/`. |
+A Godot integration for SpriteStudio: a C++ `SpriteStudioPlayer2D` node, built as a **GDExtension** or
+a **custom module**, that drives the Rust `libssruntime` over its C-API and converts `.sspj` at import
+time with `libssconverter`. `test_gdextension/` is the headless suite, not a sample.
 
 ## Where each answer is written
 
 | Question | File |
 |---|---|
-| What the plugin does, how to install and use it | [README.md](./README.md), the [docs site](./docs/en/) |
-| How to build and test from a checkout | [CONTRIBUTING.md](./CONTRIBUTING.md), [Build Guide](./docs/en/setup/build.md) |
-| How a release is cut | [RELEASING.md](./RELEASING.md), maintainers only |
-| What to build next, and what is out of scope | [ROADMAP.md](./ROADMAP.md) |
-| What each script does and takes | that script's `--help`, and its header comment |
-| Why the headless run seeds `.godot/extension_list.cfg` | the comment block in `scripts/run-tests.sh` |
+| Use and install | [README.md](./README.md), the [docs site](./docs/en/) |
+| Constraints, build, test | [CONTRIBUTING.md](./CONTRIBUTING.md), [Build Guide](./docs/en/setup/build.md) |
+| Releases, maintainers only | [RELEASING.md](./RELEASING.md) |
+| Plans and non-goals | [ROADMAP.md](./ROADMAP.md) |
+| What a script takes | its `--help` and header comment |
 
 ## Invariants
 
-*   **Release every Rust-allocated handle.** The runtime, resource, converter and slot handles come back
-    from the C-API owned; the matching `ss_*_destroy` is the only thing that frees them.
-*   **No per-frame allocations in the playback hot path.** Render from the `DrawBatch` plans the runtime
-    emits, as they are.
-*   **`scripts/SDK_VERSION.txt` pins the SDK release**, and the binaries in `ss_player/runtime/` must be
-    that version. Bumping one without the other is a silent ABI mismatch.
-*   **A new C++ source file needs its `SConstruct` / `SCsub` entry** in the same change, or one of the two
-    build shapes stops linking while the other keeps working.
-*   **Both build shapes share one copy of the playback logic**, separated only by a layer of `#ifdef
-    SPRITESTUDIO_GODOT_EXTENSION` adapters — includes and type conversions. Keep behaviour out of those
-    adapters; the module build's only guard is that it still compiles.
-*   **The headless suite covers neither drawing nor the custom-module build.** `--headless` installs a dummy
-    rasteriser, so there are no pixels to compare, and a module binary cannot even open `test_gdextension/`
-    — it registers the classes a second time and aborts.
-*   **A case that records nothing is a failure, not a pass.** GDScript answers a bad call by abandoning that
-    one function and carrying on, so a case that never ran would otherwise be indistinguishable from one
-    that passed. Cases step with `advance()` under `ANIMATION_PROCESS_MANUAL`, never the frame clock, so a
-    result cannot depend on frame timing.
-*   **The headless run is expected to be silent.** The suite ends with an `ENGINE` line counting what Godot
-    itself printed, because a case can only assert what the API returned — not that producing that answer
-    also made the engine or the runtime complain. Whatever it lists is a defect or a newly tolerated
-    message, never background.
-*   **Documentation is written twice**, `docs/en/<path>` and `docs/ja/<path>`, with per-locale `assets/` and
-    source-relative asset paths — see [CONTRIBUTING.md](./CONTRIBUTING.md).
+*   **Release every Rust-allocated handle with its `ss_*_destroy`**; nothing else frees the runtime,
+    resource, converter or slot handles.
+*   **No per-frame allocations in the playback hot path.** Render from the runtime's `DrawBatch` plans as
+    they are.
+*   **`scripts/SDK_VERSION.txt` pins the SDK release**, and `ss_player/runtime/` must hold that version's
+    binaries; bumping one alone is a silent ABI mismatch.
+*   **A new C++ source file needs its `SConstruct` / `SCsub` entry** in the same change, or one build shape
+    stops linking while the other keeps working.
+*   **Both build shapes share one copy of the playback logic.** The `#ifdef SPRITESTUDIO_GODOT_EXTENSION`
+    adapters carry only includes and type conversions; keep behaviour out of them, since the module
+    build's only guard is that it compiles.
+*   **The headless run is expected to be silent**: whatever its `ENGINE` line lists is a defect or a newly
+    tolerated message, never background.
