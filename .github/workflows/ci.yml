@@ -16,7 +16,10 @@ on:
   # rust-cache still restores the newest cache built by the same toolchain, so a
   # PR that changes dependencies rebuilds only what changed.
   schedule:
-    - cron: '0 0 * * 0'
+    # Each repository of the family takes its own hour on Sunday, so their
+    # weekly runs do not queue for the organization's runners; :17 keeps clear
+    # of the top of the hour, when GitHub delays scheduled runs.
+    - cron: '17 1 * * 0'
   workflow_dispatch:
 
 env:
