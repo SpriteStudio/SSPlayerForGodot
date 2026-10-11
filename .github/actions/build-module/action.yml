@@ -1,0 +1,99 @@
+name: Build the custom module
+description: Build Godot itself with ss_player compiled in, for one platform and one target.
+
+# Expects the runtime for the platform in ss_player/runtime/, which the calling
+# job has already built for the GDExtension. Godot is cloned at the tag in
+# scripts/GODOT_VERSION.txt, so with the SCons cache restored only ss_player and
+# the link are rebuilt; a cold build is 15-60 minutes, depending on the platform.
+
+inputs:
+  platform:
+    required: true
+    description: build.sh's platform.
+  target:
+    required: true
+    description: build.sh's target. One per platform is enough to compile and link the module.
+  options:
+    required: false
+    default: ''
+    description: Further build.sh options, such as arch=arm64.
+
+runs:
+  using: composite
+  steps:
+    - name: Read the Godot version
+      id: godot
+      shell: bash
+      run: echo "version=$(tr -d ' \r\n' < scripts/GODOT_VERSION.txt)" >> "$GITHUB_OUTPUT"
+
+    - name: Clone Godot
+      shell: bash
+      run: git clone --quiet --depth 1 --branch "${{ steps.godot.outputs.version }}" https://github.com/godotengine/godot.git godot
+
+    # SCons, plus the Vulkan SDK on macOS and the Direct3D 12 components on Windows.
+    - name: setup for godot
+      uses: ./.github/actions/setup-godot
+      with:
+        platform: ${{ inputs.platform }}
+
+    # The Wayland display server's protocol code is generated at build time.
+    - name: Install wayland-scanner (Linux)
+      if: inputs.platform == 'linux'
+      shell: bash
+      run: sudo apt-get install -y libwayland-bin
+
+    - name: Download Swappy (Android)
+      if: inputs.platform == 'android'
+      shell: bash
+      working-directory: godot
+      run: python misc/scripts/install_swappy_android.py
+
+    # The version Godot's own CI builds this engine line with
+    # (.github/workflows/web_builds.yml). It replaces the emsdk the GDExtension
+    # build set up, for the rest of the job.
+    - name: Setup emsdk (Web)
+      if: inputs.platform == 'web'
+      uses: mymindstorm/setup-emsdk@4528d102f7230f0e7b276855c01ea1159be0e984 # v16
+      with:
+        version: 4.0.11
+        no-cache: true
+
+    # Keyed on the Godot version, so a version bump starts from nothing rather
+    # than restoring objects of another engine. cache_limit below keeps the
+    # directory to what one build uses.
+    - name: Restore the SCons cache
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ runner.temp }}/scons-module
+        key: module-${{ inputs.platform }}-${{ steps.godot.outputs.version }}-${{ github.sha }}
+        restore-keys: |
+          module-${{ inputs.platform }}-${{ steps.godot.outputs.version }}-
+
+    # build.sh and build.ps1 lowercase every value they pass on, cache_path
+    # included. RUNNER_TEMP survives that: it is lowercase on Linux, and the
+    # macOS and Windows file systems ignore case.
+    - name: Build (Linux / macOS / iOS / Android / Web)
+      if: inputs.platform != 'windows'
+      shell: bash
+      run: >-
+        ./scripts/build.sh platform=${{ inputs.platform }} target=${{ inputs.target }}
+        ${{ inputs.options }} compiledb=no deps=no
+        cache_path="$RUNNER_TEMP/scons-module" cache_limit=2
+
+    - name: Build (Windows)
+      if: inputs.platform == 'windows'
+      shell: pwsh
+      env:
+        PYTHONUTF8: 1
+      run: >-
+        ./scripts/build.ps1 platform=windows target=${{ inputs.target }}
+        ${{ inputs.options }} compiledb=no deps=no
+        cache_path="$env:RUNNER_TEMP/scons-module" cache_limit=2
+
+    # Only develop writes caches, as with every other cache in this repository.
+    - name: Save the SCons cache
+      if: github.ref == 'refs/heads/develop'
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ runner.temp }}/scons-module
+        key: module-${{ inputs.platform }}-${{ steps.godot.outputs.version }}-${{ github.sha }}

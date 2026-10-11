@@ -1,0 +1,336 @@
+name: CI
+
+# Two tiers, as in SpriteStudio-SDK. Every pull request builds the GDExtension for
+# Linux and Web. The weekly run, a dispatch and the release PR (release/X.Y into
+# main) also build it for Windows, macOS, iOS and Android, build the custom-module
+# engine on all six (Godot itself with ss_player compiled in, one target each),
+# and build the documentation site.
+on:
+  pull_request:
+    paths-ignore:
+      - '**/*.md'
+      - '.gitignore'
+      - 'LICENSE*'
+  # The weekly run also writes the develop caches that PRs restore from, since
+  # PRs do not save. Weekly is enough for Rust: when Cargo.lock differs,
+  # rust-cache still restores the newest cache built by the same toolchain, so a
+  # PR that changes dependencies rebuilds only what changed.
+  schedule:
+    - cron: '0 0 * * 0'
+  workflow_dispatch:
+
+env:
+  LANG: en_US.UTF-8
+  LC_ALL: en_US.UTF-8
+  PYTHONIOENCODING: utf8
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.actor }}-${{ github.head_ref || github.run_number }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  extension:
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    # A cold custom-module build, which this job runs off pull requests, takes
+    # most of this.
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: 🐧 Linux (GCC)
+            platform: linux
+            module-target: editor
+            module-options: ''
+
+          - name: 🌐 Web (wasm32)
+            platform: web
+            module-target: template_release
+            module-options: arch=wasm32 threads=no
+
+    defaults:
+      run:
+        shell: zsh {0}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: recursive
+
+      - name: clone Godot Cpp repository
+        uses: GuillaumeFalourd/clone-github-repo-action@19817562c346ff60f9935158dede6c5ece8fd0ac # v2.3
+        with:
+          depth: 1
+          branch: master
+          owner: 'godotengine'
+          repository: 'godot-cpp'
+
+      - name: Setup Rust (Stable)
+        uses: dtolnay/rust-toolchain@7e38f4b43b4db5c8dd498af069a4f6196df1d067 # master
+        with:
+          toolchain: stable
+
+      - name: Setup Rust Cache
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          workspaces: "ss_player/SpriteStudio-SDK"
+          # The key is the job id and the runner OS, which linux and web share.
+          # Without the platform they would share one cache: only the first to
+          # finish could save it, and the other would restore its target dir.
+          key: ${{ matrix.platform }}
+          # Only develop writes caches. A PR's cache is visible to that PR alone,
+          # so saving one per PR would only fill the 10 GB quota and evict the
+          # develop caches every PR restores from.
+          save-if: ${{ github.ref == 'refs/heads/develop' }}
+
+      - name: Install Nightly Rust (Web only)
+        if: matrix.platform == 'web'
+        run: |
+          rustup target add wasm32-unknown-unknown
+          rustup toolchain install nightly
+          rustup target add wasm32-unknown-unknown --toolchain nightly
+          rustup component add rust-src --toolchain nightly
+
+      - name: Build Runtime (SDK)
+        run: ./scripts/build-runtime.sh platform=${{ matrix.platform }} build=debug
+
+      # The month is part of the key so that the cache starts over once a month:
+      # godot-cpp is cloned from master, and objects compiled against the
+      # godot-cpp of earlier weeks would otherwise pile up in it for good.
+      - name: Name the SCons cache
+        id: scons
+        shell: bash
+        run: echo "month=$(date -u +%Y-%m)" >> "$GITHUB_OUTPUT"
+
+      - name: Restore the SCons cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.scons_cache
+          key: ${{ runner.os }}-${{ matrix.platform }}-scons-${{ steps.scons.outputs.month }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.platform }}-scons-${{ steps.scons.outputs.month }}-
+
+      - name: setup for gdextension
+        uses: ./.github/actions/setup-extension
+        with:
+          platform: ${{ matrix.platform }}
+          os: ubuntu-latest
+
+      - name: Build
+        env:
+          SCONS_CACHE: ~/.scons_cache
+        run: |
+          mkdir -p ~/.scons_cache
+          if [ "${{ matrix.platform }}" = "linux" ]; then
+            ./scripts/release-gdextension-linux.sh
+          elif [ "${{ matrix.platform }}" = "web" ]; then
+            ./scripts/release-gdextension-web.sh
+          fi
+
+      - name: Save the SCons cache
+        if: github.ref == 'refs/heads/develop'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.scons_cache
+          key: ${{ runner.os }}-${{ matrix.platform }}-scons-${{ steps.scons.outputs.month }}-${{ github.sha }}
+
+      # The weekly tier. `github.base_ref == 'main'` is the release PR: under
+      # git-flow only release/X.Y is merged into main.
+      - name: Build the custom module
+        if: github.event_name != 'pull_request' || github.base_ref == 'main'
+        uses: ./.github/actions/build-module
+        with:
+          platform: ${{ matrix.platform }}
+          target: ${{ matrix.module-target }}
+          options: ${{ matrix.module-options }}
+
+  platforms:
+    name: ${{ matrix.name }}
+    if: github.event_name != 'pull_request' || github.base_ref == 'main'
+    runs-on: ${{ matrix.os }}
+    # A cold custom-module build takes most of this; Windows' editor is the
+    # longest, near an hour.
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: 🏁 Windows (x86_64, MSVC)
+            os: windows-latest
+            platform: windows
+            module-target: editor
+            module-options: ''
+
+          - name: 🍎 macOS (universal)
+            os: macos-latest
+            platform: macos
+            module-target: editor
+            module-options: ''
+
+          - name: 🤖 Android (arm64)
+            os: ubuntu-latest
+            platform: android
+            module-target: template_release
+            module-options: arch=arm64
+
+          - name: 🍏 iOS (arm64)
+            os: macos-latest
+            platform: ios
+            module-target: template_release
+            module-options: arch=arm64 ios_simulator=no
+
+    defaults:
+      run:
+        shell: zsh {0}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: recursive
+
+      - name: clone Godot Cpp repository
+        uses: GuillaumeFalourd/clone-github-repo-action@19817562c346ff60f9935158dede6c5ece8fd0ac # v2.3
+        with:
+          depth: 1
+          branch: master
+          owner: 'godotengine'
+          repository: 'godot-cpp'
+
+      - name: setup for gdextension
+        uses: ./.github/actions/setup-extension
+        with:
+          platform: ${{ matrix.platform }}
+          os: ${{ matrix.os }}
+
+      - name: Setup Rust (Stable)
+        uses: dtolnay/rust-toolchain@7e38f4b43b4db5c8dd498af069a4f6196df1d067 # master
+        with:
+          toolchain: stable
+
+      - name: Setup Rust Cache
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          workspaces: "ss_player/SpriteStudio-SDK"
+          key: ${{ matrix.platform }}
+          save-if: ${{ github.ref == 'refs/heads/develop' }}
+
+      - name: Name the SCons cache
+        id: scons
+        shell: bash
+        run: echo "month=$(date -u +%Y-%m)" >> "$GITHUB_OUTPUT"
+
+      - name: Restore the SCons cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.scons_cache
+          key: ${{ runner.os }}-${{ matrix.platform }}-scons-${{ steps.scons.outputs.month }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.platform }}-scons-${{ steps.scons.outputs.month }}-
+
+      # The runtime comes from the submodule's source rather than the pinned SDK
+      # release (download-sdk), as in the extension job: this tier checks
+      # develop's HEAD.
+      - name: Build Runtime (SDK, macOS universal)
+        if: matrix.platform == 'macos'
+        run: |
+          rustup target add aarch64-apple-darwin
+          rustup target add x86_64-apple-darwin
+          ./scripts/build-runtime.sh platform=macos arch=universal build=release
+
+      - name: Build Runtime (SDK, iOS)
+        if: matrix.platform == 'ios'
+        run: |
+          rustup target add aarch64-apple-ios
+          rustup target add aarch64-apple-ios-sim
+          rustup target add x86_64-apple-ios
+          ./scripts/build-runtime.sh platform=ios build=release
+
+      - name: Build Runtime (SDK, Android)
+        if: matrix.platform == 'android'
+        run: |
+          cargo install cargo-ndk
+          rustup target add aarch64-linux-android
+          rustup target add armv7-linux-androideabi
+          rustup target add x86_64-linux-android
+          ./scripts/build-runtime.sh platform=android build=release
+
+      - name: Build Runtime (SDK, Windows)
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        run: ./scripts/build-runtime.ps1 platform=windows build=release
+
+      # Not code-signed: this tier is for our own verification, not something we
+      # distribute, so it has no business handling the Developer ID certificate.
+      # Signing belongs to release.yml alone. The scripts no-op on signing
+      # without APPLE_SIGNING_IDENTITY.
+      - name: build macOS
+        if: matrix.platform == 'macos'
+        env:
+          SCONS_CACHE: ~/.scons_cache
+        run: ./scripts/release-gdextension-macos.sh
+
+      - name: build iOS
+        if: matrix.platform == 'ios'
+        env:
+          SCONS_CACHE: ~/.scons_cache
+        run: ./scripts/release-gdextension-ios.sh
+
+      - name: build Android
+        if: matrix.platform == 'android'
+        env:
+          SCONS_CACHE: ~/.scons_cache
+        run: ./scripts/release-gdextension-android.sh
+
+      - name: build Windows
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        env:
+          SCONS_CACHE: ~/.scons_cache
+        run: |
+          ./scripts/release-gdextension-windows.ps1
+          Remove-Item -Recurse -Force ./bin/windows/*.exp
+          Remove-Item -Recurse -Force ./bin/windows/*.lib
+
+      - name: Save the SCons cache
+        if: github.ref == 'refs/heads/develop'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.scons_cache
+          key: ${{ runner.os }}-${{ matrix.platform }}-scons-${{ steps.scons.outputs.month }}-${{ github.sha }}
+
+      - name: Build the custom module
+        uses: ./.github/actions/build-module
+        with:
+          platform: ${{ matrix.platform }}
+          target: ${{ matrix.module-target }}
+          options: ${{ matrix.module-options }}
+
+  # Builds the site the way pages.yml publishes it, both locales --strict, so a
+  # broken link or nav entry surfaces here rather than when a release is
+  # published.
+  docs:
+    name: 📚 Docs site
+    if: github.event_name != 'pull_request' || github.base_ref == 'main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.x
+          cache: pip
+          cache-dependency-path: docs/requirements.txt
+
+      - name: Install dependencies
+        run: ./scripts/prepare-docs.sh
+
+      - name: Build the Pages tree (docs, both locales, strict validation)
+        run: ./scripts/build-pages.sh prepare=no serve=no
