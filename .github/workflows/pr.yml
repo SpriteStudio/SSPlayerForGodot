@@ -6,6 +6,13 @@ on:
       - '**/*.md'
       - '.gitignore'
       - 'LICENSE*'
+  # Writes the develop Rust caches that PRs restore from, since PRs do not save
+  # (see save-if below). weekly.yml cannot stand in: it builds the runtime in
+  # release mode, and these jobs build it in debug. Weekly is enough: when
+  # Cargo.lock differs, rust-cache still restores the newest cache built by the
+  # same toolchain, so a PR that changes dependencies rebuilds only what changed.
+  schedule:
+    - cron: '0 0 * * 0'
 
 env:
   LANG: en_US.UTF-8
@@ -59,6 +66,10 @@ jobs:
           # Without the platform they would share one cache: only the first to
           # finish could save it, and the other would restore its target dir.
           key: ${{ matrix.platform }}
+          # Only develop writes caches. A PR's cache is visible to that PR alone,
+          # so saving one per PR would only fill the 10 GB quota and evict the
+          # develop caches every PR restores from.
+          save-if: ${{ github.ref == 'refs/heads/develop' }}
 
       - name: Install Nightly Rust (Web only)
         if: matrix.platform == 'web'
@@ -71,8 +82,10 @@ jobs:
       - name: Build Runtime (SDK)
         run: ./scripts/build-runtime.sh platform=${{ matrix.platform }} build=debug
 
+      # Restore only: weekly.yml saves these on develop under the same key
+      # prefix, and a copy saved here would be visible to this PR alone.
       - name: Setup SCons Cache
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.scons_cache
           key: ${{ runner.os }}-${{ matrix.platform }}-scons-${{ github.sha }}
