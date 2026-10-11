@@ -12,6 +12,7 @@
 #include <godot_cpp/templates/local_vector.hpp>
 #include <godot_cpp/templates/vector.hpp>
 #include <godot_cpp/variant/dictionary.hpp>
+#include <godot_cpp/variant/packed_byte_array.hpp>
 #include <godot_cpp/variant/packed_float32_array.hpp>
 #include <godot_cpp/variant/rect2.hpp>
 #include <godot_cpp/variant/rid.hpp>
@@ -67,6 +68,38 @@ struct SsMaskCoverageTarget;
 // holds more coverage memory than one tile-less bitmap.
 constexpr int SS_MASK_TILE_BITS = 24;
 constexpr int SS_MASK_MAX_TILES = 4;
+
+// A one-surface mesh rewritten in place from frame to frame. Building a fresh
+// surface allocates fresh GPU buffers, which on the RenderingDevice renderers
+// costs more CPU than the rest of a frame together; rewriting one allocates
+// nothing. Its buffers grow to the largest geometry drawn through it and keep
+// that size. Filled by SsInternalPlayer::_draw_dynamic_mesh.
+struct SsDynamicMesh {
+    RID mesh;
+    uint64_t format = 0;
+    int vertex_capacity = 0;
+    int index_capacity = 0;
+    uint32_t vertex_stride = 0;
+    uint32_t attribute_stride = 0;
+    uint32_t index_stride = 0;
+    uint32_t uv_offset = 0;
+    uint32_t color_offset = 0;
+    uint32_t custom0_offset = 0;
+    uint32_t custom1_offset = 0;
+    // The streams as the surface stores them, whole buffers at a time: a region
+    // update takes the size of the array it is given, so one shared staging
+    // array would be resized -- reallocated -- between meshes of other sizes.
+    PackedByteArray vertex_bytes;
+    PackedByteArray attribute_bytes;
+    PackedByteArray index_bytes;
+};
+
+inline void ss_free_dynamic_mesh(RenderingServer* p_rs, SsDynamicMesh& p_mesh) {
+    if (p_mesh.mesh.is_valid()) {
+        p_rs->free_rid(p_mesh.mesh);
+    }
+    p_mesh = SsDynamicMesh();
+}
 
 // Receiver for animation events that need to bubble up to engine-level
 // signals (GDScript signals, Unity events, etc.). The host (Node2D wrapper,
@@ -359,18 +392,11 @@ private:
         Ref<Texture2D> map0;
         Ref<Texture2D> map1;
     };
-    // Low-level mesh RID pool. Reused across frames to avoid the overhead of
-    // instantiating Ref<ArrayMesh> resources. Allocated RIDs are freed in the destructor.
-    Vector<RID> _mesh_pool;
-    int _mesh_pool_in_use = 0;
-    // Reused scratch for _emit_partcolor_mesh so the per-part/per-frame draw
-    // path does not heap-allocate a fresh surface Array (plus the empty
-    // blend-shape / LOD arguments) on every call. The element slots are cleared
-    // after each surface build so they never pin the caller's scratch buffers
-    // via copy-on-write.
-    Array _surface_arrays;
-    Array _surface_empty_blend_shapes;
-    Dictionary _surface_empty_lods;
+    // The meshes batches draw through, handed out in emission order, so a frame
+    // laid out like the one before rewrites the same surfaces. Freed in the
+    // destructor.
+    LocalVector<SsDynamicMesh> _mesh_pool;
+    uint32_t _mesh_pool_in_use = 0;
     // State handed down by setCanvasItemDefaults, applied to each canvas item as
     // it is created and to all of them when it changes.
     int _texture_filter = 0;
@@ -453,6 +479,8 @@ private:
         // `cellmap_hash` returned per draw command.
         void* effect_slot = nullptr;
         Vector<RID> emitter_cis;
+        // What each of `emitter_cis` draws, by the same index.
+        LocalVector<SsDynamicMesh> emitter_meshes;
     };
     LocalVector<EffectSlotState> _effect_slots;
 
@@ -550,8 +578,11 @@ private:
     // compositing formula reduces to a meaningful tint over white. The CUSTOM0
     // stream carries the same (rate, blend_idx, pma_flag, reserved) tuple; UVs
     // are zero-filled because there's no texture to sample meaningfully.
+    // The streams of both are grown, never shrunk: the counts, not the sizes,
+    // say how much of them the last build wrote.
     struct ShapeGeometryBuffers {
         int vert_count;          // 3..12, derived from runtime shape_vertex_counts
+        int index_count;
         SsVec2Array verts;
         SsVec2Array uvs;
         SsColorArray colors;
@@ -563,6 +594,7 @@ private:
     // so they ride on the shader-based pipeline and carry CUSTOM0 per vertex.
     struct MeshGeometryBuffers {
         int vert_count;          // mesh vertex count, derived from mesh_vertex_offsets
+        int index_count;
         SsVec2Array verts;
         SsVec2Array uvs;
         SsColorArray colors;
@@ -723,8 +755,9 @@ private:
     // Return the borrowed target to the pool (kept registered as a user).
     void _release_mask_target();
     void _free_mask_targets();
-    // A canvas item drawing into `tile` of the borrowed coverage target.
-    RID _acquire_mask_canvas_item(int tile);
+    // A canvas item drawing into `tile` of the borrowed coverage target, and in
+    // `r_mesh` the mesh it draws.
+    RID _acquire_mask_canvas_item(int tile, SsDynamicMesh*& r_mesh);
     RID _mask_tile_canvas(int tile);
     Ref<ShaderMaterial> _acquire_mask_write_material();
     // Render the whole instance tree's writers into the coverage bitmap (the
@@ -878,7 +911,7 @@ private:
     // Per-batch emit helpers. `ci` is the batch's canvas_item from
     // `_batch_canvas_items`; caller has already cleared it and set z_index.
     // For Normal batches multiple parts' geometry is concatenated into a
-    // single canvas_item_add_triangle_array call.
+    // single mesh.
     void _emit_normal_batch(const DrawFrame& f, RID ci,
                             const ss::runtime::DrawBatch* batch,
                             const uint16_t* draw_order_data);
@@ -1000,17 +1033,31 @@ private:
     // Returns zero when cell_meta is unavailable; ss-circle / ss-spot then
     // degenerate to "nothing inside the rect" which is the safest fallback.
     Vector4 _resolve_cell_rect_uv(const DrawFrame& f, int p_idx, const Vector2& inv_tex_size);
-    // Build a low-level mesh from the geometry arrays and attach it to `ci`.
-    // The mesh RID is acquired from the pool `_mesh_pool`.
+    // Draw the first `vertex_count` / `index_count` entries of the geometry
+    // streams on `ci` through the next mesh of `_mesh_pool`.
     void _emit_partcolor_mesh(RenderingServer* rs, RID ci,
-                              const SsIntArray& indices,
-                              const SsVec2Array& verts,
-                              const SsColorArray& colors,
-                              const SsVec2Array& uvs,
-                              const SsFloatArray& custom0,
-                              const RID& texture_rid);
+                              const int32_t* indices, int index_count,
+                              const Vector2* verts, const Color* colors,
+                              const Vector2* uvs, const float* custom0,
+                              int vertex_count, const RID& texture_rid);
 
-    RID _acquire_mesh_rid(RenderingServer* rs);
+    // One draw's streams. Positions, UVs and indices are always there; a colour
+    // or custom stream left null is one the surface does not have. Each vertex
+    // stream holds `vertex_count` entries.
+    struct SsMeshStreams {
+        const Vector2* verts = nullptr;
+        const Vector2* uvs = nullptr;
+        const float* colors = nullptr;   // RGBA floats a vertex, stored as ARRAY_COLOR (8 bits a channel)
+        const float* custom0 = nullptr;  // RGBA floats a vertex, ARRAY_CUSTOM0
+        const float* custom1 = nullptr;  // RGBA floats a vertex, ARRAY_CUSTOM1
+        int vertex_count = 0;
+        const int32_t* indices = nullptr;
+        int index_count = 0;
+    };
+    // Write `s` into `m`, rebuilding its surface only when `s` does not fit, and
+    // draw it on `ci`.
+    static void _draw_dynamic_mesh(RenderingServer* rs, SsDynamicMesh& m, RID ci,
+                                   const SsMeshStreams& s, const RID& texture_rid);
 
     void _clear_batch_canvas_items();
 };

@@ -98,6 +98,7 @@ struct SsMaskCoverageTarget {
     // own transform into its region of the texture.
     RID tile_canvases[SS_MASK_MAX_TILES - 1];
     Vector<RID> canvas_items;     // pooled, one per rendered writer
+    LocalVector<SsDynamicMesh> meshes; // what each of canvas_items draws, by the same index
     int canvas_items_in_use = 0;
     int w = 0;
     int h = 0;
@@ -211,6 +212,9 @@ private:
                 for (int j = 0; j < t->canvas_items.size(); j++) {
                     if (t->canvas_items[j].is_valid()) rs->free_rid(t->canvas_items[j]);
                 }
+                for (uint32_t j = 0; j < t->meshes.size(); j++) {
+                    ss_free_dynamic_mesh(rs, t->meshes[j]);
+                }
                 if (t->canvas.is_valid()) rs->free_rid(t->canvas);
                 for (int j = 0; j < SS_MASK_MAX_TILES - 1; j++) {
                     if (t->tile_canvases[j].is_valid()) rs->free_rid(t->tile_canvases[j]);
@@ -271,8 +275,8 @@ SsInternalPlayer::~SsInternalPlayer() {
     }
 
     RenderingServer* rs = RenderingServer::get_singleton();
-    for (int i = 0; i < _mesh_pool.size(); i++) {
-        rs->free_rid(_mesh_pool[i]);
+    for (uint32_t i = 0; i < _mesh_pool.size(); i++) {
+        ss_free_dynamic_mesh(rs, _mesh_pool[i]);
     }
     _mesh_pool.clear();
 
@@ -1180,12 +1184,14 @@ RID SsInternalPlayer::_mask_tile_canvas(int tile) {
     return c;
 }
 
-RID SsInternalPlayer::_acquire_mask_canvas_item(int tile) {
+RID SsInternalPlayer::_acquire_mask_canvas_item(int tile, SsDynamicMesh*& r_mesh) {
     RenderingServer* rs = RenderingServer::get_singleton();
     SsMaskCoverageTarget* t = _mask_target;
     if (t->canvas_items_in_use >= t->canvas_items.size()) {
         t->canvas_items.push_back(rs->canvas_item_create());
+        t->meshes.push_back(SsDynamicMesh());
     }
+    r_mesh = &t->meshes[t->canvas_items_in_use];
     RID ci = t->canvas_items[t->canvas_items_in_use++];
     // Pooled items move between tiles as the writer set changes.
     rs->canvas_item_set_parent(ci, _mask_tile_canvas(tile));
@@ -1475,28 +1481,33 @@ bool SsInternalPlayer::_bake_coverage_geometry(
     // their builders.
     const SsVec2Array* gverts = nullptr;
     const SsVec2Array* guvs = nullptr;
-    const SsColorArray* gcolors = nullptr;
     const SsIntArray* gindices = nullptr;
     bool no_cutout = false; // Shapes have no texture; the geometry is the mask.
 
     int nv = 0;
+    int ni = 0;
     if (kind == ss::runtime::DrawBatchKind_Mesh) {
         if (!src->_build_mesh_geometry(src_f, p_idx, part, inv_tex_size, src->_mesh_buf)) return false;
         gverts = &src->_mesh_buf.verts; guvs = &src->_mesh_buf.uvs;
-        gcolors = &src->_mesh_buf.colors; gindices = &src->_mesh_buf.indices;
-        nv = gverts->size();
+        gindices = &src->_mesh_buf.indices;
+        nv = src->_mesh_buf.vert_count;
+        ni = src->_mesh_buf.index_count;
     } else if (kind == ss::runtime::DrawBatchKind_Shape) {
         if (!src->_build_shape_geometry(src_f, p_idx, part, draw_m, src->_shape_buf)) return false;
         gverts = &src->_shape_buf.verts; guvs = &src->_shape_buf.uvs;
-        gcolors = &src->_shape_buf.colors; gindices = &src->_shape_buf.indices;
+        gindices = &src->_shape_buf.indices;
         no_cutout = true;
-        nv = gverts->size();
+        nv = src->_shape_buf.vert_count;
+        ni = src->_shape_buf.index_count;
     } else {
         if (src->_per_part_normal_verts.size() < MAX_VERTICES_COUNT) {
             src->_per_part_normal_verts.resize(MAX_VERTICES_COUNT);
             src->_per_part_normal_uvs.resize(MAX_VERTICES_COUNT);
             src->_per_part_normal_colors.resize(MAX_VERTICES_COUNT);
             src->_per_part_normal_custom0.resize(MAX_VERTICES_COUNT * 4);
+        }
+        if (src->_per_part_normal_indices.size() < INDICES_COUNT_PENTAGON) {
+            src->_per_part_normal_indices.resize(INDICES_COUNT_PENTAGON);
         }
         Vector2* verts_ptr = src->_per_part_normal_verts.ptrw();
         Vector2* uvs_ptr = src->_per_part_normal_uvs.ptrw();
@@ -1506,19 +1517,18 @@ bool SsInternalPlayer::_bake_coverage_geometry(
                                           verts_ptr, uvs_ptr,
                                           colors_ptr, custom0_ptr, 0);
         if (vc <= 0) return false;
+        int32_t* iptr = (int32_t*)src->_per_part_normal_indices.ptrw();
         if (vc == MAX_VERTICES_COUNT) {
-            src->_per_part_normal_indices.resize(INDICES_COUNT_PENTAGON);
-            int32_t* iptr = (int32_t*)src->_per_part_normal_indices.ptrw();
             const int pent[INDICES_COUNT_PENTAGON] = { 0,1,4, 1,3,4, 3,2,4, 2,0,4 };
             for (int j = 0; j < INDICES_COUNT_PENTAGON; j++) iptr[j] = pent[j];
+            ni = INDICES_COUNT_PENTAGON;
         } else {
-            src->_per_part_normal_indices.resize(INDICES_COUNT_QUAD);
-            int32_t* iptr = (int32_t*)src->_per_part_normal_indices.ptrw();
             const int quad[INDICES_COUNT_QUAD] = { 0,1,2, 1,3,2 };
             for (int j = 0; j < INDICES_COUNT_QUAD; j++) iptr[j] = quad[j];
+            ni = INDICES_COUNT_QUAD;
         }
         gverts = &src->_per_part_normal_verts; guvs = &src->_per_part_normal_uvs;
-        gcolors = &src->_per_part_normal_colors; gindices = &src->_per_part_normal_indices;
+        gindices = &src->_per_part_normal_indices;
         nv = vc;
     }
 
@@ -1528,19 +1538,10 @@ bool SsInternalPlayer::_bake_coverage_geometry(
     const bool needs_xform = to_owner != Transform2D();
     const Vector2* vp;
     if (needs_xform) {
-        // This stands in for `gverts` in the draw call below, so it has to be
-        // the same length, not `nv` long: the Normal builder reports `nv` = 4
-        // for a quad while writing into a buffer fixed at MAX_VERTICES_COUNT,
-        // and `canvas_item_add_triangle_array` drops the whole call when the
-        // vertex and colour counts disagree -- which silently lost every
-        // bubbled quad writer, and with it the clipping it was there to do.
-        // The vertices past `nv` are unreferenced by the indices; mapping them
-        // anyway keeps this path identical to the untransformed one.
-        const int gn = gverts->size();
-        if (_cov_xform_verts.size() != gn) _cov_xform_verts.resize(gn);
+        if (_cov_xform_verts.size() < nv) _cov_xform_verts.resize(nv);
         Vector2* xp = _cov_xform_verts.ptrw();
         const Vector2* sp = gverts->ptr();
-        for (int j = 0; j < gn; j++) xp[j] = to_owner.xform(sp[j]);
+        for (int j = 0; j < nv; j++) xp[j] = to_owner.xform(sp[j]);
         vp = xp;
     } else {
         vp = gverts->ptr();
@@ -1572,19 +1573,23 @@ bool SsInternalPlayer::_bake_coverage_geometry(
                     : (float)(255 - part->mask()) / 255.0f;
     if (threshold > 1.0f) threshold = 1.0f;
 
-    RID mask_ci = _acquire_mask_canvas_item(tile);
+    SsDynamicMesh* mask_mesh = nullptr;
+    RID mask_ci = _acquire_mask_canvas_item(tile, mask_mesh);
     Ref<ShaderMaterial> mat = _acquire_mask_write_material();
     mat->set_shader_parameter("mask_bit_color", bit_color);
     mat->set_shader_parameter("mask_threshold", threshold);
     rs->canvas_item_set_material(mask_ci, mat->get_rid());
     rs->canvas_item_set_transform(mask_ci, Transform2D());
-    // uvs/colors/indices are unaffected by the placement transform; only verts
-    // move into owner space.
-    if (needs_xform) {
-        rs->canvas_item_add_triangle_array(mask_ci, *gindices, _cov_xform_verts, *gcolors, *guvs, {}, {}, tex_rid);
-    } else {
-        rs->canvas_item_add_triangle_array(mask_ci, *gindices, *gverts, *gcolors, *guvs, {}, {}, tex_rid);
-    }
+    // uvs/indices are unaffected by the placement transform; only verts move
+    // into owner space. The write shader takes its colour from a uniform, so
+    // the geometry carries none.
+    SsMeshStreams streams;
+    streams.verts = vp;
+    streams.uvs = guvs->ptr();
+    streams.vertex_count = nv;
+    streams.indices = gindices->ptr();
+    streams.index_count = ni;
+    _draw_dynamic_mesh(rs, *mask_mesh, mask_ci, streams, tex_rid);
     return true;
 }
 
@@ -2112,6 +2117,10 @@ void SsInternalPlayer::_clear_effect_slots() {
             rs->free_rid(slot.emitter_cis[e]);
         }
         slot.emitter_cis.clear();
+        for (uint32_t e = 0; e < slot.emitter_meshes.size(); e++) {
+            ss_free_dynamic_mesh(rs, slot.emitter_meshes[e]);
+        }
+        slot.emitter_meshes.clear();
     }
     _effect_slots.clear();
 }
@@ -2357,6 +2366,9 @@ void SsInternalPlayer::_emit_effect_slot(const DrawFrame& f, RID ci, int p_idx, 
     // only valid when real_t == float.
     static_assert(sizeof(Vector2) == 2 * sizeof(float),
                   "EffectDrawPlan vert_stride=2 requires Godot built with real_t == float");
+    // The plan's colours are copied into Color storage as float quadruples, and
+    // the draw reads them back the same way.
+    static_assert(sizeof(Color) == 4 * sizeof(float), "the colour stream is read as RGBA floats");
 
     const float* V = plan->verts()->data();
     const float* U = plan->uvs()->data();
@@ -2402,6 +2414,7 @@ void SsInternalPlayer::_emit_effect_slot(const DrawFrame& f, RID ci, int p_idx, 
             f.rs->canvas_item_set_parent(e_ci, ci);
             _apply_canvas_item_defaults(e_ci);
             slot.emitter_cis.push_back(e_ci);
+            slot.emitter_meshes.push_back(SsDynamicMesh());
         }
 
         RID e_ci = slot.emitter_cis[drawn_cis];
@@ -2413,10 +2426,13 @@ void SsInternalPlayer::_emit_effect_slot(const DrawFrame& f, RID ci, int p_idx, 
         const ss::format::BlendType blend = (cmd->blend() == 1) ? ss::format::BlendType_Add : ss::format::BlendType_Mix;
         _apply_blend_material(f.rs, e_ci, blend);
 
-        _effect_verts.resize(merge_qc * 4);
-        _effect_uvs.resize(merge_qc * 4);
-        _effect_colors.resize(merge_qc * 4);
-        _effect_indices.resize(merge_qc * 6);
+        // Grown, never shrunk: the draw below takes the counts, not the sizes.
+        if (_effect_verts.size() < (int)merge_qc * 4) {
+            _effect_verts.resize(merge_qc * 4);
+            _effect_uvs.resize(merge_qc * 4);
+            _effect_colors.resize(merge_qc * 4);
+            _effect_indices.resize(merge_qc * 6);
+        }
         SsVec2Array&  p_verts   = _effect_verts;
         SsVec2Array&  p_uvs     = _effect_uvs;
         SsColorArray& p_colors  = _effect_colors;
@@ -2442,8 +2458,15 @@ void SsInternalPlayer::_emit_effect_slot(const DrawFrame& f, RID ci, int p_idx, 
             dest_qc += qc;
         }
 
-        f.rs->canvas_item_add_triangle_array(e_ci, p_indices, p_verts, p_colors, p_uvs, {}, {}, tex->get_rid());
-        
+        SsMeshStreams streams;
+        streams.verts = p_verts.ptr();
+        streams.uvs = p_uvs.ptr();
+        streams.colors = (const float*)p_colors.ptr();
+        streams.vertex_count = (int)merge_qc * 4;
+        streams.indices = p_indices.ptr();
+        streams.index_count = (int)merge_qc * 6;
+        _draw_dynamic_mesh(f.rs, slot.emitter_meshes[drawn_cis], e_ci, streams, tex->get_rid());
+
         drawn_cis++;
         e_idx = merge_end;
     }
@@ -2717,16 +2740,10 @@ void SsInternalPlayer::_apply_partcolor_material(RenderingServer* rs, RID ci, ui
 }
 
 void SsInternalPlayer::_emit_partcolor_mesh(RenderingServer* rs, RID ci,
-                                            const SsIntArray& indices,
-                                            const SsVec2Array& verts,
-                                            const SsColorArray& colors,
-                                            const SsVec2Array& uvs,
-                                            const SsFloatArray& custom0,
-                                            const RID& texture_rid) {
-    // Reuse the member scratch Array instead of allocating one per call.
-    if (_surface_arrays.size() != Mesh::ARRAY_MAX) {
-        _surface_arrays.resize(Mesh::ARRAY_MAX);
-    }
+                                            const int32_t* indices, int index_count,
+                                            const Vector2* verts, const Color* colors,
+                                            const Vector2* uvs, const float* custom0,
+                                            int vertex_count, const RID& texture_rid) {
     // The PartColor goes in CUSTOM1 and there is no COLOR stream, so the
     // shader's COLOR is the canvas item's modulate alone (see ss_shader_setup.h).
     // Quantised the way the engine quantises ARRAY_COLOR -- to 8 bits,
@@ -2735,50 +2752,159 @@ void SsInternalPlayer::_emit_partcolor_mesh(RenderingServer* rs, RID ci,
     // RGBA8_UNORM, which would match ARRAY_COLOR byte for byte: the
     // Compatibility renderer does not read an RGBA8 custom stream back
     // correctly, and part colours lose their green and blue.
-    const int vertex_count = colors.size();
-    if (_surface_custom1.size() != vertex_count * 4) {
+    if (_surface_custom1.size() < vertex_count * 4) {
         _surface_custom1.resize(vertex_count * 4);
     }
-    const Color* src = colors.ptr();
     float* dst = _surface_custom1.ptrw();
     for (int i = 0; i < vertex_count; i++) {
-        const float channels[4] = { src[i].r, src[i].g, src[i].b, src[i].a };
+        const float channels[4] = { colors[i].r, colors[i].g, colors[i].b, colors[i].a };
         for (int c = 0; c < 4; c++) {
             dst[i * 4 + c] = float(uint8_t(CLAMP(channels[c] * 255.0, 0.0, 255.0))) / 255.0f;
         }
     }
-    _surface_arrays[Mesh::ARRAY_VERTEX]  = verts;
-    _surface_arrays[Mesh::ARRAY_TEX_UV]  = uvs;
-    _surface_arrays[Mesh::ARRAY_CUSTOM0] = custom0;
-    _surface_arrays[Mesh::ARRAY_CUSTOM1] = _surface_custom1;
-    _surface_arrays[Mesh::ARRAY_INDEX]   = indices;
-    // CUSTOM0 and CUSTOM1 carry 4 floats per vertex each (ARRAY_CUSTOM_RGBA_FLOAT).
-    const uint64_t flags = ((uint64_t)Mesh::ARRAY_CUSTOM_RGBA_FLOAT << Mesh::ARRAY_FORMAT_CUSTOM0_SHIFT) |
-                           ((uint64_t)Mesh::ARRAY_CUSTOM_RGBA_FLOAT << Mesh::ARRAY_FORMAT_CUSTOM1_SHIFT);
 
-    RID mesh_rid = _acquire_mesh_rid(rs);
-    rs->mesh_add_surface_from_arrays(mesh_rid, RS_PRIMITIVE_TRIANGLES, _surface_arrays,
-                                     _surface_empty_blend_shapes, _surface_empty_lods, flags);
-    rs->canvas_item_add_mesh(ci, mesh_rid, Transform2D(), Color(1, 1, 1, 1), texture_rid);
-
-    // Drop the CoW references to the caller's scratch buffers so the next
-    // part's writes into them do not trigger a copy-on-write against this
-    // reused Array. mesh_add_surface_from_arrays has already copied the data.
-    _surface_arrays[Mesh::ARRAY_VERTEX]  = Variant();
-    _surface_arrays[Mesh::ARRAY_TEX_UV]  = Variant();
-    _surface_arrays[Mesh::ARRAY_CUSTOM0] = Variant();
-    _surface_arrays[Mesh::ARRAY_CUSTOM1] = Variant();
-    _surface_arrays[Mesh::ARRAY_INDEX]   = Variant();
+    if (_mesh_pool_in_use >= _mesh_pool.size()) {
+        _mesh_pool.push_back(SsDynamicMesh());
+    }
+    SsMeshStreams streams;
+    streams.verts = verts;
+    streams.uvs = uvs;
+    streams.custom0 = custom0;
+    streams.custom1 = _surface_custom1.ptr();
+    streams.vertex_count = vertex_count;
+    streams.indices = indices;
+    streams.index_count = index_count;
+    _draw_dynamic_mesh(rs, _mesh_pool[_mesh_pool_in_use++], ci, streams, texture_rid);
 }
 
-RID SsInternalPlayer::_acquire_mesh_rid(RenderingServer* rs) {
-    if (_mesh_pool_in_use >= _mesh_pool.size()) {
-        RID mesh_rid = rs->mesh_create();
-        _mesh_pool.push_back(mesh_rid);
+void SsInternalPlayer::_draw_dynamic_mesh(RenderingServer* rs, SsDynamicMesh& m, RID ci,
+                                          const SsMeshStreams& s, const RID& texture_rid) {
+    if (s.vertex_count <= 0 || s.index_count <= 0) {
+        return;
     }
-    RID mesh_rid = _mesh_pool[_mesh_pool_in_use++];
-    rs->mesh_clear(mesh_rid);
-    return mesh_rid;
+    uint64_t format = Mesh::ARRAY_FORMAT_VERTEX | Mesh::ARRAY_FORMAT_TEX_UV | Mesh::ARRAY_FORMAT_INDEX
+                    | Mesh::ARRAY_FLAG_USE_2D_VERTICES | Mesh::ARRAY_FLAG_USE_DYNAMIC_UPDATE;
+    if (s.colors) {
+        format |= Mesh::ARRAY_FORMAT_COLOR;
+    }
+    if (s.custom0) {
+        format |= Mesh::ARRAY_FORMAT_CUSTOM0 | ((uint64_t)Mesh::ARRAY_CUSTOM_RGBA_FLOAT << Mesh::ARRAY_FORMAT_CUSTOM0_SHIFT);
+    }
+    if (s.custom1) {
+        format |= Mesh::ARRAY_FORMAT_CUSTOM1 | ((uint64_t)Mesh::ARRAY_CUSTOM_RGBA_FLOAT << Mesh::ARRAY_FORMAT_CUSTOM1_SHIFT);
+    }
+
+    if (!m.mesh.is_valid() || m.format != format
+        || s.vertex_count > m.vertex_capacity || s.index_count > m.index_capacity) {
+        // Half as much again each time, so a count that keeps creeping up -- an
+        // effect whose particles are still being born -- rebuilds a few times
+        // rather than on every frame.
+        const bool grow = m.mesh.is_valid() && m.format == format;
+        const int grown_vertices = grow ? m.vertex_capacity + m.vertex_capacity / 2 : 0;
+        const int grown_indices = grow ? m.index_capacity + m.index_capacity / 2 : 0;
+        const int vertex_capacity = s.vertex_count > grown_vertices ? s.vertex_count : grown_vertices;
+        int index_capacity = s.index_count > grown_indices ? s.index_count : grown_indices;
+        index_capacity += (3 - index_capacity % 3) % 3;
+
+        // The surface is created empty and filled by the write below, the same
+        // write every other frame makes. Zero indices are what the write leaves
+        // past the frame's own, too: triangles with no area, which draw nothing.
+        SsVec2Array zero_vec2;
+        zero_vec2.resize(vertex_capacity);
+        SsIntArray zero_indices;
+        zero_indices.resize(index_capacity);
+        zero_indices.fill(0);
+        Array arrays;
+        arrays.resize(Mesh::ARRAY_MAX);
+        arrays[Mesh::ARRAY_VERTEX] = zero_vec2;
+        arrays[Mesh::ARRAY_TEX_UV] = zero_vec2;
+        arrays[Mesh::ARRAY_INDEX] = zero_indices;
+        if (s.colors) {
+            SsColorArray zero_colors;
+            zero_colors.resize(vertex_capacity);
+            arrays[Mesh::ARRAY_COLOR] = zero_colors;
+        }
+        if (s.custom0 || s.custom1) {
+            SsFloatArray zero_custom;
+            zero_custom.resize(vertex_capacity * 4);
+            zero_custom.fill(0.0f);
+            if (s.custom0) arrays[Mesh::ARRAY_CUSTOM0] = zero_custom;
+            if (s.custom1) arrays[Mesh::ARRAY_CUSTOM1] = zero_custom;
+        }
+        if (!m.mesh.is_valid()) {
+            m.mesh = rs->mesh_create();
+        }
+        rs->mesh_clear(m.mesh);
+        rs->mesh_add_surface_from_arrays(m.mesh, RS_PRIMITIVE_TRIANGLES, arrays, Array(), Dictionary(), format);
+
+        // The layout is the engine's to decide; ask it rather than assume one.
+        m.format = format;
+        m.vertex_capacity = vertex_capacity;
+        m.index_capacity = index_capacity;
+        m.vertex_stride = rs->mesh_surface_get_format_vertex_stride(format, vertex_capacity);
+        m.attribute_stride = rs->mesh_surface_get_format_attribute_stride(format, vertex_capacity);
+        m.index_stride = rs->mesh_surface_get_format_index_stride(format, vertex_capacity);
+        m.uv_offset = rs->mesh_surface_get_format_offset(format, vertex_capacity, Mesh::ARRAY_TEX_UV);
+        m.color_offset = s.colors ? rs->mesh_surface_get_format_offset(format, vertex_capacity, Mesh::ARRAY_COLOR) : 0;
+        m.custom0_offset = s.custom0 ? rs->mesh_surface_get_format_offset(format, vertex_capacity, Mesh::ARRAY_CUSTOM0) : 0;
+        m.custom1_offset = s.custom1 ? rs->mesh_surface_get_format_offset(format, vertex_capacity, Mesh::ARRAY_CUSTOM1) : 0;
+        m.vertex_bytes.resize(vertex_capacity * m.vertex_stride);
+        m.attribute_bytes.resize(vertex_capacity * m.attribute_stride);
+        m.index_bytes.resize(index_capacity * m.index_stride);
+        m.vertex_bytes.fill(0);
+        m.attribute_bytes.fill(0);
+    }
+
+    // Vertices past `vertex_count` keep what an earlier frame wrote; no index
+    // reaches them.
+    uint8_t* vertex_out = m.vertex_bytes.ptrw();
+    uint8_t* attribute_out = m.attribute_bytes.ptrw();
+    Vector2 aabb_min = s.verts[0];
+    Vector2 aabb_max = s.verts[0];
+    for (int i = 0; i < s.vertex_count; i++) {
+        const Vector2 v = s.verts[i];
+        aabb_min = aabb_min.min(v);
+        aabb_max = aabb_max.max(v);
+        const float position[2] = { (float)v.x, (float)v.y };
+        memcpy(vertex_out + i * m.vertex_stride, position, sizeof(position));
+        uint8_t* attribute = attribute_out + i * m.attribute_stride;
+        const float uv[2] = { (float)s.uvs[i].x, (float)s.uvs[i].y };
+        memcpy(attribute + m.uv_offset, uv, sizeof(uv));
+        if (s.colors) {
+            // Quantised the way the engine quantises an ARRAY_COLOR it is handed.
+            const float* c = s.colors + i * 4;
+            const uint8_t color8[4] = {
+                uint8_t(CLAMP(c[0] * 255.0, 0.0, 255.0)), uint8_t(CLAMP(c[1] * 255.0, 0.0, 255.0)),
+                uint8_t(CLAMP(c[2] * 255.0, 0.0, 255.0)), uint8_t(CLAMP(c[3] * 255.0, 0.0, 255.0))
+            };
+            memcpy(attribute + m.color_offset, color8, sizeof(color8));
+        }
+        if (s.custom0) {
+            memcpy(attribute + m.custom0_offset, s.custom0 + i * 4, 4 * sizeof(float));
+        }
+        if (s.custom1) {
+            memcpy(attribute + m.custom1_offset, s.custom1 + i * 4, 4 * sizeof(float));
+        }
+    }
+    uint8_t* index_out = m.index_bytes.ptrw();
+    if (m.index_stride == 2) {
+        uint16_t* index16 = (uint16_t*)index_out;
+        for (int i = 0; i < s.index_count; i++) {
+            index16[i] = (uint16_t)s.indices[i];
+        }
+    } else {
+        memcpy(index_out, s.indices, s.index_count * sizeof(int32_t));
+    }
+    memset(index_out + s.index_count * m.index_stride, 0, (m.index_capacity - s.index_count) * m.index_stride);
+
+    rs->mesh_surface_update_vertex_region(m.mesh, 0, 0, m.vertex_bytes);
+    rs->mesh_surface_update_attribute_region(m.mesh, 0, 0, m.attribute_bytes);
+    rs->mesh_surface_update_index_region(m.mesh, 0, 0, m.index_bytes);
+    // The surface's own bounds are those of the empty geometry it was created
+    // with; the canvas culls the item by these instead.
+    rs->mesh_set_custom_aabb(m.mesh, AABB(Vector3(aabb_min.x, aabb_min.y, 0.0f),
+                                          Vector3(aabb_max.x - aabb_min.x, aabb_max.y - aabb_min.y, 0.0f)));
+    rs->canvas_item_add_mesh(ci, m.mesh, Transform2D(), Color(1, 1, 1, 1), texture_rid);
 }
 
 bool SsInternalPlayer::_build_shape_geometry(const DrawFrame& f, int p_idx,
@@ -2832,10 +2958,12 @@ bool SsInternalPlayer::_build_shape_geometry(const DrawFrame& f, int p_idx,
 
     const float pma_flag = 0.0f;
 
-    out.verts.resize(part_shape_count);
-    out.uvs.resize(part_shape_count);
-    out.colors.resize(part_shape_count);
-    out.custom0.resize(part_shape_count * 4);
+    if (out.verts.size() < part_shape_count) {
+        out.verts.resize(part_shape_count);
+        out.uvs.resize(part_shape_count);
+        out.colors.resize(part_shape_count);
+        out.custom0.resize(part_shape_count * 4);
+    }
     Vector2* v_ptr = out.verts.ptrw();
     Vector2* u_ptr = out.uvs.ptrw();
     Color*   c_ptr = out.colors.ptrw();
@@ -2866,7 +2994,10 @@ bool SsInternalPlayer::_build_shape_geometry(const DrawFrame& f, int p_idx,
     // closing]), so a deformed / per-corner-coloured shape interpolates from
     // its center instead of across a diagonal seam.
     const int tri_count = part_shape_count - 2;
-    out.indices.resize(tri_count * 3);
+    out.index_count = tri_count * 3;
+    if (out.indices.size() < out.index_count) {
+        out.indices.resize(out.index_count);
+    }
     int32_t* i_ptr = (int32_t*)out.indices.ptrw();
     for (int i = 0; i < tri_count; i++) {
         i_ptr[i*3 + 0] = 0;
@@ -2913,21 +3044,14 @@ void SsInternalPlayer::_emit_normal_batch(const DrawFrame& f, RID ci,
     if (_normal_indices.size() < index_count) {
         _normal_indices.resize(index_count);
     }
-    SsVec2Array&  verts   = _normal_verts;
-    SsVec2Array&  uvs     = _normal_uvs;
-    SsColorArray& colors  = _normal_colors;
-    SsFloatArray& custom0 = _normal_custom0;
     SsIntArray&   indices = _normal_indices;
 
     // The accumulators are peak-retained (grown above, never shrunk), so their
-    // size is the largest batch seen so far, not this run's. Remember the
-    // capacity to restore after each run trims itself down for the emit.
-    const int verts_cap = verts.size(); // uvs / colors track this exactly
-
-    Vector2* verts_ptr = verts.ptrw();
-    Vector2* uvs_ptr = uvs.ptrw();
-    Color* colors_ptr = colors.ptrw();
-    float* custom0_ptr = custom0.ptrw();
+    // size is the largest batch seen so far; each run emits only what it wrote.
+    Vector2* verts_ptr = _normal_verts.ptrw();
+    Vector2* uvs_ptr = _normal_uvs.ptrw();
+    Color* colors_ptr = _normal_colors.ptrw();
+    float* custom0_ptr = _normal_custom0.ptrw();
     int32_t* indices_ptr = (int32_t*)indices.ptrw();
 
     int vbase = 0;
@@ -2979,32 +3103,10 @@ void SsInternalPlayer::_emit_normal_batch(const DrawFrame& f, RID ci,
         } else {
             run_ci = _acquire_per_part_canvas_item(); // fresh CI, draw_index = _draw_seq++
         }
-        // Trim every stream to what this run actually wrote. mesh_add_surface_from_arrays
-        // uploads whatever it is handed and derives the surface AABB from
-        // ARRAY_VERTEX, so leaving the peak-retained tail in place would upload
-        // the previous (larger) batch's vertex count on every small run and size
-        // the culling rect against geometry that is not drawn.
-        indices.resize(ibase);
-        verts.resize(vbase);
-        uvs.resize(vbase);
-        colors.resize(vbase);
-        custom0.resize(vbase * 4);
         _apply_partcolor_material(rs, run_ci, s_default_shader_id_hash, ssab_blend);
         rs->canvas_item_set_transform(run_ci, Transform2D());
-        _emit_partcolor_mesh(rs, run_ci, indices, verts, colors, uvs, custom0, tex_rid);
-        // Restore the accumulators to full batch capacity for the next run and
-        // re-fetch the write pointers (the arrays were shared with the emitted
-        // mesh during the call above).
-        indices.resize(index_count);
-        verts.resize(verts_cap);
-        uvs.resize(verts_cap);
-        colors.resize(verts_cap);
-        custom0.resize(verts_cap * 4);
-        verts_ptr = verts.ptrw();
-        uvs_ptr = uvs.ptrw();
-        colors_ptr = colors.ptrw();
-        custom0_ptr = custom0.ptrw();
-        indices_ptr = (int32_t*)indices.ptrw();
+        _emit_partcolor_mesh(rs, run_ci, indices_ptr, ibase, verts_ptr, colors_ptr,
+                             uvs_ptr, custom0_ptr, vbase, tex_rid);
         vbase = 0;
         ibase = 0;
     };
@@ -3060,9 +3162,6 @@ void SsInternalPlayer::_emit_normal_batch(const DrawFrame& f, RID ci,
                 for (int j = 0; j < INDICES_COUNT_QUAD; j++) iptr[j] = q[j];
                 idx_count = INDICES_COUNT_QUAD;
             }
-            // Temporarily resize indices for this emit so _emit_partcolor_mesh reads
-            // the correct size(). We don't shrink verts/uvs/colors/custom0.
-            _per_part_normal_indices.resize(idx_count);
 
             RID part_ci = _acquire_per_part_canvas_item();
             Ref<ShaderMaterial> mat = _acquire_per_part_material(psi.id_hash, ssab_blend);
@@ -3071,13 +3170,8 @@ void SsInternalPlayer::_emit_normal_batch(const DrawFrame& f, RID ci,
             _stamp_part_mask(mat, rank, md);
             rs->canvas_item_set_material(part_ci, mat->get_rid());
             rs->canvas_item_set_transform(part_ci, Transform2D());
-            _emit_partcolor_mesh(rs, part_ci,
-                                 _per_part_normal_indices, _per_part_normal_verts,
-                                 _per_part_normal_colors, _per_part_normal_uvs,
-                                 _per_part_normal_custom0, tex_rid);
-
-            // Restore index scratch buffer to max footprint for next emit.
-            _per_part_normal_indices.resize(INDICES_COUNT_PENTAGON);
+            _emit_partcolor_mesh(rs, part_ci, iptr, idx_count, p_verts_ptr, p_colors_ptr,
+                                 p_uvs_ptr, p_custom0_ptr, vc, tex_rid);
             continue;
         }
 
@@ -3184,13 +3278,13 @@ void SsInternalPlayer::_emit_shape_batch(const DrawFrame& f, RID ci,
             _apply_per_part_uniforms(mat, psi.params, psi.map0, psi.map1, Vector4(0, 0, 0, 0));
             _stamp_part_mask(mat, rank, md);
             f.rs->canvas_item_set_material(part_ci, mat->get_rid());
-            _emit_partcolor_mesh(f.rs, part_ci, _shape_buf.indices, _shape_buf.verts,
-                                 _shape_buf.colors, _shape_buf.uvs, _shape_buf.custom0,
-                                 RID());
+            _emit_partcolor_mesh(f.rs, part_ci, _shape_buf.indices.ptr(), _shape_buf.index_count,
+                                 _shape_buf.verts.ptr(), _shape_buf.colors.ptr(), _shape_buf.uvs.ptr(),
+                                 _shape_buf.custom0.ptr(), _shape_buf.vert_count, RID());
         } else {
-            _emit_partcolor_mesh(f.rs, default_run_ci(), _shape_buf.indices, _shape_buf.verts,
-                                 _shape_buf.colors, _shape_buf.uvs, _shape_buf.custom0,
-                                 RID());
+            _emit_partcolor_mesh(f.rs, default_run_ci(), _shape_buf.indices.ptr(), _shape_buf.index_count,
+                                 _shape_buf.verts.ptr(), _shape_buf.colors.ptr(), _shape_buf.uvs.ptr(),
+                                 _shape_buf.custom0.ptr(), _shape_buf.vert_count, RID());
         }
     }
     if (!batch_ci_used) {
@@ -3267,13 +3361,13 @@ void SsInternalPlayer::_emit_mesh_batch(const DrawFrame& f, RID ci,
             _apply_per_part_uniforms(mat, psi.params, psi.map0, psi.map1, cell_rect);
             _stamp_part_mask(mat, rank, md);
             f.rs->canvas_item_set_material(part_ci, mat->get_rid());
-            _emit_partcolor_mesh(f.rs, part_ci, _mesh_buf.indices, _mesh_buf.verts,
-                                 _mesh_buf.colors, _mesh_buf.uvs, _mesh_buf.custom0,
-                                 tex_rid);
+            _emit_partcolor_mesh(f.rs, part_ci, _mesh_buf.indices.ptr(), _mesh_buf.index_count,
+                                 _mesh_buf.verts.ptr(), _mesh_buf.colors.ptr(), _mesh_buf.uvs.ptr(),
+                                 _mesh_buf.custom0.ptr(), _mesh_buf.vert_count, tex_rid);
         } else {
-            _emit_partcolor_mesh(f.rs, default_run_ci(), _mesh_buf.indices, _mesh_buf.verts,
-                                 _mesh_buf.colors, _mesh_buf.uvs, _mesh_buf.custom0,
-                                 tex_rid);
+            _emit_partcolor_mesh(f.rs, default_run_ci(), _mesh_buf.indices.ptr(), _mesh_buf.index_count,
+                                 _mesh_buf.verts.ptr(), _mesh_buf.colors.ptr(), _mesh_buf.uvs.ptr(),
+                                 _mesh_buf.custom0.ptr(), _mesh_buf.vert_count, tex_rid);
         }
     }
     if (!batch_ci_used) {
@@ -3306,11 +3400,16 @@ bool SsInternalPlayer::_build_mesh_geometry(const DrawFrame& f, int p_idx,
     if (!f.mesh_indices || (uintptr_t)i1 > f.mesh_indices_len) return false;
 
     out.vert_count = vert_count;
-    out.verts.resize(vert_count);
-    out.uvs.resize(vert_count);
-    out.colors.resize(vert_count);
-    out.custom0.resize(vert_count * 4);
-    out.indices.resize(index_count);
+    out.index_count = index_count;
+    if (out.verts.size() < vert_count) {
+        out.verts.resize(vert_count);
+        out.uvs.resize(vert_count);
+        out.colors.resize(vert_count);
+        out.custom0.resize(vert_count * 4);
+    }
+    if (out.indices.size() < index_count) {
+        out.indices.resize(index_count);
+    }
 
     // Mesh part color is "Overall" only (a single flat color for the whole
     // part — see SS6 DrawMesh); resolve once, apply to every vertex. After
