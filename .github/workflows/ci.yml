@@ -16,7 +16,10 @@ on:
   # rust-cache still restores the newest cache built by the same toolchain, so a
   # PR that changes dependencies rebuilds only what changed.
   schedule:
-    - cron: '0 0 * * 0'
+    # Each repository of the family takes its own hour on Sunday, so their
+    # weekly runs do not queue for the organization's runners; :17 keeps clear
+    # of the top of the hour, when GitHub delays scheduled runs.
+    - cron: '17 1 * * 0'
   workflow_dispatch:
 
 env:
@@ -99,19 +102,25 @@ jobs:
       - name: Build Runtime (SDK)
         run: ./scripts/build-runtime.sh platform=${{ matrix.platform }} build=debug
 
-      # The month is part of the key so that the cache starts over once a month:
-      # godot-cpp is cloned from master, and objects compiled against the
-      # godot-cpp of earlier weeks would otherwise pile up in it for good.
+      # Keyed on what the objects are compiled from, godot-cpp's commit and this
+      # repository's sources, so a week in which neither moved restores the exact
+      # entry and saves nothing. The month is part of the key so that the cache
+      # starts over once a month: godot-cpp is cloned from master, and objects
+      # compiled against the godot-cpp of earlier weeks would otherwise pile up in
+      # it for good.
       - name: Name the SCons cache
         id: scons
         shell: bash
-        run: echo "month=$(date -u +%Y-%m)" >> "$GITHUB_OUTPUT"
+        run: |
+          echo "month=$(date -u +%Y-%m)" >> "$GITHUB_OUTPUT"
+          echo "godot-cpp=$(git -C godot-cpp rev-parse --short=12 HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Restore the SCons cache
+        id: scons-cache
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.scons_cache
-          key: ${{ runner.os }}-${{ matrix.platform }}-scons-${{ steps.scons.outputs.month }}-${{ github.sha }}
+          key: ${{ runner.os }}-${{ matrix.platform }}-scons-${{ steps.scons.outputs.month }}-${{ steps.scons.outputs.godot-cpp }}-${{ hashFiles('SConstruct', 'ss_player/SCsub', 'ss_player/*.py', 'ss_player/*.cpp', 'ss_player/*.h', 'ss_player/*.in', 'ss_player/VERSION.txt', 'ss_player/format/**', 'ss_player/shaders/**', 'ss_player/doc_classes/**', 'ss_player/icons/**') }}
           restore-keys: |
             ${{ runner.os }}-${{ matrix.platform }}-scons-${{ steps.scons.outputs.month }}-
 
@@ -133,11 +142,11 @@ jobs:
           fi
 
       - name: Save the SCons cache
-        if: github.ref == 'refs/heads/develop'
+        if: github.ref == 'refs/heads/develop' && steps.scons-cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.scons_cache
-          key: ${{ runner.os }}-${{ matrix.platform }}-scons-${{ steps.scons.outputs.month }}-${{ github.sha }}
+          key: ${{ steps.scons-cache.outputs.cache-primary-key }}
 
       # The weekly tier. `github.base_ref == 'main'` is the release PR: under
       # git-flow only release/X.Y is merged into main.
@@ -220,16 +229,20 @@ jobs:
           key: ${{ matrix.platform }}
           save-if: ${{ github.ref == 'refs/heads/develop' }}
 
+      # Keyed as in the extension job.
       - name: Name the SCons cache
         id: scons
         shell: bash
-        run: echo "month=$(date -u +%Y-%m)" >> "$GITHUB_OUTPUT"
+        run: |
+          echo "month=$(date -u +%Y-%m)" >> "$GITHUB_OUTPUT"
+          echo "godot-cpp=$(git -C godot-cpp rev-parse --short=12 HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Restore the SCons cache
+        id: scons-cache
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.scons_cache
-          key: ${{ runner.os }}-${{ matrix.platform }}-scons-${{ steps.scons.outputs.month }}-${{ github.sha }}
+          key: ${{ runner.os }}-${{ matrix.platform }}-scons-${{ steps.scons.outputs.month }}-${{ steps.scons.outputs.godot-cpp }}-${{ hashFiles('SConstruct', 'ss_player/SCsub', 'ss_player/*.py', 'ss_player/*.cpp', 'ss_player/*.h', 'ss_player/*.in', 'ss_player/VERSION.txt', 'ss_player/format/**', 'ss_player/shaders/**', 'ss_player/doc_classes/**', 'ss_player/icons/**') }}
           restore-keys: |
             ${{ runner.os }}-${{ matrix.platform }}-scons-${{ steps.scons.outputs.month }}-
 
@@ -298,11 +311,11 @@ jobs:
           Remove-Item -Recurse -Force ./bin/windows/*.lib
 
       - name: Save the SCons cache
-        if: github.ref == 'refs/heads/develop'
+        if: github.ref == 'refs/heads/develop' && steps.scons-cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.scons_cache
-          key: ${{ runner.os }}-${{ matrix.platform }}-scons-${{ steps.scons.outputs.month }}-${{ github.sha }}
+          key: ${{ steps.scons-cache.outputs.cache-primary-key }}
 
       - name: Build the custom module
         uses: ./.github/actions/build-module

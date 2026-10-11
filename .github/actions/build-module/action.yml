@@ -59,13 +59,15 @@ runs:
         no-cache: true
 
     # Keyed on the Godot version, so a version bump starts from nothing rather
-    # than restoring objects of another engine. cache_limit below keeps the
-    # directory to what one build uses.
+    # than restoring objects of another engine, and then on ss_player's sources,
+    # so a week in which they did not move restores the exact entry and saves
+    # nothing. cache_limit below keeps the directory to what one build uses.
     - name: Restore the SCons cache
+      id: scons-cache
       uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ${{ runner.temp }}/scons-module
-        key: module-${{ inputs.platform }}-${{ steps.godot.outputs.version }}-${{ github.sha }}
+        key: module-${{ inputs.platform }}-${{ steps.godot.outputs.version }}-${{ hashFiles('ss_player/SCsub', 'ss_player/*.py', 'ss_player/*.cpp', 'ss_player/*.h', 'ss_player/*.in', 'ss_player/VERSION.txt', 'ss_player/format/**', 'ss_player/shaders/**', 'ss_player/doc_classes/**', 'ss_player/icons/**') }}
         restore-keys: |
           module-${{ inputs.platform }}-${{ steps.godot.outputs.version }}-
 
@@ -92,8 +94,8 @@ runs:
 
     # Only develop writes caches, as with every other cache in this repository.
     - name: Save the SCons cache
-      if: github.ref == 'refs/heads/develop'
+      if: github.ref == 'refs/heads/develop' && steps.scons-cache.outputs.cache-hit != 'true'
       uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ${{ runner.temp }}/scons-module
-        key: module-${{ inputs.platform }}-${{ steps.godot.outputs.version }}-${{ github.sha }}
+        key: ${{ steps.scons-cache.outputs.cache-primary-key }}
