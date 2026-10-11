@@ -85,3 +85,13 @@ waits on the runtime is under *Needs SDK* and tracked in the
 - [ ] **Collider integration** — per-part collision shapes with callbacks. A `CollisionShape2D` or `Area2D` parented to
   a `SpriteStudioPartAttachment2D` already delegates collision to Godot's physics, so evaluate whether an auto-sizing
   `SpriteStudioPartCollider2D` (reading the part's vertex bounds) is needed at all.
+- [ ] **One parallel pass for every player's frame** — each `SpriteStudioPlayer2D` evaluates its frame
+  (`ss_runtime_get_frame_data`) and steps its effect slots on the main thread inside its own tick, one player after
+  another. With twenty players, the evaluation is about half of Ringo's `advance()` and a quarter of Doll's, and the
+  effect step about a third of `overall/Effect`'s (Forward+, sub-frame on). Both are independent per player, which is
+  what SpriteStudio Player for Unity relies on to run them for all its players in one pass across worker threads.
+  Here that would be a pass that advances every player and fires its signals first, then evaluates the frames and
+  steps the effects through `WorkerThreadPool`, then emits `frame_updated` and draws on the main thread. Before
+  building it, settle how the pass keeps what each node's own tick guarantees today: the order signals reach scripts
+  in, `frame_updated` before the draw, `ANIMATION_PROCESS_IDLE` / `PHYSICS` and a hand-driven `advance()` under
+  `ANIMATION_PROCESS_MANUAL`, and pause. Measure whether the gain holds at the player counts a game has on screen.
