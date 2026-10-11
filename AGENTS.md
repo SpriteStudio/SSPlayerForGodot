@@ -2,8 +2,10 @@
 
 ## Operating rules
 
-*   **Unrequested hardening is a suggestion, not a commit.** A defect you hit in code you touched is not:
-    fix it, or say why you did not.
+*   Keep changes scoped to the requested task. Unrequested hardening is a suggestion, not a commit; a defect
+    you actually hit in the code you touched is not — fix it, or say plainly why you did not.
+*   Before editing, read enough surrounding context to understand callers and invariants, the ones below
+    included.
 *   **Anything that exists twice changes twice** — a page and its translation, a `.sh` and its `.ps1`.
     Missing one half is this family's most common defect.
 *   **Never break a line between two Japanese characters**; Chrome renders the break as a space.
