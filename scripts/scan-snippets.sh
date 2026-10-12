@@ -37,7 +37,9 @@ mkdir "$WORK/src"
 mkdir -p "$ROOT_DIR/qa"
 tar -xf "$WORK/tracked.tar" -C "$WORK/src"
 
-"$BIN/scanoss-py" scan --threads 1 -o "$OUT" "$WORK/src"
+# --all-folders: by default the scanner skips any folder named example or
+# examples, and those are tracked and published like the rest.
+"$BIN/scanoss-py" scan --all-folders --threads 1 -o "$OUT" "$WORK/src"
 
 "$BIN/python" - "$OUT" <<'EOF'
 import json
