@@ -5185,8 +5185,8 @@ struct InitialPartAttributes FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Ta
   float local_alpha() const {
     return GetField<float>(VT_LOCAL_ALPHA, 1.0f);
   }
-  float priority() const {
-    return GetField<float>(VT_PRIORITY, 0.0f);
+  int32_t priority() const {
+    return GetField<int32_t>(VT_PRIORITY, 0);
   }
   bool flip_h() const {
     return GetField<uint8_t>(VT_FLIP_H, 0) != 0;
@@ -5281,7 +5281,7 @@ struct InitialPartAttributes FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Ta
            VerifyField<float>(verifier, VT_LOCAL_SCALE_Y, 4) &&
            VerifyField<float>(verifier, VT_ALPHA, 4) &&
            VerifyField<float>(verifier, VT_LOCAL_ALPHA, 4) &&
-           VerifyField<float>(verifier, VT_PRIORITY, 4) &&
+           VerifyField<int32_t>(verifier, VT_PRIORITY, 4) &&
            VerifyField<uint8_t>(verifier, VT_FLIP_H, 1) &&
            VerifyField<uint8_t>(verifier, VT_FLIP_V, 1) &&
            VerifyField<uint8_t>(verifier, VT_HIDE, 1) &&
@@ -5361,8 +5361,8 @@ struct InitialPartAttributesBuilder {
   void add_local_alpha(float local_alpha) {
     fbb_.AddElement<float>(InitialPartAttributes::VT_LOCAL_ALPHA, local_alpha, 1.0f);
   }
-  void add_priority(float priority) {
-    fbb_.AddElement<float>(InitialPartAttributes::VT_PRIORITY, priority, 0.0f);
+  void add_priority(int32_t priority) {
+    fbb_.AddElement<int32_t>(InitialPartAttributes::VT_PRIORITY, priority, 0);
   }
   void add_flip_h(bool flip_h) {
     fbb_.AddElement<uint8_t>(InitialPartAttributes::VT_FLIP_H, static_cast<uint8_t>(flip_h), 0);
@@ -5466,7 +5466,7 @@ inline ::flatbuffers::Offset<InitialPartAttributes> CreateInitialPartAttributes(
     float local_scale_y = 1.0f,
     float alpha = 1.0f,
     float local_alpha = 1.0f,
-    float priority = 0.0f,
+    int32_t priority = 0,
     bool flip_h = false,
     bool flip_v = false,
     bool hide = false,
