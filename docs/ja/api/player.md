@@ -118,6 +118,46 @@ pivot はキャンバス内のどこに原点があるかを表します。地�
 > [!NOTE]
 > 表示指定（`set_part_visibility_override`）に `priority` はありません。常にキーフレームに勝ち、アニメーションを設定し直すと必ずクリアされます。
 
+## モーションブレンド { #motion-blending }
+
+割り当てた `.ssab` の複数のアニメーションを、トラックに積んで同時に再生します。track 0 は `set_animation()` で選んだアニメーションで、その上のトラックが重なります。組み合わせ方は [モーションブレンド](../workflow/motion_blending.md) を参照してください。
+
+* `set_track_animation(track: int, anim_name: String) -> bool`: `track` に `anim_name` を載せ、それまで再生していたものと置き換えます。トラックは必要に応じて作られます。
+* `get_track_count() -> int`
+* `clear_track(track: int) -> bool`: トラックを空にします。track 0 は空にできないので、alpha を 0 までフェードしてください。
+* `set_track_alpha(track: int, alpha: float) -> bool` / `get_track_alpha(track: int) -> float`: そのトラックを下の結果にどれだけ重ねるか。0〜1 に制限しません。
+* `set_track_blend(track: int, blend: TrackBlend) -> bool` / `get_track_blend(track: int) -> TrackBlend`
+* `set_track_sync(track: int, sync: TrackSync) -> bool` / `get_track_sync(track: int) -> TrackSync`: そのトラックに **次に** 載せるアニメーションをどこから始めるか。載せる前に設定してください。
+* `set_track_frame(track: int, frame_no: float) -> bool` / `get_track_frame(track: int) -> float`
+* `set_track_speed(track: int, speed: float) -> bool`: トラックごとの速度。track 0 の速度は `speed_scale` で、同じ値を書き換えます。
+* `crossfade(track: int, anim_name: String, duration: float) -> bool`: トラックが再生しているものから `anim_name` へ `duration` **秒** かけてフェードし、終わるとトラックをそのアニメーションに引き継ぎます。空のトラックではすぐに再生を始めます。
+* `fade_track(track: int, target_alpha: float, duration: float) -> bool`: トラックの alpha を `duration` 秒かけて `target_alpha` にします。
+* `get_track_fade_progress(track: int) -> float`: フェード中は 0〜1、フェードしていないときは **-1**。
+* `cancel_track_fade(track: int) -> bool`: フェードを止めます。alpha と weight はその時点の値のままです。
+* `get_track_main_source(track: int) -> int`: そのトラックのアニメーションを持つソースのハンドル。無いときは **-1**。
+* `add_track_source(track: int, anim_name: String, weight: float) -> int`: トラックに別のアニメーションを足し、そのハンドルを返します（失敗したときは **-1**）。
+* `set_source_weight(source: int, weight: float) -> bool` / `get_source_weight(source: int) -> float`: トラックの中でのソースの比率。絶対値ではなく比率です。
+* `set_source_frame(source: int, frame_no: float) -> bool` / `get_source_frame(source: int) -> float`
+* `set_source_event_threshold(source: int, threshold: float) -> bool` / `get_source_event_threshold(source: int) -> float`: ソースがイベントを発火する weight の下限。初期値は `INF` なので、既定では track 0 の主ソースだけが発火します。
+
+設定のメソッドは、アニメーションが設定されていないとき、アニメーション名が `.ssab` に無いとき、ランタイムが受け付けなかったときに `false` を返します。存在しないトラックやソースの読み出しは `0` を返します（先に `get_track_count()` で確かめてください）。ただし `0` が正しい値になりうる 2 つは別で、`get_track_fade_progress()` は `-1` を返し、ソースのハンドルは `-1` です。
+
+別のアニメーションへの `set_animation()` は、トラックの設定も含めてスタックを track 0 だけに戻します。`play()` は track 0 だけを先頭へ戻し、`pause()`・`resume()`・`stop()` はすべてのトラックとフェードに効きます。track 0 が終わっても、重ねたトラックは止まりません。`is_playing()`・`is_pausing()`・`is_finished()` と `animation_*` シグナルは track 0 の状態を表します。
+
+### `TrackBlend` の値
+
+| 定数 | 値 | 意味 |
+| --- | --- | --- |
+| `TRACK_BLEND_MIX` | `0` | alpha に応じてトラックの姿勢へ近づける（既定） |
+| `TRACK_BLEND_ADDITIVE` | `1` | セットアップポーズからの差分を足す |
+
+### `TrackSync` の値
+
+| 定数 | 値 | 意味 |
+| --- | --- | --- |
+| `TRACK_SYNC_FREE` | `0` | 載せたアニメーションは再生区間の先頭から始まる（既定） |
+| `TRACK_SYNC_START` | `1` | track 0 のアニメーションと同じ位相から始まる |
+
 ## シグナル
 
 | シグナル | 引数 | 発行タイミング |
@@ -140,6 +180,7 @@ SpriteStudio 上でユーザーデータに設定した値が `Dictionary` と�
 | `part_index` | `int` | キーが置かれているパーツのインデックス |
 | `part_name` | `String` | そのパート名 |
 | `frame_no` | `int` | キーが置かれているフレーム。1 ティックで複数フレームをまたぐことがあるため、検出されたフレームとは限りません |
+| `source` | `int` | 発火したソースのハンドル（[モーションブレンド](#motion-blending) を参照） |
 | `integer` | `int` | 整数値 |
 | `point` | `Vector2` | 座標値 |
 | `rect` | `Rect2` | 矩形値（`x`, `y`, `width`, `height`） |
@@ -156,6 +197,7 @@ SpriteStudio 上でユーザーデータに設定した値が `Dictionary` と�
 | `part_index` | `int` | キーが置かれているパーツのインデックス |
 | `part_name` | `String` | そのパート名 |
 | `frame_no` | `int` | キーが置かれているフレーム |
+| `source` | `int` | 発火したソースのハンドル |
 
 ### `audio` の `payload` フィールド
 
@@ -166,6 +208,7 @@ SpriteStudio 上でユーザーデータに設定した値が `Dictionary` と�
 | `part_index` | `int` | 発火したパーツのインデックス |
 | `part_name` | `String` | そのパート名 |
 | `frame_no` | `int` | キーが置かれているフレーム |
+| `source` | `int` | 発火したソースのハンドル |
 | `sound_list_name_hash` | `int` | サウンドリスト名のハッシュ |
 | `sound_name_hash` | `int` | サウンド名のハッシュ |
 | `sound_name` | `String` | サウンド名（設定時のみ） |

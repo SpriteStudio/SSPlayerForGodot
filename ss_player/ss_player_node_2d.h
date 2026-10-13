@@ -58,6 +58,20 @@ public:
         OVERRIDE_PRIORITY_PERMANENT,                  // survives animation changes
     };
 
+    // How a track lays its animation over the tracks below it. Mirrors the
+    // runtime's SS_RUNTIME_TRACK_BLEND_* encoding.
+    enum TrackBlend {
+        TRACK_BLEND_MIX,      // lerp toward the track's pose by its alpha
+        TRACK_BLEND_ADDITIVE, // add its offset from the setup pose
+    };
+
+    // Where an animation laid on a track starts. Mirrors the runtime's
+    // SS_RUNTIME_TRACK_SYNC_* encoding.
+    enum TrackSync {
+        TRACK_SYNC_FREE,  // from the head of its section
+        TRACK_SYNC_START, // at the phase track 0's animation stands at
+    };
+
 private:
     void _notification( int p_notification );
     SpriteStudioPlayer2D();
@@ -242,6 +256,41 @@ public:
     bool set_part_cell_override_by_index(int part_index, const String& cellmap_name, const String& cell_name, OverridePriority priority);
     bool clear_part_cell_override_by_index(int part_index);
 
+    // ---- Animation mixing: the track stack ---------------------------------
+    // Track 0 is the animation set_animation() selects; the tracks above it lay
+    // other animations of the same SSAB over it. set_animation() to another
+    // animation folds the stack back to track 0 alone, every track's settings
+    // included. Durations are in seconds, as `advance()` takes them. Mutators
+    // return false when nothing is set up, the animation name is unknown, or
+    // the runtime refuses the call. Reads of a track or source that does not
+    // exist return 0 (check get_track_count() first), except
+    // get_track_fade_progress() (-1 when not fading) and the source handles
+    // (-1 for none), where 0 is a real answer.
+    bool set_track_animation(int track, const String& anim_name);
+    int get_track_count() const;
+    bool clear_track(int track);
+    bool set_track_alpha(int track, float alpha);
+    float get_track_alpha(int track) const;
+    bool set_track_blend(int track, TrackBlend blend);
+    TrackBlend get_track_blend(int track) const;
+    bool set_track_sync(int track, TrackSync sync);
+    TrackSync get_track_sync(int track) const;
+    bool set_track_frame(int track, float frame_no);
+    float get_track_frame(int track) const;
+    bool set_track_speed(int track, float speed);
+    bool crossfade(int track, const String& anim_name, float duration);
+    bool fade_track(int track, float target_alpha, float duration);
+    float get_track_fade_progress(int track) const;
+    bool cancel_track_fade(int track);
+    int64_t get_track_main_source(int track) const;
+    int64_t add_track_source(int track, const String& anim_name, float weight);
+    bool set_source_weight(int64_t source, float weight);
+    float get_source_weight(int64_t source) const;
+    bool set_source_frame(int64_t source, float frame_no);
+    float get_source_frame(int64_t source) const;
+    bool set_source_event_threshold(int64_t source, float threshold);
+    float get_source_event_threshold(int64_t source) const;
+
 private:
     // Engine-agnostic playback / render core. The Node2D wrapper feeds it the
     // host canvas item and per-tick delta, and forwards its events back to
@@ -315,3 +364,5 @@ VARIANT_ENUM_CAST(SpriteStudioPlayer2D::PlaybackDirection);
 VARIANT_ENUM_CAST(SpriteStudioPlayer2D::PlaybackStyle);
 VARIANT_ENUM_CAST(SpriteStudioPlayer2D::ColorBlendOperation);
 VARIANT_ENUM_CAST(SpriteStudioPlayer2D::OverridePriority);
+VARIANT_ENUM_CAST(SpriteStudioPlayer2D::TrackBlend);
+VARIANT_ENUM_CAST(SpriteStudioPlayer2D::TrackSync);

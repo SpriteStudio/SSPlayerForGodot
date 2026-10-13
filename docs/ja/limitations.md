@@ -54,6 +54,12 @@ Godot の 2D キャンバスにはステンシルバッファが無いため、�
 > - **WebAssembly SIMD が必須。** ランタイムは WebAssembly SIMD 命令を用いてビルドされており、**SIMD 非対応のブラウザでは動作しません**。配信先のブラウザ要件として SIMD 対応を前提としてください。
 > - **Web で GDExtension を使うには dlink 対応のエンジンテンプレートが必要。** 公式の Godot Web エクスポートテンプレートは GDExtension ライブラリに対応していません。`dlink_enabled=yes` でビルドしたエンジンテンプレートを用意し、エクスポートプリセットで **「Extensions Support」** を有効にする必要があります。これを行わないと、書き出したページが *「GDExtension libraries are not supported by this engine version.」* で失敗します。手順は [プロジェクトのエクスポート → Web](workflow/export.md#web) を参照してください。（**カスタムモジュール**形態はコードをエンジン本体へ組み込むため、この対応は不要です。）
 
+## モーションブレンド
+
+> [!WARNING]
+> - **track 0 のクロスフェードは `set_animation()` が作ったものを保ちます。** インスタンスパーツとエフェクトパーツは `set_animation()` で選んだアニメーションに合わせて準備され、クロスフェードでは準備し直しません。`get_current_animation()` もそのアニメーションの名前のままです。クロスフェードは、パーツを共有する同じ `.ssae` のアニメーションどうしで行ってください。
+> - **クロスフェードで track 0 に入ってきたアニメーションは無限にループします。** `loop_count` の値は関係ありません。ノードのループ回数が効くのは、`set_animation()` で設定したアニメーションです。
+
 ## 再生機能の制約
 
 以下は共通の `libssruntime` に由来する挙動のため、ビルド形態に関わらず適用されます。すべての公式

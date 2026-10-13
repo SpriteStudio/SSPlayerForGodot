@@ -542,6 +542,177 @@ bool SsInternalPlayer::clear_all_part_overrides() {
     return _override_applied(ss_runtime_clear_all_part_overrides(runtime_ctx));
 }
 
+// ---- Animation mixing ----------------------------------------------------
+
+bool SsInternalPlayer::_mixing_applied(bool p_ok) {
+    if (p_ok) {
+        _mixing_active = true;
+        // A stopped player, or one in MANUAL mode, has to show the change the
+        // way it shows an override: without stepping the animation.
+        _overrides_dirty = true;
+    }
+    return p_ok;
+}
+
+uint32_t SsInternalPlayer::_find_animation_hash(const String& p_name) const {
+    if (_ssabRes.is_null()) return 0;
+    const ss::format::AnimationData* animation = _ssabRes->find_animation(p_name);
+    return animation ? animation->name_hash() : 0;
+}
+
+// Tracks and sources are addressed by u32 in the runtime; a negative number
+// from GDScript names none, and is refused here rather than wrapped around.
+#define SS_TRACK_OR_FAIL(p_track, r_fail) \
+    if (runtime_ctx == nullptr || _currentAnimationData == nullptr || (p_track) < 0) return r_fail
+#define SS_SOURCE_OR_FAIL(p_source, r_fail) \
+    if (runtime_ctx == nullptr || _currentAnimationData == nullptr || (p_source) < 0 || (p_source) >= (int64_t)SS_RUNTIME_INVALID_HANDLE) return r_fail
+
+bool SsInternalPlayer::setTrackAnimation(int p_track, const String& p_name) {
+    SS_TRACK_OR_FAIL(p_track, false);
+    const uint32_t hash = _find_animation_hash(p_name);
+    if (hash == 0) return false;
+    return _mixing_applied(ss_runtime_set_track_animation_by_hash(runtime_ctx, (uint32_t)p_track, hash));
+}
+
+int SsInternalPlayer::getTrackCount() const {
+    if (runtime_ctx == nullptr || _currentAnimationData == nullptr) return 0;
+    return (int)ss_runtime_get_track_count(runtime_ctx);
+}
+
+bool SsInternalPlayer::clearTrack(int p_track) {
+    SS_TRACK_OR_FAIL(p_track, false);
+    return _mixing_applied(ss_runtime_clear_track(runtime_ctx, (uint32_t)p_track));
+}
+
+bool SsInternalPlayer::setTrackAlpha(int p_track, float p_alpha) {
+    SS_TRACK_OR_FAIL(p_track, false);
+    return _mixing_applied(ss_runtime_set_track_alpha(runtime_ctx, (uint32_t)p_track, p_alpha));
+}
+
+float SsInternalPlayer::getTrackAlpha(int p_track) const {
+    SS_TRACK_OR_FAIL(p_track, 0.0f);
+    const float alpha = ss_runtime_get_track_alpha(runtime_ctx, (uint32_t)p_track);
+    return std::isnan(alpha) ? 0.0f : alpha;
+}
+
+bool SsInternalPlayer::setTrackBlend(int p_track, int p_blend) {
+    SS_TRACK_OR_FAIL(p_track, false);
+    return _mixing_applied(ss_runtime_set_track_blend(runtime_ctx, (uint32_t)p_track, (uint32_t)p_blend));
+}
+
+int SsInternalPlayer::getTrackBlend(int p_track) const {
+    SS_TRACK_OR_FAIL(p_track, SS_RUNTIME_TRACK_BLEND_MIX);
+    const uint32_t blend = ss_runtime_get_track_blend(runtime_ctx, (uint32_t)p_track);
+    return blend == SS_RUNTIME_INVALID_HANDLE ? (int)SS_RUNTIME_TRACK_BLEND_MIX : (int)blend;
+}
+
+bool SsInternalPlayer::setTrackSync(int p_track, int p_sync) {
+    SS_TRACK_OR_FAIL(p_track, false);
+    // Not a change to the pose: it only decides where the next animation laid on
+    // the track starts, so it does not mark the stack as in use.
+    return ss_runtime_set_track_sync(runtime_ctx, (uint32_t)p_track, (uint32_t)p_sync);
+}
+
+int SsInternalPlayer::getTrackSync(int p_track) const {
+    SS_TRACK_OR_FAIL(p_track, SS_RUNTIME_TRACK_SYNC_FREE);
+    const uint32_t sync = ss_runtime_get_track_sync(runtime_ctx, (uint32_t)p_track);
+    return sync == SS_RUNTIME_INVALID_HANDLE ? (int)SS_RUNTIME_TRACK_SYNC_FREE : (int)sync;
+}
+
+bool SsInternalPlayer::setTrackFrame(int p_track, float p_frame) {
+    SS_TRACK_OR_FAIL(p_track, false);
+    return _mixing_applied(ss_runtime_set_track_frame(runtime_ctx, (uint32_t)p_track, p_frame));
+}
+
+float SsInternalPlayer::getTrackFrame(int p_track) const {
+    SS_TRACK_OR_FAIL(p_track, 0.0f);
+    const float frame = ss_runtime_get_track_frame(runtime_ctx, (uint32_t)p_track);
+    return std::isnan(frame) ? 0.0f : frame;
+}
+
+bool SsInternalPlayer::setTrackSpeed(int p_track, float p_speed) {
+    SS_TRACK_OR_FAIL(p_track, false);
+    return _mixing_applied(ss_runtime_set_track_speed(runtime_ctx, (uint32_t)p_track, p_speed));
+}
+
+bool SsInternalPlayer::crossfade(int p_track, const String& p_name, float p_duration_seconds) {
+    SS_TRACK_OR_FAIL(p_track, false);
+    const uint32_t hash = _find_animation_hash(p_name);
+    if (hash == 0) return false;
+    // The runtime's fades run in the milliseconds `update` hands it.
+    return _mixing_applied(ss_runtime_crossfade_by_hash(runtime_ctx, (uint32_t)p_track, hash, p_duration_seconds * 1000.0f));
+}
+
+bool SsInternalPlayer::fadeTrack(int p_track, float p_target_alpha, float p_duration_seconds) {
+    SS_TRACK_OR_FAIL(p_track, false);
+    return _mixing_applied(ss_runtime_fade_track(runtime_ctx, (uint32_t)p_track, p_target_alpha, p_duration_seconds * 1000.0f));
+}
+
+float SsInternalPlayer::getTrackFadeProgress(int p_track) const {
+    // -1 rather than 0 for "not fading": 0 is a fade that has just begun.
+    SS_TRACK_OR_FAIL(p_track, -1.0f);
+    const float progress = ss_runtime_get_track_fade_progress(runtime_ctx, (uint32_t)p_track);
+    return std::isnan(progress) ? -1.0f : progress;
+}
+
+bool SsInternalPlayer::cancelTrackFade(int p_track) {
+    SS_TRACK_OR_FAIL(p_track, false);
+    return _mixing_applied(ss_runtime_cancel_track_fade(runtime_ctx, (uint32_t)p_track));
+}
+
+int64_t SsInternalPlayer::getTrackMainSource(int p_track) const {
+    // -1 rather than 0 for "none": 0 is a valid handle.
+    SS_TRACK_OR_FAIL(p_track, -1);
+    const uint32_t handle = ss_runtime_get_track_main_source(runtime_ctx, (uint32_t)p_track);
+    return handle == SS_RUNTIME_INVALID_HANDLE ? -1 : (int64_t)handle;
+}
+
+int64_t SsInternalPlayer::addTrackSource(int p_track, const String& p_name, float p_weight) {
+    SS_TRACK_OR_FAIL(p_track, -1);
+    const uint32_t hash = _find_animation_hash(p_name);
+    if (hash == 0) return -1;
+    const uint32_t handle = ss_runtime_add_track_source_by_hash(runtime_ctx, (uint32_t)p_track, hash, p_weight);
+    if (!_mixing_applied(handle != SS_RUNTIME_INVALID_HANDLE)) return -1;
+    return (int64_t)handle;
+}
+
+bool SsInternalPlayer::setSourceWeight(int64_t p_source, float p_weight) {
+    SS_SOURCE_OR_FAIL(p_source, false);
+    return _mixing_applied(ss_runtime_set_source_weight(runtime_ctx, (uint32_t)p_source, p_weight));
+}
+
+float SsInternalPlayer::getSourceWeight(int64_t p_source) const {
+    SS_SOURCE_OR_FAIL(p_source, 0.0f);
+    const float weight = ss_runtime_get_source_weight(runtime_ctx, (uint32_t)p_source);
+    return std::isnan(weight) ? 0.0f : weight;
+}
+
+bool SsInternalPlayer::setSourceFrame(int64_t p_source, float p_frame) {
+    SS_SOURCE_OR_FAIL(p_source, false);
+    return _mixing_applied(ss_runtime_set_source_frame(runtime_ctx, (uint32_t)p_source, p_frame));
+}
+
+float SsInternalPlayer::getSourceFrame(int64_t p_source) const {
+    SS_SOURCE_OR_FAIL(p_source, 0.0f);
+    const float frame = ss_runtime_get_source_frame(runtime_ctx, (uint32_t)p_source);
+    return std::isnan(frame) ? 0.0f : frame;
+}
+
+bool SsInternalPlayer::setSourceEventThreshold(int64_t p_source, float p_threshold) {
+    SS_SOURCE_OR_FAIL(p_source, false);
+    // Decides which events are reported, not what is drawn.
+    return ss_runtime_set_source_event_threshold(runtime_ctx, (uint32_t)p_source, p_threshold);
+}
+
+float SsInternalPlayer::getSourceEventThreshold(int64_t p_source) const {
+    SS_SOURCE_OR_FAIL(p_source, 0.0f);
+    const float threshold = ss_runtime_get_source_event_threshold(runtime_ctx, (uint32_t)p_source);
+    return std::isnan(threshold) ? 0.0f : threshold;
+}
+
+#undef SS_TRACK_OR_FAIL
+#undef SS_SOURCE_OR_FAIL
+
 void SsInternalPlayer::onSSABReloaded() {
     String prev_anim = _strAnimationSelected;
     Ref<SSABResource> current = _ssabRes;
@@ -873,7 +1044,11 @@ void SsInternalPlayer::update(float delta_seconds) {
     if (_subtree_borrow_stale()) {
         onSSABReloaded();
     }
-    if (!ss_runtime_is_playing(runtime_ctx)) {
+    // `is_playing` describes track 0, not the character's clock: with the track
+    // stack in use, overlays and fades run on after track 0 has finished, and
+    // only the runtime knows whether its clock is running. So a stack in use
+    // is always ticked, and the runtime decides what moves.
+    if (!_mixing_active && !ss_runtime_is_playing(runtime_ctx)) {
         // A stopped or finished player does not reach the draw-dedup at the
         // bottom at all, so an override taken here would wait for the next
         // play(). Redraw the frame it is already holding. (A *paused* player
@@ -883,18 +1058,20 @@ void SsInternalPlayer::update(float delta_seconds) {
         return;
     }
 
+    // `is_finished` is sticky until play() clears it, so the signal is sent on
+    // the tick it turns true, which a stopped track 0 under a running stack
+    // would otherwise repeat every tick.
+    const bool was_finished = ss_runtime_is_finished(runtime_ctx);
     auto d = delta_seconds * 1000.0f;
     float frame_no = ss_runtime_update(runtime_ctx, d);
 
     // `just_looped` is a pulse the runtime clears on entry to every update, so
-    // reading it right after the tick is what catches it. `is_finished` is a
-    // sticky state instead; the `is_playing` early-return above is what keeps
-    // it from re-emitting, since only play() clears it.
+    // reading it right after the tick is what catches it.
     const bool was_looped = ss_runtime_just_looped(runtime_ctx);
     if (was_looped) {
         if (_event_sink) _event_sink->onAnimationLooped(_strAnimationSelected);
     }
-    if (ss_runtime_is_finished(runtime_ctx)) {
+    if (!was_finished && ss_runtime_is_finished(runtime_ctx)) {
         if (_event_sink) _event_sink->onAnimationFinished(_strAnimationSelected);
     }
 
@@ -907,16 +1084,24 @@ void SsInternalPlayer::update(float delta_seconds) {
     // — a timing-dependent loss seen in the editor preview but not a running
     // project. Events must fire whenever the runtime reports them, regardless of
     // whether we also redraw.
-    const auto* events = _currentAnimationData ? _currentAnimationData->events() : nullptr;
-    if (events != nullptr) {
-        const uint32_t events_size = events->size();
-        int event_count = ss_runtime_get_passed_event_count(runtime_ctx);
+    // Each index addresses the event table of the animation of the source that
+    // fired it, so the table is looked up per event. Reading them all against
+    // the animation set up here reports other events, or none, once a crossfade
+    // on track 0 has handed the track to another animation.
+    const int event_count = ss_runtime_get_passed_event_count(runtime_ctx);
+    const auto* animations = (event_count > 0 && _currentAnimationData && _ssabRes.is_valid())
+                             ? _ssabRes->get_ss_anime_binary()->animations() : nullptr;
+    if (animations != nullptr) {
         for (int i = 0; i < event_count; i++) {
+            const uint32_t source = ss_runtime_get_passed_event_source_handle(runtime_ctx, i);
+            const int32_t anim_idx = ss_runtime_get_source_animation_index(runtime_ctx, source);
+            if (anim_idx < 0 || (uint32_t)anim_idx >= animations->size()) continue;
+            const auto* events = animations->Get((uint32_t)anim_idx)->events();
+            if (events == nullptr) continue;
             int event_idx = ss_runtime_get_passed_event_index(runtime_ctx, i);
-            // The index comes from the runtime and is only meaningful against the
-            // animation currently bound there; a not-found (-1) or an index left
-            // over from a different animation would read past the FlatBuffer.
-            if (event_idx < 0 || (uint32_t)event_idx >= events_size) continue;
+            // A not-found (-1), or an index past that table, would read past the
+            // FlatBuffer.
+            if (event_idx < 0 || (uint32_t)event_idx >= events->size()) continue;
             auto events_per_frame = events->Get((uint32_t)event_idx);
             if (!events_per_frame) continue;
 
@@ -936,6 +1121,7 @@ void SsInternalPlayer::update(float delta_seconds) {
                     payload["part_index"] = part_index;
                     payload["part_name"] = get_part_name(part_index);
                     payload["frame_no"] = frame_no;
+                    payload["source"] = (int64_t)source;
                     if (auto i = val->integer()) payload["integer"] = i->value();
                     if (auto r = val->rect())    payload["rect"]    = Rect2(r->left(), r->top(), r->right() - r->left(), r->bottom() - r->top());
                     if (auto p = val->point())   payload["point"]   = Vector2(p->v1(), p->v2());
@@ -962,6 +1148,7 @@ void SsInternalPlayer::update(float delta_seconds) {
                     info["part_index"] = part_index;
                     info["part_name"] = get_part_name(part_index);
                     info["frame_no"] = frame_no;
+                    info["source"] = (int64_t)source;
 
                     Dictionary value_dict;
 
@@ -1016,6 +1203,7 @@ void SsInternalPlayer::update(float delta_seconds) {
                     payload["part_index"] = part_index;
                     payload["part_name"] = get_part_name(part_index);
                     payload["frame_no"] = frame_no;
+                    payload["source"] = (int64_t)source;
                     payload["sound_list_name_hash"] = (int64_t)val->sound_list_name_hash();
                     payload["sound_name_hash"] = (int64_t)val->sound_name_hash();
                     if (val->sound_name()) payload["sound_name"] = String::utf8(val->sound_name()->c_str());
@@ -1030,9 +1218,11 @@ void SsInternalPlayer::update(float delta_seconds) {
     float draw_frame = _sub_frame_enabled ? frame_no : floorf(frame_no);
     // An override changes what the frame draws without changing which frame it
     // is, so it has to defeat the dedup the same way a held-frame effect does.
-    // So does a mask coverage waiting on the size class its last draw picked.
+    // So does a mask coverage waiting on the size class its last draw picked,
+    // and a track stack in use, whose overlays and fades move the pose while
+    // track 0's frame stands still.
     if (previous_frame_no == draw_frame && !_needs_continuous_update() && !_overrides_dirty
-        && !_mask_resize_pending) return;
+        && !_mask_resize_pending && !_mixing_active) return;
 
     _seek_and_redraw(frame_no, delta_seconds, was_looped);
 }
@@ -3482,6 +3672,9 @@ bool SsInternalPlayer::_build_mesh_geometry(const DrawFrame& f, int p_idx,
 }
 
 void SsInternalPlayer::_fetchAnimation() {
+    // Both ways out reset or set up the runtime, which folds its stack back to
+    // track 0 alone (a failed setup leaves nothing to mix at all).
+    _mixing_active = false;
     if ((_strAnimationSelected.is_empty() && _animationSelectedHash == 0) || _ssabRes.is_null()) {
         ss_runtime_reset(runtime_ctx);
         _reconfigure();

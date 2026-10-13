@@ -54,6 +54,12 @@ Per-platform caveats to keep in mind:
 > - **WebAssembly SIMD is required.** The runtime is built with WebAssembly SIMD instructions and will **not run on browsers without SIMD support**. Treat SIMD support as a browser requirement for your distribution.
 > - **GDExtension on the Web needs a dlink-enabled engine template.** The official Godot Web export templates do not support GDExtension libraries. You must supply an engine template built with `dlink_enabled=yes` and turn on **"Extensions Support"** in the export preset — otherwise the exported page fails with *"GDExtension libraries are not supported by this engine version."* See [Exporting Your Project → Web](workflow/export.md#web) for the steps. (The **custom module** variant embeds the code into the engine itself and does not need this.)
 
+## Motion Blending
+
+> [!WARNING]
+> - **A crossfade on track 0 keeps what `set_animation()` built.** Instance and Effect parts are set up for the animation `set_animation()` selected and are not set up again by a crossfade, and `get_current_animation()` keeps naming that animation. Crossfade between animations of one `.ssae`, which share their parts.
+> - **An animation that enters track 0 by a crossfade loops without end**, whatever `loop_count` says. The node's loop count applies to the animation `set_animation()` set up.
+
 ## Playback Feature Constraints
 
 These come from the shared `libssruntime` and therefore apply regardless of build variant. They

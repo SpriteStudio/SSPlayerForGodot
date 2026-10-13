@@ -6,12 +6,6 @@ waits on the runtime is under *Needs SDK* and tracked in the
 
 ## Playback & rendering
 
-- [ ] **Motion blending / crossfade** — layer and cross-fade animations on one `SpriteStudioPlayer2D` through the
-  runtime's track stack. The runtime ships it and exports `ss_runtime_set_track_animation` / `ss_runtime_crossfade` /
-  `ss_runtime_add_track_source` / `ss_runtime_fade_track`, but nothing in `ss_player/` calls them and the node has no
-  track or crossfade method; SpriteStudio Player for wgpu is the reference (`set_track_animation` / `crossfade` /
-  `fade_track` / …), with the stems in the SDK porting guide's `20_design/30_api_conventions.md` (*Animation mixing*)
-  and the design in its `50_features/10_animation_mixing.md`.
 - [ ] **Label playback** — set the playback section by a start and an end label, each with an offset. Labels already
   ride in the `.ssab` payload (`AnimationData.Labels`), so no SDK change is needed: resolve them in `SsInternalPlayer`
   and add `set_animation_section_by_label(start_label, end_label, start_offset, end_offset)` on `SpriteStudioPlayer2D`,
