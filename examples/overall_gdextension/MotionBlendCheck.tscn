@@ -1,0 +1,6 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/motion_blend_check.gd" id="1_check"]
+
+[node name="MotionBlendCheck" type="Node2D"]
+script = ExtResource("1_check")

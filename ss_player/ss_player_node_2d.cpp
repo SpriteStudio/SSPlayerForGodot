@@ -304,6 +304,62 @@ bool SpriteStudioPlayer2D::clear_all_part_overrides() {
     return _internal->clear_all_part_overrides();
 }
 
+// ---- Animation mixing ----------------------------------------------------
+
+bool SpriteStudioPlayer2D::set_track_animation(int track, const String& anim_name) {
+    if (!_internal->setTrackAnimation(track, anim_name)) return false;
+    if (track == 0) _track_zero_switched();
+    return true;
+}
+int SpriteStudioPlayer2D::get_track_count() const { return _internal->getTrackCount(); }
+bool SpriteStudioPlayer2D::clear_track(int track) { return _internal->clearTrack(track); }
+bool SpriteStudioPlayer2D::set_track_alpha(int track, float alpha) { return _internal->setTrackAlpha(track, alpha); }
+float SpriteStudioPlayer2D::get_track_alpha(int track) const { return _internal->getTrackAlpha(track); }
+bool SpriteStudioPlayer2D::set_track_blend(int track, TrackBlend blend) { return _internal->setTrackBlend(track, (int)blend); }
+SpriteStudioPlayer2D::TrackBlend SpriteStudioPlayer2D::get_track_blend(int track) const { return (TrackBlend)_internal->getTrackBlend(track); }
+bool SpriteStudioPlayer2D::set_track_sync(int track, TrackSync sync) { return _internal->setTrackSync(track, (int)sync); }
+SpriteStudioPlayer2D::TrackSync SpriteStudioPlayer2D::get_track_sync(int track) const { return (TrackSync)_internal->getTrackSync(track); }
+bool SpriteStudioPlayer2D::set_track_frame(int track, float frame_no) { return _internal->setTrackFrame(track, frame_no); }
+float SpriteStudioPlayer2D::get_track_frame(int track) const { return _internal->getTrackFrame(track); }
+bool SpriteStudioPlayer2D::set_track_speed(int track, float speed) { return _internal->setTrackSpeed(track, speed); }
+float SpriteStudioPlayer2D::get_track_speed(int track) const { return _internal->getTrackSpeed(track); }
+bool SpriteStudioPlayer2D::set_track_frame_rate(int track, int fps) { return _internal->setTrackFrameRate(track, fps); }
+int SpriteStudioPlayer2D::get_track_frame_rate(int track) const { return _internal->getTrackFrameRate(track); }
+bool SpriteStudioPlayer2D::set_track_frame_skip_enabled(int track, bool enabled) { return _internal->setTrackSkipFrames(track, enabled); }
+bool SpriteStudioPlayer2D::is_track_frame_skip_enabled(int track) const { return _internal->getTrackSkipFrames(track); }
+bool SpriteStudioPlayer2D::set_track_playback_direction(int track, PlaybackDirection direction, PlaybackStyle style) { return _internal->setTrackPlaybackDirection(track, (int)direction, (int)style); }
+SpriteStudioPlayer2D::PlaybackDirection SpriteStudioPlayer2D::get_track_playback_direction(int track) const { return (PlaybackDirection)_internal->getTrackPlaybackDirection(track); }
+SpriteStudioPlayer2D::PlaybackStyle SpriteStudioPlayer2D::get_track_playback_style(int track) const { return (PlaybackStyle)_internal->getTrackPlaybackStyle(track); }
+
+bool SpriteStudioPlayer2D::set_track_loop_count(int track, int count) {
+    if (!_internal->setTrackLoopCount(track, count)) return false;
+    // Track 0's count is the node's loop_count, which every switch of track 0
+    // puts back; written past it, it would be undone at the next one.
+    if (track == 0) _loop_count = count;
+    return true;
+}
+int SpriteStudioPlayer2D::get_track_loop_count(int track) const { return _internal->getTrackLoopCount(track); }
+bool SpriteStudioPlayer2D::is_track_finished(int track) const { return _internal->isTrackFinished(track); }
+bool SpriteStudioPlayer2D::track_just_looped(int track) const { return _internal->trackJustLooped(track); }
+bool SpriteStudioPlayer2D::set_track_outgoing_event_threshold(int track, float threshold) { return _internal->setTrackOutgoingEventThreshold(track, threshold); }
+float SpriteStudioPlayer2D::get_track_outgoing_event_threshold(int track) const { return _internal->getTrackOutgoingEventThreshold(track); }
+bool SpriteStudioPlayer2D::crossfade(int track, const String& anim_name, float duration) {
+    if (!_internal->crossfade(track, anim_name, duration)) return false;
+    if (track == 0) _track_zero_switched();
+    return true;
+}
+bool SpriteStudioPlayer2D::fade_track(int track, float target_alpha, float duration) { return _internal->fadeTrack(track, target_alpha, duration); }
+float SpriteStudioPlayer2D::get_track_fade_progress(int track) const { return _internal->getTrackFadeProgress(track); }
+bool SpriteStudioPlayer2D::cancel_track_fade(int track) { return _internal->cancelTrackFade(track); }
+int64_t SpriteStudioPlayer2D::get_track_main_source(int track) const { return _internal->getTrackMainSource(track); }
+int64_t SpriteStudioPlayer2D::add_track_source(int track, const String& anim_name, float weight) { return _internal->addTrackSource(track, anim_name, weight); }
+bool SpriteStudioPlayer2D::set_source_weight(int64_t source, float weight) { return _internal->setSourceWeight(source, weight); }
+float SpriteStudioPlayer2D::get_source_weight(int64_t source) const { return _internal->getSourceWeight(source); }
+bool SpriteStudioPlayer2D::set_source_frame(int64_t source, float frame_no) { return _internal->setSourceFrame(source, frame_no); }
+float SpriteStudioPlayer2D::get_source_frame(int64_t source) const { return _internal->getSourceFrame(source); }
+bool SpriteStudioPlayer2D::set_source_event_threshold(int64_t source, float threshold) { return _internal->setSourceEventThreshold(source, threshold); }
+float SpriteStudioPlayer2D::get_source_event_threshold(int64_t source) const { return _internal->getSourceEventThreshold(source); }
+
 void SpriteStudioPlayer2D::setAnimation(const String& strName) {
     _internal->setAnimation(strName);
     _apply_transport_settings();
@@ -541,6 +597,15 @@ void SpriteStudioPlayer2D::_apply_transport_settings() {
     _internal->setLoop(_loop_count);
 }
 
+void SpriteStudioPlayer2D::_track_zero_switched() {
+    // The runtime carries speed, direction, frame rate and frame skip over to
+    // the incoming animation, but lays it looping forever, as a setup does: the
+    // loop count is the one setting that has to be put back.
+    _apply_transport_settings();
+    // `current_animation` now names the incoming animation.
+    notify_property_list_changed();
+}
+
 void SpriteStudioPlayer2D::setFrameSkipEnabled(bool p_skip) { _internal->setSkipFrames(p_skip); }
 bool SpriteStudioPlayer2D::isFrameSkipEnabled() const { return _internal->isSkipFrames(); }
 
@@ -654,6 +719,46 @@ void SpriteStudioPlayer2D::_bind_methods() {
     ClassDB::bind_method( D_METHOD( "set_part_cell_override_by_index", "part_index", "cellmap_name", "cell_name", "priority" ), &SpriteStudioPlayer2D::set_part_cell_override_by_index, DEFVAL(OVERRIDE_PRIORITY_HOLD_UNTIL_NEXT_ANIMATION) );
     ClassDB::bind_method( D_METHOD( "clear_part_cell_override_by_index", "part_index" ), &SpriteStudioPlayer2D::clear_part_cell_override_by_index );
 
+    // ---- Animation mixing: the track stack ---------------------------------
+    ClassDB::bind_method( D_METHOD( "set_track_animation", "track", "anim_name" ), &SpriteStudioPlayer2D::set_track_animation );
+    ClassDB::bind_method( D_METHOD( "get_track_count" ), &SpriteStudioPlayer2D::get_track_count );
+    ClassDB::bind_method( D_METHOD( "clear_track", "track" ), &SpriteStudioPlayer2D::clear_track );
+    ClassDB::bind_method( D_METHOD( "set_track_alpha", "track", "alpha" ), &SpriteStudioPlayer2D::set_track_alpha );
+    ClassDB::bind_method( D_METHOD( "get_track_alpha", "track" ), &SpriteStudioPlayer2D::get_track_alpha );
+    ClassDB::bind_method( D_METHOD( "set_track_blend", "track", "blend" ), &SpriteStudioPlayer2D::set_track_blend );
+    ClassDB::bind_method( D_METHOD( "get_track_blend", "track" ), &SpriteStudioPlayer2D::get_track_blend );
+    ClassDB::bind_method( D_METHOD( "set_track_sync", "track", "sync" ), &SpriteStudioPlayer2D::set_track_sync );
+    ClassDB::bind_method( D_METHOD( "get_track_sync", "track" ), &SpriteStudioPlayer2D::get_track_sync );
+    ClassDB::bind_method( D_METHOD( "set_track_frame", "track", "frame_no" ), &SpriteStudioPlayer2D::set_track_frame );
+    ClassDB::bind_method( D_METHOD( "get_track_frame", "track" ), &SpriteStudioPlayer2D::get_track_frame );
+    ClassDB::bind_method( D_METHOD( "set_track_speed", "track", "speed" ), &SpriteStudioPlayer2D::set_track_speed );
+    ClassDB::bind_method( D_METHOD( "get_track_speed", "track" ), &SpriteStudioPlayer2D::get_track_speed );
+    ClassDB::bind_method( D_METHOD( "set_track_frame_rate", "track", "fps" ), &SpriteStudioPlayer2D::set_track_frame_rate );
+    ClassDB::bind_method( D_METHOD( "get_track_frame_rate", "track" ), &SpriteStudioPlayer2D::get_track_frame_rate );
+    ClassDB::bind_method( D_METHOD( "set_track_frame_skip_enabled", "track", "enabled" ), &SpriteStudioPlayer2D::set_track_frame_skip_enabled );
+    ClassDB::bind_method( D_METHOD( "is_track_frame_skip_enabled", "track" ), &SpriteStudioPlayer2D::is_track_frame_skip_enabled );
+    ClassDB::bind_method( D_METHOD( "set_track_playback_direction", "track", "direction", "style" ), &SpriteStudioPlayer2D::set_track_playback_direction );
+    ClassDB::bind_method( D_METHOD( "get_track_playback_direction", "track" ), &SpriteStudioPlayer2D::get_track_playback_direction );
+    ClassDB::bind_method( D_METHOD( "get_track_playback_style", "track" ), &SpriteStudioPlayer2D::get_track_playback_style );
+    ClassDB::bind_method( D_METHOD( "set_track_loop_count", "track", "count" ), &SpriteStudioPlayer2D::set_track_loop_count );
+    ClassDB::bind_method( D_METHOD( "get_track_loop_count", "track" ), &SpriteStudioPlayer2D::get_track_loop_count );
+    ClassDB::bind_method( D_METHOD( "is_track_finished", "track" ), &SpriteStudioPlayer2D::is_track_finished );
+    ClassDB::bind_method( D_METHOD( "track_just_looped", "track" ), &SpriteStudioPlayer2D::track_just_looped );
+    ClassDB::bind_method( D_METHOD( "set_track_outgoing_event_threshold", "track", "threshold" ), &SpriteStudioPlayer2D::set_track_outgoing_event_threshold );
+    ClassDB::bind_method( D_METHOD( "get_track_outgoing_event_threshold", "track" ), &SpriteStudioPlayer2D::get_track_outgoing_event_threshold );
+    ClassDB::bind_method( D_METHOD( "crossfade", "track", "anim_name", "duration" ), &SpriteStudioPlayer2D::crossfade );
+    ClassDB::bind_method( D_METHOD( "fade_track", "track", "target_alpha", "duration" ), &SpriteStudioPlayer2D::fade_track );
+    ClassDB::bind_method( D_METHOD( "get_track_fade_progress", "track" ), &SpriteStudioPlayer2D::get_track_fade_progress );
+    ClassDB::bind_method( D_METHOD( "cancel_track_fade", "track" ), &SpriteStudioPlayer2D::cancel_track_fade );
+    ClassDB::bind_method( D_METHOD( "get_track_main_source", "track" ), &SpriteStudioPlayer2D::get_track_main_source );
+    ClassDB::bind_method( D_METHOD( "add_track_source", "track", "anim_name", "weight" ), &SpriteStudioPlayer2D::add_track_source );
+    ClassDB::bind_method( D_METHOD( "set_source_weight", "source", "weight" ), &SpriteStudioPlayer2D::set_source_weight );
+    ClassDB::bind_method( D_METHOD( "get_source_weight", "source" ), &SpriteStudioPlayer2D::get_source_weight );
+    ClassDB::bind_method( D_METHOD( "set_source_frame", "source", "frame_no" ), &SpriteStudioPlayer2D::set_source_frame );
+    ClassDB::bind_method( D_METHOD( "get_source_frame", "source" ), &SpriteStudioPlayer2D::get_source_frame );
+    ClassDB::bind_method( D_METHOD( "set_source_event_threshold", "source", "threshold" ), &SpriteStudioPlayer2D::set_source_event_threshold );
+    ClassDB::bind_method( D_METHOD( "get_source_event_threshold", "source" ), &SpriteStudioPlayer2D::get_source_event_threshold );
+
     ADD_SIGNAL(
         MethodInfo(
             "user_data",
@@ -759,6 +864,12 @@ void SpriteStudioPlayer2D::_bind_methods() {
     BIND_ENUM_CONSTANT(OVERRIDE_PRIORITY_OVERWRITE_ON_NEXT_KEYFRAME);
     BIND_ENUM_CONSTANT(OVERRIDE_PRIORITY_HOLD_UNTIL_NEXT_ANIMATION);
     BIND_ENUM_CONSTANT(OVERRIDE_PRIORITY_PERMANENT);
+
+    BIND_ENUM_CONSTANT(TRACK_BLEND_MIX);
+    BIND_ENUM_CONSTANT(TRACK_BLEND_ADDITIVE);
+
+    BIND_ENUM_CONSTANT(TRACK_SYNC_FREE);
+    BIND_ENUM_CONSTANT(TRACK_SYNC_START);
 }
 
 // Runtime-only properties. They stay reachable by name (`player.frame_rate = 30`)

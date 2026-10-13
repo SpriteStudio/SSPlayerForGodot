@@ -113,8 +113,9 @@ public:
     virtual void onAnimationChanged(const String& anim_name) {}
     virtual void onAnimationFinished(const String& anim_name) {}
     virtual void onAnimationLooped(const String& anim_name) {}
-    // `payload` / `info` carry the event's origin — `part_index`, `part_name`
-    // and `frame_no` — alongside the authored values. Signals keep theirs in a
+    // `payload` / `info` carry the event's origin — `part_index`, `part_name`,
+    // `frame_no` and the `source` handle that fired it — alongside the authored
+    // values. Signals keep theirs in a
     // separate `info` dictionary because `value` is keyed by author-defined
     // parameter ids, which a fixed key could collide with.
     virtual void onUserData(const Dictionary& payload) {}
@@ -222,7 +223,9 @@ public:
     bool isParentDriven() const { return _parent_driven; }
 
     // Per-tick update (in seconds; the host typically passes
-    // `process_delta_time`). No-op when paused or in instance-child mode.
+    // `process_delta_time`). No-op in instance-child mode, and for a stopped
+    // animation that has not used the track stack. A pause is the runtime's to
+    // hold, so a paused player still ticks.
     void update(float delta_seconds);
 
     // Transform / visibility / modulate on the root canvas item. The Node2D
@@ -316,6 +319,62 @@ public:
     // call every tick; `update()` covers the modes that tick the animation
     // themselves.
     void redraw_pending_overrides();
+
+    // ---- Animation mixing: the runtime's track stack ----------------------
+    // Thin wrappers over the ssruntime track / source FFI. Animations are named
+    // as setAnimation names them and resolved against the bound SSAB, so a name
+    // the pack does not have fails here rather than in the runtime. Each mutator
+    // returns false when nothing is bound or the runtime refuses the call.
+    // Reads of a track or source that does not exist return 0, except the two
+    // whose 0 is a real answer: getTrackFadeProgress (-1 when not fading) and
+    // the source handles (-1 for none).
+    bool setTrackAnimation(int p_track, const String& p_name);
+    int getTrackCount() const;
+    bool clearTrack(int p_track);
+    bool setTrackAlpha(int p_track, float p_alpha);
+    float getTrackAlpha(int p_track) const;
+    // 0 = Mix, 1 = Additive (the runtime's SS_RUNTIME_TRACK_BLEND_* values).
+    bool setTrackBlend(int p_track, int p_blend);
+    int getTrackBlend(int p_track) const;
+    // 0 = Free, 1 = Start (the runtime's SS_RUNTIME_TRACK_SYNC_* values).
+    bool setTrackSync(int p_track, int p_sync);
+    int getTrackSync(int p_track) const;
+    bool setTrackFrame(int p_track, float p_frame);
+    float getTrackFrame(int p_track) const;
+    bool setTrackSpeed(int p_track, float p_speed);
+    // A track's playback settings: they apply to every animation on it, those
+    // a crossfade fades in included, and outlast the animation. Track 0's are
+    // the transport the node's own setters reach. The loop count is the
+    // exception: it belongs to the animation, and an animation is laid looping
+    // forever (getTrackLoopCount is -1 then, and 0 for a track with none).
+    float getTrackSpeed(int p_track) const;
+    bool setTrackFrameRate(int p_track, int p_fps);
+    int getTrackFrameRate(int p_track) const;
+    bool setTrackSkipFrames(int p_track, bool p_skip);
+    bool getTrackSkipFrames(int p_track) const;
+    bool setTrackPlaybackDirection(int p_track, int p_direction, int p_style);
+    int getTrackPlaybackDirection(int p_track) const;
+    int getTrackPlaybackStyle(int p_track) const;
+    bool setTrackLoopCount(int p_track, int p_count);
+    int getTrackLoopCount(int p_track) const;
+    // A finished track holds its last frame and is still mixed in. Track 0's are
+    // isFinished / justLooped.
+    bool isTrackFinished(int p_track) const;
+    bool trackJustLooped(int p_track) const;
+    bool setTrackOutgoingEventThreshold(int p_track, float p_threshold);
+    float getTrackOutgoingEventThreshold(int p_track) const;
+    bool crossfade(int p_track, const String& p_name, float p_duration_seconds);
+    bool fadeTrack(int p_track, float p_target_alpha, float p_duration_seconds);
+    float getTrackFadeProgress(int p_track) const;
+    bool cancelTrackFade(int p_track);
+    int64_t getTrackMainSource(int p_track) const;
+    int64_t addTrackSource(int p_track, const String& p_name, float p_weight);
+    bool setSourceWeight(int64_t p_source, float p_weight);
+    float getSourceWeight(int64_t p_source) const;
+    bool setSourceFrame(int64_t p_source, float p_frame);
+    float getSourceFrame(int64_t p_source) const;
+    bool setSourceEventThreshold(int64_t p_source, float p_threshold);
+    float getSourceEventThreshold(int64_t p_source) const;
 
 private:
     using SsVec2Array = PackedVector2Array;
@@ -451,6 +510,21 @@ private:
     // sits in the runtime, unseen, until playback happens to step. Cleared by
     // `_drawAnimation`, which both the owner's and the child's path go through.
     bool _overrides_dirty = false;
+    // A track or source call has gone through since the animation was last set
+    // up. The pose then depends on more than track 0's frame: an overlay or a
+    // fade moves while track 0 holds, or after it has finished, so `update`
+    // neither stops at a stopped track 0 nor dedups on its frame. Cleared by
+    // `_fetchAnimation`, whose setup folds the stack back to track 0 alone.
+    bool _mixing_active = false;
+    bool _mixing_applied(bool p_ok);
+    // The resolved animation's name hash, or 0 for a name the SSAB lacks.
+    uint32_t _find_animation_hash(const String& p_name) const;
+    // A crossfade or a track animation on track 0 hands the character to
+    // `p_animation` from the call on, as setAnimation does. Recording it there
+    // and then is what keeps setAnimation from taking the animation a crossfade
+    // left behind for the one still selected, and the canvas, the signals and
+    // the effects' frame rate from describing the outgoing one.
+    void _track_zero_switched(const ss::format::AnimationData* p_animation);
 
     SsPlayerEventSink* _event_sink = nullptr;
 

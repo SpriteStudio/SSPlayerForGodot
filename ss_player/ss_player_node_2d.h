@@ -58,6 +58,20 @@ public:
         OVERRIDE_PRIORITY_PERMANENT,                  // survives animation changes
     };
 
+    // How a track lays its animation over the tracks below it. Mirrors the
+    // runtime's SS_RUNTIME_TRACK_BLEND_* encoding.
+    enum TrackBlend {
+        TRACK_BLEND_MIX,      // lerp toward the track's pose by its alpha
+        TRACK_BLEND_ADDITIVE, // add its offset from the setup pose
+    };
+
+    // Where an animation laid on a track starts. Mirrors the runtime's
+    // SS_RUNTIME_TRACK_SYNC_* encoding.
+    enum TrackSync {
+        TRACK_SYNC_FREE,  // from the head of its section
+        TRACK_SYNC_START, // at the phase track 0's animation stands at
+    };
+
 private:
     void _notification( int p_notification );
     SpriteStudioPlayer2D();
@@ -119,6 +133,9 @@ private:
     // Pushes the node's own transport configuration back onto the runtime after
     // anything that runs `setup_animation` underneath us.
     void _apply_transport_settings();
+    // The node's half of a crossfade or a track animation on track 0, which
+    // switches the animation without a `setup_animation`.
+    void _track_zero_switched();
 
 public:
     AnimationProcessMode get_animation_process_mode() const;
@@ -242,6 +259,67 @@ public:
     bool set_part_cell_override_by_index(int part_index, const String& cellmap_name, const String& cell_name, OverridePriority priority);
     bool clear_part_cell_override_by_index(int part_index);
 
+    // ---- Animation mixing: the track stack ---------------------------------
+    // Track 0 is the animation set_animation() selects; the tracks above it lay
+    // other animations of the same SSAB over it. set_animation() to another
+    // animation folds the stack back to track 0 alone, every track's settings
+    // included. Durations are in seconds, as `advance()` takes them. Mutators
+    // return false when nothing is set up, the animation name is unknown, or
+    // the runtime refuses the call. Reads of a track or source that does not
+    // exist return 0 (check get_track_count() first), except
+    // get_track_fade_progress() (-1 when not fading) and the source handles
+    // (-1 for none), where 0 is a real answer.
+    bool set_track_animation(int track, const String& anim_name);
+    int get_track_count() const;
+    bool clear_track(int track);
+    bool set_track_alpha(int track, float alpha);
+    float get_track_alpha(int track) const;
+    bool set_track_blend(int track, TrackBlend blend);
+    TrackBlend get_track_blend(int track) const;
+    bool set_track_sync(int track, TrackSync sync);
+    TrackSync get_track_sync(int track) const;
+    bool set_track_frame(int track, float frame_no);
+    float get_track_frame(int track) const;
+    bool set_track_speed(int track, float speed);
+    // A track's playback settings apply to every animation on it, those a
+    // crossfade fades in included, and outlast them; track 0's are the
+    // speed_scale / frame_rate / frame_skip_enabled / playback_direction this
+    // node already has. The loop count belongs to the animation instead: one
+    // laid on a track loops forever until set again, except on track 0, where
+    // set_track_loop_count is set_loop_count and the node puts it back.
+    float get_track_speed(int track) const;
+    bool set_track_frame_rate(int track, int fps);
+    int get_track_frame_rate(int track) const;
+    bool set_track_frame_skip_enabled(int track, bool enabled);
+    bool is_track_frame_skip_enabled(int track) const;
+    bool set_track_playback_direction(int track, PlaybackDirection direction, PlaybackStyle style);
+    PlaybackDirection get_track_playback_direction(int track) const;
+    PlaybackStyle get_track_playback_style(int track) const;
+    bool set_track_loop_count(int track, int count);
+    int get_track_loop_count(int track) const;
+    // States, read from the last tick: a finished track holds its last frame,
+    // still mixed in, until the host fades or clears it. No signal is sent for
+    // either; track 0's are animation_finished / animation_looped.
+    bool is_track_finished(int track) const;
+    bool track_just_looped(int track) const;
+    // The outgoing side of a crossfade on `track` fires events while its share,
+    // 1 - progress, is at least this. The default, INF, silences it from the
+    // moment the fade begins.
+    bool set_track_outgoing_event_threshold(int track, float threshold);
+    float get_track_outgoing_event_threshold(int track) const;
+    bool crossfade(int track, const String& anim_name, float duration);
+    bool fade_track(int track, float target_alpha, float duration);
+    float get_track_fade_progress(int track) const;
+    bool cancel_track_fade(int track);
+    int64_t get_track_main_source(int track) const;
+    int64_t add_track_source(int track, const String& anim_name, float weight);
+    bool set_source_weight(int64_t source, float weight);
+    float get_source_weight(int64_t source) const;
+    bool set_source_frame(int64_t source, float frame_no);
+    float get_source_frame(int64_t source) const;
+    bool set_source_event_threshold(int64_t source, float threshold);
+    float get_source_event_threshold(int64_t source) const;
+
 private:
     // Engine-agnostic playback / render core. The Node2D wrapper feeds it the
     // host canvas item and per-tick delta, and forwards its events back to
@@ -270,7 +348,9 @@ private:
     // The loop count as configured on the node — an inspector property, so it is
     // the node's own state and has to outlive an animation change. The runtime
     // resets its own count on every `setup_animation` (the transition is meant to
-    // state it), so this is pushed back afterwards by _apply_transport_settings.
+    // state it), and on every animation laid on track 0 by a crossfade or a
+    // track animation, so this is pushed back afterwards by
+    // _apply_transport_settings.
     // Speed, frame skip and the frame-rate override need no such handling: the
     // runtime carries those across a setup itself.
     int _loop_count = -1;
@@ -315,3 +395,5 @@ VARIANT_ENUM_CAST(SpriteStudioPlayer2D::PlaybackDirection);
 VARIANT_ENUM_CAST(SpriteStudioPlayer2D::PlaybackStyle);
 VARIANT_ENUM_CAST(SpriteStudioPlayer2D::ColorBlendOperation);
 VARIANT_ENUM_CAST(SpriteStudioPlayer2D::OverridePriority);
+VARIANT_ENUM_CAST(SpriteStudioPlayer2D::TrackBlend);
+VARIANT_ENUM_CAST(SpriteStudioPlayer2D::TrackSync);

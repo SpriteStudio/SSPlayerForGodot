@@ -33,6 +33,7 @@ nav:
       - Basic Usage: workflow/usage_basic.md
       - Asset Import & Editor Integration: workflow/usage_asset_pipeline.md
       - Scripting & Events: workflow/usage_scripting.md
+      - Motion Blending: workflow/motion_blending.md
       - Audio Playback: workflow/audio.md
       - AnimationPlayer Integration: workflow/animation_player.md
       - Exporting Your Project: workflow/export.md

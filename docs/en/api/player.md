@@ -119,12 +119,58 @@ Override a single part's color / cell / visibility so that it wins over the keyf
 > [!NOTE]
 > `set_part_visibility_override` has no `priority`. It always wins over the keyframes and is always cleared when a new animation is set up.
 
+## Motion blending { #motion-blending }
+
+Play several animations of the assigned `.ssab` at once, stacked on tracks: track 0 is the animation `set_animation()` selects, and the tracks above it are laid over it. [Motion Blending](../workflow/motion_blending.md) explains how the pieces fit together.
+
+* `set_track_animation(track: int, anim_name: String) -> bool`: Lays `anim_name` on `track`, replacing what it played. Tracks are created as needed. On track 0 it switches the current animation, as a crossfade does, and leaves the tracks above it in place.
+* `get_track_count() -> int`
+* `clear_track(track: int) -> bool`: Empties a track. Track 0 cannot be emptied — fade its alpha to 0 instead.
+* `set_track_alpha(track: int, alpha: float) -> bool` / `get_track_alpha(track: int) -> float`: How much of the track lays over what is below. Not clamped to 0–1.
+* `set_track_blend(track: int, blend: TrackBlend) -> bool` / `get_track_blend(track: int) -> TrackBlend`
+* `set_track_sync(track: int, sync: TrackSync) -> bool` / `get_track_sync(track: int) -> TrackSync`: Where the animations laid on the track **next** start. Set it before laying.
+* `set_track_frame(track: int, frame_no: float) -> bool` / `get_track_frame(track: int) -> float`
+* `set_track_speed(track: int, speed: float) -> bool` / `get_track_speed(track: int) -> float`: A track's speed. This and the three settings below belong to the track: they reach every animation on it, both sides of a crossfade included. Track 0's is `speed_scale`, which writes the same value.
+* `set_track_frame_rate(track: int, fps: int) -> bool` / `get_track_frame_rate(track: int) -> int`: Track 0's is `frame_rate`.
+* `set_track_frame_skip_enabled(track: int, enabled: bool) -> bool` / `is_track_frame_skip_enabled(track: int) -> bool`: Track 0's is `frame_skip_enabled`.
+* `set_track_playback_direction(track: int, direction: PlaybackDirection, style: PlaybackStyle) -> bool` / `get_track_playback_direction(track: int) -> PlaybackDirection` / `get_track_playback_style(track: int) -> PlaybackStyle`: Track 0's is `set_playback_direction()`.
+* `set_track_loop_count(track: int, count: int) -> bool` / `get_track_loop_count(track: int) -> int`: The loop count of the animation on the track. An animation is laid looping forever (`-1`); a track with none reads `0`. Track 0's is `loop_count`, which the node puts back on every animation track 0 switches to.
+* `is_track_finished(track: int) -> bool` / `track_just_looped(track: int) -> bool`: Track 0's are `is_finished()` / `just_looped()`. A finished track holds its last frame and stays mixed in. No signal is sent for either.
+* `set_track_outgoing_event_threshold(track: int, threshold: float) -> bool` / `get_track_outgoing_event_threshold(track: int) -> float`: The outgoing side of a crossfade on the track fires its events while its share, `1 - progress`, is at least this. Starts at `INF`, which silences it as the fade begins.
+* `crossfade(track: int, anim_name: String, duration: float) -> bool`: Fades the track from what it plays to `anim_name` over `duration` **seconds**. `anim_name` takes the track over from the call on: on track 0 it is the current animation from then, and `animation_changed` is sent. On an empty track it starts at once.
+* `fade_track(track: int, target_alpha: float, duration: float) -> bool`: Drives the track's alpha to `target_alpha` over `duration` seconds.
+* `get_track_fade_progress(track: int) -> float`: 0 to 1 during a fade, **-1** when the track is not fading.
+* `cancel_track_fade(track: int) -> bool`: Stops a fade, leaving alpha and weight where they are.
+* `get_track_main_source(track: int) -> int`: The handle of the source carrying the track's animation, **-1** for none.
+* `add_track_source(track: int, anim_name: String, weight: float) -> int`: Lays another animation on the track beside what it carries, and returns its handle (**-1** on failure).
+* `set_source_weight(source: int, weight: float) -> bool` / `get_source_weight(source: int) -> float`: A source's share within its track — a ratio, not an absolute value.
+* `set_source_frame(source: int, frame_no: float) -> bool` / `get_source_frame(source: int) -> float`
+* `set_source_event_threshold(source: int, threshold: float) -> bool` / `get_source_event_threshold(source: int) -> float`: The weight at or above which the source fires its events. Starts at `INF`, so only track 0's main source fires by default.
+
+Each setter returns `false` when no animation is set up, the animation name is not in the `.ssab`, or the runtime refuses the call. A read of a track or source that does not exist returns `0` (check `get_track_count()` first), except the two whose `0` is a real answer: `get_track_fade_progress()` returns `-1`, and the source handles are `-1`.
+
+`set_animation()` to a different animation folds the stack back to track 0 alone, every track setting included. `play()` heads out track 0 only; `pause()`, `resume()` and `stop()` act on every track and fade; and track 0 finishing does not stop the overlays. `is_playing()`, `is_pausing()`, `is_finished()` and the `animation_*` signals describe track 0.
+
+### Values for `TrackBlend`
+
+| Constant | Value | Meaning |
+| --- | --- | --- |
+| `TRACK_BLEND_MIX` | `0` | Pull toward the track's pose by its alpha (default) |
+| `TRACK_BLEND_ADDITIVE` | `1` | Add the track's offset from the setup pose |
+
+### Values for `TrackSync`
+
+| Constant | Value | Meaning |
+| --- | --- | --- |
+| `TRACK_SYNC_FREE` | `0` | A laid animation starts at the head of its section (default) |
+| `TRACK_SYNC_START` | `1` | It starts at the phase track 0's animation stands at |
+
 ## Signals
 
 | Signal | Arguments | Emitted When |
 | --- | --- | --- |
 | `animation_started` | `anim_name: String` | Playback starts |
-| `animation_changed` | `anim_name: String` | The animation name is changed |
+| `animation_changed` | `anim_name: String` | The animation name is changed — by `set_animation()`, or by `crossfade()` / `set_track_animation()` on track 0 |
 | `animation_finished` | `anim_name: String` | Every configured loop has been played. Never emitted under an infinite loop |
 | `animation_looped` | `anim_name: String` | The animation looped back to the start. Not emitted on the final cycle, which emits `animation_finished` instead |
 | `frame_updated` | `frame_no: float` | The frame's part poses have just been finalized (right after the player's update, before the render phase). Which process it fires in follows `animation_process_mode` |
@@ -141,6 +187,7 @@ The User Data values configured in SpriteStudio are delivered as a `Dictionary`.
 | `part_index` | `int` | Index of the part the key sits on |
 | `part_name` | `String` | Name of that part |
 | `frame_no` | `int` | The frame the key sits on. Not necessarily the frame it was noticed on — one tick can step across several |
+| `source` | `int` | Handle of the source that fired it — see [Motion blending](#motion-blending) |
 | `integer` | `int` | Integer value |
 | `point` | `Vector2` | Point value |
 | `rect` | `Rect2` | Rectangle value (`x`, `y`, `width`, `height`) |
@@ -157,6 +204,7 @@ The event's origin arrives as a **separate** `info` dictionary rather than as mo
 | `part_index` | `int` | Index of the part the key sits on |
 | `part_name` | `String` | Name of that part |
 | `frame_no` | `int` | The frame the key sits on |
+| `source` | `int` | Handle of the source that fired it |
 
 ### `audio` payload fields
 
@@ -167,6 +215,7 @@ The information configured on the timeline audio keyframe is delivered as a `Dic
 | `part_index` | `int` | Index of the part that fired |
 | `part_name` | `String` | Name of that part |
 | `frame_no` | `int` | The frame the key sits on |
+| `source` | `int` | Handle of the source that fired it |
 | `sound_list_name_hash` | `int` | Hash of the sound list name |
 | `sound_name_hash` | `int` | Hash of the sound name |
 | `sound_name` | `String` | Sound name (present only when set) |
