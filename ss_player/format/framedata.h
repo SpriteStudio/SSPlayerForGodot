@@ -578,7 +578,7 @@ FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(8) PartState FLATBUFFERS_FINAL_CLASS {
   float local_scale_y_;
   float alpha_;
   float local_alpha_;
-  float priority_;
+  int32_t priority_;
   float pivot_x_;
   float pivot_y_;
   float anchor_x_;
@@ -656,7 +656,7 @@ FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(8) PartState FLATBUFFERS_FINAL_CLASS {
     (void)padding0__;
     (void)padding1__;
   }
-  PartState(ss::runtime::UpdateAttributeFlags _update_flag, float _position_x, float _position_y, float _position_z, float _rotation_x, float _rotation_y, float _rotation_z, float _scale_x, float _scale_y, float _local_scale_x, float _local_scale_y, float _alpha, float _local_alpha, float _priority, float _pivot_x, float _pivot_y, float _anchor_x, float _anchor_y, float _size_x, float _size_y, float _uv_translation_x, float _uv_translation_y, float _uv_rotation_z, float _uv_scale_x, float _uv_scale_y, float _bounding_radius, float _mask, float _skew_x, float _skew_y, uint32_t _texture, int16_t _part_index, int16_t _cell, int16_t _part_color, int16_t _shader, int16_t _vertex, int16_t _deform, bool _flip_h, bool _flip_v, bool _hide, bool _img_flip_h, bool _img_flip_v)
+  PartState(ss::runtime::UpdateAttributeFlags _update_flag, float _position_x, float _position_y, float _position_z, float _rotation_x, float _rotation_y, float _rotation_z, float _scale_x, float _scale_y, float _local_scale_x, float _local_scale_y, float _alpha, float _local_alpha, int32_t _priority, float _pivot_x, float _pivot_y, float _anchor_x, float _anchor_y, float _size_x, float _size_y, float _uv_translation_x, float _uv_translation_y, float _uv_rotation_z, float _uv_scale_x, float _uv_scale_y, float _bounding_radius, float _mask, float _skew_x, float _skew_y, uint32_t _texture, int16_t _part_index, int16_t _cell, int16_t _part_color, int16_t _shader, int16_t _vertex, int16_t _deform, bool _flip_h, bool _flip_v, bool _hide, bool _img_flip_h, bool _img_flip_v)
       : update_flag_(::flatbuffers::EndianScalar(static_cast<uint64_t>(_update_flag))),
         position_x_(::flatbuffers::EndianScalar(_position_x)),
         position_y_(::flatbuffers::EndianScalar(_position_y)),
@@ -742,7 +742,7 @@ FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(8) PartState FLATBUFFERS_FINAL_CLASS {
   float local_alpha() const {
     return ::flatbuffers::EndianScalar(local_alpha_);
   }
-  float priority() const {
+  int32_t priority() const {
     return ::flatbuffers::EndianScalar(priority_);
   }
   float pivot_x() const {
