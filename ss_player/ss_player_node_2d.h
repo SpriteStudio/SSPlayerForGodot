@@ -281,6 +281,32 @@ public:
     bool set_track_frame(int track, float frame_no);
     float get_track_frame(int track) const;
     bool set_track_speed(int track, float speed);
+    // A track's playback settings apply to every animation on it, those a
+    // crossfade fades in included, and outlast them; track 0's are the
+    // speed_scale / frame_rate / frame_skip_enabled / playback_direction this
+    // node already has. The loop count belongs to the animation instead: one
+    // laid on a track loops forever until set again, except on track 0, where
+    // set_track_loop_count is set_loop_count and the node puts it back.
+    float get_track_speed(int track) const;
+    bool set_track_frame_rate(int track, int fps);
+    int get_track_frame_rate(int track) const;
+    bool set_track_frame_skip_enabled(int track, bool enabled);
+    bool is_track_frame_skip_enabled(int track) const;
+    bool set_track_playback_direction(int track, PlaybackDirection direction, PlaybackStyle style);
+    PlaybackDirection get_track_playback_direction(int track) const;
+    PlaybackStyle get_track_playback_style(int track) const;
+    bool set_track_loop_count(int track, int count);
+    int get_track_loop_count(int track) const;
+    // States, read from the last tick: a finished track holds its last frame,
+    // still mixed in, until the host fades or clears it. No signal is sent for
+    // either; track 0's are animation_finished / animation_looped.
+    bool is_track_finished(int track) const;
+    bool track_just_looped(int track) const;
+    // The outgoing side of a crossfade on `track` fires events while its share,
+    // 1 - progress, is at least this. The default, INF, silences it from the
+    // moment the fade begins.
+    bool set_track_outgoing_event_threshold(int track, float threshold);
+    float get_track_outgoing_event_threshold(int track) const;
     bool crossfade(int track, const String& anim_name, float duration);
     bool fade_track(int track, float target_alpha, float duration);
     float get_track_fade_progress(int track) const;

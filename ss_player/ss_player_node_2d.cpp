@@ -322,6 +322,27 @@ SpriteStudioPlayer2D::TrackSync SpriteStudioPlayer2D::get_track_sync(int track) 
 bool SpriteStudioPlayer2D::set_track_frame(int track, float frame_no) { return _internal->setTrackFrame(track, frame_no); }
 float SpriteStudioPlayer2D::get_track_frame(int track) const { return _internal->getTrackFrame(track); }
 bool SpriteStudioPlayer2D::set_track_speed(int track, float speed) { return _internal->setTrackSpeed(track, speed); }
+float SpriteStudioPlayer2D::get_track_speed(int track) const { return _internal->getTrackSpeed(track); }
+bool SpriteStudioPlayer2D::set_track_frame_rate(int track, int fps) { return _internal->setTrackFrameRate(track, fps); }
+int SpriteStudioPlayer2D::get_track_frame_rate(int track) const { return _internal->getTrackFrameRate(track); }
+bool SpriteStudioPlayer2D::set_track_frame_skip_enabled(int track, bool enabled) { return _internal->setTrackSkipFrames(track, enabled); }
+bool SpriteStudioPlayer2D::is_track_frame_skip_enabled(int track) const { return _internal->getTrackSkipFrames(track); }
+bool SpriteStudioPlayer2D::set_track_playback_direction(int track, PlaybackDirection direction, PlaybackStyle style) { return _internal->setTrackPlaybackDirection(track, (int)direction, (int)style); }
+SpriteStudioPlayer2D::PlaybackDirection SpriteStudioPlayer2D::get_track_playback_direction(int track) const { return (PlaybackDirection)_internal->getTrackPlaybackDirection(track); }
+SpriteStudioPlayer2D::PlaybackStyle SpriteStudioPlayer2D::get_track_playback_style(int track) const { return (PlaybackStyle)_internal->getTrackPlaybackStyle(track); }
+
+bool SpriteStudioPlayer2D::set_track_loop_count(int track, int count) {
+    if (!_internal->setTrackLoopCount(track, count)) return false;
+    // Track 0's count is the node's loop_count, which every switch of track 0
+    // puts back; written past it, it would be undone at the next one.
+    if (track == 0) _loop_count = count;
+    return true;
+}
+int SpriteStudioPlayer2D::get_track_loop_count(int track) const { return _internal->getTrackLoopCount(track); }
+bool SpriteStudioPlayer2D::is_track_finished(int track) const { return _internal->isTrackFinished(track); }
+bool SpriteStudioPlayer2D::track_just_looped(int track) const { return _internal->trackJustLooped(track); }
+bool SpriteStudioPlayer2D::set_track_outgoing_event_threshold(int track, float threshold) { return _internal->setTrackOutgoingEventThreshold(track, threshold); }
+float SpriteStudioPlayer2D::get_track_outgoing_event_threshold(int track) const { return _internal->getTrackOutgoingEventThreshold(track); }
 bool SpriteStudioPlayer2D::crossfade(int track, const String& anim_name, float duration) {
     if (!_internal->crossfade(track, anim_name, duration)) return false;
     if (track == 0) _track_zero_switched();
@@ -711,6 +732,20 @@ void SpriteStudioPlayer2D::_bind_methods() {
     ClassDB::bind_method( D_METHOD( "set_track_frame", "track", "frame_no" ), &SpriteStudioPlayer2D::set_track_frame );
     ClassDB::bind_method( D_METHOD( "get_track_frame", "track" ), &SpriteStudioPlayer2D::get_track_frame );
     ClassDB::bind_method( D_METHOD( "set_track_speed", "track", "speed" ), &SpriteStudioPlayer2D::set_track_speed );
+    ClassDB::bind_method( D_METHOD( "get_track_speed", "track" ), &SpriteStudioPlayer2D::get_track_speed );
+    ClassDB::bind_method( D_METHOD( "set_track_frame_rate", "track", "fps" ), &SpriteStudioPlayer2D::set_track_frame_rate );
+    ClassDB::bind_method( D_METHOD( "get_track_frame_rate", "track" ), &SpriteStudioPlayer2D::get_track_frame_rate );
+    ClassDB::bind_method( D_METHOD( "set_track_frame_skip_enabled", "track", "enabled" ), &SpriteStudioPlayer2D::set_track_frame_skip_enabled );
+    ClassDB::bind_method( D_METHOD( "is_track_frame_skip_enabled", "track" ), &SpriteStudioPlayer2D::is_track_frame_skip_enabled );
+    ClassDB::bind_method( D_METHOD( "set_track_playback_direction", "track", "direction", "style" ), &SpriteStudioPlayer2D::set_track_playback_direction );
+    ClassDB::bind_method( D_METHOD( "get_track_playback_direction", "track" ), &SpriteStudioPlayer2D::get_track_playback_direction );
+    ClassDB::bind_method( D_METHOD( "get_track_playback_style", "track" ), &SpriteStudioPlayer2D::get_track_playback_style );
+    ClassDB::bind_method( D_METHOD( "set_track_loop_count", "track", "count" ), &SpriteStudioPlayer2D::set_track_loop_count );
+    ClassDB::bind_method( D_METHOD( "get_track_loop_count", "track" ), &SpriteStudioPlayer2D::get_track_loop_count );
+    ClassDB::bind_method( D_METHOD( "is_track_finished", "track" ), &SpriteStudioPlayer2D::is_track_finished );
+    ClassDB::bind_method( D_METHOD( "track_just_looped", "track" ), &SpriteStudioPlayer2D::track_just_looped );
+    ClassDB::bind_method( D_METHOD( "set_track_outgoing_event_threshold", "track", "threshold" ), &SpriteStudioPlayer2D::set_track_outgoing_event_threshold );
+    ClassDB::bind_method( D_METHOD( "get_track_outgoing_event_threshold", "track" ), &SpriteStudioPlayer2D::get_track_outgoing_event_threshold );
     ClassDB::bind_method( D_METHOD( "crossfade", "track", "anim_name", "duration" ), &SpriteStudioPlayer2D::crossfade );
     ClassDB::bind_method( D_METHOD( "fade_track", "track", "target_alpha", "duration" ), &SpriteStudioPlayer2D::fade_track );
     ClassDB::bind_method( D_METHOD( "get_track_fade_progress", "track" ), &SpriteStudioPlayer2D::get_track_fade_progress );

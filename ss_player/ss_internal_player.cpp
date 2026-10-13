@@ -652,6 +652,87 @@ bool SsInternalPlayer::setTrackSpeed(int p_track, float p_speed) {
     return _mixing_applied(ss_runtime_set_track_speed(runtime_ctx, (uint32_t)p_track, p_speed));
 }
 
+// The playback settings below decide how the tracks move, not what they show,
+// so they do not mark the stack as in use; a track above 0 that moves already
+// holds an animation, which did.
+
+float SsInternalPlayer::getTrackSpeed(int p_track) const {
+    SS_TRACK_OR_FAIL(p_track, 0.0f);
+    const float speed = ss_runtime_get_track_speed(runtime_ctx, (uint32_t)p_track);
+    return std::isnan(speed) ? 0.0f : speed;
+}
+
+bool SsInternalPlayer::setTrackFrameRate(int p_track, int p_fps) {
+    SS_TRACK_OR_FAIL(p_track, false);
+    return ss_runtime_set_track_frame_rate(runtime_ctx, (uint32_t)p_track, p_fps);
+}
+
+int SsInternalPlayer::getTrackFrameRate(int p_track) const {
+    SS_TRACK_OR_FAIL(p_track, 0);
+    const int32_t fps = ss_runtime_get_track_frame_rate(runtime_ctx, (uint32_t)p_track);
+    return fps < 0 ? 0 : (int)fps;
+}
+
+bool SsInternalPlayer::setTrackSkipFrames(int p_track, bool p_skip) {
+    SS_TRACK_OR_FAIL(p_track, false);
+    return ss_runtime_set_track_skip_frames(runtime_ctx, (uint32_t)p_track, p_skip);
+}
+
+bool SsInternalPlayer::getTrackSkipFrames(int p_track) const {
+    SS_TRACK_OR_FAIL(p_track, false);
+    return ss_runtime_get_track_skip_frames(runtime_ctx, (uint32_t)p_track);
+}
+
+bool SsInternalPlayer::setTrackPlaybackDirection(int p_track, int p_direction, int p_style) {
+    SS_TRACK_OR_FAIL(p_track, false);
+    return ss_runtime_set_track_playback_direction(runtime_ctx, (uint32_t)p_track, p_direction, p_style);
+}
+
+int SsInternalPlayer::getTrackPlaybackDirection(int p_track) const {
+    SS_TRACK_OR_FAIL(p_track, 0);
+    const int32_t direction = ss_runtime_get_track_playback_direction(runtime_ctx, (uint32_t)p_track);
+    return direction < 0 ? 0 : (int)direction;
+}
+
+int SsInternalPlayer::getTrackPlaybackStyle(int p_track) const {
+    SS_TRACK_OR_FAIL(p_track, 0);
+    const int32_t style = ss_runtime_get_track_playback_style(runtime_ctx, (uint32_t)p_track);
+    return style < 0 ? 0 : (int)style;
+}
+
+bool SsInternalPlayer::setTrackLoopCount(int p_track, int p_count) {
+    SS_TRACK_OR_FAIL(p_track, false);
+    return ss_runtime_set_track_loop_count(runtime_ctx, (uint32_t)p_track, p_count);
+}
+
+int SsInternalPlayer::getTrackLoopCount(int p_track) const {
+    // The runtime's 0 already means "no animation": a count reads back positive,
+    // or -1 for looping forever.
+    SS_TRACK_OR_FAIL(p_track, 0);
+    return (int)ss_runtime_get_track_loop_count(runtime_ctx, (uint32_t)p_track);
+}
+
+bool SsInternalPlayer::isTrackFinished(int p_track) const {
+    SS_TRACK_OR_FAIL(p_track, false);
+    return ss_runtime_is_track_finished(runtime_ctx, (uint32_t)p_track);
+}
+
+bool SsInternalPlayer::trackJustLooped(int p_track) const {
+    SS_TRACK_OR_FAIL(p_track, false);
+    return ss_runtime_track_just_looped(runtime_ctx, (uint32_t)p_track);
+}
+
+bool SsInternalPlayer::setTrackOutgoingEventThreshold(int p_track, float p_threshold) {
+    SS_TRACK_OR_FAIL(p_track, false);
+    return ss_runtime_set_track_outgoing_event_threshold(runtime_ctx, (uint32_t)p_track, p_threshold);
+}
+
+float SsInternalPlayer::getTrackOutgoingEventThreshold(int p_track) const {
+    SS_TRACK_OR_FAIL(p_track, 0.0f);
+    const float threshold = ss_runtime_get_track_outgoing_event_threshold(runtime_ctx, (uint32_t)p_track);
+    return std::isnan(threshold) ? 0.0f : threshold;
+}
+
 bool SsInternalPlayer::crossfade(int p_track, const String& p_name, float p_duration_seconds) {
     SS_TRACK_OR_FAIL(p_track, false);
     const ss::format::AnimationData* animation = _ssabRes->find_animation(p_name);

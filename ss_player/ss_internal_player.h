@@ -342,6 +342,27 @@ public:
     bool setTrackFrame(int p_track, float p_frame);
     float getTrackFrame(int p_track) const;
     bool setTrackSpeed(int p_track, float p_speed);
+    // A track's playback settings: they apply to every animation on it, those
+    // a crossfade fades in included, and outlast the animation. Track 0's are
+    // the transport the node's own setters reach. The loop count is the
+    // exception: it belongs to the animation, and an animation is laid looping
+    // forever (getTrackLoopCount is -1 then, and 0 for a track with none).
+    float getTrackSpeed(int p_track) const;
+    bool setTrackFrameRate(int p_track, int p_fps);
+    int getTrackFrameRate(int p_track) const;
+    bool setTrackSkipFrames(int p_track, bool p_skip);
+    bool getTrackSkipFrames(int p_track) const;
+    bool setTrackPlaybackDirection(int p_track, int p_direction, int p_style);
+    int getTrackPlaybackDirection(int p_track) const;
+    int getTrackPlaybackStyle(int p_track) const;
+    bool setTrackLoopCount(int p_track, int p_count);
+    int getTrackLoopCount(int p_track) const;
+    // A finished track holds its last frame and is still mixed in. Track 0's are
+    // isFinished / justLooped.
+    bool isTrackFinished(int p_track) const;
+    bool trackJustLooped(int p_track) const;
+    bool setTrackOutgoingEventThreshold(int p_track, float p_threshold);
+    float getTrackOutgoingEventThreshold(int p_track) const;
     bool crossfade(int p_track, const String& p_name, float p_duration_seconds);
     bool fadeTrack(int p_track, float p_target_alpha, float p_duration_seconds);
     float getTrackFadeProgress(int p_track) const;

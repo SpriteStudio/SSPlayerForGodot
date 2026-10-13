@@ -163,6 +163,93 @@ func test_an_outgoing_animation_running_out_does_not_finish_the_character() -> v
 	eq(finished, [], "no animation_finished")
 
 
+func test_a_track_s_playback_settings_round_trip() -> void:
+	ok(player.set_track_animation(1, names[1]), "an overlay")
+	ok(player.set_track_speed(1, 2.0), "set_track_speed")
+	near(player.get_track_speed(1), 2.0, "read back")
+	ok(player.set_track_frame_rate(1, 12), "set_track_frame_rate")
+	eq(player.get_track_frame_rate(1), 12, "read back")
+	ok(player.set_track_frame_skip_enabled(1, true), "set_track_frame_skip_enabled")
+	ok(player.is_track_frame_skip_enabled(1), "read back")
+	ok(player.set_track_playback_direction(1, player.PLAYBACK_DIRECTION_BACKWARD, player.PLAYBACK_STYLE_PING_PONG), "set_track_playback_direction")
+	eq(player.get_track_playback_direction(1), player.PLAYBACK_DIRECTION_BACKWARD, "the direction read back")
+	eq(player.get_track_playback_style(1), player.PLAYBACK_STYLE_PING_PONG, "the style read back")
+	eq(player.get_track_loop_count(1), -1, "an animation is laid looping forever")
+	ok(player.set_track_loop_count(1, 2), "set_track_loop_count")
+	eq(player.get_track_loop_count(1), 2, "read back")
+	eq(player.get_track_outgoing_event_threshold(1), INF, "the outgoing side is silent by default")
+	ok(player.set_track_outgoing_event_threshold(1, 0.5), "set_track_outgoing_event_threshold")
+	near(player.get_track_outgoing_event_threshold(1), 0.5, "read back")
+
+	# The settings are the track's, the loop count the animation's.
+	ok(player.set_track_animation(1, names[2]), "another animation on the track")
+	near(player.get_track_speed(1), 2.0, "keeps the track's speed")
+	eq(player.get_track_loop_count(1), -1, "but loops forever again")
+
+
+## Track 0's settings are the node's transport, under either name.
+func test_track_0_s_settings_are_the_node_s() -> void:
+	player.set_speed_scale(2.0)
+	near(player.get_track_speed(0), 2.0, "speed_scale is track 0's speed")
+	player.set_frame_rate(24)
+	eq(player.get_track_frame_rate(0), 24, "frame_rate is track 0's")
+	ok(player.set_track_loop_count(0, 3), "set_track_loop_count on track 0")
+	eq(player.get_loop_count(), 3, "is set_loop_count")
+	player.crossfade(0, names[1], 0.1)
+	eq(player.get_track_loop_count(0), 3, "and is put back on the incoming animation")
+
+
+## The incoming animation of a crossfade plays the way track 0 is played.
+func test_a_crossfade_plays_the_incoming_animation_at_track_0_s_speed() -> void:
+	player.set_speed_scale(2.0)
+	player.play()
+	_step(2)
+	player.crossfade(0, names[1], 10.0 * dt)
+	var frame: float = player.get_frame_no()
+	_step(2)
+	near(player.get_frame_no(), frame + 4.0, "two frames a step", 0.001)
+	near(player.get_speed_scale(), 2.0, "and speed_scale still says so")
+
+
+## An overlay runs its own loop count out and holds its last frame, still on
+## the stack; the character plays on.
+func test_an_overlay_finishes_on_its_own_loop_count() -> void:
+	player.set_track_animation(1, "attack1")
+	player.set_track_loop_count(1, 1)
+	player.play()
+	not_ok(player.is_track_finished(1), "not finished before it ran")
+	var finished_at := -1
+	for i in 200:
+		player.advance(dt)
+		if player.is_track_finished(1):
+			finished_at = i
+			break
+	if not ok(finished_at >= 0, "the overlay finished"):
+		return
+	var held: float = player.get_track_frame(1)
+	_step(3)
+	near(player.get_track_frame(1), held, "and holds its last frame")
+	eq(player.get_track_count(), 2, "still on the stack")
+	ok(player.is_playing(), "while the character plays on")
+	not_ok(player.is_track_finished(7), "a track that does not exist is not finished")
+
+
+func test_an_overlay_reports_its_own_loop() -> void:
+	player.set_animation("wait1")
+	player.set_track_animation(1, "attack1")
+	player.play()
+	var looped := 0
+	var track_0_looped := 0
+	for i in 200:
+		player.advance(dt)
+		if player.track_just_looped(1):
+			looped += 1
+		if player.just_looped():
+			track_0_looped += 1
+	gt(looped, 0, "track_just_looped pulsed for the overlay")
+	gt(looped, track_0_looped, "and more often than the longer wait1 on track 0")
+
+
 func test_pause_holds_every_track_and_resume_releases_them() -> void:
 	player.set_track_animation(1, names[1])
 	player.play()
@@ -357,6 +444,27 @@ func test_an_overlay_fires_events_only_once_opted_in() -> void:
 		var sources := twice.map(func(d): return int(d.get("source", -1)))
 		has(sources, q.get_track_main_source(0), "one from track 0")
 		has(sources, overlay, "one from the overlay")
+
+
+## The outgoing side of a crossfade is silent by default; a threshold below its
+## share lets it fire, and its events name the outgoing source.
+func test_the_outgoing_side_fires_by_its_track_s_threshold() -> void:
+	var counts: Array = []
+	for threshold in [INF, 0.5]:
+		var p = _events_player()
+		p.set_track_outgoing_event_threshold(0, threshold)
+		var step := 1.0 / maxf(1.0, float(p.get_frame_rate()))
+		p.play()
+		for i in 8:
+			p.advance(step)
+		var outgoing: int = p.get_track_main_source(0)
+		p.crossfade(0, "anime_1", 10.0 * step)
+		var got: Array = []
+		p.user_data.connect(func(d): got.append(d))
+		for i in 4:
+			p.advance(step)
+		counts.append(_frame_10(got).filter(func(d): return int(d.get("source", -1)) == outgoing).size())
+	eq(counts, [0, 1], "silent at INF, fires once at 0.5 (outgoing frame-10 keys: %s)" % [counts])
 
 
 ## After a crossfade on track 0 the events come from the incoming source, read
