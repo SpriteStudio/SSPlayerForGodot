@@ -13,7 +13,7 @@ A high-performance extension plugin (GDExtension / Custom Module) for playing an
 - **Bring your characters to life.** Breathing and blinking, swaying hair and clothes, flashy slash and magic effects — the motion is built visually in a dedicated editor (SpriteStudio) with bone rigs, mesh deformation and particles, and Godot just plays it. Nothing to rebuild by hand in `AnimationPlayer`.
 - **Not just characters — effects, UI and whole scenes.** Combine characters, backgrounds, effects and UI into a cutscene or a full-screen sequence in the editor, and play it in Godot as a single animation.
 - **Just another node.** `SpriteStudioPlayer2D` sits in your scene like any other node and is controlled from GDScript. The animation lives in its own file rather than inside the scene, so teammates don't collide over scene merges in Git.
-- **A seamless SpriteStudio ⇄ Godot round trip.** Drop a `.sspj` onto the SS Import Dock and it is converted inside the editor. To tweak it, click **Open SSPJ** in the Inspector, save in SpriteStudio, then click **Reconvert** — no manual export step.
+- **A seamless SpriteStudio ⇄ Godot round trip.** Drop a `.sspj` onto the SS Importer dock and it is converted inside the editor. To tweak it, click **Open SSPJ** in the Inspector, save in SpriteStudio, then click **Reconvert** — no manual export step.
 - **Zero-parse loading, SIMD playback.** `.ssab` is a FlatBuffers binary read in place, so loading involves no parsing, and poses are computed by a SIMD-optimised Rust core — light enough for mobile and for scenes with many characters. Turn on **sub-frame interpolation** and motion follows high-refresh-rate displays.
 
 ## 📚 Documentation
@@ -43,7 +43,7 @@ Everything after that (scripting, signals, per-part overrides) is the same path 
 You need a 4.7-series Godot editor from the [official site](https://godotengine.org/download/). Projects have to be authored in **SpriteStudio 7.5 or later**.
 
 1. **Install**: On [Releases](https://github.com/cri-middleware/SSPlayerForGodot/releases), open the newest Release whose tag starts with `v7` and download `ssplayer-godot-extension-<Godot version>.zip` from its **Assets** — Releases whose tag starts with `v1` are the 1.x plugin, which has neither `SSABResource` nor `SpriteStudioPlayer2D`. Extract it, and copy its `addons` folder into your Godot project root.
-2. **Import**: Drag your `.sspj` from your file manager onto the **SS Import** dock to convert it to `.ssab` (see [Asset Import and Editor Integration](./docs/en/workflow/usage_asset_pipeline.md)).
+2. **Import**: Drag your `.sspj` from your file manager onto the **SS Importer** dock to convert it to `.ssab` (see [Asset Import and Editor Integration](./docs/en/workflow/usage_asset_pipeline.md)).
 3. **Play**: Add a `SpriteStudioPlayer2D` node and assign the `.ssab` to its `Ssab` property.
 
 No `.sspj` of your own yet? SpriteStudio's [official sample data](https://www.webtech.co.jp/help/ja/spritestudio7/download/sample/) works as-is — the page is in Japanese, the downloads are not. [Ringo](https://www.webtech.co.jp/help/ja/spritestudio7/download/sample/#ringo) is a good character to start with, and [Particle](https://www.webtech.co.jp/help/ja/spritestudio7/download/sample/#Perticle_sample) a good one for effects.

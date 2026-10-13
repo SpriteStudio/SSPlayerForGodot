@@ -141,7 +141,7 @@ void SSEditorPlugin::_notification(int what) {
 
             if (this->import_dock == nullptr) {
                 this->import_dock = memnew(SSImportControl);
-                this->import_dock->set_name(String::utf8("SSPJ"));
+                this->import_dock->set_name(String::utf8("SS Importer"));
                 this->import_dock->set_importer(this->importer);
                 add_control_to_dock(EditorPlugin::DOCK_SLOT_RIGHT_BL, this->import_dock, Ref<Shortcut>());
             }

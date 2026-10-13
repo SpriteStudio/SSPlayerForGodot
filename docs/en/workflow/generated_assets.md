@@ -63,7 +63,7 @@ res://ssab_generated/overall/
 
 > [!TIP]
 > **The output can live anywhere in the project**
-> `res://ssab_generated` is only the default. The SS Import Dock's output folder accepts any folder under `res://`, and the value is stored in `.ssplayer_sources.cfg` at the project root, so **a team can share one output location**.
+> `res://ssab_generated` is only the default. The SS Importer dock's output folder accepts any folder under `res://`, and the value is stored in `.ssplayer_sources.cfg` at the project root, so **a team can share one output location**.
 >
 > Keep the `.ssab`, its images and its `sound/` folder **in the same place relative to each other**, though. As described below, every reference is a path resolved against the `.ssab`'s own directory, so splitting the folder's contents apart breaks resolution. You may move the whole folder afterwards, but the binding to the `.sspj` does not follow the move (the relink procedure is in [Asset Import and Editor Integration](usage_asset_pipeline.md#limitations-and-team-development-notes)).
 
@@ -153,7 +153,7 @@ There is really only one design decision: **at what granularity do you want to b
 
 1. Build the images into their own pack and ship it alongside the application.
 2. Repaint the artwork, reload it in SpriteStudio, and save the `.sspj`.
-3. Press **Reconvert** in Godot (re-dropping onto the SS Import Dock does the same). The images are overwritten and their `.import` is preserved, so the import settings are unchanged.
+3. Press **Reconvert** in Godot (re-dropping onto the SS Importer dock does the same). The images are overwritten and their `.import` is preserved, so the import settings are unchanged.
 4. Rebuild and ship only the image pack.
 
 > [!WARNING]

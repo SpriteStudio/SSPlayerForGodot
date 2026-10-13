@@ -10,7 +10,7 @@ The shortest path to using the plugin without any build work.
 2. On the [SSPlayerForGodot Releases](https://github.com/cri-middleware/SSPlayerForGodot/releases), open the newest Release whose tag starts with `v7` and download `ssplayer-godot-extension-<Godot version>.zip` from its **Assets**. The one ZIP carries the binaries for every platform.
 3. Extract the ZIP and copy the `addons` folder it contains into your Godot project root directory.
    * If placed correctly, `res://addons/spritestudio/spritestudio.gdextension` should exist.
-4. Restart the Godot editor and the `SpriteStudioPlayer2D` node and the SS Import Dock will become available.
+4. Restart the Godot editor and the `SpriteStudioPlayer2D` node and the SS Importer dock will become available.
 
 ## B. Use a Godot Engine with the SpriteStudio Player for Godot Custom Module
 

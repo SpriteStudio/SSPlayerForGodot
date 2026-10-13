@@ -6,13 +6,13 @@ SpriteStudio Player for Godot は単にアニメーションを再生するだ�
 
 ---
 
-## 1. 初回のインポート (SS Import Dock を使ったコンバート)
+## 1. 初回のインポート (SS Importer ドックを使ったコンバート)
 
 まだ Godot プロジェクト内に `.ssab` が存在しない場合は、まず SpriteStudio のプロジェクトファイル (`.sspj`) をインポート（コンバート）します。
 
-1. Godot エディタ右側の **「SS Import」ドック** を開きます。
+1. Godot エディタ右側の **「SS Importer」ドック** を開きます。
 2. 出力先（デフォルトは `res://ssab_generated`）を確認します。
-3. エクスプローラーや Finder から、目的の **`.sspj` ファイルを「SS Import」ドックへドラッグ＆ドロップ** します。
+3. エクスプローラーや Finder から、目的の **`.sspj` ファイルを「SS Importer」ドックへドラッグ＆ドロップ** します。
 
 これだけでコンバート処理が走り、指定した出力先に `.ssab` と `.ssqb` が生成されます。生成された `.ssab` を 2D ビューポートへドラッグ＆ドロップして、あらかじめ `SpriteStudioPlayer2D` ノードを配置しておきましょう（詳細は [基本的な使い方](usage_basic.md) を参照）。
 
@@ -24,7 +24,7 @@ SpriteStudio Player for Godot は単にアニメーションを再生するだ�
 > <img src="../assets/1-sspj_import.webp" width="100%" style="display: none;">
 
 > [!TIP]
-> 手元に `.sspj` がまだ無い状態で試したい場合は、[SpriteStudio 公式のサンプルデータ](https://www.webtech.co.jp/help/ja/spritestudio7/download/sample/)がそのまま使えます。キャラクターなら [Ringo](https://www.webtech.co.jp/help/ja/spritestudio7/download/sample/#ringo)、エフェクトを含むものなら [パーティクル](https://www.webtech.co.jp/help/ja/spritestudio7/download/sample/#Perticle_sample) が手頃です。ダウンロードした `.sspj` を、上と同じ手順で「SS Import」ドックへドロップしてください。
+> 手元に `.sspj` がまだ無い状態で試したい場合は、[SpriteStudio 公式のサンプルデータ](https://www.webtech.co.jp/help/ja/spritestudio7/download/sample/)がそのまま使えます。キャラクターなら [Ringo](https://www.webtech.co.jp/help/ja/spritestudio7/download/sample/#ringo)、エフェクトを含むものなら [パーティクル](https://www.webtech.co.jp/help/ja/spritestudio7/download/sample/#Perticle_sample) が手頃です。ダウンロードした `.sspj` を、上と同じ手順で「SS Importer」ドックへドロップしてください。
 
 ---
 
@@ -75,7 +75,7 @@ SpriteStudio 側でアニメーションを修正して保存したら、Godot �
 > [!TIP]
 > **チーム開発時のファイルパス共有とスマート再リンク**
 > 
-> SS Import Dock経由でインポートした際の連携情報（`.sspj` のファイルパス）は、Godot プロジェクト直下の `.ssplayer_sources.cfg` に **相対パス** で保存されます。
+> SS Importer ドック経由でインポートした際の連携情報（`.sspj` のファイルパス）は、Godot プロジェクト直下の `.ssplayer_sources.cfg` に **相対パス** で保存されます。
 > 
 > `.ssplayer_sources.cfg` を Git 等のバージョン管理システムで共有することで、チームの別メンバーがPCに `git clone` した場合でもパスの連携が維持され、そのまま `Open SSPJ` や `Reconvert` を利用できます。
 > 

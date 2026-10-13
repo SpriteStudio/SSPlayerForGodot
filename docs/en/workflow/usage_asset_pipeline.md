@@ -6,13 +6,13 @@ SpriteStudio Player for Godot does not just play animations; it provides a **pow
 
 ---
 
-## 1. Initial Import (Converting via SS Import Dock)
+## 1. Initial Import (Converting via the SS Importer dock)
 
 If there is no `.ssab` in your Godot project yet, you first need to import (convert) the SpriteStudio project file (`.sspj`).
 
-1. Open the **"SS Import" dock** on the right side of the Godot editor.
+1. Open the **"SS Importer" dock** on the right side of the Godot editor.
 2. Check the output directory (default is `res://ssab_generated`).
-3. **Drag and drop the `.sspj` file** from your Explorer/Finder into the "SS Import" dock.
+3. **Drag and drop the `.sspj` file** from your Explorer/Finder into the "SS Importer" dock.
 
 This triggers the conversion process, generating `.ssab` and `.ssqb` files in the specified output directory.
 Drag and drop the generated `.ssab` file into the 2D viewport to place a `SpriteStudioPlayer2D` node in advance (see [Basic Usage](usage_basic.md) for details).
@@ -25,7 +25,7 @@ Drag and drop the generated `.ssab` file into the 2D viewport to place a `Sprite
 > <img src="../assets/1-sspj_import.webp" width="100%" style="display: none;">
 
 > [!TIP]
-> If you do not have a `.sspj` yet and just want to try this out, the [official SpriteStudio sample data](https://www.webtech.co.jp/help/ja/spritestudio7/download/sample/) works as-is (that page is only available in Japanese; the downloads themselves are language-neutral). [Ringo](https://www.webtech.co.jp/help/ja/spritestudio7/download/sample/#ringo) is a good character sample, and [Particle](https://www.webtech.co.jp/help/ja/spritestudio7/download/sample/#Perticle_sample) is a good one if you want effects. Drop the downloaded `.sspj` onto the "SS Import" dock exactly as described above.
+> If you do not have a `.sspj` yet and just want to try this out, the [official SpriteStudio sample data](https://www.webtech.co.jp/help/ja/spritestudio7/download/sample/) works as-is (that page is only available in Japanese; the downloads themselves are language-neutral). [Ringo](https://www.webtech.co.jp/help/ja/spritestudio7/download/sample/#ringo) is a good character sample, and [Particle](https://www.webtech.co.jp/help/ja/spritestudio7/download/sample/#Perticle_sample) is a good one if you want effects. Drop the downloaded `.sspj` onto the "SS Importer" dock exactly as described above.
 
 ---
 
@@ -78,7 +78,7 @@ While this powerful cross-editor integration (`Open SSPJ` and `Reconvert`) is in
 > [!TIP]
 > **File Path Sharing and Smart Re-link for Team Development**
 > 
-> When you import using the SS Import Dock, the integration information (the file path to the `.sspj`) is saved as a **relative path** inside the `.ssplayer_sources.cfg` file located at the root of your Godot project.
+> When you import using the SS Importer dock, the integration information (the file path to the `.sspj`) is saved as a **relative path** inside the `.ssplayer_sources.cfg` file located at the root of your Godot project.
 > 
 > By tracking `.ssplayer_sources.cfg` in a version control system like Git, team members can `git clone` the project and immediately use the `Open SSPJ` and `Reconvert` buttons, as the paths remain valid across different PCs.
 > 

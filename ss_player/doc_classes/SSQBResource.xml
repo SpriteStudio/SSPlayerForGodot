@@ -4,7 +4,7 @@
 		A SpriteStudio sequence binary ([code].ssqb[/code]).
 	</brief_description>
 	<description>
-		Holds the sequence binary produced from a SpriteStudio sequence ([code].ssqe[/code]) alongside the animations, either by dropping the project onto the editor (the [b]SS Import Dock[/b]) or by running [code]ssconverter-cli[/code].
+		Holds the sequence binary produced from a SpriteStudio sequence ([code].ssqe[/code]) alongside the animations, either by dropping the project onto the editor (the [b]SS Importer[/b] dock) or by running [code]ssconverter-cli[/code].
 		A sequence is a playlist that chains animations together. The resource loads and saves today, but no node consumes it yet — sequence playback is not implemented in this version, so loading a [code].ssqb[/code] has no effect on [SpriteStudioPlayer2D]. See [SSABResource] for the animation data that is playable.
 	</description>
 	<tutorials>

@@ -4,7 +4,7 @@
 		A SpriteStudio animation binary ([code].ssab[/code]).
 	</brief_description>
 	<description>
-		Holds the animation binary produced from a SpriteStudio project ([code].sspj[/code]), either by dropping the project onto the editor (the [b]SS Import Dock[/b]) or by running [code]ssconverter-cli[/code]. Assign it to [member SpriteStudioPlayer2D.ssab] to play it.
+		Holds the animation binary produced from a SpriteStudio project ([code].sspj[/code]), either by dropping the project onto the editor (the [b]SS Importer[/b] dock) or by running [code]ssconverter-cli[/code]. Assign it to [member SpriteStudioPlayer2D.ssab] to play it.
 		Loading does not parse the file: the runtime reads the FlatBuffers buffer in place and borrows it rather than copying, so load cost is close to the cost of reading the bytes. The buffer stays immutable until [method load_from_file] replaces it.
 		Textures and audio referenced by the animation are resolved relative to the directory the resource was loaded from, so keep the converter's output directory intact when moving files around.
 		[b]Note:[/b] when several [SpriteStudioPlayer2D] nodes share one resource, enable [member Resource.resource_local_to_scene] so each node gets its own playback state.
