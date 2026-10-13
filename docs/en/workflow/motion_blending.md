@@ -24,7 +24,7 @@ Two numbers adjust a stack, and **which one you reach for matters**:
 
 A track only acts on what its animation keys. An overlay that keys only the head leaves the legs alone, with no mask to set up — so **an overlay reaches exactly as far as it was animated**.
 
-Track 0 carries the **structure**: cells, part colour, shaders, flips, hide, draw priority and textures all come from track 0, as do the events by default. Overlays blend the continuous attributes (position, rotation, scale, alpha and the rest).
+Track 0 carries the **structure**: cells, part colour, shaders, flips, hide, draw priority and textures all come from track 0's main animation, as do the events by default. Overlays blend the continuous attributes (position, rotation, scale, alpha and the rest).
 
 ## Laying an overlay
 
@@ -55,7 +55,7 @@ func _process(_delta: float) -> void:
 
 ## Switching with a crossfade
 
-`crossfade()` fades a track from what it plays to another animation, then hands the track to it and releases the outgoing one. Durations are in **seconds**, as `advance()` takes them:
+`crossfade()` fades a track from what it plays to another animation. The incoming animation takes the track over **from the call on**; everything the track was playing fades out together, keeping its proportions, and is released when the fade completes. Durations are in **seconds**, as `advance()` takes them:
 
 ```gdscript
 player.crossfade(0, "run", 0.3)
@@ -64,7 +64,8 @@ player.crossfade(0, "run", 0.3)
 | Case | What happens |
 |---|---|
 | A track playing nothing | No fade: the animation starts at once |
-| A track already fading | The fade under way completes first, and the new one starts from there |
+| A track already fading | The fade in flight is taken over as it stands, so the pose does not jump |
+| A track mixing several sources, or left part-way by `cancel_track_fade` | Everything on it fades out together |
 | `duration` of 0 or less, or an unknown name | Refused: `false` |
 | Stopping a fade part-way | `cancel_track_fade(track)` — alpha and weight stay where they are |
 
@@ -75,6 +76,17 @@ player.crossfade(0, "run", 0.3)
 ```gdscript
 player.fade_track(1, 0.0, 0.2)                # fade the overlay out over 0.2 s
 ```
+
+### What a crossfade on track 0 changes, and when
+
+The incoming animation takes track 0 over **when the fade begins**, not when it ends:
+
+- `get_current_animation()` names it straight after the call, and `animation_changed` is sent then. `animation_started` is not: the switch carries on track 0's play state. `set_animation()` with the name the fade left behind switches back; with the incoming name it changes nothing, and the fade carries on. The canvas (`get_canvas_size()` / `get_canvas_rect()`) follows the switch too.
+- Its cells, hide and the other values that cannot be blended show from the first frame of the fade. `is_playing()`, `is_finished()` and the `animation_*` signals report it: the outgoing animation running out during the fade does not finish the character.
+- It plays with the node's speed, frame rate, frame skip, direction and `loop_count`, as if `set_animation()` had switched to it. Its section is its own whole length.
+- Its events fire from the start of the fade, and the outgoing animation's stop — see [Events](#events) below.
+
+`set_track_animation(0, ...)` switches track 0 the same way, without the fade.
 
 ## Mixing animations on one track
 
@@ -119,8 +131,32 @@ Every track runs on the character's one clock, and the playback controls act on 
 | `stop()` | Stops the whole character where it stands. Only `play()` restarts it |
 
 - **Track 0 finishing does not stop the clock.** Overlays and fades carry on after track 0 has played its last loop. `is_playing()`, `is_pausing()`, `is_finished()` and the `animation_*` signals describe track 0, and report its end as usual.
-- These settings act on **track 0 only**: `speed_scale`, the frame-rate override, frame skip, playback direction, loop count and the playback section. Each other track has its own speed (`set_track_speed`) and loops without end.
-- An animation that enters track 0 by a crossfade starts with the runtime's defaults rather than the node's settings: it loops without end, whatever `loop_count` says. Set the loop count again after the crossfade completes if you need it.
+- The playback section is track 0's alone. The other playback settings are each track's — see the next section.
+
+## A track's playback settings
+
+The speed, the frame-rate override, frame skip and the playback direction belong to the **track**, not to the animation on it: they reach every animation on the track, both sides of a crossfade included, and every one laid on it later. Track 0's are the node's own `speed_scale`, `frame_rate`, `frame_skip_enabled` and `set_playback_direction()`.
+
+```gdscript
+player.set_track_speed(1, 0.5)
+player.set_track_frame_rate(1, 24)
+player.set_track_playback_direction(1,
+        SpriteStudioPlayer2D.PLAYBACK_DIRECTION_FORWARD,
+        SpriteStudioPlayer2D.PLAYBACK_STYLE_PING_PONG)
+```
+
+The **loop count** is the animation's instead: an animation laid on a track loops without end, so state the count after laying it. A track that has played its count out holds its last frame and stays mixed in until you fade or clear it:
+
+```gdscript
+player.set_track_animation(2, "hit_react")
+player.set_track_loop_count(2, 1)              # once, then hold the last frame
+
+func _process(_delta: float) -> void:
+    if player.is_track_finished(2):
+        player.clear_track(2)
+```
+
+Track 0's loop count is `loop_count` (`set_track_loop_count(0, ...)` writes the same), and the node puts it back on every animation track 0 switches to. `track_just_looped(track)` is true for the tick in which the track wrapped, as `just_looped()` is for track 0. Neither is a signal; only track 0's are (`animation_finished`, `animation_looped`).
 
 ## set_animation() folds the stack
 
@@ -135,11 +171,19 @@ var overlay: int = player.get_track_main_source(1)
 player.set_source_event_threshold(overlay, 1.0)   # fires while its weight is 1 or more
 ```
 
-Every event carries the handle of the source that fired it — `payload["source"]` for `user_data` and `audio`, `info["source"]` for `signal_emitted` — so events from two sources can be told apart. After a crossfade on track 0, the events are those of the incoming animation.
+Every event carries the handle of the source that fired it — `payload["source"]` for `user_data` and `audio`, `info["source"]` for `signal_emitted` — so events from two sources can be told apart.
+
+From the moment a crossfade on track 0 begins, the incoming animation is the one that fires, and the outgoing side falls silent. To keep the outgoing side firing for part of the fade, give the track an outgoing event threshold: the outgoing side fires while its share of the track, `1 - progress`, is at least the threshold.
+
+```gdscript
+player.set_track_outgoing_event_threshold(0, 0.5)   # the outgoing side fires for the first half
+```
+
+The threshold is the track's setting and stays set. Its default, `INF`, silences the outgoing side as the fade begins.
 
 ## Limits
 
 - **One `.ssab`.** Only the animations of the resource assigned to the player can be stacked.
-- **A crossfade on track 0 keeps what `set_animation()` built.** The Instance and Effect parts are set up for the animation `set_animation()` selected, and a crossfade does not set them up again; `get_current_animation()` still names that animation. Crossfade between animations of one `.ssae`, which share their parts.
+- **Instance and Effect parts are outside motion blending.** They belong to the `.ssab`, not to one animation, so a crossfade on track 0 keeps them running instead of setting them up again. Which key drives such a part across the switch is not blended: where both animations key it on the same frame, it may carry on with the outgoing animation's setting.
 - **Give every stacked animation the same cell on a part.** A cell's size and origin come from track 0, so a different cell on an overlay distorts the part.
 - See also the runtime's own [animation mixing guide](https://github.com/cri-middleware/SpriteStudio-SDK/blob/HEAD/libs/ssruntime/docs/50_features/10_animation_mixing.md), which every official player follows.

@@ -122,15 +122,21 @@ pivot はキャンバス内のどこに原点があるかを表します。地�
 
 割り当てた `.ssab` の複数のアニメーションを、トラックに積んで同時に再生します。track 0 は `set_animation()` で選んだアニメーションで、その上のトラックが重なります。組み合わせ方は [モーションブレンド](../workflow/motion_blending.md) を参照してください。
 
-* `set_track_animation(track: int, anim_name: String) -> bool`: `track` に `anim_name` を載せ、それまで再生していたものと置き換えます。トラックは必要に応じて作られます。
+* `set_track_animation(track: int, anim_name: String) -> bool`: `track` に `anim_name` を載せ、それまで再生していたものと置き換えます。トラックは必要に応じて作られます。track 0 ではクロスフェードと同じく現在のアニメーションを切り替え、その上のトラックはそのまま残します。
 * `get_track_count() -> int`
 * `clear_track(track: int) -> bool`: トラックを空にします。track 0 は空にできないので、alpha を 0 までフェードしてください。
 * `set_track_alpha(track: int, alpha: float) -> bool` / `get_track_alpha(track: int) -> float`: そのトラックを下の結果にどれだけ重ねるか。0〜1 に制限しません。
 * `set_track_blend(track: int, blend: TrackBlend) -> bool` / `get_track_blend(track: int) -> TrackBlend`
 * `set_track_sync(track: int, sync: TrackSync) -> bool` / `get_track_sync(track: int) -> TrackSync`: そのトラックに **次に** 載せるアニメーションをどこから始めるか。載せる前に設定してください。
 * `set_track_frame(track: int, frame_no: float) -> bool` / `get_track_frame(track: int) -> float`
-* `set_track_speed(track: int, speed: float) -> bool`: トラックごとの速度。track 0 の速度は `speed_scale` で、同じ値を書き換えます。
-* `crossfade(track: int, anim_name: String, duration: float) -> bool`: トラックが再生しているものから `anim_name` へ `duration` **秒** かけてフェードし、終わるとトラックをそのアニメーションに引き継ぎます。空のトラックではすぐに再生を始めます。
+* `set_track_speed(track: int, speed: float) -> bool` / `get_track_speed(track: int) -> float`: トラックの速度。これと下の 3 つの設定はトラックのもので、そのトラックに載るすべてのアニメーション（クロスフェードの両側を含む）に効きます。track 0 の速度は `speed_scale` で、同じ値を書き換えます。
+* `set_track_frame_rate(track: int, fps: int) -> bool` / `get_track_frame_rate(track: int) -> int`: track 0 では `frame_rate` です。
+* `set_track_frame_skip_enabled(track: int, enabled: bool) -> bool` / `is_track_frame_skip_enabled(track: int) -> bool`: track 0 では `frame_skip_enabled` です。
+* `set_track_playback_direction(track: int, direction: PlaybackDirection, style: PlaybackStyle) -> bool` / `get_track_playback_direction(track: int) -> PlaybackDirection` / `get_track_playback_style(track: int) -> PlaybackStyle`: track 0 では `set_playback_direction()` です。
+* `set_track_loop_count(track: int, count: int) -> bool` / `get_track_loop_count(track: int) -> int`: トラックに載っているアニメーションのループ回数。アニメーションは無限ループ（`-1`）で載り、何も載っていないトラックは `0` を返します。track 0 では `loop_count` で、ノードは track 0 が切り替わるたびにこの回数をかけ直します。
+* `is_track_finished(track: int) -> bool` / `track_just_looped(track: int) -> bool`: track 0 では `is_finished()` / `just_looped()` です。終了したトラックは最後のフレームで止まり、混ざり続けます。どちらもシグナルは送られません。
+* `set_track_outgoing_event_threshold(track: int, threshold: float) -> bool` / `get_track_outgoing_event_threshold(track: int) -> float`: トラックのクロスフェードで出ていく側は、その割合 `1 - progress` がこの値以上のあいだイベントを発火します。初期値は `INF` で、フェードの開始と同時に発火しなくなります。
+* `crossfade(track: int, anim_name: String, duration: float) -> bool`: トラックが再生しているものから `anim_name` へ `duration` **秒** かけてフェードします。`anim_name` は呼んだ時点でトラックを引き継ぎます。track 0 ではその時点から現在のアニメーションになり、`animation_changed` が送られます。空のトラックではすぐに再生を始めます。
 * `fade_track(track: int, target_alpha: float, duration: float) -> bool`: トラックの alpha を `duration` 秒かけて `target_alpha` にします。
 * `get_track_fade_progress(track: int) -> float`: フェード中は 0〜1、フェードしていないときは **-1**。
 * `cancel_track_fade(track: int) -> bool`: フェードを止めます。alpha と weight はその時点の値のままです。
@@ -163,7 +169,7 @@ pivot はキャンバス内のどこに原点があるかを表します。地�
 | シグナル | 引数 | 発行タイミング |
 | --- | --- | --- |
 | `animation_started` | `anim_name: String` | 再生が開始された時 |
-| `animation_changed` | `anim_name: String` | アニメーションが切り替わった時 |
+| `animation_changed` | `anim_name: String` | アニメーションが切り替わった時（`set_animation()`、または track 0 への `crossfade()` / `set_track_animation()`） |
 | `animation_finished` | `anim_name: String` | 指定したループ回数をすべて再生し終えた時。無限ループでは発火しない |
 | `animation_looped` | `anim_name: String` | 1周して先頭に戻った時。最終周では発火せず `animation_finished` になる |
 | `frame_updated` | `frame_no: float` | そのフレームのパーツ姿勢が確定した直後（プレーヤの更新直後、描画の前）。発火するプロセスは `animation_process_mode` に従う |

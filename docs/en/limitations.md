@@ -57,8 +57,7 @@ Per-platform caveats to keep in mind:
 ## Motion Blending
 
 > [!WARNING]
-> - **A crossfade on track 0 keeps what `set_animation()` built.** Instance and Effect parts are set up for the animation `set_animation()` selected and are not set up again by a crossfade, and `get_current_animation()` keeps naming that animation. Crossfade between animations of one `.ssae`, which share their parts.
-> - **An animation that enters track 0 by a crossfade loops without end**, whatever `loop_count` says. The node's loop count applies to the animation `set_animation()` set up.
+> - **Instance and Effect parts are outside motion blending.** They belong to the `.ssab`, not to one animation, so a crossfade on track 0 keeps them running instead of setting them up again. Which key drives such a part across the switch is not blended: where both animations key it on the same frame, it may carry on with the outgoing animation's setting.
 
 ## Playback Feature Constraints
 

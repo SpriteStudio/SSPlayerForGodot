@@ -123,15 +123,21 @@ Override a single part's color / cell / visibility so that it wins over the keyf
 
 Play several animations of the assigned `.ssab` at once, stacked on tracks: track 0 is the animation `set_animation()` selects, and the tracks above it are laid over it. [Motion Blending](../workflow/motion_blending.md) explains how the pieces fit together.
 
-* `set_track_animation(track: int, anim_name: String) -> bool`: Lays `anim_name` on `track`, replacing what it played. Tracks are created as needed.
+* `set_track_animation(track: int, anim_name: String) -> bool`: Lays `anim_name` on `track`, replacing what it played. Tracks are created as needed. On track 0 it switches the current animation, as a crossfade does, and leaves the tracks above it in place.
 * `get_track_count() -> int`
 * `clear_track(track: int) -> bool`: Empties a track. Track 0 cannot be emptied — fade its alpha to 0 instead.
 * `set_track_alpha(track: int, alpha: float) -> bool` / `get_track_alpha(track: int) -> float`: How much of the track lays over what is below. Not clamped to 0–1.
 * `set_track_blend(track: int, blend: TrackBlend) -> bool` / `get_track_blend(track: int) -> TrackBlend`
 * `set_track_sync(track: int, sync: TrackSync) -> bool` / `get_track_sync(track: int) -> TrackSync`: Where the animations laid on the track **next** start. Set it before laying.
 * `set_track_frame(track: int, frame_no: float) -> bool` / `get_track_frame(track: int) -> float`
-* `set_track_speed(track: int, speed: float) -> bool`: A track's own speed. Track 0's is `speed_scale`, which writes the same value.
-* `crossfade(track: int, anim_name: String, duration: float) -> bool`: Fades the track from what it plays to `anim_name` over `duration` **seconds**, then hands the track to it. On an empty track it starts at once.
+* `set_track_speed(track: int, speed: float) -> bool` / `get_track_speed(track: int) -> float`: A track's speed. This and the three settings below belong to the track: they reach every animation on it, both sides of a crossfade included. Track 0's is `speed_scale`, which writes the same value.
+* `set_track_frame_rate(track: int, fps: int) -> bool` / `get_track_frame_rate(track: int) -> int`: Track 0's is `frame_rate`.
+* `set_track_frame_skip_enabled(track: int, enabled: bool) -> bool` / `is_track_frame_skip_enabled(track: int) -> bool`: Track 0's is `frame_skip_enabled`.
+* `set_track_playback_direction(track: int, direction: PlaybackDirection, style: PlaybackStyle) -> bool` / `get_track_playback_direction(track: int) -> PlaybackDirection` / `get_track_playback_style(track: int) -> PlaybackStyle`: Track 0's is `set_playback_direction()`.
+* `set_track_loop_count(track: int, count: int) -> bool` / `get_track_loop_count(track: int) -> int`: The loop count of the animation on the track. An animation is laid looping forever (`-1`); a track with none reads `0`. Track 0's is `loop_count`, which the node puts back on every animation track 0 switches to.
+* `is_track_finished(track: int) -> bool` / `track_just_looped(track: int) -> bool`: Track 0's are `is_finished()` / `just_looped()`. A finished track holds its last frame and stays mixed in. No signal is sent for either.
+* `set_track_outgoing_event_threshold(track: int, threshold: float) -> bool` / `get_track_outgoing_event_threshold(track: int) -> float`: The outgoing side of a crossfade on the track fires its events while its share, `1 - progress`, is at least this. Starts at `INF`, which silences it as the fade begins.
+* `crossfade(track: int, anim_name: String, duration: float) -> bool`: Fades the track from what it plays to `anim_name` over `duration` **seconds**. `anim_name` takes the track over from the call on: on track 0 it is the current animation from then, and `animation_changed` is sent. On an empty track it starts at once.
 * `fade_track(track: int, target_alpha: float, duration: float) -> bool`: Drives the track's alpha to `target_alpha` over `duration` seconds.
 * `get_track_fade_progress(track: int) -> float`: 0 to 1 during a fade, **-1** when the track is not fading.
 * `cancel_track_fade(track: int) -> bool`: Stops a fade, leaving alpha and weight where they are.
@@ -164,7 +170,7 @@ Each setter returns `false` when no animation is set up, the animation name is n
 | Signal | Arguments | Emitted When |
 | --- | --- | --- |
 | `animation_started` | `anim_name: String` | Playback starts |
-| `animation_changed` | `anim_name: String` | The animation name is changed |
+| `animation_changed` | `anim_name: String` | The animation name is changed — by `set_animation()`, or by `crossfade()` / `set_track_animation()` on track 0 |
 | `animation_finished` | `anim_name: String` | Every configured loop has been played. Never emitted under an infinite loop |
 | `animation_looped` | `anim_name: String` | The animation looped back to the start. Not emitted on the final cycle, which emits `animation_finished` instead |
 | `frame_updated` | `frame_no: float` | The frame's part poses have just been finalized (right after the player's update, before the render phase). Which process it fires in follows `animation_process_mode` |
