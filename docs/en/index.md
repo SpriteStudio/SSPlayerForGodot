@@ -46,7 +46,7 @@ Animation playback uses `libssruntime` provided by [SpriteStudio-SDK](https://gi
 This plugin brings SpriteStudio's full expressive power to Godot Engine.
 
 *   **Broad Feature Support:** Supports nearly all SpriteStudio features — bone hierarchies, mesh & deformations, and high-performance particle effects — with a few exceptions noted in [Limitations & Scope](limitations.md).
-*   **Seamless Integration and a Powerful Asset Pipeline:** In addition to easy drag-and-drop importing via the built-in "SS Import Dock", you can open SpriteStudio directly from the Inspector and reconvert with a single click. For details, see [Asset Import and Editor Integration](workflow/usage_asset_pipeline.md).
+*   **Seamless Integration and a Powerful Asset Pipeline:** In addition to easy drag-and-drop importing via the built-in "SS Importer" dock, you can open SpriteStudio directly from the Inspector and reconvert with a single click. For details, see [Asset Import and Editor Integration](workflow/usage_asset_pipeline.md).
 *   **Dynamic Customization (CellMap Overrides):** Easily swap textures at runtime to implement character equipment changes or color variations.
 *   **Signals & Events:** Receive "User Data" and "Signals" from your animation timeline directly as Godot Signals, allowing frame-perfect triggers for game logic. Every event says which part fired it.
 *   **Motion Blending:** Lay animations over one another on tracks and cross-fade between them, so a character slides from one motion into the next instead of cutting. See [Motion Blending](workflow/motion_blending.md).
@@ -64,7 +64,7 @@ graph LR
     SS[" .sspj / Images<br>(Source Assets) "]
 
     subgraph Convert ["Conversion Process"]
-        DOCK[[" SS Import Dock<br>(Built-in Editor) "]]
+        DOCK[[" SS Importer dock<br>(Built-in Editor) "]]
         CLI[[" ssconverter-cli<br>(CLI Tool) "]]
     end
 

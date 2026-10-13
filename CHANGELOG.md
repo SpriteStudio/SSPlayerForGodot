@@ -17,7 +17,7 @@ converted binaries (`.ssab`) instead of parsing `.sspj` at runtime. See the
 - **`SpriteStudioPlayer2D` node**: plays an `.ssab` animation as an ordinary `Node2D`.
   Transport (`play` / `pause` / `resume` / `stop`), frame seeking, playback sections,
   direction, speed scale, loop count, frame skipping and sub-frame interpolation.
-- **Asset pipeline**: the **SS Import Dock** converts a SpriteStudio project (`.sspj`) to
+- **Asset pipeline**: the **SS Importer** dock converts a SpriteStudio project (`.sspj`) to
   `.ssab` by drag & drop and reconverts from the Inspector. `ssconverter-cli` performs the
   same conversion for CI/CD.
 - **Resource classes**: `SSABResource` (animation binary) and `SSQBResource` (sequence

@@ -63,7 +63,7 @@ res://ssab_generated/overall/
 
 > [!TIP]
 > **出力先はプロジェクト内のどこでも構いません**
-> `res://ssab_generated` は既定値にすぎません。SS Import Dock の出力先には `res://` 配下の任意のフォルダを指定でき、その値はプロジェクト直下の `.ssplayer_sources.cfg` に入るため、**チームで同じ出力先を共有できます**。
+> `res://ssab_generated` は既定値にすぎません。SS Importer ドックの出力先には `res://` 配下の任意のフォルダを指定でき、その値はプロジェクト直下の `.ssplayer_sources.cfg` に入るため、**チームで同じ出力先を共有できます**。
 >
 > ただし **`.ssab` と画像・`sound/` の相対位置は保ってください**。下記のとおり参照は `.ssab` 自身のディレクトリを基準にしたパスなので、フォルダの中身を分けて配置すると解決に失敗します。生成後にフォルダごと移動すること自体はできますが、`.sspj` とのひも付けは追従しません（再リンクの手順は [アセットのインポートとエディタ連携](usage_asset_pipeline.md#制限事項とチーム開発時の注意点) にあります）。
 
@@ -153,7 +153,7 @@ if ProjectSettings.load_resource_pack("user://dlc/characters.pck"):
 
 1. 画像を別パックへ分けてビルドし、本体と一緒に配信します。
 2. 絵を描き替え、SpriteStudio 側でリロードして `.sspj` を保存します。
-3. Godot で対象の **Reconvert** を実行します（SS Import Dock への再ドロップでも同じです）。画像は上書きされ、`.import` が維持されるためインポート設定も変わりません。
+3. Godot で対象の **Reconvert** を実行します（SS Importer ドックへの再ドロップでも同じです）。画像は上書きされ、`.import` が維持されるためインポート設定も変わりません。
 4. 画像のパックだけを再ビルドして配信します。
 
 > [!WARNING]

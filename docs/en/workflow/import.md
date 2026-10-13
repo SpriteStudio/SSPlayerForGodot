@@ -1,6 +1,6 @@
 # 🤖 CLI Conversion and Automation
 
-For the intuitive import method using the Godot editor's "SS Import Dock", please refer to [Asset Import and Editor Integration](usage_asset_pipeline.md).
+For the intuitive import method using the Godot editor's "SS Importer" dock, please refer to [Asset Import and Editor Integration](usage_asset_pipeline.md).
 
 This document explains how to perform conversion from the command line without launching the Godot editor.
 This is highly useful when you want to integrate the conversion process into your CI/CD (Continuous Integration/Continuous Deployment) pipeline, build systems, or when you need to batch convert a large number of assets.

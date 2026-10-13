@@ -4,7 +4,7 @@ When migrating from v1.x to the current version, please note the following major
 
 ## 1. Asset Format and Import Pipeline
 - **v1.x**: SpriteStudio files like `.sspj`, `.ssae`, and `.ssce` were placed directly in the project and used as-is from Godot's FileSystem dock.
-- **Current version**: Utilizes a customized optimized binary format (`.ssab`). Please remove the `.sspj` and other source files that were placed in your Godot project during v1 (move them outside the project). Then, use the **SS Import Dock** to convert them into `.ssab` files.
+- **Current version**: Utilizes a customized optimized binary format (`.ssab`). Please remove the `.sspj` and other source files that were placed in your Godot project during v1 (move them outside the project). Then, use the **SS Importer** dock to convert them into `.ssab` files.
   - For detailed conversion steps, please refer to [Asset Import and Editor Integration](workflow/usage_asset_pipeline.md).
 
 ## 2. Node and GDScript API Changes
