@@ -560,6 +560,21 @@ uint32_t SsInternalPlayer::_find_animation_hash(const String& p_name) const {
     return animation ? animation->name_hash() : 0;
 }
 
+void SsInternalPlayer::_track_zero_switched(const ss::format::AnimationData* p_animation) {
+    // The instance children and effect slots stay: they come from the pack's
+    // parts, which every animation of it shares, so the running children carry
+    // on under the new animation's keys.
+    _currentAnimationData = p_animation;
+    if (_animationSelectedHash == p_animation->name_hash()) return;
+    _animationSelectedHash = p_animation->name_hash();
+    _strAnimationSelected = p_animation->name() ? String::utf8(p_animation->name()->c_str()) : String();
+    // No animation_started: the incoming animation is not started, it carries
+    // on whatever play state track 0 had.
+    if (_event_sink) {
+        _event_sink->onAnimationChanged(_strAnimationSelected);
+    }
+}
+
 // Tracks and sources are addressed by u32 in the runtime; a negative number
 // from GDScript names none, and is refused here rather than wrapped around.
 #define SS_TRACK_OR_FAIL(p_track, r_fail) \
@@ -569,9 +584,11 @@ uint32_t SsInternalPlayer::_find_animation_hash(const String& p_name) const {
 
 bool SsInternalPlayer::setTrackAnimation(int p_track, const String& p_name) {
     SS_TRACK_OR_FAIL(p_track, false);
-    const uint32_t hash = _find_animation_hash(p_name);
-    if (hash == 0) return false;
-    return _mixing_applied(ss_runtime_set_track_animation_by_hash(runtime_ctx, (uint32_t)p_track, hash));
+    const ss::format::AnimationData* animation = _ssabRes->find_animation(p_name);
+    if (animation == nullptr) return false;
+    if (!_mixing_applied(ss_runtime_set_track_animation_by_hash(runtime_ctx, (uint32_t)p_track, animation->name_hash()))) return false;
+    if (p_track == 0) _track_zero_switched(animation);
+    return true;
 }
 
 int SsInternalPlayer::getTrackCount() const {
@@ -637,10 +654,14 @@ bool SsInternalPlayer::setTrackSpeed(int p_track, float p_speed) {
 
 bool SsInternalPlayer::crossfade(int p_track, const String& p_name, float p_duration_seconds) {
     SS_TRACK_OR_FAIL(p_track, false);
-    const uint32_t hash = _find_animation_hash(p_name);
-    if (hash == 0) return false;
+    const ss::format::AnimationData* animation = _ssabRes->find_animation(p_name);
+    if (animation == nullptr) return false;
     // The runtime's fades run in the milliseconds `update` hands it.
-    return _mixing_applied(ss_runtime_crossfade_by_hash(runtime_ctx, (uint32_t)p_track, hash, p_duration_seconds * 1000.0f));
+    if (!_mixing_applied(ss_runtime_crossfade_by_hash(runtime_ctx, (uint32_t)p_track, animation->name_hash(), p_duration_seconds * 1000.0f))) return false;
+    // The incoming animation takes over track 0 when the fade begins, not when
+    // it completes.
+    if (p_track == 0) _track_zero_switched(animation);
+    return true;
 }
 
 bool SsInternalPlayer::fadeTrack(int p_track, float p_target_alpha, float p_duration_seconds) {

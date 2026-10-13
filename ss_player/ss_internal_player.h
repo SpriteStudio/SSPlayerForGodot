@@ -498,6 +498,12 @@ private:
     bool _mixing_applied(bool p_ok);
     // The resolved animation's name hash, or 0 for a name the SSAB lacks.
     uint32_t _find_animation_hash(const String& p_name) const;
+    // A crossfade or a track animation on track 0 hands the character to
+    // `p_animation` from the call on, as setAnimation does. Recording it there
+    // and then is what keeps setAnimation from taking the animation a crossfade
+    // left behind for the one still selected, and the canvas, the signals and
+    // the effects' frame rate from describing the outgoing one.
+    void _track_zero_switched(const ss::format::AnimationData* p_animation);
 
     SsPlayerEventSink* _event_sink = nullptr;
 

@@ -133,6 +133,9 @@ private:
     // Pushes the node's own transport configuration back onto the runtime after
     // anything that runs `setup_animation` underneath us.
     void _apply_transport_settings();
+    // The node's half of a crossfade or a track animation on track 0, which
+    // switches the animation without a `setup_animation`.
+    void _track_zero_switched();
 
 public:
     AnimationProcessMode get_animation_process_mode() const;
@@ -319,7 +322,9 @@ private:
     // The loop count as configured on the node — an inspector property, so it is
     // the node's own state and has to outlive an animation change. The runtime
     // resets its own count on every `setup_animation` (the transition is meant to
-    // state it), so this is pushed back afterwards by _apply_transport_settings.
+    // state it), and on every animation laid on track 0 by a crossfade or a
+    // track animation, so this is pushed back afterwards by
+    // _apply_transport_settings.
     // Speed, frame skip and the frame-rate override need no such handling: the
     // runtime carries those across a setup itself.
     int _loop_count = -1;

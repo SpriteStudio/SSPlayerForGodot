@@ -56,23 +56,111 @@ func test_a_crossfade_onto_an_empty_track_plays_at_once() -> void:
 	near(player.get_track_frame(1), 3.0, "and it plays", 0.001)
 
 
-## The incoming animation is played while it fades in, and owns the track once
-## the fade completes; the character does not stop there.
+## The incoming animation owns the track from the call on, is played while it
+## fades in, and the character does not stop when the fade completes.
 func test_a_crossfade_on_track_0_hands_it_over() -> void:
 	player.play()
 	_step(2)
 	var outgoing: int = player.get_track_main_source(0)
 	ok(player.crossfade(0, names[1], 4.0 * dt), "crossfade over four frames")
+	var incoming: int = player.get_track_main_source(0)
+	ne(incoming, outgoing, "track 0 carries the incoming source from the call on")
 	_step(2)
 	var progress: float = player.get_track_fade_progress(0)
 	ok(progress > 0.0 and progress < 1.0, "half-way through the fade (%f)" % progress)
 	_step(4)
 	near(player.get_track_fade_progress(0), -1.0, "the fade has completed")
-	ne(player.get_track_main_source(0), outgoing, "track 0 carries the incoming source")
+	eq(player.get_track_main_source(0), incoming, "and still carries it")
 	ok(player.is_playing(), "and the character still plays")
 	var frame: float = player.get_frame_no()
 	_step(2)
 	near(player.get_frame_no(), frame + 2.0, "the incoming animation advances", 0.001)
+
+
+## A crossfade on track 0 makes the incoming animation the current one at the
+## call, and says so once; a switch is not a start.
+func test_a_crossfade_on_track_0_switches_the_current_animation_at_the_call() -> void:
+	player.play()
+	_step(2)
+	var seen: Array = []
+	player.animation_changed.connect(func(n): seen.append(["changed", n]))
+	player.animation_started.connect(func(n): seen.append(["started", n]))
+	ok(player.crossfade(0, names[1], 10.0 * dt), "crossfade")
+	eq(player.get_current_animation(), names[1], "the incoming animation is current at once")
+	eq(seen, [["changed", names[1]]], "animation_changed once, naming it, and no start")
+	ok(player.crossfade(0, names[1], 10.0 * dt), "a crossfade to the current animation")
+	eq(seen.size(), 1, "is no switch to report")
+
+
+## The animation a crossfade left is no longer the current one, so selecting it
+## again sets it up; selecting the incoming one during its fade is a no-op.
+func test_set_animation_returns_to_the_animation_a_crossfade_left() -> void:
+	player.play()
+	_step(2)
+	player.crossfade(0, names[1], 10.0 * dt)
+	_step(2)
+	player.set_animation(names[1])
+	ok(player.get_track_fade_progress(0) > 0.0, "selecting the incoming one leaves the fade running")
+	player.set_animation(names[0])
+	eq(player.get_current_animation(), names[0], "back to the outgoing animation")
+	near(player.get_track_fade_progress(0), -1.0, "set up afresh, with no fade")
+	eq(player.get_track_count(), 1, "and track 0 alone")
+
+
+## What is looked up by the current animation's name follows the switch: Ringo's
+## `dead` is the one animation authored on a wider canvas.
+func test_the_canvas_follows_a_crossfade_on_track_0() -> void:
+	player.set_animation("wait1")
+	var before: Vector2 = player.get_canvas_size()
+	player.crossfade(0, "dead", 0.5)
+	ne(player.get_canvas_size(), before, "the canvas is dead's at the call")
+	eq(player.get_canvas_size(), player.get_ssab_resource().get_canvas_size("dead"), "and is dead's")
+
+
+func test_set_track_animation_on_track_0_switches_too() -> void:
+	var changed: Array = []
+	player.animation_changed.connect(func(n): changed.append(n))
+	ok(player.set_track_animation(1, names[1]), "an overlay")
+	eq(player.get_current_animation(), names[0], "does not change the current animation")
+	ok(player.set_track_animation(0, names[1]), "track 0")
+	eq(player.get_current_animation(), names[1], "does")
+	eq(changed, [names[1]], "and only that one is reported")
+
+
+## The runtime lays every animation looping forever; the node puts its loop count
+## back, so the incoming animation finishes on it and says so once.
+func test_the_loop_count_carries_across_a_crossfade_on_track_0() -> void:
+	var finished: Array = []
+	player.animation_finished.connect(func(n): finished.append(n))
+	player.set_animation("attack1")
+	player.set_loop_count(1)
+	player.play()
+	_step(2)
+	player.crossfade(0, "wait1", 4.0 * dt)
+	eq(player.get_loop_count(), 1, "the loop count is the node's still")
+	for i in 2000:
+		if player.is_finished():
+			break
+		player.advance(dt)
+	ok(player.is_finished(), "the incoming animation finished on it")
+	eq(finished, ["wait1"], "animation_finished once, naming it")
+
+
+## The outgoing animation running out mid-fade is not the character finishing:
+## track 0 already reports the incoming one.
+func test_an_outgoing_animation_running_out_does_not_finish_the_character() -> void:
+	var finished: Array = []
+	player.animation_finished.connect(func(n): finished.append(n))
+	player.set_animation("attack1")
+	player.set_loop_count(1)
+	player.play()
+	_step(15)
+	player.crossfade(0, "wait1", 30.0 * dt)
+	_step(20)
+	ok(player.get_track_fade_progress(0) > 0.0, "still fading, past attack1's end")
+	not_ok(player.is_finished(), "the character is not finished")
+	ok(player.is_playing(), "and plays on")
+	eq(finished, [], "no animation_finished")
 
 
 func test_pause_holds_every_track_and_resume_releases_them() -> void:
@@ -272,8 +360,7 @@ func test_an_overlay_fires_events_only_once_opted_in() -> void:
 
 
 ## After a crossfade on track 0 the events come from the incoming source, read
-## against its animation. The incoming animation loops without end (a crossfade
-## does not carry the loop count over), so the case stops at the first key.
+## against its animation. The case stops at the first key.
 func test_events_after_a_crossfade_on_track_0() -> void:
 	var p = _events_player()
 	var got: Array = []

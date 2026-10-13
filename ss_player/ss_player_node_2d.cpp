@@ -306,7 +306,11 @@ bool SpriteStudioPlayer2D::clear_all_part_overrides() {
 
 // ---- Animation mixing ----------------------------------------------------
 
-bool SpriteStudioPlayer2D::set_track_animation(int track, const String& anim_name) { return _internal->setTrackAnimation(track, anim_name); }
+bool SpriteStudioPlayer2D::set_track_animation(int track, const String& anim_name) {
+    if (!_internal->setTrackAnimation(track, anim_name)) return false;
+    if (track == 0) _track_zero_switched();
+    return true;
+}
 int SpriteStudioPlayer2D::get_track_count() const { return _internal->getTrackCount(); }
 bool SpriteStudioPlayer2D::clear_track(int track) { return _internal->clearTrack(track); }
 bool SpriteStudioPlayer2D::set_track_alpha(int track, float alpha) { return _internal->setTrackAlpha(track, alpha); }
@@ -318,7 +322,11 @@ SpriteStudioPlayer2D::TrackSync SpriteStudioPlayer2D::get_track_sync(int track) 
 bool SpriteStudioPlayer2D::set_track_frame(int track, float frame_no) { return _internal->setTrackFrame(track, frame_no); }
 float SpriteStudioPlayer2D::get_track_frame(int track) const { return _internal->getTrackFrame(track); }
 bool SpriteStudioPlayer2D::set_track_speed(int track, float speed) { return _internal->setTrackSpeed(track, speed); }
-bool SpriteStudioPlayer2D::crossfade(int track, const String& anim_name, float duration) { return _internal->crossfade(track, anim_name, duration); }
+bool SpriteStudioPlayer2D::crossfade(int track, const String& anim_name, float duration) {
+    if (!_internal->crossfade(track, anim_name, duration)) return false;
+    if (track == 0) _track_zero_switched();
+    return true;
+}
 bool SpriteStudioPlayer2D::fade_track(int track, float target_alpha, float duration) { return _internal->fadeTrack(track, target_alpha, duration); }
 float SpriteStudioPlayer2D::get_track_fade_progress(int track) const { return _internal->getTrackFadeProgress(track); }
 bool SpriteStudioPlayer2D::cancel_track_fade(int track) { return _internal->cancelTrackFade(track); }
@@ -566,6 +574,15 @@ int SpriteStudioPlayer2D::getLoopCount() const { return _internal->getLoop(); }
 
 void SpriteStudioPlayer2D::_apply_transport_settings() {
     _internal->setLoop(_loop_count);
+}
+
+void SpriteStudioPlayer2D::_track_zero_switched() {
+    // The runtime carries speed, direction, frame rate and frame skip over to
+    // the incoming animation, but lays it looping forever, as a setup does: the
+    // loop count is the one setting that has to be put back.
+    _apply_transport_settings();
+    // `current_animation` now names the incoming animation.
+    notify_property_list_changed();
 }
 
 void SpriteStudioPlayer2D::setFrameSkipEnabled(bool p_skip) { _internal->setSkipFrames(p_skip); }
