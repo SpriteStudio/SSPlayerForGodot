@@ -199,5 +199,18 @@ if ($PLATFORM -eq "android") {
         } elseif (Test-Path "$SRC_DIR/ssconverter$LIB_EXT") {
             Copy-Item "$SRC_DIR/ssconverter$LIB_EXT" "$LIB_OUTPUT/${LIB_PREFIX}ssconverter$LIB_EXT" -Force
         }
+
+        # Godot Custom Module compatibility, as download-sdk makes them: Godot's
+        # SCons asks MSVC for "ssruntime" under the engine's own suffix, so
+        # without these a custom-module build links stale copies.
+        if ($PLATFORM -eq "windows") {
+            foreach ($target in "editor", "template_release", "template_debug") {
+                foreach ($lib in "ssruntime", "ssconverter") {
+                    if (Test-Path "$LIB_OUTPUT/$lib.lib") {
+                        Copy-Item "$LIB_OUTPUT/$lib.lib" "$LIB_OUTPUT/$lib.windows.$target.$ARCH.lib" -Force
+                    }
+                }
+            }
+        }
     }
 }
