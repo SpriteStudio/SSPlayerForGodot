@@ -205,6 +205,16 @@ else
     if [[ "$PLATFORM" == "windows" ]]; then
         copy_lib "ssruntime.lib" "ssruntime.lib" || copy_lib "libssruntime.a" "ssruntime.lib"
         copy_lib "ssconverter.lib" "ssconverter.lib" || copy_lib "libssconverter.a" "ssconverter.lib"
+        # Godot Custom Module compatibility, as download-sdk makes them: Godot's
+        # SCons asks MSVC for "ssruntime" under the engine's own suffix, so
+        # without these a custom-module build links stale copies.
+        for target in editor template_release template_debug; do
+            for lib in ssruntime ssconverter; do
+                if [[ -f "${LIB_OUT_DIR}/${lib}.lib" ]]; then
+                    cp -f "${LIB_OUT_DIR}/${lib}.lib" "${LIB_OUT_DIR}/${lib}.windows.${target}.${ARCH}.lib"
+                fi
+            done
+        done
     elif [[ "$PLATFORM" == "ios" ]]; then
         if [[ -d "${SDK_DIR}/target/xcframework/static/libssruntime.xcframework" ]]; then
             cp -R "${SDK_DIR}/target/xcframework/static/libssruntime.xcframework" "${LIB_OUT_DIR}/"

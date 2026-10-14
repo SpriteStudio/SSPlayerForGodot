@@ -61,8 +61,11 @@ foreach ($item in $Args) {
 # godot\bin\* is deliberately not in this list. That is a custom module build
 # with SpriteStudio compiled into it, so it registers the classes a second time
 # and aborts on a project carrying addons\spritestudio -- see the message below.
+# On Windows the console wrapper comes first: PowerShell neither waits for nor
+# captures the GUI editor, which would leave this script no output to read.
 if (-not $GodotBin) {
     foreach ($cand in @(
+            (Join-Path $RootDir "godot-bin\godot_console.exe"),
             (Join-Path $RootDir "godot-bin\godot.exe"),
             (Join-Path $RootDir "godot-bin\godot"),
             (Join-Path $RootDir "godot-bin\Godot.app\Contents\MacOS\Godot"))) {
@@ -162,7 +165,12 @@ custom module build), so loading the extension registers every class twice.
     exit 2
 }
 
-if ($output -notmatch "==== SUITE FINISHED ====") {
+# Asked of the output as a whole. `-notmatch` on an array returns the lines that
+# lack the marker, so it read every finished run as stopped, and an empty one as
+# finished.
+$finished = @($output | ForEach-Object { "$_" } |
+              Select-String -SimpleMatch "==== SUITE FINISHED ====").Count -gt 0
+if (-not $finished) {
     Write-Host "`nrun-tests.ps1: the run stopped before the suite finished — see above."
     exit 1
 }

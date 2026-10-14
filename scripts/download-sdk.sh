@@ -83,6 +83,18 @@ echo "Extracting SDK..."
 rm -rf "${TARGET_DIR}/runtime"
 unzip -q -o "$ZIP_FILE" -d "${TARGET_DIR}/runtime"
 
+# Godot Custom Module compatibility (Windows x86_64): Godot's SCons asks MSVC
+# for "ssruntime" under the engine's own suffix, so without these copies a
+# custom-module build links whatever stale copies are already there.
+WIN_LIB_DIR="${TARGET_DIR}/runtime/libs/windows/x86_64"
+if [ -d "$WIN_LIB_DIR" ]; then
+    echo "Creating library copies for Godot Custom Module..."
+    for target in editor template_release template_debug; do
+        cp -f "${WIN_LIB_DIR}/ssruntime.lib" "${WIN_LIB_DIR}/ssruntime.windows.${target}.x86_64.lib"
+        cp -f "${WIN_LIB_DIR}/ssconverter.lib" "${WIN_LIB_DIR}/ssconverter.windows.${target}.x86_64.lib"
+    done
+fi
+
 echo "$TARGET_VERSION" > "$CURRENT_VERSION_FILE"
 
 echo "Done."
