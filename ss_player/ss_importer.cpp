@@ -169,7 +169,7 @@ void SSImporter::_notification(int p_what) {
 void SSImporter::_scan_start_current() {
     const String &dir = _scan_dirs[_scan_dir_index];
     CharString dir_utf8 = dir.utf8();
-    ss_converter_scan_dir((Context *)_scan_context, dir_utf8.get_data(), SCAN_MAX_DEPTH, (uintptr_t)_scan_cur_max_entries, _scan_cur_max_millis);
+    ss_converter_scan_dir((Context *)_scan_context, dir_utf8.get_data(), _scan_cur_max_depth, (uintptr_t)_scan_cur_max_entries, _scan_cur_max_millis);
 }
 
 void SSImporter::_scan_collect_current_results() {
@@ -189,6 +189,7 @@ void SSImporter::_scan_collect_current_results() {
 void SSImporter::_scan_finish_or_advance() {
     _scan_dir_index++;
     if (_scan_dir_index < _scan_dirs.size()) {
+        _scan_cur_max_depth = SCAN_MAX_DEPTH;
         _scan_cur_max_entries = SCAN_MAX_ENTRIES;
         _scan_cur_max_millis = SCAN_MAX_MILLIS;
         _scan_start_current();
@@ -299,7 +300,10 @@ void SSImporter::_on_budget_action(const StringName &p_action) {
         return;
     }
     // Keep scanning the same directory from scratch without budget limits; the
-    // Cancel button on the progress dialog remains the safety valve.
+    // Cancel button on the progress dialog remains the safety valve. Depth too:
+    // the converter reports a walk its depth limit cut, and a rescan that kept
+    // the limit would stop in the same place and ask the same question again.
+    _scan_cur_max_depth = UINT32_MAX;
     _scan_cur_max_entries = (uint64_t)1 << 60;
     _scan_cur_max_millis = 0;
     if (_import_dialog) {
@@ -593,6 +597,7 @@ void SSImporter::_idle_reset() {
     _scan_dirs.clear();
     _scan_loose_sspj.clear();
     _scan_dir_index = 0;
+    _scan_cur_max_depth = SCAN_MAX_DEPTH;
     _scan_cur_max_entries = SCAN_MAX_ENTRIES;
     _scan_cur_max_millis = SCAN_MAX_MILLIS;
 
@@ -753,6 +758,7 @@ void SSImporter::queue_scan_and_import(const PackedStringArray &p_dirs, const Pa
         _scan_dirs.push_back(p_dirs[i]);
     }
     _scan_dir_index = 0;
+    _scan_cur_max_depth = SCAN_MAX_DEPTH;
     _scan_cur_max_entries = SCAN_MAX_ENTRIES;
     _scan_cur_max_millis = SCAN_MAX_MILLIS;
 

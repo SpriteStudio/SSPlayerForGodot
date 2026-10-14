@@ -110,6 +110,7 @@ private:
   Vector<String> _scan_dirs;       // absolute dir paths to scan
   int _scan_dir_index = 0;
   Vector<String> _scan_loose_sspj; // absolute .sspj dropped directly
+  uint32_t _scan_cur_max_depth = SCAN_MAX_DEPTH;
   uint64_t _scan_cur_max_entries = SCAN_MAX_ENTRIES;
   uint64_t _scan_cur_max_millis = SCAN_MAX_MILLIS;
 
