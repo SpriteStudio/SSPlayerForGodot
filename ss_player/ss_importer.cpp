@@ -315,6 +315,9 @@ void SSImporter::_on_budget_action(const StringName &p_action) {
 
 void *SSImporter::_process_file(const String &source_sspj_path, const String &dst_dir_path) {
     auto ctx = ss_converter_create();
+    if (!ctx) {
+        return nullptr;
+    }
 
     CharString src_utf8 = source_sspj_path.utf8();
     CharString dst_utf8 = dst_dir_path.utf8();
@@ -489,6 +492,15 @@ void SSImporter::_convert_pump() {
         String global_src = ProjectSettings::get_singleton()->globalize_path(src);
         String global_dst = ProjectSettings::get_singleton()->globalize_path(dst);
         void *ctx = _process_file(global_src, global_dst);
+        if (!ctx) {
+            // Nothing runs without a context. Kept among the active ones, it
+            // would never report finished, and the import would never end.
+            ERR_PRINT(vformat("SSImporter: convert failed for %s: the converter could not create a context.", global_src));
+            _failed_files.push_back(global_src.get_file());
+            _failed_reasons.push_back(tr("The converter could not start: it could not create a conversion context."));
+            _convert_done++;
+            continue;
+        }
         print_line("SSImporter: convert sspj file: " + src + ", to ssab files: " + dst);
 
         _active_ctx.push_back(ctx);
@@ -753,6 +765,13 @@ void SSImporter::queue_scan_and_import(const PackedStringArray &p_dirs, const Pa
     }
 
     _scan_context = ss_converter_create();
+    if (!_scan_context) {
+        // A scan without a context never reports finished either, and the
+        // import would wait on it for good.
+        ERR_PRINT("SSImporter: the converter could not create a context, so the dropped folders were not scanned.");
+        _idle_reset();
+        return;
+    }
     _is_scanning = true;
     _scan_canceling = false;
 
