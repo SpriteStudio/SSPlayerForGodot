@@ -3827,13 +3827,10 @@ void SsInternalPlayer::_fetchAnimation() {
 
         bool binded = ss_runtime_bind_resource(runtime_ctx, parsed->get_handle());
         if (!binded) {
-            // TODO: append
-            // `ss_runtime_error_message(ss_runtime_get_last_error(runtime_ctx))`
-            // once the downloaded SDK carries the pair. They landed in the SDK
-            // after the release `scripts/download-sdk.sh` pulls
-            // `ss_player/runtime/include/ssruntime.h` from, so calling them here
-            // would not compile yet.
-            ERR_PRINT(vformat("[SS] %s: the runtime read the SSAB but would not bind it.", ssab_label(_ssabRes)));
+            // Read before any other call on the context, which would clear it.
+            const String reason = String::utf8(ss_runtime_error_message(ss_runtime_get_last_error(runtime_ctx)));
+            ERR_PRINT(vformat("[SS] %s: the runtime read the SSAB but would not bind it%s.", ssab_label(_ssabRes),
+                              reason.is_empty() ? String() : ": " + reason));
             return;
         }
         // The previous parse goes only now that the runtime is bound to this one.
