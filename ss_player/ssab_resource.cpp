@@ -118,16 +118,15 @@ void SSABResource::set_data(const PackedByteArray &p_data) {
 }
 
 Error SSABResource::save_to_file(const String &path) {
-  Error error;
+  Error error = OK;
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
   Ref<FileAccess> file = FileAccess::open(path, FileAccess::WRITE);
-  if (!file.is_valid())
-    return ERR_FILE_CANT_OPEN;
+  error = FileAccess::get_open_error();
 #else
   Ref<FileAccess> file = FileAccess::open(path, FileAccess::WRITE, &error);
+#endif
   if (error != OK)
     return error;
-#endif
   file->store_buffer(binary.ptr(), binary.size());
   file->flush();
   return OK;

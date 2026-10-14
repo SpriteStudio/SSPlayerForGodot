@@ -52,6 +52,19 @@ func test_a_file_that_does_not_load_says_why() -> void:
 		"bytes that are not a sequence")
 
 
+## A save that cannot open its file says why in the engine's words: the code
+## FileAccess gives for the same path. Which code that is depends on the
+## platform, so the case compares the two.
+func test_a_save_that_cannot_open_its_file_says_why() -> void:
+	const PATH := "user://no_such_folder/out.ssab"
+	FileAccess.open(PATH, FileAccess.WRITE)
+	var expected := FileAccess.get_open_error()
+	ne(expected, OK, "the folder is not there to write into")
+	eq(load(BASIC).save_to_file(PATH), expected, "a pack reports the engine's code")
+	eq(SSQBResource.new().save_to_file(PATH.get_basename() + ".ssqb"), expected,
+		"and so does a sequence")
+
+
 ## Everything a pack resolves by name beside itself is a dependency: the atlas,
 ## the sounds, the pack an Instance part plays. Reporting them is what lets a
 ## dependency-based export mode ship them, and the FileSystem dock see them.
