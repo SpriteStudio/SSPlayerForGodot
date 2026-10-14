@@ -57,6 +57,7 @@ void register_ss_translations() {
     ja_translation->add_message("Cancel", "キャンセル");
     ja_translation->add_message("Skipped - %s already writes to %s. Rename one .sspj, or import them into separate output folders.", "スキップ - %s が既に %s へ出力します。どちらかの.sspjをリネームするか、別々の出力フォルダにインポートしてください。");
     ja_translation->add_message("Some files failed to import.\n\n", "一部のファイルのインポートに失敗しました。\n\n");
+    ja_translation->add_message("The converter could not start: it could not create a conversion context.", "コンバーターを開始できませんでした（変換コンテキストを作成できませんでした）。");
     ja_translation->add_message("\nPlease check the Output tab for details.", "\n詳細は出力タブを確認してください。");
 
     TranslationServer::get_singleton()->add_translation(ja_translation);
