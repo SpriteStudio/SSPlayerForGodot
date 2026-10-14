@@ -510,12 +510,18 @@ private:
     // sits in the runtime, unseen, until playback happens to step. Cleared by
     // `_drawAnimation`, which both the owner's and the child's path go through.
     bool _overrides_dirty = false;
-    // A track or source call has gone through since the animation was last set
-    // up. The pose then depends on more than track 0's frame: an overlay or a
-    // fade moves while track 0 holds, or after it has finished, so `update`
-    // neither stops at a stopped track 0 nor dedups on its frame. Cleared by
-    // `_fetchAnimation`, whose setup folds the stack back to track 0 alone.
-    bool _mixing_active = false;
+    // A track may hold a source beside its main one: one was added, or a fade
+    // was cancelled, which can leave a crossfade's outgoing side playing. The
+    // runtime reports no source count, and such a source moves the pose while
+    // every track's main animation holds, so this stands in for one. Cleared
+    // only by `_fetchAnimation`, whose setup folds the stack back to track 0
+    // alone: a stale `true` costs redraws, never a frozen pose.
+    bool _extra_sources = false;
+    // Whether the track stack moves the pose beyond track 0's frame: a fade on
+    // any track, an unfinished animation on a track above 0, or a source beside
+    // a main one. Otherwise read from the runtime each tick, so a stack the host
+    // has cleared, or that has played out, costs nothing.
+    bool _stack_in_motion() const;
     bool _mixing_applied(bool p_ok);
     // The resolved animation's name hash, or 0 for a name the SSAB lacks.
     uint32_t _find_animation_hash(const String& p_name) const;
