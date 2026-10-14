@@ -124,10 +124,14 @@ if ($PLATFORM -eq "macos" -or $PLATFORM -eq "ios" -or $PLATFORM -eq "web") {
 }
 New-Item -ItemType Directory -Path $LIB_OUTPUT -Force | Out-Null
 
+# The names the link asks for: SConstruct and SCsub link "ssruntime", which
+# MSVC resolves as ssruntime.lib and every other toolchain as libssruntime.a.
 $LIB_EXT = ".a"
-if ($PLATFORM -eq "windows") { $LIB_EXT = ".lib" }
+$LIB_PREFIX = "lib"
+if ($PLATFORM -eq "windows") { $LIB_EXT = ".lib"; $LIB_PREFIX = "" }
 
-# Determine source directory
+# Determine source directory: where the build above left the libraries, the
+# same per-platform choice as build-runtime.sh.
 if ($IS_HOST_BUILD) {
     $SRC_DIR = "$SDK_DIR/target/$BUILD_MODE"
 } elseif ($PLATFORM -eq "ios") {
@@ -138,25 +142,19 @@ if ($IS_HOST_BUILD) {
     } else {
         $SRC_DIR = "$SDK_DIR/target/xcframework/static/libssruntime.xcframework/ios-arm64"
     }
-    # Architecture mapping for cross-compilation
-    $TARGET_TRIPLE = ""
-    if ($PLATFORM -eq "android") {
-        $SRC_DIR = "$SDK_DIR/target/*-linux-android*/$BUILD_MODE"
-    } elseif ($PLATFORM -eq "web") {
-        $TARGET_TRIPLE = "wasm32-unknown-unknown"
-    } elseif ($PLATFORM -eq "macos" -and $ARCH -eq "universal") {
-        $TARGET_TRIPLE = "universal-apple-darwin"
-    } elseif ($PLATFORM -eq "windows" -and $ARCH -eq "x86_64") {
-        $TARGET_TRIPLE = "x86_64-pc-windows-msvc"
-    }
-
-    if ($PLATFORM -ne "android") {
-        if ($TARGET_TRIPLE -ne "") {
-            $SRC_DIR = "$SDK_DIR/target/$TARGET_TRIPLE/$BUILD_MODE"
-        } else {
-            $SRC_DIR = "$SDK_DIR/target/$BUILD_MODE"
-        }
-    }
+} elseif ($PLATFORM -eq "android") {
+    # One directory per ABI; the collection below walks them.
+    $SRC_DIR = "$SDK_DIR/target/*-linux-android*/$BUILD_MODE"
+} elseif ($PLATFORM -eq "macos") {
+    $SRC_DIR = "$SDK_DIR/target/universal-apple-darwin/$BUILD_MODE"
+} elseif ($PLATFORM -eq "web") {
+    $SRC_DIR = "$SDK_DIR/target/wasm32-unknown-unknown/$BUILD_MODE"
+} elseif ($PLATFORM -eq "windows") {
+    $TARGET_TRIPLE = "x86_64-pc-windows-msvc"
+    if ($ARCH -eq "arm64") { $TARGET_TRIPLE = "aarch64-pc-windows-msvc" }
+    $SRC_DIR = "$SDK_DIR/target/$TARGET_TRIPLE/$BUILD_MODE"
+} else {
+    $SRC_DIR = "$SDK_DIR/target/$BUILD_MODE"
 }
 
 echo "Copying libraries from $SRC_DIR..."
@@ -188,26 +186,15 @@ if ($PLATFORM -eq "android") {
     } else {
         echo "Copying libraries from $SRC_DIR to $LIB_OUTPUT..."
         if (Test-Path "$SRC_DIR/libssruntime$LIB_EXT") {
-            Copy-Item "$SRC_DIR/libssruntime$LIB_EXT" "$LIB_OUTPUT/ssruntime$LIB_EXT" -Force
+            Copy-Item "$SRC_DIR/libssruntime$LIB_EXT" "$LIB_OUTPUT/${LIB_PREFIX}ssruntime$LIB_EXT" -Force
         } elseif (Test-Path "$SRC_DIR/ssruntime$LIB_EXT") {
-            Copy-Item "$SRC_DIR/ssruntime$LIB_EXT" "$LIB_OUTPUT/ssruntime$LIB_EXT" -Force
+            Copy-Item "$SRC_DIR/ssruntime$LIB_EXT" "$LIB_OUTPUT/${LIB_PREFIX}ssruntime$LIB_EXT" -Force
         }
 
         if (Test-Path "$SRC_DIR/libssconverter$LIB_EXT") {
-            Copy-Item "$SRC_DIR/libssconverter$LIB_EXT" "$LIB_OUTPUT/ssconverter$LIB_EXT" -Force
+            Copy-Item "$SRC_DIR/libssconverter$LIB_EXT" "$LIB_OUTPUT/${LIB_PREFIX}ssconverter$LIB_EXT" -Force
         } elseif (Test-Path "$SRC_DIR/ssconverter$LIB_EXT") {
-            Copy-Item "$SRC_DIR/ssconverter$LIB_EXT" "$LIB_OUTPUT/ssconverter$LIB_EXT" -Force
-        }
-
-        # Copy for Godot Custom Module (with platform.target.arch naming)
-        $targets = "editor", "template_release", "template_debug"
-        foreach($target in $targets) {
-            if (Test-Path "$LIB_OUTPUT/ssruntime$LIB_EXT") {
-                Copy-Item "$LIB_OUTPUT/ssruntime$LIB_EXT" "$LIB_OUTPUT/ssruntime.$PLATFORM.$target.$ARCH$LIB_EXT" -Force
-            }
-            if (Test-Path "$LIB_OUTPUT/ssconverter$LIB_EXT") {
-                Copy-Item "$LIB_OUTPUT/ssconverter$LIB_EXT" "$LIB_OUTPUT/ssconverter.$PLATFORM.$target.$ARCH$LIB_EXT" -Force
-            }
+            Copy-Item "$SRC_DIR/ssconverter$LIB_EXT" "$LIB_OUTPUT/${LIB_PREFIX}ssconverter$LIB_EXT" -Force
         }
     }
 }
