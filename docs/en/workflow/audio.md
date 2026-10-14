@@ -76,6 +76,7 @@ func _on_audio(payload: Dictionary) -> void:
 | `part_index` | `int` | Index of the audio part that fired |
 | `part_name` | `String` | Name of that part |
 | `frame_no` | `int` | The frame the key sits on — not necessarily the frame it was noticed on, since one tick can step across several |
+| `source` | `int` | Handle of the source that fired it — see [Motion Blending](motion_blending.md) |
 | `sound_list_name_hash` | `int` | Hash of the sound list name |
 | `sound_name_hash` | `int` | Hash of the sound name |
 | `sound_name` | `String` | Sound name as authored (present only when set) |

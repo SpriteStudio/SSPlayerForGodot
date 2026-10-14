@@ -22,6 +22,7 @@
     - [AnimationPlayer との連携](workflow/animation_player.md)
     - [アセットのインポートとエディタ連携](workflow/usage_asset_pipeline.md)（初回の `.sspj` インポートはこちら）
     - [スクリプト制御とイベント](workflow/usage_scripting.md)
+    - [モーションブレンド](workflow/motion_blending.md)
     - [サウンド再生](workflow/audio.md)
     - [プロジェクトのエクスポート](workflow/export.md)
     - [生成アセットの構成と配信](workflow/generated_assets.md)（依存関係・エクスポートモード・`.pck`）
