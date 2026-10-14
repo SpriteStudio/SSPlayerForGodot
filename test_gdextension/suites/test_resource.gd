@@ -102,7 +102,7 @@ func test_frame_metadata_describes_the_animation() -> void:
 	eq(player.get_end_frame(), player.get_total_frames() - 1, "the last frame")
 
 
-## The section defaults to the whole animation; `test_playback` covers narrowing it.
+## The section defaults to the whole animation.
 func test_the_section_starts_as_the_whole_animation() -> void:
 	player.set_animation("anime_1")
 	eq(player.get_animation_section_start(), player.get_start_frame(), "section start")
