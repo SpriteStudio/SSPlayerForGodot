@@ -13,28 +13,44 @@
 void SSQBResource::_bind_methods() {
   ClassDB::bind_method(D_METHOD("load_from_file", "path"), &SSQBResource::load_from_file);
   ClassDB::bind_method(D_METHOD("save_to_file", "path"), &SSQBResource::save_to_file);
+  ClassDB::bind_method(D_METHOD("set_data", "data"), &SSQBResource::set_data);
+  ClassDB::bind_method(D_METHOD("get_data"), &SSQBResource::get_data);
+
+  ADD_PROPERTY(PropertyInfo(Variant::PACKED_BYTE_ARRAY, "data", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_STORAGE), "set_data", "get_data");
+}
+
+bool SSQBResource::_take_binary(const PackedByteArray &p_bytes) {
+  binary = p_bytes;
+  // .ssqb is untrusted input; reject a structurally-invalid buffer here before
+  // any accessor follows its offsets (see get_ss_sequence_binary).
+  ::flatbuffers::Verifier verifier(binary.ptr(), binary.size());
+  if (ss::format::VerifySsSequenceBinaryBuffer(verifier)) {
+    return true;
+  }
+  binary.clear();
+  return false;
 }
 
 Error SSQBResource::load_from_file(const String &path) {
   Error error = OK;
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
-  binary = FileAccess::get_file_as_bytes(path);
+  PackedByteArray bytes = FileAccess::get_file_as_bytes(path);
   error = FileAccess::get_open_error();
 #else
-  binary = FileAccess::get_file_as_bytes(path, &error);
+  PackedByteArray bytes = FileAccess::get_file_as_bytes(path, &error);
 #endif
+  // A file that cannot be read still replaces the bytes -- with none.
+  const bool valid = _take_binary(bytes);
   if (error != OK)
     return error;
+  return valid ? OK : ERR_INVALID_DATA;
+}
 
-  // .ssqb is untrusted input; reject a structurally-invalid buffer here before
-  // any accessor follows its offsets (see get_ss_sequence_binary).
-  ::flatbuffers::Verifier verifier(binary.ptr(), binary.size());
-  if (!ss::format::VerifySsSequenceBinaryBuffer(verifier)) {
-    binary.clear();
-    return ERR_INVALID_DATA;
+void SSQBResource::set_data(const PackedByteArray &p_data) {
+  // Empty is a resource that was never loaded, which is not worth a message.
+  if (!_take_binary(p_data) && !p_data.is_empty()) {
+    ERR_PRINT(vformat("[SS] SSQBResource.data: these %d bytes are not a usable SSQB, so none were kept.", p_data.size()));
   }
-
-  return error;
 }
 
 Error SSQBResource::save_to_file(const String &path) {
@@ -63,18 +79,6 @@ const ss::format::SsSequenceBinary *SSQBResource::get_ss_sequence_binary() {
 }
 
 const uint8_t *SSQBResource::get_data_ptr() { return this->binary.ptr(); }
-
-#ifndef SPRITESTUDIO_GODOT_EXTENSION
-Error SSQBResource::copy_from(const Ref<Resource> &p_resource) {
-  auto error = Resource::copy_from(p_resource);
-  if (error != OK)
-    return error;
-  const Ref<SSQBResource> &ssqbFile =
-      static_cast<const Ref<SSQBResource> &>(p_resource);
-  this->binary = ssqbFile->binary;
-  return OK;
-}
-#endif
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
 Variant SSQBResourceFormatLoader::_load(const String &path,

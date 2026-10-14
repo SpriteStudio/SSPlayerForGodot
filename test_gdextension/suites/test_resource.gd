@@ -226,3 +226,25 @@ func test_a_pack_reloaded_in_place_keeps_its_players_playing() -> void:
 	for i in 3:
 		p.advance(dt)
 	near(p.get_frame_no(), 3.0, "and plays from the new bytes", 0.001)
+
+
+## `data` is a storage property, so a copy of a pack carries its bytes. What a
+## copy cannot carry is the directory its textures resolve from.
+func test_a_copy_of_a_pack_carries_its_bytes() -> void:
+	var res: Resource = load(BASIC)
+	var copy: Resource = res.duplicate()
+	ok(copy.is_valid(), "the copy holds a usable pack")
+	eq(copy.get_animation_names(), res.get_animation_names(), "with the same animations")
+
+
+## The editor reloads a pack changed on disk into the object already loaded,
+## through its storage properties, and `CACHE_MODE_REPLACE` takes the same path:
+## whatever holds the pack sees the new bytes without being handed a new pack.
+func test_a_pack_changed_on_disk_reloads_into_the_loaded_object() -> void:
+	_write(SCRATCH, load(BASIC).data)
+	var res: Resource = load(SCRATCH)
+	eq(res.get_animation_names(), load(BASIC).get_animation_names(), "loaded as Basic")
+	_write(SCRATCH, load(RINGO).data)
+	var again: Resource = ResourceLoader.load(SCRATCH, "", ResourceLoader.CACHE_MODE_REPLACE)
+	ok(again == res, "the reload went into the object already loaded")
+	eq(res.get_animation_names(), load(RINGO).get_animation_names(), "which now holds Ringo")

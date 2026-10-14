@@ -5,9 +5,9 @@
 	</brief_description>
 	<description>
 		Holds the animation binary produced from a SpriteStudio project ([code].sspj[/code]), either by dropping the project onto the editor (the [b]SS Importer[/b] dock) or by running [code]ssconverter-cli[/code]. Assign it to [member SpriteStudioPlayer2D.ssab] to play it.
-		Loading does not parse the file: the runtime reads the FlatBuffers buffer in place and borrows it rather than copying, so load cost is close to the cost of reading the bytes. The buffer stays immutable until [method load_from_file] replaces it.
+		Loading does not parse the file: the runtime reads the FlatBuffers buffer in place and borrows it rather than copying, so load cost is close to the cost of reading the bytes. The buffer stays immutable until [method load_from_file] or [member data] replaces it.
 		Textures and audio referenced by the animation are resolved relative to the directory the resource was loaded from, so keep the converter's output directory intact when moving files around.
-		[b]Note:[/b] when several [SpriteStudioPlayer2D] nodes share one resource, enable [member Resource.resource_local_to_scene] so each node gets its own playback state.
+		[b]Note:[/b] several [SpriteStudioPlayer2D] nodes can share one resource as it is: each node keeps its own playback state, and the players of one resource share one parse of it. Leave [member Resource.resource_local_to_scene] off: it copies the bytes and the parse for every node. Any copy of the resource — local to scene, [method Resource.duplicate], or made unique in the Inspector — also has no directory to resolve its textures and audio from.
 	</description>
 	<tutorials>
 	</tutorials>
@@ -91,4 +91,10 @@
 			</description>
 		</method>
 	</methods>
+	<members>
+		<member name="data" type="PackedByteArray" setter="set_data" getter="get_data" default="PackedByteArray()">
+			The held binary. Setting it replaces the binary the way [method load_from_file] does, except that textures and audio still resolve from the directory the resource was loaded from. Bytes that are not a usable [code].ssab[/code] are not kept, and an error is printed.
+			It is a storage property, not shown in the Inspector, so that reloading the resource in place replaces the binary: the editor does that when the file changes on disk, and so does [method ResourceLoader.load] with [constant ResourceLoader.CACHE_MODE_REPLACE]. Reading it does not copy the bytes.
+		</member>
+	</members>
 </class>

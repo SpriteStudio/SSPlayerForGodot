@@ -23,13 +23,17 @@ void SSABResource::_bind_methods() {
   ClassDB::bind_method(D_METHOD("get_canvas_rect", "anim_name"), &SSABResource::get_canvas_rect);
   ClassDB::bind_method(D_METHOD("get_sound_stream", "sound_list_name_hash", "sound_name_hash"), &SSABResource::get_sound_stream);
   ClassDB::bind_method(D_METHOD("get_sound_info", "sound_list_name_hash", "sound_name_hash"), &SSABResource::get_sound_info);
+  ClassDB::bind_method(D_METHOD("set_data", "data"), &SSABResource::set_data);
+  ClassDB::bind_method(D_METHOD("get_data"), &SSABResource::get_data);
+
+  ADD_PROPERTY(PropertyInfo(Variant::PACKED_BYTE_ARRAY, "data", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_STORAGE), "set_data", "get_data");
   }
 bool SSABResource::is_valid() const {
   // Verification walks the whole buffer, and nearly every accessor below gates
   // on it (selecting a player in the editor alone triggers several, and each
   // Instance child does one per animation lookup), so a multi-megabyte SSAB
   // would be re-verified many times per operation. The buffer is immutable
-  // between load_from_file / copy_from, both of which reset the cache.
+  // between replacements, and _take_binary resets the cache on each.
   if (_valid_cache < 0) {
     _valid_cache = _verify_binary() ? 1 : 0;
   }
@@ -71,32 +75,46 @@ bool SSABResource::_verify_binary() const {
   return true;
 }
 
-Error SSABResource::load_from_file(const String &path) {
-  Error error = OK;
-  _parent_dir = path.get_base_dir();
-  // New buffer: drop the cached verification verdict before touching `binary`.
-  // The generation is bumped up-front so the failure paths below, which leave
-  // `binary` reassigned or cleared, invalidate outstanding borrows too.
+bool SSABResource::_take_binary(const PackedByteArray &p_bytes) {
+  // New buffer: whatever was derived from the old one goes with it. The
+  // generation is bumped whether or not the new bytes verify, so a borrower of
+  // the old ones re-binds even when nothing usable replaced them -- and it is
+  // the only signal a borrower gets from copy_from, which emits no "changed".
   _valid_cache = -1;
   _generation++;
   _parsed.unref();
+  _sound_cache.clear();
+  binary = p_bytes;
+  if (is_valid()) {
+    return true;
+  }
+  binary.clear();
+  _valid_cache = -1;
+  return false;
+}
+
+Error SSABResource::load_from_file(const String &path) {
+  Error error = OK;
+  _parent_dir = path.get_base_dir();
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
-  binary = FileAccess::get_file_as_bytes(path);
+  PackedByteArray bytes = FileAccess::get_file_as_bytes(path);
   error = FileAccess::get_open_error();
 #else
-  binary = FileAccess::get_file_as_bytes(path, &error);
+  PackedByteArray bytes = FileAccess::get_file_as_bytes(path, &error);
 #endif
+  // A file that cannot be read still replaces the bytes -- with none.
+  const bool valid = _take_binary(bytes);
   if (error != OK) {
     return error;
   }
+  return valid ? OK : ERR_INVALID_DATA;
+}
 
-  if (!is_valid()) {
-    binary.clear();
-    _valid_cache = -1;
-    return ERR_INVALID_DATA;
+void SSABResource::set_data(const PackedByteArray &p_data) {
+  // Empty is a resource that was never loaded, which is not worth a message.
+  if (!_take_binary(p_data) && !p_data.is_empty()) {
+    ERR_PRINT(vformat("[SS] SSABResource.data: these %d bytes are not a usable SSAB, so none were kept.", p_data.size()));
   }
-
-  return OK;
 }
 
 Error SSABResource::save_to_file(const String &path) {
@@ -476,23 +494,6 @@ Dictionary SSABResource::get_sound_info(uint32_t sound_list_name_hash, uint32_t 
     info["time_total"] = (int64_t)file->time_total();
     return info;
 }
-
-#ifndef SPRITESTUDIO_GODOT_EXTENSION
-Error SSABResource::copy_from(const Ref<Resource> &p_resource) {
-  auto error = Resource::copy_from(p_resource);
-  if (error != OK)
-    return error;
-  const Ref<SSABResource> &ssabFile =
-      static_cast<const Ref<SSABResource> &>(p_resource);
-  this->binary = ssabFile->binary;
-  _valid_cache = -1;
-  // This path emits no "changed", so the generation is the only signal a
-  // borrower gets that its buffer was replaced.
-  _generation++;
-  _parsed.unref();
-  return OK;
-}
-#endif
 
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION

@@ -1,6 +1,6 @@
 # 🗃️ Resource classes
 
-These extend Godot's built-in `Resource`. When multiple `SpriteStudioPlayer2D` nodes share the same resource, set the **Local To Scene** flag to `True` to give each node its own state.
+These extend Godot's built-in `Resource`. Several `SpriteStudioPlayer2D` nodes can share one resource as it is: each node keeps its own playback state, and the players of one resource share one parse of it. Leave **Local To Scene** off, since it copies the bytes and the parse for every node. Any copy of a resource — Local To Scene, `duplicate()`, or making it unique in the Inspector — also has no directory to resolve its textures and sounds from.
 
 ## SSABResource
 
@@ -11,6 +11,7 @@ Textures and sounds referenced by the animation resolve **relative to the direct
 Main methods:
 
 * `load_from_file(path: String) -> Error` / `save_to_file(path: String) -> Error`
+* `data: PackedByteArray`: The held binary, as a storage property that the Inspector does not show. Setting it replaces the binary as `load_from_file()` does, but textures and sounds still resolve from the directory the resource was loaded from. Bytes that are not a usable `.ssab` are not kept, and an error is printed. Reloading the resource in place goes through it, so the editor picks up a file changed on disk, and so does `ResourceLoader.load()` with `CACHE_MODE_REPLACE`.
 * `is_valid() -> bool`: Whether the held binary passes verification. The result is cached, since the buffer is immutable between loads.
 * `get_animation_count() -> int` / `get_animation_names() -> PackedStringArray`
 * `get_cellmap_names() -> PackedStringArray` / `get_cell_names(cellmap_name: String) -> PackedStringArray`: The same two lookups the player offers, for an `.ssab` that is not on a player yet. `get_cell_names()` returns an empty array for an unknown cell map.
@@ -28,3 +29,4 @@ Main methods:
 
 * `load_from_file(path: String) -> Error`
 * `save_to_file(path: String) -> Error`
+* `data: PackedByteArray`: The held binary, a storage property like `SSABResource.data`. Bytes that are not a usable `.ssqb` are not kept, and an error is printed.

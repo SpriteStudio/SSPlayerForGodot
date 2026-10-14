@@ -1,6 +1,6 @@
 # 🗃️ リソース管理クラス
 
-Godot の `Resource` を継承しているため、複数の `SpriteStudioPlayer2D` から同じリソースを参照する場合は **Local To Scene** フラグを `True` に設定すると個別に状態を持たせられます。
+Godot の `Resource` を継承しています。1 つのリソースは複数の `SpriteStudioPlayer2D` からそのまま共有できます。再生状態は各ノードが持ち、同じリソースを使うプレーヤはその解析結果を 1 つ共有します。**Local To Scene** はノードごとにバイト列と解析結果を複製してしまうため、オフのままにしてください。また、リソースの複製（Local To Scene、`duplicate()`、インスペクタでのユニーク化）は読み込み元のディレクトリを持たないため、テクスチャとサウンドを解決できません。
 
 ## SSABResource
 
@@ -11,6 +11,7 @@ Godot の `Resource` を継承しているため、複数の `SpriteStudioPlayer
 主なメソッド:
 
 * `load_from_file(path: String) -> Error` / `save_to_file(path: String) -> Error`
+* `data: PackedByteArray`: 保持しているバイナリ。インスペクタには表示されない保存用プロパティです。代入すると `load_from_file()` と同じようにバイナリを置き換えますが、テクスチャとサウンドは引き続きリソースを読み込んだディレクトリから解決します。`.ssab` として使えないバイト列は保持されず、エラーが出力されます。リソースをその場で読み直す処理はこのプロパティを通るため、ディスク上で変更されたファイルをエディタが取り込めます。`CACHE_MODE_REPLACE` を指定した `ResourceLoader.load()` も同様です。
 * `is_valid() -> bool`: 保持しているバイナリが検証を通るかどうか。バッファは読み込みの間は不変であるため、結果はキャッシュされます。
 * `get_animation_count() -> int` / `get_animation_names() -> PackedStringArray`
 * `get_cellmap_names() -> PackedStringArray` / `get_cell_names(cellmap_name: String) -> PackedStringArray`: プレーヤ側と同じ 2 つの参照を、まだプレーヤに載せていない `.ssab` に対して行えます。存在しないセルマップを指定した場合、`get_cell_names()` は空配列を返します。
@@ -28,3 +29,4 @@ Godot の `Resource` を継承しているため、複数の `SpriteStudioPlayer
 
 * `load_from_file(path: String) -> Error`
 * `save_to_file(path: String) -> Error`
+* `data: PackedByteArray`: 保持しているバイナリ。`SSABResource.data` と同じ保存用プロパティです。`.ssqb` として使えないバイト列は保持されず、エラーが出力されます。

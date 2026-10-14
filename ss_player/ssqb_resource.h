@@ -28,13 +28,18 @@ protected:
 public:
   Error load_from_file(const String &path);
   Error save_to_file(const String &path);
+  // The bytes as a storage property, for the in-place reload Resource::copy_from
+  // performs -- see SSABResource::set_data.
+  void set_data(const PackedByteArray &p_data);
+  PackedByteArray get_data() const { return binary; }
 
   const ss::format::SsSequenceBinary *get_ss_sequence_binary();
   const uint8_t *get_data_ptr();
 
-#ifndef SPRITESTUDIO_GODOT_EXTENSION
-  virtual Error copy_from(const Ref<Resource> &p_resource);
-#endif
+private:
+  // Every replacement of `binary` goes through here; false when the new bytes
+  // do not verify, in which case none are kept.
+  bool _take_binary(const PackedByteArray &p_bytes);
 };
 
 class SSQBResourceFormatLoader : public ResourceFormatLoader {
