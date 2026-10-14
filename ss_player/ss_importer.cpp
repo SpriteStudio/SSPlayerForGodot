@@ -273,6 +273,10 @@ void SSImporter::_show_budget_dialog() {
 
 void SSImporter::_free_budget_dialog() {
     if (_budget_dialog) {
+        // "Keep scanning" is a custom button, and unlike OK and Cancel it leaves
+        // the dialog up and exclusive: the progress dialog the rescan raises next
+        // cannot become exclusive beside it, and Godot reports that as an error.
+        Object::cast_to<Window>(_budget_dialog)->hide();
         _budget_dialog->queue_free();
         _budget_dialog = nullptr;
     }
