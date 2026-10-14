@@ -53,7 +53,26 @@ void SSImporter::_bind_methods() {
 SSImporter::SSImporter() {
 }
 
+// The plugin frees this node when it leaves the tree -- the plugin disabled or
+// the editor closing -- which can be in the middle of an import. Destroying a
+// converter context does not stop its worker thread: a conversion would go on
+// writing into the project and logging through a callback in this library after
+// both are gone. So each job is aborted and waited for before its context goes;
+// get_result is the call that waits, and an aborted job reaches its next
+// checkpoint quickly. A scan's worker runs no callback and writes nothing.
 SSImporter::~SSImporter() {
+    for (int i = 0; i < _active_ctx.size(); i++) {
+        Context *ctx = (Context *)_active_ctx[i];
+        ss_converter_abort(ctx);
+        ss_converter_get_result(ctx);
+        ss_converter_destroy(ctx);
+    }
+    _active_ctx.clear();
+    if (_scan_context) {
+        ss_converter_abort((Context *)_scan_context);
+        ss_converter_destroy((Context *)_scan_context);
+        _scan_context = nullptr;
+    }
 }
 
 int SSImporter::_concurrency() const {

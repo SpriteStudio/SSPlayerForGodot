@@ -11,6 +11,8 @@ const BASIC := "res://ssab_generated/overall/Basic.ssab"
 const RINGO := "res://ssab_generated/Ringo/Ringo.ssab"
 const INSTANCE := "res://ssab_generated/overall/Instance.ssab"
 const SOUND := "res://ssab_generated/overall/Sound.ssab"
+## A pack written by a case, for what only a file on disk can show.
+const SCRATCH := "user://test_resource_scratch.ssab"
 
 var player: Node
 
@@ -19,10 +21,35 @@ func setup() -> void:
 	player = make_player(BASIC)
 
 
+func teardown() -> void:
+	if FileAccess.file_exists(SCRATCH):
+		DirAccess.remove_absolute(SCRATCH)
+
+
+func _write(path: String, bytes: PackedByteArray) -> void:
+	var file := FileAccess.open(path, FileAccess.WRITE)
+	file.store_buffer(bytes)
+	file.close()
+
+
 func test_a_pack_loads_as_its_own_resource_type() -> void:
 	var res := load(BASIC)
 	ok(res != null, "load() returned something")
 	eq(res.get_class(), "SSABResource", "the pack's resource type")
+
+
+## The code says why a file did not load, and both build shapes say the same.
+func test_a_file_that_does_not_load_says_why() -> void:
+	eq(SSABResource.new().load_from_file("res://no_such.ssab"), ERR_FILE_NOT_FOUND,
+		"a missing pack")
+	eq(SSQBResource.new().load_from_file("res://no_such.ssqb"), ERR_FILE_NOT_FOUND,
+		"a missing sequence")
+	_write(SCRATCH, PackedByteArray([1, 2, 3, 4]))
+	var res := SSABResource.new()
+	eq(res.load_from_file(SCRATCH), ERR_INVALID_DATA, "bytes that are not a pack")
+	not_ok(res.is_valid(), "and none of them were kept")
+	eq(SSQBResource.new().load_from_file(SCRATCH), ERR_INVALID_DATA,
+		"bytes that are not a sequence")
 
 
 ## Everything a pack resolves by name beside itself is a dependency: the atlas,
@@ -199,3 +226,25 @@ func test_a_pack_reloaded_in_place_keeps_its_players_playing() -> void:
 	for i in 3:
 		p.advance(dt)
 	near(p.get_frame_no(), 3.0, "and plays from the new bytes", 0.001)
+
+
+## `data` is a storage property, so a copy of a pack carries its bytes. What a
+## copy cannot carry is the directory its textures resolve from.
+func test_a_copy_of_a_pack_carries_its_bytes() -> void:
+	var res: Resource = load(BASIC)
+	var copy: Resource = res.duplicate()
+	ok(copy.is_valid(), "the copy holds a usable pack")
+	eq(copy.get_animation_names(), res.get_animation_names(), "with the same animations")
+
+
+## The editor reloads a pack changed on disk into the object already loaded,
+## through its storage properties, and `CACHE_MODE_REPLACE` takes the same path:
+## whatever holds the pack sees the new bytes without being handed a new pack.
+func test_a_pack_changed_on_disk_reloads_into_the_loaded_object() -> void:
+	_write(SCRATCH, load(BASIC).data)
+	var res: Resource = load(SCRATCH)
+	eq(res.get_animation_names(), load(BASIC).get_animation_names(), "loaded as Basic")
+	_write(SCRATCH, load(RINGO).data)
+	var again: Resource = ResourceLoader.load(SCRATCH, "", ResourceLoader.CACHE_MODE_REPLACE)
+	ok(again == res, "the reload went into the object already loaded")
+	eq(res.get_animation_names(), load(RINGO).get_animation_names(), "which now holds Ringo")

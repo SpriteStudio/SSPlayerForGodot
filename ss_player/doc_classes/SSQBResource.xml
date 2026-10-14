@@ -25,4 +25,10 @@
 			</description>
 		</method>
 	</methods>
+	<members>
+		<member name="data" type="PackedByteArray" setter="set_data" getter="get_data" default="PackedByteArray()">
+			The held binary. Setting it replaces the binary the way [method load_from_file] does. Bytes that are not a usable [code].ssqb[/code] are not kept, and an error is printed.
+			It is a storage property, not shown in the Inspector, so that reloading the resource in place replaces the binary: the editor does that when the file changes on disk, and so does [method ResourceLoader.load] with [constant ResourceLoader.CACHE_MODE_REPLACE]. Reading it does not copy the bytes.
+		</member>
+	</members>
 </class>

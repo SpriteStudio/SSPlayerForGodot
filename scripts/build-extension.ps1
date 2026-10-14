@@ -24,6 +24,7 @@ $scons_default_opts = @{
 $winbuild_default_opts = @{
     cpus = $cpus
     ccache = "no"
+    strip = "no"
 }
 
 $opts = @{}
@@ -39,6 +40,7 @@ function usage() {
     echo "  cpus=<nums>         number of scons -j option (default: $cpus)"
     echo "  target=<target>     build target (default: $($scons_default_opts.target))"
     echo "  api_version=<ver>   Target Godot API version (default: $($scons_default_opts.api_version))"
+    echo "  strip=<yes|no>      Accepted for parity with build-extension.sh; godot-cpp already links without symbols unless debug_symbols=yes, so nothing is stripped (default: $($winbuild_default_opts.strip))"
     # echo "  ccache=<yes|no>     Enable ccache (default: $($winbuild_default_opts.ccache))"
     echo "Godot scons options: "
     pushd $rootDirectory/godot-cpp

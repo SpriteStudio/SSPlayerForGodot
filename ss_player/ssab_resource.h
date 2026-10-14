@@ -60,6 +60,13 @@ protected:
 public:
   Error load_from_file(const String &path);
   Error save_to_file(const String &path);
+  // The bytes as a storage property. Resource::copy_from carries a resource's
+  // storage properties and nothing else, so this is what lets an in-place
+  // reload -- the editor's after the file changed on disk, or a load with
+  // CACHE_MODE_REPLACE -- replace the bytes in both builds. Bytes that do not
+  // verify are dropped, as load_from_file drops them.
+  void set_data(const PackedByteArray &p_data);
+  PackedByteArray get_data() const { return binary; }
   bool is_valid() const;
   int get_animation_count();
   PackedStringArray get_animation_names();
@@ -128,14 +135,14 @@ public:
   // Intended for custom audio backends that bypass AudioStream playback.
   Dictionary get_sound_info(uint32_t sound_list_name_hash, uint32_t sound_name_hash);
 
-#ifndef SPRITESTUDIO_GODOT_EXTENSION
-  Error copy_from(const Ref<Resource> &p_resource) override;
-#endif
 private:
     String _parent_dir;
+    // Every replacement of `binary` goes through here; false when the new
+    // bytes do not verify, in which case none are kept.
+    bool _take_binary(const PackedByteArray &p_bytes);
     // Cached result of the whole-buffer FlatBuffers verification run by
     // is_valid(): -1 = not verified yet, 0 = invalid, 1 = valid. Reset to -1
-    // wherever `binary` is replaced (load_from_file / copy_from).
+    // wherever `binary` is replaced (_take_binary).
     mutable int8_t _valid_cache = -1;
     // Bumped alongside `_valid_cache`; see get_generation().
     uint32_t _generation = 0;

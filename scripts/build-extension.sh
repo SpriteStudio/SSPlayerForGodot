@@ -46,10 +46,10 @@ func usage() {
     echo "$APP options:"
     echo "  arch=<arch>         Target architecture (default: ${HOST_ARCH})"
     echo "  platform=<platform> Target platform (default: ${scons_default_opts[platform]})"
-    echo "  cpus=<nums>         number of scons -j option"
+    echo "  cpus=<nums>         number of scons -j option (default: ${build_default_opts[cpus]})"
     echo "  target=<target>     build target (default: ${scons_default_opts[target]})"
     echo "  api_version=<ver>   Target Godot API version (default: ${scons_default_opts[api_version]})"
-    echo "  strip=<yes|no>      Execute strip command to the app binary (default: ${build_default_opts[strip]})"
+    echo "  strip=<yes|no>      Accepted for parity with build.sh; godot-cpp already links without symbols unless debug_symbols=yes, so nothing is stripped (default: ${build_default_opts[strip]})"
     echo "Godot scons options: "
     pushd $ROOTDIR/godot-cpp > /dev/null
     scons --help
@@ -90,7 +90,7 @@ for key value in ${(kv)opts}; do
     scons_command_opts="$scons_command_opts $key=$value"
 done
 
-scons_command_opts="$scons_command_opts -j $build_default_opts[cpus]"
+scons_command_opts="$scons_command_opts -j $opts[cpus]"
 
 echo "scons command options: $scons_command_opts"
 

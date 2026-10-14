@@ -113,10 +113,16 @@ else
             SRC_DIR="target/wasm32-unknown-unknown/$BUILD_MODE"
             ;;
         windows)
-            if command -v pwsh &> /dev/null; then
-                pwsh ./scripts/release-windows.ps1 $BUILD_MODE
+            WIN_SCRIPT=./scripts/release-windows.ps1
+            WIN_TRIPLE=x86_64-pc-windows-msvc
+            if [[ "$ARCH" == "arm64" ]]; then
+                WIN_SCRIPT=./scripts/release-windows-arm64.ps1
+                WIN_TRIPLE=aarch64-pc-windows-msvc
             fi
-            SRC_DIR="target/x86_64-pc-windows-msvc/$BUILD_MODE"
+            if command -v pwsh &> /dev/null; then
+                pwsh $WIN_SCRIPT $BUILD_MODE
+            fi
+            SRC_DIR="target/$WIN_TRIPLE/$BUILD_MODE"
             ;;
     esac
 fi
