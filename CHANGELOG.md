@@ -33,6 +33,10 @@ converted binaries (`.ssab`) instead of parsing `.sspj` at runtime. See the
   lifecycle (`animation_started` / `_changed` / `_finished` / `_looped`), and `frame_updated`.
   Every timeline event carries where it came from — `part_index`, `part_name` and `frame_no` —
   in its payload, or as `signal_emitted`'s separate `info` argument.
+- **Motion blending**: play several animations of one `.ssab` at once, stacked on tracks over
+  the one `set_animation()` selects — overlays laid by alpha, additive tracks, crossfades and
+  track fades timed in seconds, and several weighted sources on one track. Each timeline event
+  also carries the `source` that fired it.
 - **AnimationPlayer integration**: drive playback from Godot's own animation tooling.
 - **Authored canvas queries**: `get_canvas_size()` and `get_canvas_rect()` report the box the
   animation was composed in, placed against the node's origin by its pivot. Hand the rect to a
@@ -52,7 +56,10 @@ converted binaries (`.ssab`) instead of parsing `.sspj` at runtime. See the
   contribution guidelines.
 
 ### Known Limitations
-- Text / bitmap font rendering is not yet validated.
+- Text parts and 9-slice parts are not drawn; they keep their place in the draw order, so an
+  animation that uses them plays with those parts missing.
+- Six of the twelve part blend modes (Screen, Exclusion, Invert, Div2, Screen2, Overlay2)
+  composite as Mix.
 - Sequence playback is not implemented. `SSQBResource` loads `.ssqb` files, but no node
   consumes them yet.
 - Web builds are single-threaded only and require WebAssembly SIMD, plus an engine template
