@@ -116,6 +116,12 @@ if env['target'] == 'editor':
     if platform == "windows":
         env.Append(LINKFLAGS=["Userenv.lib", "Bcrypt.lib", "Ntdll.lib", "Ws2_32.lib"])
         env.Append(LINKFLAGS=["/FORCE:MULTIPLE", "/IGNORE:4006", "/WX:NO"])
+    elif platform == "macos" and env["debug_symbols"]:
+        # The same pair /FORCE:MULTIPLE lets through on Windows: ssruntime's own
+        # panic handler and the one in ssconverter's std. ld64 rejects them as
+        # duplicates unless it dead-strips, and godot-cpp passes -dead_strip
+        # only while debug_symbols is off.
+        env.Append(LINKFLAGS=["-Wl,-dead_strip"])
 
 if platform == "ios":
     if env.get("ios_simulator", False):

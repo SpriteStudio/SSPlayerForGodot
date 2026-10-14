@@ -76,6 +76,7 @@ func _on_audio(payload: Dictionary) -> void:
 | `part_index` | `int` | 発火したサウンドパートのインデックス |
 | `part_name` | `String` | そのパート名 |
 | `frame_no` | `int` | キーが置かれているフレーム。1 ティックで複数フレームをまたぐことがあるため、検出されたフレームとは限りません |
+| `source` | `int` | 発火したソースのハンドル（[モーションブレンド](motion_blending.md) を参照） |
 | `sound_list_name_hash` | `int` | サウンドリスト名のハッシュ |
 | `sound_name_hash` | `int` | サウンド名のハッシュ |
 | `sound_name` | `String` | 設定されたサウンド名（設定時のみ存在） |

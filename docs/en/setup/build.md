@@ -413,8 +413,8 @@ For GDExtensions (e.g., `dev_gdextension`), **rebuilding the engine itself or in
 
 You can debug the C++ code for GDExtensions using almost the same steps as a custom module. The only difference is that the launch program is the "official Godot editor".
 
-1. **Verify the GDExtension debug build**
-   The normal build scripts (like `build-extension.sh`) use `target=template_debug` by default, so the output libraries (`.dll`, `.dylib`) include debug symbols.
+1. **Build the GDExtension with debug symbols**
+   The build scripts (like `build-extension.sh`) default to `target=editor` and, as godot-cpp does, leave debug symbols out. Pass `debug_symbols=yes` (`./scripts/build-extension.sh debug_symbols=yes`, or the `.ps1` on Windows) so the output libraries (`.dll`, `.dylib`) are built with them.
 
 2. **Attach Debugger and Launch Arguments**
    Specify the **official Godot binary** as the launch program in your debugger (e.g., VSCode, Visual Studio), and pass the project path as an argument (`--path examples/dev_gdextension`). The breakpoint will be hit once Godot dynamically loads the plugin at startup.

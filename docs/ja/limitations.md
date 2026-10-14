@@ -62,8 +62,7 @@ Godot の 2D キャンバスにはステンシルバッファが無いため、�
 ## 再生機能の制約
 
 以下は共通の `libssruntime` に由来する挙動のため、ビルド形態に関わらず適用されます。すべての公式
-Player に共通する制約であり、詳しい説明とその他の共通制約（embedded モード、`.ssab` の入力が検証されないことなど）はポータルの **[共通の制限事項](https://cri-middleware.github.io/SpriteStudio-Docs/ja/sdk/limitations/)**
-にまとまっています。
+Player に共通する制約であり、詳しい説明とその他の共通制約（embedded モード、`.ssab` の入力が検証されないことなど）はポータルの **[共通の制限事項](https://cri-middleware.github.io/SpriteStudio-Docs/ja/sdk/limitations/)** にまとまっています。
 
 > [!WARNING]
 > - **`independent=true` パーツ（Instance / Effect）は逆再生・シークで正しく動作しません。** 正しく動作するのは順方向再生（順方向のフレームスキップを含む）のみです。

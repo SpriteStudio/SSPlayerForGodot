@@ -6,6 +6,10 @@ $arch = (Get-Item Env:PROCESSOR_ARCHITECTURE).Value
 
 pushd $rootDirectory
 
+# Start from an empty bin/windows, as the other platforms' release scripts do:
+# a DLL left by an earlier build would otherwise ship beside the new ones.
+Remove-Item -Recurse -Force -ErrorAction SilentlyContinue ./bin/windows
+
 $targets= "editor", "template_release", "template_debug"
 foreach($target in $targets) {
     ./scripts/build-extension.ps1 platform=windows compiledb=no strip=yes target=${target} $args

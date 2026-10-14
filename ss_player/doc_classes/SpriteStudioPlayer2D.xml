@@ -99,13 +99,15 @@
 			<return type="void" />
 			<param index="0" name="fps" type="int" />
 			<description>
-				Sets the playback frame rate, in frames per second. It overrides whatever the animation was authored at, and the override is kept across [member current_animation] changes. Pass [code]0[/code] to clear it and hand playback back to each clip's authored rate. See [member frame_rate].
+				Sets the playback frame rate, in frames per second. It overrides whatever the animation was authored at, and the override is kept across [member current_animation] changes. Pass [code]0[/code] to clear it and hand playback back to each clip's authored rate.
+				This is an [i]absolute[/i] rate where [member speed_scale] is a multiplier, so its effect depends on the clip: 60 against a 30fps animation is double speed, and against a 60fps one is none.
+				[code]player.frame_rate = 30[/code] does the same, but [code]frame_rate[/code] is not a member: it is neither shown in the Inspector nor stored in the scene.
 			</description>
 		</method>
 		<method name="get_frame_rate" qualifiers="const">
 			<return type="int" />
 			<description>
-				Returns the frame rate playback runs at: the rate set with [method set_frame_rate], or the current animation's authored rate while none is set. See [member frame_rate].
+				Returns the frame rate playback runs at: the rate set with [method set_frame_rate], or the current animation's authored rate while none is set.
 			</description>
 		</method>
 		<method name="get_start_frame" qualifiers="const">
@@ -357,12 +359,301 @@
 				Shares one override slot with [method set_part_color_override], so the last call wins and [method clear_part_color_override] clears either kind. Returns [code]false[/code] when the part is unknown or the runtime rejects the call.
 			</description>
 		</method>
+		<method name="set_track_animation">
+			<return type="bool" />
+			<param index="0" name="track" type="int" />
+			<param index="1" name="anim_name" type="String" />
+			<description>
+				Lays the animation [param anim_name] of [member ssab] on [param track], replacing what the track played. Tracks are created as needed: setting track 3 creates tracks 1 and 2 empty.
+				On track 0 it switches the current animation, as [method crossfade] does, and leaves the tracks above it in place; [method set_animation] to a different animation instead folds the stack back to track 0 alone, every track setting included.
+				Like every track mutator, returns [code]false[/code] when no animation is set up, [param anim_name] is not in [member ssab], or the runtime refuses the call.
+			</description>
+		</method>
+		<method name="get_track_count" qualifiers="const">
+			<return type="int" />
+			<description>
+				Returns the number of tracks, track 0 included. A read of a track that does not exist returns [code]0[/code], so check this first when [code]0[/code] could also be a real answer.
+			</description>
+		</method>
+		<method name="clear_track">
+			<return type="bool" />
+			<param index="0" name="track" type="int" />
+			<description>
+				Empties [param track]. Track 0 cannot be emptied: fade its alpha to [code]0[/code] with [method fade_track] instead.
+			</description>
+		</method>
+		<method name="set_track_alpha">
+			<return type="bool" />
+			<param index="0" name="track" type="int" />
+			<param index="1" name="alpha" type="float" />
+			<description>
+				Sets how much of [param track] lays over the tracks below it. This is the strength control; [method set_source_weight] only sets proportions within one track. Not clamped to [code][0, 1][/code]: above [code]1[/code] it extrapolates.
+			</description>
+		</method>
+		<method name="get_track_alpha" qualifiers="const">
+			<return type="float" />
+			<param index="0" name="track" type="int" />
+			<description>
+				Returns the alpha of [param track]. See [method set_track_alpha].
+			</description>
+		</method>
+		<method name="set_track_blend">
+			<return type="bool" />
+			<param index="0" name="track" type="int" />
+			<param index="1" name="blend" type="int" enum="SpriteStudioPlayer2D.TrackBlend" />
+			<description>
+				Sets how [param track] lays its animation over the tracks below it. See [enum TrackBlend].
+			</description>
+		</method>
+		<method name="get_track_blend" qualifiers="const">
+			<return type="int" enum="SpriteStudioPlayer2D.TrackBlend" />
+			<param index="0" name="track" type="int" />
+			<description>
+				Returns how [param track] lays its animation over the tracks below it.
+			</description>
+		</method>
+		<method name="set_track_sync">
+			<return type="bool" />
+			<param index="0" name="track" type="int" />
+			<param index="1" name="sync" type="int" enum="SpriteStudioPlayer2D.TrackSync" />
+			<description>
+				Sets where the animations laid on [param track] [i]next[/i] start. It does not move what the track already plays, so set it before laying. See [enum TrackSync].
+			</description>
+		</method>
+		<method name="get_track_sync" qualifiers="const">
+			<return type="int" enum="SpriteStudioPlayer2D.TrackSync" />
+			<param index="0" name="track" type="int" />
+			<description>
+				Returns where the animations laid on [param track] next start.
+			</description>
+		</method>
+		<method name="set_track_frame">
+			<return type="bool" />
+			<param index="0" name="track" type="int" />
+			<param index="1" name="frame_no" type="float" />
+			<description>
+				Moves the playhead of [param track] to [param frame_no]. With [method set_track_speed] at [code]0.0[/code], this is how a track is driven by a value rather than by the clock.
+			</description>
+		</method>
+		<method name="get_track_frame" qualifiers="const">
+			<return type="float" />
+			<param index="0" name="track" type="int" />
+			<description>
+				Returns where the playhead of [param track] is, in frames.
+			</description>
+		</method>
+		<method name="set_track_speed">
+			<return type="bool" />
+			<param index="0" name="track" type="int" />
+			<param index="1" name="speed" type="float" />
+			<description>
+				Sets the speed multiplier of [param track]. This and the frame rate, frame skip and playback direction of a track belong to the track: they reach every animation on it, both sides of a crossfade included, and outlast them. Track 0's is [member speed_scale], which writes the same value.
+			</description>
+		</method>
+		<method name="get_track_speed" qualifiers="const">
+			<return type="float" />
+			<param index="0" name="track" type="int" />
+			<description>
+				Returns the speed multiplier of [param track].
+			</description>
+		</method>
+		<method name="set_track_frame_rate">
+			<return type="bool" />
+			<param index="0" name="track" type="int" />
+			<param index="1" name="fps" type="int" />
+			<description>
+				Sets the frame rate [param track] plays at, overriding what its animations were authored at. Track 0's is [method set_frame_rate].
+			</description>
+		</method>
+		<method name="get_track_frame_rate" qualifiers="const">
+			<return type="int" />
+			<param index="0" name="track" type="int" />
+			<description>
+				Returns the frame rate [param track] plays at.
+			</description>
+		</method>
+		<method name="set_track_frame_skip_enabled">
+			<return type="bool" />
+			<param index="0" name="track" type="int" />
+			<param index="1" name="enabled" type="bool" />
+			<description>
+				Sets whether [param track] may skip frames to keep real-time playback under load. Track 0's is [member frame_skip_enabled].
+			</description>
+		</method>
+		<method name="is_track_frame_skip_enabled" qualifiers="const">
+			<return type="bool" />
+			<param index="0" name="track" type="int" />
+			<description>
+				Returns whether [param track] may skip frames.
+			</description>
+		</method>
+		<method name="set_track_playback_direction">
+			<return type="bool" />
+			<param index="0" name="track" type="int" />
+			<param index="1" name="direction" type="int" enum="SpriteStudioPlayer2D.PlaybackDirection" />
+			<param index="2" name="style" type="int" enum="SpriteStudioPlayer2D.PlaybackStyle" />
+			<description>
+				Sets the playback direction and style of [param track]. Track 0's is [method set_playback_direction].
+			</description>
+		</method>
+		<method name="get_track_playback_direction" qualifiers="const">
+			<return type="int" enum="SpriteStudioPlayer2D.PlaybackDirection" />
+			<param index="0" name="track" type="int" />
+			<description>
+				Returns the configured playback direction of [param track].
+			</description>
+		</method>
+		<method name="get_track_playback_style" qualifiers="const">
+			<return type="int" enum="SpriteStudioPlayer2D.PlaybackStyle" />
+			<param index="0" name="track" type="int" />
+			<description>
+				Returns the playback style of [param track].
+			</description>
+		</method>
+		<method name="set_track_loop_count">
+			<return type="bool" />
+			<param index="0" name="track" type="int" />
+			<param index="1" name="count" type="int" />
+			<description>
+				Sets the loop count of the animation on [param track], counted as [member loop_count] is. Unlike the other track settings it belongs to the animation: one laid on a track loops forever ([code]-1[/code]) until this sets it again. Track 0's is [member loop_count], which the node puts back on every animation track 0 switches to.
+			</description>
+		</method>
+		<method name="get_track_loop_count" qualifiers="const">
+			<return type="int" />
+			<param index="0" name="track" type="int" />
+			<description>
+				Returns the loop count of the animation on [param track], or [code]0[/code] for a track playing nothing.
+			</description>
+		</method>
+		<method name="is_track_finished" qualifiers="const">
+			<return type="bool" />
+			<param index="0" name="track" type="int" />
+			<description>
+				Returns [code]true[/code] when the animation on [param track] has played every configured loop, as of the last tick. A finished track holds its last frame and stays mixed in until it is faded or cleared. No signal is sent for it; track 0's is [method is_finished], with [signal animation_finished].
+			</description>
+		</method>
+		<method name="track_just_looped" qualifiers="const">
+			<return type="bool" />
+			<param index="0" name="track" type="int" />
+			<description>
+				Returns [code]true[/code] when the last tick took the animation on [param track] across a loop boundary. A pulse, not a state, and no signal is sent for it; track 0's is [method just_looped], with [signal animation_looped].
+			</description>
+		</method>
+		<method name="set_track_outgoing_event_threshold">
+			<return type="bool" />
+			<param index="0" name="track" type="int" />
+			<param index="1" name="threshold" type="float" />
+			<description>
+				Sets the share at or above which the outgoing side of a crossfade on [param track] fires its events. That share is [code]1 - progress[/code]. The default, [constant @GDScript.INF], silences the outgoing side as the fade begins.
+			</description>
+		</method>
+		<method name="get_track_outgoing_event_threshold" qualifiers="const">
+			<return type="float" />
+			<param index="0" name="track" type="int" />
+			<description>
+				Returns the share at or above which the outgoing side of a crossfade on [param track] fires its events.
+			</description>
+		</method>
+		<method name="crossfade">
+			<return type="bool" />
+			<param index="0" name="track" type="int" />
+			<param index="1" name="anim_name" type="String" />
+			<param index="2" name="duration" type="float" />
+			<description>
+				Fades [param track] from what it plays to [param anim_name] over [param duration] seconds, as [method advance] takes them. [param anim_name] takes the track over from the call on: on track 0 it is [member current_animation] from then, and [signal animation_changed] is sent.
+				On a track playing nothing it starts at once, with no fade. A fade already in flight is taken over as it stands, so the pose does not jump. Returns [code]false[/code] for a [param duration] of [code]0[/code] or less, or an unknown name.
+			</description>
+		</method>
+		<method name="fade_track">
+			<return type="bool" />
+			<param index="0" name="track" type="int" />
+			<param index="1" name="target_alpha" type="float" />
+			<param index="2" name="duration" type="float" />
+			<description>
+				Drives the alpha of [param track] to [param target_alpha] over [param duration] seconds. It changes how much the track counts, not what it plays.
+			</description>
+		</method>
+		<method name="get_track_fade_progress" qualifiers="const">
+			<return type="float" />
+			<param index="0" name="track" type="int" />
+			<description>
+				Returns the progress of the fade on [param track], from [code]0[/code] to [code]1[/code], or [code]-1[/code] when the track is not fading.
+			</description>
+		</method>
+		<method name="cancel_track_fade">
+			<return type="bool" />
+			<param index="0" name="track" type="int" />
+			<description>
+				Stops the fade on [param track], leaving its alpha and weights where they stand.
+			</description>
+		</method>
+		<method name="get_track_main_source" qualifiers="const">
+			<return type="int" />
+			<param index="0" name="track" type="int" />
+			<description>
+				Returns the handle of the source carrying the animation of [param track], or [code]-1[/code] for none. The [code]source[/code] key of the event payloads carries the same handles.
+			</description>
+		</method>
+		<method name="add_track_source">
+			<return type="int" />
+			<param index="0" name="track" type="int" />
+			<param index="1" name="anim_name" type="String" />
+			<param index="2" name="weight" type="float" />
+			<description>
+				Lays [param anim_name] on [param track] beside what the track carries, with [param weight] as its share, and returns the handle of the new source, or [code]-1[/code] on failure.
+			</description>
+		</method>
+		<method name="set_source_weight">
+			<return type="bool" />
+			<param index="0" name="source" type="int" />
+			<param index="1" name="weight" type="float" />
+			<description>
+				Sets the share of [param source] within its track. A ratio between the sources of one track, not an absolute value: how much the track counts is [method set_track_alpha].
+			</description>
+		</method>
+		<method name="get_source_weight" qualifiers="const">
+			<return type="float" />
+			<param index="0" name="source" type="int" />
+			<description>
+				Returns the share of [param source] within its track.
+			</description>
+		</method>
+		<method name="set_source_frame">
+			<return type="bool" />
+			<param index="0" name="source" type="int" />
+			<param index="1" name="frame_no" type="float" />
+			<description>
+				Moves the playhead of [param source] to [param frame_no].
+			</description>
+		</method>
+		<method name="get_source_frame" qualifiers="const">
+			<return type="float" />
+			<param index="0" name="source" type="int" />
+			<description>
+				Returns where the playhead of [param source] is, in frames.
+			</description>
+		</method>
+		<method name="set_source_event_threshold">
+			<return type="bool" />
+			<param index="0" name="source" type="int" />
+			<param index="1" name="threshold" type="float" />
+			<description>
+				Sets the weight at or above which [param source] fires its events. The default, [constant @GDScript.INF], means that only the main source of track 0 fires.
+			</description>
+		</method>
+		<method name="get_source_event_threshold" qualifiers="const">
+			<return type="float" />
+			<param index="0" name="source" type="int" />
+			<description>
+				Returns the weight at or above which [param source] fires its events.
+			</description>
+		</method>
 	</methods>
 	<members>
 		<member name="ssab" type="SSABResource" setter="set_ssab_resource" getter="get_ssab_resource">
 			The SpriteStudio animation resource ([code].ssab[/code]) to play.
 		</member>
-		<member name="current_animation" type="String" setter="set_animation" getter="get_current_animation">
+		<member name="current_animation" type="String" setter="set_animation" getter="get_current_animation" default="&quot;&quot;">
 			Name of the animation to play, chosen from the animations contained in [member ssab].
 		</member>
 		<member name="autoplay" type="bool" setter="set_autoplay" getter="is_autoplay" default="true">
@@ -381,13 +672,13 @@
 		<member name="animation_process_mode" type="int" setter="set_animation_process_mode" getter="get_animation_process_mode" enum="SpriteStudioPlayer2D.AnimationProcessMode" default="1">
 			Determines whether to advance the animation in [code]_physics_process[/code] ([constant ANIMATION_PROCESS_PHYSICS]) or [code]_process[/code] ([constant ANIMATION_PROCESS_IDLE]). Use Physics if the parent node moves using the physics engine to avoid jitter. [constant ANIMATION_PROCESS_MANUAL] stops the node advancing itself, leaving playback to [method advance].
 		</member>
-		<member name="animation_section_start" type="int" setter="set_animation_section_start" getter="get_animation_section_start">
+		<member name="animation_section_start" type="int" setter="set_animation_section_start" getter="get_animation_section_start" default="0">
 			First frame of the played section, inclusive. Setting it keeps [member animation_section_end]; use [method set_animation_section] to move both endpoints at once.
 		</member>
-		<member name="animation_section_end" type="int" setter="set_animation_section_end" getter="get_animation_section_end">
+		<member name="animation_section_end" type="int" setter="set_animation_section_end" getter="get_animation_section_end" default="0">
 			Last frame of the played section, inclusive. Setting it keeps [member animation_section_start]; use [method set_animation_section] to move both endpoints at once.
 		</member>
-		<member name="frame_no" type="float" setter="set_frame_no" getter="get_frame_no">
+		<member name="frame_no" type="float" setter="set_frame_no" getter="get_frame_no" default="0.0">
 			Where the playhead is, in frames. Fractional: sub-frame interpolation puts it between two authored frames, which is why it is not called [code]frame[/code] - [member AnimatedSprite2D.frame] is an integer index into a [SpriteFrames] set and means something else. Editor-only display. Can be keyframed from an [AnimationPlayer] to drive playback from a timeline.
 		</member>
 		<member name="speed_scale" type="float" setter="set_speed_scale" getter="get_speed_scale" default="1.0">
@@ -395,11 +686,7 @@
 		</member>
 		<member name="loop_count" type="int" setter="set_loop_count" getter="get_loop_count" default="-1">
 			How many times to play the animation. [code]n[/code] plays [code]n[/code] cycles and stops, so [code]1[/code] plays it once; [code]-1[/code] loops forever, and [code]0[/code] is an alias for that rather than "no cycles" - the runtime normalizes everything at or below zero to [code]-1[/code].
-			Kept across [member current_animation] changes, because it is the node's own configuration - as are [member speed_scale], [member frame_skip_enabled], [member frame_rate] and the playback direction and style. Only the playback section is per-transition: frame indices mean nothing against a different clip.
-		</member>
-		<member name="frame_rate" type="int" setter="set_frame_rate" getter="get_frame_rate">
-			Playback frame rate (FPS). Setting one overrides whatever the animation was authored at, and the override is kept across [member current_animation] changes; set it to [code]0[/code] to clear it and hand playback back to each clip's authored rate.
-			This is an [i]absolute[/i] rate where [member speed_scale] is a multiplier, so its effect depends on the clip: 60 against a 30fps animation is double speed, and against a 60fps one is none.
+			Kept across [member current_animation] changes, because it is the node's own configuration - as are [member speed_scale], [member frame_skip_enabled], the frame rate from [method set_frame_rate] and the playback direction and style. Only the playback section is per-transition: frame indices mean nothing against a different clip.
 		</member>
 		<member name="frame_skip_enabled" type="bool" setter="set_frame_skip_enabled" getter="is_frame_skip_enabled" default="true">
 			If [code]true[/code], frames may be skipped to keep real-time playback under load.
@@ -449,7 +736,7 @@
 		<signal name="user_data">
 			<param index="0" name="payload" type="Dictionary" />
 			<description>
-				Emitted when a user-data key on the timeline is reached. [param payload] always carries the event's origin - [code]part_index[/code], [code]part_name[/code] and [code]frame_no[/code] (the frame the key sits on, not necessarily the frame it was noticed on) - plus whichever of [code]integer[/code], [code]point[/code], [code]rect[/code] and [code]string[/code] the animator filled in. A value left unset is absent from the dictionary rather than zero.
+				Emitted when a user-data key on the timeline is reached. [param payload] always carries the event's origin - [code]part_index[/code], [code]part_name[/code], [code]frame_no[/code] (the frame the key sits on, not necessarily the frame it was noticed on) and [code]source[/code] (the handle of the source that fired it, as [method get_track_main_source] returns them) - plus whichever of [code]integer[/code], [code]point[/code], [code]rect[/code] and [code]string[/code] the animator filled in. A value left unset is absent from the dictionary rather than zero.
 			</description>
 		</signal>
 		<signal name="signal_emitted">
@@ -457,13 +744,13 @@
 			<param index="1" name="value" type="Dictionary" />
 			<param index="2" name="info" type="Dictionary" />
 			<description>
-				Emitted when a signal attribute on the timeline fires. [param command] is the command id and [param value] holds its parameters, keyed by the parameter ids authored in SpriteStudio. [param info] is kept separate precisely because those keys are author-defined: it carries [code]part_index[/code], [code]part_name[/code] and [code]frame_no[/code].
+				Emitted when a signal attribute on the timeline fires. [param command] is the command id and [param value] holds its parameters, keyed by the parameter ids authored in SpriteStudio. [param info] is kept separate precisely because those keys are author-defined: it carries [code]part_index[/code], [code]part_name[/code], [code]frame_no[/code] and [code]source[/code].
 			</description>
 		</signal>
 		<signal name="audio">
 			<param index="0" name="payload" type="Dictionary" />
 			<description>
-				Emitted when an audio part fires an audio event. [param payload] carries [code]part_index[/code], [code]part_name[/code], [code]frame_no[/code], [code]sound_list_name_hash[/code], [code]sound_name_hash[/code], [code]sound_name[/code] and [code]loop_num[/code] (the play count). This is an observation channel and fires in every playback direction (and in the editor), independently of [member play_audio].
+				Emitted when an audio part fires an audio event. [param payload] carries [code]part_index[/code], [code]part_name[/code], [code]frame_no[/code], [code]source[/code], [code]sound_list_name_hash[/code], [code]sound_name_hash[/code], [code]sound_name[/code] and [code]loop_num[/code] (the play count). This is an observation channel and fires in every playback direction (and in the editor), independently of [member play_audio].
 			</description>
 		</signal>
 		<signal name="frame_updated">
@@ -515,6 +802,18 @@
 		</constant>
 		<constant name="OVERRIDE_PRIORITY_PERMANENT" value="2" enum="OverridePriority">
 			The override survives animation changes and is only removed by an explicit clear.
+		</constant>
+		<constant name="TRACK_BLEND_MIX" value="0" enum="TrackBlend">
+			The track pulls the pose below it toward its own pose, by its alpha. This is the default.
+		</constant>
+		<constant name="TRACK_BLEND_ADDITIVE" value="1" enum="TrackBlend">
+			The track adds its offset from the setup pose, so what is below keeps showing through.
+		</constant>
+		<constant name="TRACK_SYNC_FREE" value="0" enum="TrackSync">
+			An animation laid on the track starts at the head of its section. This is the default.
+		</constant>
+		<constant name="TRACK_SYNC_START" value="1" enum="TrackSync">
+			An animation laid on the track starts at the phase the animation of track 0 stands at.
 		</constant>
 	</constants>
 </class>
