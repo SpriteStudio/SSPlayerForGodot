@@ -11,6 +11,8 @@ const BASIC := "res://ssab_generated/overall/Basic.ssab"
 const RINGO := "res://ssab_generated/Ringo/Ringo.ssab"
 const INSTANCE := "res://ssab_generated/overall/Instance.ssab"
 const SOUND := "res://ssab_generated/overall/Sound.ssab"
+## A pack written by a case, for what only a file on disk can show.
+const SCRATCH := "user://test_resource_scratch.ssab"
 
 var player: Node
 
@@ -19,10 +21,35 @@ func setup() -> void:
 	player = make_player(BASIC)
 
 
+func teardown() -> void:
+	if FileAccess.file_exists(SCRATCH):
+		DirAccess.remove_absolute(SCRATCH)
+
+
+func _write(path: String, bytes: PackedByteArray) -> void:
+	var file := FileAccess.open(path, FileAccess.WRITE)
+	file.store_buffer(bytes)
+	file.close()
+
+
 func test_a_pack_loads_as_its_own_resource_type() -> void:
 	var res := load(BASIC)
 	ok(res != null, "load() returned something")
 	eq(res.get_class(), "SSABResource", "the pack's resource type")
+
+
+## The code says why a file did not load, and both build shapes say the same.
+func test_a_file_that_does_not_load_says_why() -> void:
+	eq(SSABResource.new().load_from_file("res://no_such.ssab"), ERR_FILE_NOT_FOUND,
+		"a missing pack")
+	eq(SSQBResource.new().load_from_file("res://no_such.ssqb"), ERR_FILE_NOT_FOUND,
+		"a missing sequence")
+	_write(SCRATCH, PackedByteArray([1, 2, 3, 4]))
+	var res := SSABResource.new()
+	eq(res.load_from_file(SCRATCH), ERR_INVALID_DATA, "bytes that are not a pack")
+	not_ok(res.is_valid(), "and none of them were kept")
+	eq(SSQBResource.new().load_from_file(SCRATCH), ERR_INVALID_DATA,
+		"bytes that are not a sequence")
 
 
 ## Everything a pack resolves by name beside itself is a dependency: the atlas,

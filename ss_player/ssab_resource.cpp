@@ -82,15 +82,13 @@ Error SSABResource::load_from_file(const String &path) {
   _parsed.unref();
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
   binary = FileAccess::get_file_as_bytes(path);
-  if (binary.size() == 0) {
-    return ERR_INVALID_DATA;
-  }
+  error = FileAccess::get_open_error();
 #else
   binary = FileAccess::get_file_as_bytes(path, &error);
+#endif
   if (error != OK) {
     return error;
   }
-#endif
 
   if (!is_valid()) {
     binary.clear();
@@ -512,11 +510,15 @@ Ref<Resource> SSABResourceFormatLoader::load(const String &path,
   Ref<SSABResource> ssab_file = memnew(SSABResource);
   Error err = ssab_file->load_from_file(path);
   if (err != OK) {
-#ifndef SPRITESTUDIO_GODOT_EXTENSION
+#ifdef SPRITESTUDIO_GODOT_EXTENSION
+    // _load reports a failure by returning the code: a null resource is taken
+    // for a success, and the caller gets OK with nothing loaded.
+    return err;
+#else
     if (error)
       *error = err;
-#endif
     return Ref<Resource>();
+#endif
   }
 
 #ifndef SPRITESTUDIO_GODOT_EXTENSION
