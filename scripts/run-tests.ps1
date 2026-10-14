@@ -61,8 +61,11 @@ foreach ($item in $Args) {
 # godot\bin\* is deliberately not in this list. That is a custom module build
 # with SpriteStudio compiled into it, so it registers the classes a second time
 # and aborts on a project carrying addons\spritestudio -- see the message below.
+# On Windows the console wrapper comes first: PowerShell neither waits for nor
+# captures the GUI editor, which would leave this script no output to read.
 if (-not $GodotBin) {
     foreach ($cand in @(
+            (Join-Path $RootDir "godot-bin\godot_console.exe"),
             (Join-Path $RootDir "godot-bin\godot.exe"),
             (Join-Path $RootDir "godot-bin\godot"),
             (Join-Path $RootDir "godot-bin\Godot.app\Contents\MacOS\Godot"))) {

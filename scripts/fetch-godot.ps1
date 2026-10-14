@@ -84,8 +84,14 @@ try {
 
 # Normalise what the archive unpacks to, so run-tests.ps1 has one path rather
 # than a version-stamped name that changes with every bump.
-$bin = Get-ChildItem -Path $OutDir -Filter "Godot_v*.exe" -File | Select-Object -First 1
+$console = Get-ChildItem -Path $OutDir -Filter "Godot_v*_console.exe" -File | Select-Object -First 1
+$bin = Get-ChildItem -Path $OutDir -Filter "Godot_v*.exe" -File |
+       Where-Object { $_.Name -notlike "*_console.exe" } | Select-Object -First 1
 if ($bin) { Move-Item $bin.FullName (Join-Path $OutDir "godot.exe") -Force }
+# The console wrapper is what run-tests.ps1 runs: PowerShell neither waits for
+# nor captures a GUI program. The wrapper finds the editor by its own name less
+# "_console", so it is renamed to match, and starts under no other name.
+if ($console) { Move-Item $console.FullName (Join-Path $OutDir "godot_console.exe") -Force }
 
 Set-Content -Path $VersionFile -Value $Version
 Write-Host "fetch-godot.ps1: Godot $Version installed in godot-bin\"

@@ -89,8 +89,12 @@ case "$(uname -s)" in
     BIN=$(find "$OUT_DIR" -maxdepth 1 -type f -name 'Godot_v*' | head -n 1)
     [ -n "$BIN" ] && mv "$BIN" "${OUT_DIR}/godot" && chmod +x "${OUT_DIR}/godot" ;;
   *)
-    BIN=$(find "$OUT_DIR" -maxdepth 1 -type f -name 'Godot_v*.exe' | head -n 1)
-    [ -n "$BIN" ] && mv "$BIN" "${OUT_DIR}/godot.exe" ;;
+    # The console wrapper finds the editor by its own name less "_console", so
+    # it is renamed along with it: run-tests.ps1 runs the wrapper.
+    CONSOLE=$(find "$OUT_DIR" -maxdepth 1 -type f -name 'Godot_v*_console.exe' | head -n 1)
+    BIN=$(find "$OUT_DIR" -maxdepth 1 -type f -name 'Godot_v*.exe' ! -name '*_console.exe' | head -n 1)
+    [ -n "$BIN" ] && mv "$BIN" "${OUT_DIR}/godot.exe"
+    [ -n "$CONSOLE" ] && mv "$CONSOLE" "${OUT_DIR}/godot_console.exe" ;;
 esac
 
 printf '%s\n' "$VERSION" > "$VERSION_FILE"
