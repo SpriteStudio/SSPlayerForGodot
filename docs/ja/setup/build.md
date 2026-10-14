@@ -403,7 +403,7 @@ GDExtension（例: `dev_gdextension`）の場合、**エンジン本体の再ビ
 
 GDExtension の場合も、カスタムモジュールとほぼ同じ手順でC++コードをデバッグできます。違いは起動するプログラムが「公式のGodotエディタ」になる点のみです。
 
-1. **GDExtensionのデバッグビルド確認**通常のビルドスクリプト（`build-extension.sh` 等）はデフォルトで `target=template_debug` となっており、出力されるライブラリ（`.dll` や `.dylib`）にはデバッグシンボルが含まれています。
+1. **デバッグシンボル付きで GDExtension をビルドする**ビルドスクリプト（`build-extension.sh` 等）の既定は `target=editor` で、godot-cpp と同じくデバッグシンボルを含みません。`debug_symbols=yes` を付けて（`./scripts/build-extension.sh debug_symbols=yes`、Windows では `.ps1`）ビルドすると、出力されるライブラリ（`.dll` や `.dylib`）にデバッグシンボルが含まれます。
 
 2. **デバッガのアタッチと起動引数**
    VSCode や Visual Studio 等のデバッガから、**公式のGodotバイナリ** を起動プログラムとして指定し、引数でプロジェクトのパス（`--path examples/dev_gdextension`）を渡します。Godotが起動時にプラグインを動的ロードした時点でブレークポイントにヒットするようになります。
