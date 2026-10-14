@@ -68,10 +68,13 @@ if ($IS_HOST_BUILD) {
 } else {
     # Cross-compilation: dispatch to SDK release scripts
     if ($PLATFORM -eq "windows") {
-        $script = "./scripts/release-windows.ps1"
-        if ($ARCH -eq "arm64") { $script = "./scripts/release-windows-arm64.ps1" }
-        echo "Executing $script $BUILD_MODE..."
-        & $script $BUILD_MODE
+        # cargo itself, as the host build does: the SDK's release-windows*.ps1
+        # always build --release, so build=debug copied from a directory
+        # nothing had written. The two crates and features are those scripts'.
+        $TARGET_TRIPLE = "x86_64-pc-windows-msvc"
+        if ($ARCH -eq "arm64") { $TARGET_TRIPLE = "aarch64-pc-windows-msvc" }
+        & cargo build --target $TARGET_TRIPLE @CARGO_FLAGS
+        & cargo build --target $TARGET_TRIPLE @CARGO_FLAGS -p ssruntime-ffi --features libc_alloc,panic-handler
     } elseif ($PLATFORM -eq "ios") {
         & sh ./scripts/release-ios-xcframework.sh $BUILD_MODE
     } elseif ($PLATFORM -eq "web") {

@@ -113,15 +113,13 @@ else
             SRC_DIR="target/wasm32-unknown-unknown/$BUILD_MODE"
             ;;
         windows)
-            WIN_SCRIPT=./scripts/release-windows.ps1
+            # cargo itself, as the host build does: the SDK's release-windows*.ps1
+            # always build --release, so build=debug copied from a directory
+            # nothing had written. The two crates and features are those scripts'.
             WIN_TRIPLE=x86_64-pc-windows-msvc
-            if [[ "$ARCH" == "arm64" ]]; then
-                WIN_SCRIPT=./scripts/release-windows-arm64.ps1
-                WIN_TRIPLE=aarch64-pc-windows-msvc
-            fi
-            if command -v pwsh &> /dev/null; then
-                pwsh $WIN_SCRIPT $BUILD_MODE
-            fi
+            [[ "$ARCH" == "arm64" ]] && WIN_TRIPLE=aarch64-pc-windows-msvc
+            cargo build --target $WIN_TRIPLE $CARGO_FLAGS
+            cargo build --target $WIN_TRIPLE $CARGO_FLAGS -p ssruntime-ffi --features libc_alloc,panic-handler
             SRC_DIR="target/$WIN_TRIPLE/$BUILD_MODE"
             ;;
     esac
