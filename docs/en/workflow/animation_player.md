@@ -11,7 +11,7 @@ This enables you to visually perform tasks such as **synchronizing attack hitbox
 To control `SpriteStudioPlayer2D` with an `AnimationPlayer`, you must first convert all animations (e.g., walk, attack) contained in the target `.ssab` file into an `AnimationLibrary` (`_anims.res`) that Godot can read.
 
 1. In the Godot editor, select the `.ssab` file from the FileSystem dock.
-2. Click the **"Gen AnimLib"** button at the bottom of the Inspector.
+2. Click the **"Gen AnimLib"** button at the top of the Inspector, next to **Reconvert**.
 3. Upon success, a file named `[original_filename]_anims.res` will be generated in the same directory.
 
 > [!NOTE]

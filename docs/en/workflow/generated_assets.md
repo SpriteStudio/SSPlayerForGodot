@@ -1,7 +1,5 @@
 # 📦 Generated Assets, Exporting and Downloadable Packs
 
-[← Back to documentation index](../index.md)
-
 Converting a `.sspj` produces several files in the output folder. This page covers what you need in order to decide **how much of that has to travel together** when you export or ship a `.pck`: how the files depend on each other, what the Godot editor does with those dependencies, and what a reconvert overwrites and what it leaves alone.
 
 For the import procedure itself see [Asset Import and Editor Integration](usage_asset_pipeline.md); for per-target export settings see [Exporting Your Project](export.md).
@@ -25,7 +23,7 @@ If you are handed a `.sspj` and asked to take it from there in Godot, the first 
 | Added, moved or resized cells, or changed the image size (the `.ssce` changed) | The `.png` **and** the `.ssab` | **Ship both together.** Shipping one alone makes the artwork shift |
 | Edited an animation (`.ssae`) | The corresponding `.ssab` | The pack containing that `.ssab` |
 | Added an anime pack | One more `.ssab` | Make sure the new file is included in a pack |
-| Edited a sequence (`.ssqe`) | The `.ssqb` | Nothing in the game changes today |
+| Edited a sequence (`.ssqe`) | The `.ssqb` | No effect in the game: sequence playback is not supported |
 
 ---
 
@@ -53,7 +51,7 @@ res://ssab_generated/overall/
 | File | Produced from | Godot representation | What it holds |
 |---|---|---|---|
 | `<anime pack>.ssab` | One file per `.ssae` | `SSABResource` | Animations (keyframes), part structure, **the cell map (the source rectangle, pivot and original image size on the atlas)**, effect definitions, user data / signals, referenced texture names, sound references |
-| `<sequence pack>.ssqb` | One file per `.ssqe` | `SSQBResource` | The animation playback order (sequence). Playback is not yet supported ([Limitations and Scope](../limitations.md)) |
+| `<sequence pack>.ssqb` | One file per `.ssqe` | `SSQBResource` | The animation playback order (sequence). Playback is not supported ([Limitations and Scope](../limitations.md)) |
 | `<texture>.png` and so on | The images referenced by the `.sspj` | `Texture2D` (Godot writes an `.import` and converts to `.ctex`) | The artwork itself (the atlas image) |
 | `sound/<audio file>` | The sounds referenced by the `.sspj` | `AudioStream` | The audio played by sound parts ([Audio Playback](audio.md)) |
 
@@ -93,7 +91,7 @@ graph LR
 - **The thick edge is the only resource reference.** All a scene holds is a reference to the `.ssab`; everything beyond it is **resolved by path at runtime**, building a `res://` path against the `.ssab`'s own directory and handing it to `ResourceLoader`.
 - Four things are resolved that way: the **cell map atlases**, the **replacement textures for texture change (TCHG)**, the **audio under `sound/`**, and the **`.ssab` that an Instance part plays** — looked up as `<anime pack>.ssab` in the **same folder**.
 - Image paths may contain a subfolder (`font/RoundedMPlus_0.png` in the example above). Move them with their position relative to the `.ssab` intact.
-- Conversely, there is no equivalent of the Addressables problem where a dependency you did not register explicitly is duplicated into every bundle. One copy at the expected `res://` path is seen by everyone referencing it.
+- Conversely, there is no equivalent of Unity's Addressables problem where a dependency you did not register explicitly is duplicated into every bundle. One copy at the expected `res://` path is seen by everyone referencing it.
 
 > [!NOTE]
 > **The Godot editor tracks these dependencies.**

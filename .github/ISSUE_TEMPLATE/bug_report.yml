@@ -8,10 +8,10 @@ body:
         Thanks for taking the time to report this.
 
         Before filing, please [search existing issues](https://github.com/cri-middleware/SSPlayerForGodot/issues?q=is%3Aissue).
-        **Do not attach proprietary `.sspj` files here** — this is a public tracker. Ask through the
-        [inquiry form](https://www.webtech.co.jp/contact/en.html) and we will arrange a private transfer.
+        **Do not attach proprietary `.sspj` files here** — this is a public tracker. Send them privately through the
+        [Japanese Help Center form](https://www.webtech.co.jp/help/ja/spritestudio7/inquiries/ssplayer_tool/), which takes a zip of up to 8 MB.
 
-        投稿前に既存の Issue を検索してください。**業務データの `.sspj` は公開の場である本 Issue に添付しないでください。** 送付が必要な場合はヘルプセンターをご利用ください。
+        投稿前に既存の Issue を検索してください。**業務データの `.sspj` は公開の場である本 Issue に添付しないでください。** 送付が必要な場合は[ヘルプセンター](https://www.webtech.co.jp/help/ja/spritestudio7/inquiries/ssplayer_tool/)をご利用ください（8 MB までの zip を添付できます）。
 
   - type: textarea
     id: what-happened

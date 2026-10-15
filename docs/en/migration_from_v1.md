@@ -20,8 +20,9 @@ When migrating from v1.x to the current version, please note the following major
   - `set_play()` / `get_play()` → Removed (Use `play()`, `stop()`, and `is_playing()` instead)
   - `pause(bool)` → `pause()` (No longer takes arguments)
   - `set_texture_interpolate()` → Removed (Use Godot 4's native `Texture Filter` property on the CanvasItem instead)
-- **Signal Names**: Signal names have been updated to follow Godot's standard conventions (e.g., removing the `on_` prefix).
-  - `on_animation_finished` → `animation_finished`
-  - `on_animation_changed` → `animation_changed`
-  - `on_user_data` → `user_data`
+- **Signals**: `animation_finished` and `animation_changed` keep their names. The others have changed:
+  - `user_data(flag, int_value, rect_value, point_value, string_value)` → `user_data(payload: Dictionary)`
+  - `signal(command, value)` → `signal_emitted(command, value, info)` (`signal` is a GDScript keyword)
+  - `frame_changed(frame)` → `frame_updated(frame_no: float)`
+  - `anime_pack_changed` → Removed (Anime packs are now bundled within each `.ssab` file)
   - For full details, see the [API Reference](api/player.md).

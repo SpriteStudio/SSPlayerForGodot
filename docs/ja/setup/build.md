@@ -32,7 +32,7 @@ git clone https://github.com/godotengine/godot-cpp.git -b master
 
 - [Windows](https://docs.godotengine.org/ja/stable/engine_details/development/compiling/compiling_for_windows.html)
 - [macOS](https://docs.godotengine.org/ja/stable/engine_details/development/compiling/compiling_for_macos.html)
-- Linux: T.B.D.
+- [Linux](https://docs.godotengine.org/ja/stable/engine_details/development/compiling/compiling_for_linuxbsd.html)
 
 ### 注意点
 
@@ -136,7 +136,7 @@ $env:PYTHONUTF8=1
 | Android          | `./scripts/release-android.sh`        | `arm32` / `arm64` / `x86_64` の3アーキ        |
 | Web              | `./scripts/release-web.sh`            | `wasm32`（`threads=no`）、`template_debug` / `template_release` のみ |
 
-> Linux 向けのカスタムモジュール用一括ビルドスクリプトは未整備です。`./scripts/build.sh platform=linux target=...` を `editor` / `template_debug` / `template_release` で個別に呼び出してください。
+> Linux 向けのカスタムモジュール用一括ビルドスクリプトは用意していません。`./scripts/build.sh platform=linux target=...` を `editor` / `template_debug` / `template_release` で個別に呼び出してください。
 
 ## カスタムモジュールのデバッグ方法
 
@@ -186,7 +186,7 @@ $env:PYTHONUTF8=1
 
 以下の流れで、手元でテンプレートをビルド・インストールし、サンプルプロジェクトをエクスポートします。（以下はmacOSの例です）
 
-1. **ランタイムとテンプレートのビルド**事前に `libssruntime` を用意し、対象プラットフォームのリリーススクリプトを実行します。
+1. **ランタイムとテンプレートのビルド** 事前に `libssruntime` を用意し、対象プラットフォームのリリーススクリプトを実行します。
    ```bash
    # (必要に応じて) ランタイムをリリースビルドで用意
    ./scripts/build-runtime.sh build=release platform=macos
@@ -195,7 +195,7 @@ $env:PYTHONUTF8=1
    ./scripts/release-macos.sh
    ```
 
-2. **テンプレートのインストール**ビルドしたテンプレートを、Godotが認識するローカルの所定ディレクトリへインストールします。
+2. **テンプレートのインストール** ビルドしたテンプレートを、Godotが認識するローカルの所定ディレクトリへインストールします。
    **macOS / Linux:**
    ```bash
    ./scripts/install-template.sh macos
@@ -205,7 +205,7 @@ $env:PYTHONUTF8=1
    .\scripts\install-template.ps1 windows
    ```
 
-3. **CLIからのエクスポート実行**ビルドしたGodotエディタ（headlessモード）を使い、コマンドラインから直接エクスポート処理を呼び出します。
+3. **CLIからのエクスポート実行** ビルドしたGodotエディタ（headlessモード）を使い、コマンドラインから直接エクスポート処理を呼び出します。
    **macOS / Linux:**
    ```bash
    # 例: dev_module プロジェクトを macOS 向けにエクスポート (.appとして直接出力)
@@ -279,7 +279,7 @@ Android のエクスポートテンプレートは、エンジンの Gradle プ�
   ```
 - Godot のエディタ設定で、Android SDK パスとデバッグ用キーストアを設定します（`export/android/android_sdk_path`, `export/android/debug_keystore`, `export/android/debug_keystore_pass`）。
 
-1. **ランタイムとテンプレートのビルド**まず Rust ランタイムを一度ビルドし、次に ABI／ターゲットごとにエンジンの共有ライブラリをビルドして、Gradle でテンプレートAPKにパッケージします。
+1. **ランタイムとテンプレートのビルド** まず Rust ランタイムを一度ビルドし、次に ABI／ターゲットごとにエンジンの共有ライブラリをビルドして、Gradle でテンプレートAPKにパッケージします。
    ```bash
    # Rust ランタイム（1回のreleaseビルドを両テンプレートで共用します）
    ./scripts/build-runtime.sh platform=android build=release
@@ -356,13 +356,13 @@ xcrun simctl launch "$DEV" com.crimw.devmodule
 xcrun simctl io "$DEV" screenshot screen.png
 ```
 
-> **Note:** 本来の解決策は、iOS テンプレート自体（`install-template.sh` / `misc/dist/apple_embedded_xcode`）に `MoltenVK.xcframework` を同梱し、エクスポート時に自動で埋め込み・署名させて公式テンプレートと同等にすることです。上記の手動手順が要るのは**自前ビルド**のテンプレートの場合のみで、公式 Godot エディタ＋公式エクスポートテンプレートを使う一般利用者には影響しません。
+> **Note:** 上記の手動手順が要るのは**自前ビルド**のテンプレートの場合のみで、公式 Godot エディタ＋公式エクスポートテンプレートを使う一般利用者には影響しません。
 
 ### GDExtension のエクスポートと動作確認
 
 GDExtension（例: `dev_gdextension`）の場合、**エンジン本体の再ビルドやカスタムテンプレートのインストールは不要**です。Godot公式が配布している標準のGodotエディタとエクスポートテンプレートを使用して、そのままエクスポートが可能です。
 
-1. **GDExtension プラグインのリリースビルド**事前に対象プラットフォーム向けのビルドスクリプトを実行し、プロジェクトの `addons/` ディレクトリにライブラリ（`.so`, `.xcframework`, `.dll` 等）を出力しておきます。
+1. **GDExtension プラグインのリリースビルド** 事前に対象プラットフォーム向けのビルドスクリプトを実行し、プロジェクトの `addons/` ディレクトリにライブラリ（`.so`, `.xcframework`, `.dll` 等）を出力しておきます。
    **macOS / Linux:**
    ```bash
    ./scripts/release-gdextension-macos.sh
@@ -372,7 +372,7 @@ GDExtension（例: `dev_gdextension`）の場合、**エンジン本体の再ビ
    .\scripts\release-gdextension-windows.ps1
    ```
 
-2. **CLIからのエクスポート実行**公式のGodotバイナリ（あるいは各自のGodotコマンド）を使って、プロジェクトをエクスポートします。
+2. **CLIからのエクスポート実行** 公式のGodotバイナリ（あるいは各自のGodotコマンド）を使って、プロジェクトをエクスポートします。
    **macOS / Linux:**
    ```bash
    # ※ ここでの "godot" は、パスが通っている公式のGodotエディタ実行ファイル等を指します
@@ -403,7 +403,7 @@ GDExtension（例: `dev_gdextension`）の場合、**エンジン本体の再ビ
 
 GDExtension の場合も、カスタムモジュールとほぼ同じ手順でC++コードをデバッグできます。違いは起動するプログラムが「公式のGodotエディタ」になる点のみです。
 
-1. **デバッグシンボル付きで GDExtension をビルドする**ビルドスクリプト（`build-extension.sh` 等）の既定は `target=editor` で、godot-cpp と同じくデバッグシンボルを含みません。`debug_symbols=yes` を付けて（`./scripts/build-extension.sh debug_symbols=yes`、Windows では `.ps1`）ビルドすると、出力されるライブラリ（`.dll` や `.dylib`）にデバッグシンボルが含まれます。
+1. **デバッグシンボル付きで GDExtension をビルドする** ビルドスクリプト（`build-extension.sh` 等）の既定は `target=editor` で、godot-cpp と同じくデバッグシンボルを含みません。`debug_symbols=yes` を付けて（`./scripts/build-extension.sh debug_symbols=yes`、Windows では `.ps1`）ビルドすると、出力されるライブラリ（`.dll` や `.dylib`）にデバッグシンボルが含まれます。
 
 2. **デバッガのアタッチと起動引数**
    VSCode や Visual Studio 等のデバッガから、**公式のGodotバイナリ** を起動プログラムとして指定し、引数でプロジェクトのパス（`--path examples/dev_gdextension`）を渡します。Godotが起動時にプラグインを動的ロードした時点でブレークポイントにヒットするようになります。
@@ -507,8 +507,6 @@ SpriteStudio-SDK の `.fbs` を変更した場合は、以下で `ss_player/form
 
 > `examples/dev_*` は対象外です。開発者用のプロジェクトのため sources 設定と `ssab_generated/` の双方が gitignore されており、エディタ上で手動設定する運用です。
 
-### SpriteStudio-SDK 内部ドキュメント
+### Player 移植ガイド
 
-サブモジュール初期化済みであれば、ランタイムの内部仕様や移植時の注意点は以下を参照できます。
-
-- `ss_player/SpriteStudio-SDK/libs/ssruntime/docs/README.ja.md`
+Player が守るべきランタイムの仕様は、SpriteStudio-SDK の [Player 移植ガイド](https://github.com/cri-middleware/SpriteStudio-SDK/blob/HEAD/libs/ssruntime/docs/README.ja.md) にあります（サブモジュール初期化済みであれば `ss_player/SpriteStudio-SDK/libs/ssruntime/docs/` でも読めます）。

@@ -90,6 +90,6 @@ Once the node is selected, you can adjust various settings from Godot's Inspecto
 
 ## Support for Mask Parts
 
-This plugin fully supports SpriteStudio's "Mask" feature.
+This plugin supports SpriteStudio's "Mask" feature (for its limits, see [Limitations & Scope → Masks](../limitations.md#masks)).
 No special setup is required; if your `.ssab` file contains mask parts, clipping processes are automatically applied in Godot.
 Since the rendering is fully resolved internally via batch processing and Godot's rendering pipeline, there is no need for users to manually assign specific materials or configure `clip_children` on CanvasItems. You can use it simply by placing it in the scene.

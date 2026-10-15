@@ -20,8 +20,9 @@ v1.x から本バージョンへ移行する場合は、以下の大きな変更
   - `set_play()` / `get_play()` → 廃止（代わりに `play()`, `stop()`, `is_playing()` 等を利用してください）
   - `pause(bool)` → `pause()`（引数なしに変更）
   - `set_texture_interpolate()` → 廃止（Godot 4 標準の `Texture Filter` (CanvasItem プロパティ) を利用してください）
-- **シグナル名の変更**: イベント名の先頭の `on_` が外れるなど、Godot の標準的な命名規則に統一されました。
-  - `on_animation_finished` → `animation_finished`
-  - `on_animation_changed` → `animation_changed`
-  - `on_user_data` → `user_data`
+- **シグナルの変更**: `animation_finished` と `animation_changed` は名前が変わっていません。それ以外は次のように変わりました。
+  - `user_data(flag, int_value, rect_value, point_value, string_value)` → `user_data(payload: Dictionary)`
+  - `signal(command, value)` → `signal_emitted(command, value, info)`（`signal` は GDScript の予約語のため）
+  - `frame_changed(frame)` → `frame_updated(frame_no: float)`
+  - `anime_pack_changed` → 廃止（アニメパックは `.ssab` ごとに含まれるため不要）
   - 詳細は [API リファレンス](api/player.md) をご確認ください。

@@ -262,7 +262,7 @@ print(ss_player.get_cell_names("Ringo"))    # -> ["effect3", ...]
 
 Both read the bound `SSABResource` and return an empty array when none is assigned. The same two methods are also available on the resource itself (`ss_player.get_ssab_resource().get_cellmap_names()`), which is the way to enumerate an `.ssab` you have not put on a player yet.
 
-> **On choosing between a texture swap and a cell override**: `set_cellmap_texture()` in the previous section replaces a **whole cell map (texture)** at once, affecting every part that uses it. This feature instead replaces the cell that a **single part** draws. Pick whichever matches your intent.
+> **On choosing between a texture swap and a cell override**: `set_cellmap_texture()` in [Dynamic Texture Replacement](#dynamic-texture-replacement-avatar-customization) above replaces a **whole cell map (texture)** at once, affecting every part that uses it. This feature instead replaces the cell that a **single part** draws. Pick whichever matches your intent.
 
 > **On using part indices**: Part indices are stable within one asset (the same `.ssab`), so if you set overrides frequently, resolve the name once with `find_part_index()` and reuse that index with the `*_by_index()` variants.
 

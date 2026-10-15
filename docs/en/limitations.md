@@ -1,6 +1,6 @@
 # ⚠️ Limitations & Scope
 
-Constraints and platform-specific caveats to be aware of when shipping with the current SpriteStudio Player for Godot. For the list of what *is* supported, see the [Key Features](index.md#key-features) and workflow guides.
+Constraints and platform-specific caveats to be aware of when shipping with the current SpriteStudio Player for Godot. For what *is* supported, see the workflow guides.
 
 > [!NOTE]
 > This is a living document. Items are added as they are confirmed; wording and coverage may change as the plugin evolves.
@@ -10,8 +10,9 @@ Constraints and platform-specific caveats to be aware of when shipping with the 
 > [!WARNING]
 > - **Text parts** — not drawn. The runtime reserves the part's slot in the draw plan but supplies no glyphs (glyph layout and rasterization are the player's job), and the plugin has no Godot text pass yet.
 > - **9-slice parts** — not drawn. The runtime builds the whole grid into its dedicated `Nines` buffers, but the plugin does not read them yet, so the part renders as nothing rather than as a stretched cell.
+> - **Sequences (`.ssqb`)** — not played. `SSQBResource` loads them, but no node plays one; chain animations from GDScript on `animation_finished` instead.
 
-Both part types still occupy their place in the draw order, so an animation that uses them plays with those parts missing rather than failing. If you ship one, replace it with an ordinary part at authoring time.
+Text and 9-slice parts still occupy their place in the draw order, so an animation that uses them plays with those parts missing rather than failing. If you ship one, replace it with an ordinary part at authoring time.
 
 ## Blend Modes
 
