@@ -43,7 +43,7 @@ If you find a bug, please use the provided Issue Templates. Include:
 ## Development Environment
 
 ### Prerequisites
-- Godot Engine 4.x
+- Godot Engine 4.7 or later
 - A C++ compiler (GCC, Clang, or MSVC)
 - Python 3 and SCons
 - A Rust toolchain, only to build the runtime from the submodule (`build-runtime`) or to convert the samples without the editor (`deploy-examples`)
@@ -158,7 +158,7 @@ Godot Engineとのネイティブな統合と高いパフォーマンスを維�
 ## 開発環境のセットアップ
 
 ### 前提条件
-- Godot Engine 4.x
+- Godot Engine 4.7 以降
 - C++ コンパイラ (GCC, Clang, MSVC のいずれか)
 - Python 3 および SCons
 - Rust ツールチェイン（submodule からランタイムをビルドする `build-runtime` と、エディタを使わずにサンプルを変換する `deploy-examples` でのみ必要です）

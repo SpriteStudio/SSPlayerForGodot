@@ -79,6 +79,10 @@ waits on the runtime is under *Needs SDK* and tracked in the
 - [ ] **Collider integration** — per-part collision shapes with callbacks. A `CollisionShape2D` or `Area2D` parented to
   a `SpriteStudioPartAttachment2D` already delegates collision to Godot's physics, so evaluate whether an auto-sizing
   `SpriteStudioPartCollider2D` (reading the part's vertex bounds) is needed at all.
+- [ ] **Bundle MoltenVK into the self-built iOS template** — an iOS export from a template built here needs
+  `MoltenVK.xcframework` embedded and signed by hand (the Build Guide's iOS export steps). Bundling it into the
+  template itself (`install-template.sh` / `misc/dist/apple_embedded_xcode`) would let the export embed and sign it, as
+  the official templates do.
 - [ ] **One parallel pass for every player's frame** — each `SpriteStudioPlayer2D` evaluates its frame
   (`ss_runtime_get_frame_data`) and steps its effect slots on the main thread inside its own tick, one player after
   another. With twenty players, the evaluation is about half of Ringo's `advance()` and a quarter of Doll's, and the

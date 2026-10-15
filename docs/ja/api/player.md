@@ -29,7 +29,7 @@ func _ready() -> void:
 * `set_flip_v(flip: bool)` / `is_flipped_v() -> bool`: 垂直反転。
 * `set_animation_process_mode(mode: AnimationProcessMode)` / `get_animation_process_mode() -> AnimationProcessMode`: `ANIMATION_PROCESS_PHYSICS`（`0`）で Physics (`_physics_process`) 同期、`ANIMATION_PROCESS_IDLE`（`1`）で Idle (`_process`) 同期、`ANIMATION_PROCESS_MANUAL`（`2`）でノード自身による更新を停止します。
 * `advance(delta: float)`: 再生を `delta` 秒ぶん進め、自動更新と同じように `frame_updated` を発行します。`ANIMATION_PROCESS_MANUAL` 向けの API です。他のモードで呼ぶと、ノード自身の更新に *加えて* アニメーションが進みます。
-* **エディタ内プレビュー**: ノードを選択すると表示される **SpriteStudio** ボトムパネル（先頭から再生 / 現在位置から再生 / 停止、フレームスクラバ、ループと速度）で、ゲームを実行せずにプレビューできます。ショートカットは AnimationPlayer エディタと同じです（**D** 現在位置から再生 / **Shift+D** 先頭から再生 / **S** 停止）。*(旧 `editor_playing` インスペクタトグルはこのパネルに置き換えられました。)*
+* **エディタ内プレビュー**: ノードを選択すると表示される **SpriteStudio** ボトムパネル（先頭から再生 / 現在位置から再生 / 停止、フレームスクラバ、ループと速度）で、ゲームを実行せずにプレビューできます。ショートカットは AnimationPlayer エディタと同じです（**D** 現在位置から再生 / **Shift+D** 先頭から再生 / **S** 停止）。
 * `play(start_frame: float = -1.0)`: 再生を開始します。既定値の `-1.0` は、現在の再生ヘッド位置から続きを再生するのではなく、**区間の先頭に巻き戻します**（逆再生方向なら区間の末尾）。現在位置から再生したい場合は `get_frame_no()` を渡してください。
 * `pause()`: 現在のフレームを保持したまま、その場で再生を止めます。**冪等**です（2 回呼んでも一時停止のままで、再開はしません）。
 * `resume()`: 保持を解除し、同じフレームから再開します。**冪等**で、一時停止ではなく停止している場合は何もしません（停止からの開始は `play()` で、こちらは巻き戻ります）。
@@ -84,7 +84,7 @@ pivot はキャンバス内のどこに原点があるかを表します。地�
 
 これは作者が絵を構成した枠であって、実際の描画を測った外接矩形ではありません（パーツはキャンバスの外にも描けます）。読み出しのコストはゼロですが、より小さい矩形を得るには読み込み時にアニメーションの全フレームを進めて測る必要があります。
 
-この矩形を追加した目的については [パフォーマンスチューニング → 画面外のプレイヤーを止める](../workflow/tips.md) を参照してください。
+この矩形で画面外のプレイヤーを止める方法は [パフォーマンスチューニング → 画面外のプレイヤーを止める](../workflow/tips.md#画面外のプレイヤーを止める) を参照してください。
 
 ## パーツオーバーライド
 
@@ -221,7 +221,7 @@ SpriteStudio 上でユーザーデータに設定した値が `Dictionary` と�
 | `loop_num` | `int` | 再生回数（`1` で 1 回。SpriteStudio に無限ループのサウンドはありません） |
 
 > [!NOTE]
-> 引数の正確な型・最新の取り得る値は実装 `ss_player/ss_player_node_2d.h` / `ss_player/ss_internal_player.cpp` を併せて参照してください。
+> 各シグナルの引数の型は、エディタ内蔵のクラスリファレンス（**ヘルプ → ヘルプを検索** で `SpriteStudioPlayer2D`）でも確認できます。
 
 ## サウンド (Audio)
 

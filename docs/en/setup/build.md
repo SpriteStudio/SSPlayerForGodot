@@ -32,7 +32,7 @@ For build tools (compiler, Python, SCons, etc.) on each platform, follow the off
 
 - [Windows](https://docs.godotengine.org/en/stable/engine_details/development/compiling/compiling_for_windows.html)
 - [macOS](https://docs.godotengine.org/en/stable/engine_details/development/compiling/compiling_for_macos.html)
-- Linux: T.B.D.
+- [Linux](https://docs.godotengine.org/en/stable/engine_details/development/compiling/compiling_for_linuxbsd.html)
 
 ### Notes
 
@@ -364,7 +364,7 @@ xcrun simctl launch "$DEV" com.crimw.devmodule
 xcrun simctl io "$DEV" screenshot screen.png
 ```
 
-> **Note:** The proper fix is to bundle `MoltenVK.xcframework` into the iOS template itself (`install-template.sh` / `misc/dist/apple_embedded_xcode`) so the export embeds and signs it automatically, matching the official templates. The manual steps above are only needed for **self-built** templates — end users on the official Godot editor and official export templates are unaffected.
+> **Note:** The manual steps above are only needed for **self-built** templates — end users on the official Godot editor and official export templates are unaffected.
 
 ### GDExtension Export and Testing
 
@@ -518,8 +518,8 @@ The sample projects under `examples/` load `.ssab` assets converted from the Spr
 
 > The `examples/dev_*` projects are excluded: they are developer-only scratch projects, so both their sources config and `ssab_generated/` are gitignored and set up by hand in the editor.
 
-### SpriteStudio-SDK internal documentation
+### Player Porting Guide
 
-Once the submodule is initialized, internal runtime specifications and porting notes are available at:
-
-- `ss_player/SpriteStudio-SDK/libs/ssruntime/docs/README.ja.md`
+The runtime semantics a Player must honour are documented in the SpriteStudio-SDK
+[Player Porting Guide](https://github.com/cri-middleware/SpriteStudio-SDK/blob/HEAD/libs/ssruntime/docs/README.md)
+(`ss_player/SpriteStudio-SDK/libs/ssruntime/docs/` once the submodule is initialized).

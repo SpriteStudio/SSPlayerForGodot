@@ -30,7 +30,7 @@ func _ready() -> void:
 * `set_flip_v(flip: bool)` / `is_flipped_v() -> bool`: Flips the animation vertically.
 * `set_animation_process_mode(mode: AnimationProcessMode)` / `get_animation_process_mode() -> AnimationProcessMode`: Sets whether to sync with `_physics_process` (`ANIMATION_PROCESS_PHYSICS` / `0`) or `_process` (`ANIMATION_PROCESS_IDLE` / `1`), or to stop ticking on its own (`ANIMATION_PROCESS_MANUAL` / `2`).
 * `advance(delta: float)`: Steps playback by `delta` seconds and emits `frame_updated`, exactly as an automatic tick would. Meant for `ANIMATION_PROCESS_MANUAL` — under the other modes it advances the animation *on top of* the node's own tick.
-* **In-editor preview**: Select the node and use the **SpriteStudio** bottom panel — play from start / play from current / stop, a frame scrubber, and loop and speed controls — to preview without running the game. Shortcuts mirror the AnimationPlayer editor (**D** play from current, **Shift+D** play from start, **S** stop). *(The former `editor_playing` inspector toggle has been replaced by this panel.)*
+* **In-editor preview**: Select the node and use the **SpriteStudio** bottom panel — play from start / play from current / stop, a frame scrubber, and loop and speed controls — to preview without running the game. Shortcuts mirror the AnimationPlayer editor (**D** play from current, **Shift+D** play from start, **S** stop).
 * `play(start_frame: float = -1.0)`: Starts playback. `-1.0` (the default) **rewinds to the start of the section** — its end when the direction is backward — rather than continuing from where the playhead is. Pass `get_frame_no()` to play on from the current position.
 * `pause()`: Holds playback where it stands, keeping the current frame. **Idempotent** — pausing twice leaves it paused.
 * `resume()`: Lifts the hold and carries on from the same frame. **Idempotent**, and a no-op on an animation that is stopped rather than held — `play()` is what starts a stopped animation, and it rewinds.
@@ -85,7 +85,7 @@ The canvas is authored **per animation**, not per asset — in the `Ringo` sampl
 
 It is the box the artist composed in, not a measured bounding box: parts are free to draw outside it. Reading it costs nothing, while measuring a tighter one would mean stepping every frame of the animation at load.
 
-See [Performance Tuning → Skipping Players That Are Off Screen](../workflow/tips.md) for the use this box was added for.
+To use this box to skip players that are off screen, see [Performance Tuning → Skipping Players That Are Off Screen](../workflow/tips.md#skipping-players-that-are-off-screen).
 
 ## Part overrides
 
@@ -222,7 +222,7 @@ The information configured on the timeline audio keyframe is delivered as a `Dic
 | `loop_num` | `int` | Play count (`1` plays once; SpriteStudio has no infinite audio loop) |
 
 > [!NOTE]
-> For the exact types and the latest set of accepted values, also refer to the implementation files `ss_player/ss_player_node_2d.h` and `ss_player/ss_internal_player.cpp`.
+> Each signal's argument types are also in the editor's built-in class reference: **Help → Search Help**, then `SpriteStudioPlayer2D`.
 
 ## Audio
 
