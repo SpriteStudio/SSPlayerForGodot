@@ -12,7 +12,7 @@ Constraints and platform-specific caveats to be aware of when shipping with the 
 > - **9-slice parts** — not drawn. The runtime builds the whole grid into its dedicated `Nines` buffers, but the plugin does not read them yet, so the part renders as nothing rather than as a stretched cell.
 > - **Sequences (`.ssqb`)** — not played. `SSQBResource` loads them, but no node plays one; chain animations from GDScript on `animation_finished` instead.
 
-Both part types still occupy their place in the draw order, so an animation that uses them plays with those parts missing rather than failing. If you ship one, replace it with an ordinary part at authoring time.
+Text and 9-slice parts still occupy their place in the draw order, so an animation that uses them plays with those parts missing rather than failing. If you ship one, replace it with an ordinary part at authoring time.
 
 ## Blend Modes
 
