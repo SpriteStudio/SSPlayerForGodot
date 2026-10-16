@@ -37,7 +37,7 @@ declare -A scons_default_opts=(
 declare -A build_default_opts=(
     [cpus]=${CPUS}
     [ccache]="no"
-    [version]="4.7"
+    [version]="$(cut -d. -f1,2 < "${BASEDIR}/GODOT_VERSION.txt" | tr -d '[:space:]')"
     [strip]="no"
     [deps]="yes"
 )

@@ -26,7 +26,7 @@ declare -A scons_default_opts=(
     [platform]=${PLATFORM}
     [target]="editor"
     [compiledb]="yes"
-    [api_version]="4.7"
+    [api_version]="$("${BASEDIR}/godot-api-version.sh")"
 )
 
 # macbuild default options

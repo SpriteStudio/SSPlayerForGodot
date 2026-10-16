@@ -37,7 +37,7 @@ $scons_default_opts = @{
 $winbuild_default_opts = @{
     cpus = $cpus
     ccache = "no"
-    version = "4.7"
+    version = (((Get-Content (Join-Path $baseDirectory "GODOT_VERSION.txt") -Raw).Trim() -split '\.')[0..1] -join '.')
     strip = "no"
     deps = "yes"
 }
