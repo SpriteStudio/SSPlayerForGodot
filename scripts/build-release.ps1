@@ -47,7 +47,7 @@ $platforms = @("linux", "windows", "macos", "android", "ios", "web")
 
 $in = "artifacts"
 $out = "release-dist"
-$apiVersion = "4.7"
+$apiVersion = & (Join-Path $rootDirectory "scripts/godot-api-version.ps1")
 $verify = "yes"
 $clean = "yes"
 

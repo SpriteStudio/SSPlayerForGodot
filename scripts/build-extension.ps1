@@ -17,7 +17,7 @@ $scons_default_opts = @{
     target = "editor"
     compiledb = "yes"
     use_static_cpp = "no"
-    api_version = "4.7"
+    api_version = (& (Join-Path $baseDirectory "godot-api-version.ps1"))
 }
 
 # winbuild default options

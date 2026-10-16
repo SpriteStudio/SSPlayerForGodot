@@ -6,13 +6,6 @@ name: release gdextension
 on:
   workflow_dispatch:
     inputs:
-      godot_version:
-        required: true
-        type: choice
-        options:
-          - "4.7"
-        default: "4.7"
-        description: "Target Godot API version"
       upload_release:
         description: 'Draft the GitHub Release, to publish by hand. Only from a v* tag that has no Release yet; from a branch the run is a build.'
         required: false
@@ -20,7 +13,6 @@ on:
         type: boolean
 
 env:
-  GODOT_VERSION: ${{ inputs.godot_version || '4.7' }}
   LANG: en_US.UTF-8
   LC_ALL: en_US.UTF-8
   PYTHONIOENCODING: utf8
@@ -81,6 +73,12 @@ jobs:
         with:
           submodules: recursive
           persist-credentials: false
+
+      # The API every platform builds against is the floor the descriptor names.
+      - name: Read the Godot API the extension targets
+        shell: bash
+        run: echo "GODOT_API=$(./scripts/godot-api-version.sh)" >> "$GITHUB_ENV"
+
       - name: clone Godot Cpp repository
         uses: GuillaumeFalourd/clone-github-repo-action@19817562c346ff60f9935158dede6c5ece8fd0ac # v2.3
         with:
@@ -171,7 +169,7 @@ jobs:
       - name: build Linux
         if: matrix.platform == 'linux'
         run: |
-          ./scripts/release-gdextension-linux.sh api_version=${{ env.GODOT_VERSION }}
+          ./scripts/release-gdextension-linux.sh api_version=${{ env.GODOT_API }}
 
       # release-gdextension-macos.sh signs the frameworks (hardened runtime +
       # timestamp) when APPLE_SIGNING_IDENTITY is present, and notarizes them
@@ -184,7 +182,7 @@ jobs:
           APPLE_API_ISSUER: ${{ secrets.ASC_API_ISSUER_ID }}
           APPLE_API_KEY: ${{ secrets.ASC_API_KEY_ID }}
         run: |
-          ./scripts/release-gdextension-macos.sh api_version=${{ env.GODOT_VERSION }}
+          ./scripts/release-gdextension-macos.sh api_version=${{ env.GODOT_API }}
 
       # release-gdextension-ios.sh signs the XCFrameworks inside-out (no hardened
       # runtime; iOS is not notarized) when APPLE_SIGNING_IDENTITY is present.
@@ -193,24 +191,24 @@ jobs:
         env:
           APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_DEV_ID_APP_NAME }}
         run: |
-          ./scripts/release-gdextension-ios.sh api_version=${{ env.GODOT_VERSION }}
+          ./scripts/release-gdextension-ios.sh api_version=${{ env.GODOT_API }}
 
       - name: build Android
         if: matrix.platform == 'android'
         run: |
-          ./scripts/release-gdextension-android.sh api_version=${{ env.GODOT_VERSION }}
+          ./scripts/release-gdextension-android.sh api_version=${{ env.GODOT_API }}
 
       - name: build Windows
         if: matrix.platform == 'windows'
         shell: pwsh
         # The script drops the .exp / .lib link residue itself, so a local run
         # leaves bin/windows looking exactly like a release.
-        run: ./scripts/release-gdextension-windows.ps1 api_version=${{ env.GODOT_VERSION }}
+        run: ./scripts/release-gdextension-windows.ps1 api_version=${{ env.GODOT_API }}
 
       - name: build Web
         if: matrix.platform == 'web'
         run: |
-          ./scripts/release-gdextension-web.sh api_version=${{ env.GODOT_VERSION }}
+          ./scripts/release-gdextension-web.sh api_version=${{ env.GODOT_API }}
 
       # Stage the runtime third-party license files (produced by the SDK
       # download step) into the uploaded artifact so the packaging job can
@@ -231,7 +229,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: extension-${{ env.GODOT_VERSION }}-${{ matrix.platform }}
+          name: extension-${{ env.GODOT_API }}-${{ matrix.platform }}
           path: bin/
           if-no-files-found: error
           # A week, not the 90-day default: this is the matrix's handoff to the
@@ -250,6 +248,9 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+
+      - name: Read the Godot API the extension targets
+        run: echo "GODOT_API=$(./scripts/godot-api-version.sh)" >> "$GITHUB_ENV"
 
       - name: Download all artifacts
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
@@ -270,12 +271,12 @@ jobs:
       # a name that does not match what shipped fails silently on that platform.
       # Every path in it is looked up inside the finished zip.
       - name: Build the release
-        run: ./scripts/build-release.sh in=artifacts out=release-dist api_version=${{ env.GODOT_VERSION }} verify=yes clean=yes
+        run: ./scripts/build-release.sh in=artifacts out=release-dist api_version=${{ env.GODOT_API }} verify=yes clean=yes
 
       - name: Upload final release package
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: ssplayer-godot-release-dist-${{ env.GODOT_VERSION }}
+          name: ssplayer-godot-release-dist-${{ env.GODOT_API }}
           path: release-dist
           if-no-files-found: error
           # A week, not the 90-day default. What is meant to last is attached to

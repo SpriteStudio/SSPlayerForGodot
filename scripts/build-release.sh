@@ -46,7 +46,7 @@ PLATFORMS="linux windows macos android ios web"
 
 IN="artifacts"
 OUT="release-dist"
-API_VERSION="4.7"
+API_VERSION="$("$ROOT_DIR/scripts/godot-api-version.sh")"
 VERIFY="yes"
 CLEAN="yes"
 
