@@ -41,7 +41,6 @@ body:
     attributes:
       label: Plugin version / プラグインのバージョン
       description: The release you installed, or the commit you are on.
-      placeholder: 7.0.0-beta.1
     validations:
       required: true
 
