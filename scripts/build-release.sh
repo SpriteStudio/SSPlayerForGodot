@@ -167,6 +167,14 @@ if [ ! -f "$GDEXTENSION" ]; then
   exit 1
 fi
 
+# The binaries report ss_player/VERSION.txt while the Release is named after the
+# tag, so a release whose tag says otherwise stops here.
+VERSION_FILE="$(tr -d '[:space:]' < "$ROOT_DIR/ss_player/VERSION.txt")"
+if [ -n "$TAG" ] && [ "$TAG" != "$VERSION_FILE" ]; then
+  echo "$APP: tag $TAG does not match ss_player/VERSION.txt ($VERSION_FILE)" >&2
+  exit 1
+fi
+
 for tool in zip unzip; do
   command -v "$tool" > /dev/null 2>&1 || {
     echo "$APP: $tool not found -- it is what packages the archive" >&2

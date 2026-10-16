@@ -159,6 +159,13 @@ if (-not (Test-Path $gdextension)) {
     Write-Error "${app}: misc/spritestudio.gdextension not found -- is this the SSPlayerForGodot repo?"
 }
 
+# The binaries report ss_player/VERSION.txt while the Release is named after the
+# tag, so a release whose tag says otherwise stops here.
+$versionFile = (Get-Content "$rootDirectory/ss_player/VERSION.txt" -Raw).Trim()
+if ($tag -and $tag -ne $versionFile) {
+    Write-Error "${app}: tag $tag does not match ss_player/VERSION.txt ($versionFile)"
+}
+
 # Get-FileHash returns an upper-case hash; sha256sum writes lower-case. Emit the
 # lower-case form so SHA256SUMS is byte-identical to the one the shell twin (and
 # CI) writes, and so `sha256sum -c` accepts it.

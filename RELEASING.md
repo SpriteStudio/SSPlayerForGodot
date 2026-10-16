@@ -118,7 +118,7 @@ BRANCH=$(git branch --show-current | grep '^release/')
 gh pr merge "${BRANCH:?}" --merge
 ```
 
-Then tag `main`. The tag is read from `ss_player/VERSION.txt` rather than typed, because nothing else compares the two, and it goes on the merge commit only when its tree is the branch's, which `git diff` confirms by printing nothing:
+Then tag `main`. The tag is read from `ss_player/VERSION.txt` rather than typed, and the release build refuses one that differs from it; it goes on the merge commit only when its tree is the branch's, which `git diff` confirms by printing nothing:
 
 ```bash
 git switch main && git pull --ff-only &&
@@ -323,7 +323,7 @@ BRANCH=$(git branch --show-current | grep '^release/')
 gh pr merge "${BRANCH:?}" --merge
 ```
 
-続けて `main` にタグを打ちます。タグは手で打たず `ss_player/VERSION.txt` から読みます。この 2 つを照らし合わせるものが他に無いためです。タグはマージコミットのツリーがブランチと同じときにだけ打たれます。`git diff` が何も出力しないことがその確認です。
+続けて `main` にタグを打ちます。タグは手で打たず `ss_player/VERSION.txt` から読みます。食い違うタグはリリースビルドが拒否します。タグはマージコミットのツリーがブランチと同じときにだけ打たれます。`git diff` が何も出力しないことがその確認です。
 
 ```bash
 git switch main && git pull --ff-only &&
