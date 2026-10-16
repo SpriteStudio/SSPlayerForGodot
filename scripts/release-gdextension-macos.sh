@@ -55,6 +55,10 @@ if [ -n "${APPLE_SIGNING_IDENTITY:-}" ]; then
         # status check below is what decides. plutil parses the JSON — it ships
         # with macOS, unlike jq, so this holds for a local release build too.
         #
+        # --timeout bounds the wait: a submission still in progress then ends
+        # here with its status reported below, rather than holding the job
+        # until the workflow's timeout kills it without the notary log.
+        #
         # All three frameworks (editor, template_release, template_debug) go up
         # as one archive, so a rejection is all-or-nothing and the status alone
         # does not say which one failed — fetch the notary log, which reports
@@ -64,7 +68,7 @@ if [ -n "${APPLE_SIGNING_IDENTITY:-}" ]; then
             --key "${APPLE_API_KEY_PATH}" \
             --key-id "${APPLE_API_KEY}" \
             --issuer "${APPLE_API_ISSUER}" \
-            --wait --output-format json > "${NOTARIZE_OUT}" || NOTARIZE_RC=$?
+            --wait --timeout 60m --output-format json > "${NOTARIZE_OUT}" || NOTARIZE_RC=$?
         cat "${NOTARIZE_OUT}"
 
         # An unparseable response leaves the status empty, which fails below —
