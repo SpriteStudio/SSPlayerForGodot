@@ -247,6 +247,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          fetch-tags: true
           persist-credentials: false
 
       - name: Read the Godot API the extension targets
@@ -311,6 +312,16 @@ jobs:
             exit 1
           fi
 
+      # The pre-release mark the draft carries: one once a full release is
+      # tagged, none before (scripts/release-channel.sh).
+      - name: Read the Release's channel
+        id: channel
+        if: steps.release.outputs.draft == 'true'
+        run: |
+          channel="$(./scripts/release-channel.sh "$GITHUB_REF_NAME")"
+          echo "::notice::${GITHUB_REF_NAME} is a ${channel} release"
+          echo "channel=${channel}" >> "$GITHUB_OUTPUT"
+
       - name: Create GitHub Release
         if: steps.release.outputs.draft == 'true'
         uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
@@ -320,9 +331,8 @@ jobs:
             release-dist/SHA256SUMS
           tag_name: ${{ github.ref_name }}
           generate_release_notes: true
-          # 常に draft として作成する。アセットと自動生成リリースノートが揃った
-          # 状態を人間が確認し、GitHub UI から公開する。「Set as a pre-release」
-          # 「Set as the latest release」も公開時に UI で選ぶ。
-          # ここで prerelease / make_latest を指定しないのは意図的:
-          # GitHub は draft を latest にできない仕様のため、指定しても効かない。
+          # Always a draft: a person checks the assets and the generated notes,
+          # then publishes it from the GitHub UI as it is marked. A draft cannot
+          # be made Latest; publishing one that is not a pre-release makes it so.
           draft: true
+          prerelease: ${{ steps.channel.outputs.channel == 'prerelease' }}
