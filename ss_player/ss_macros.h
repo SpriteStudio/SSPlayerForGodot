@@ -25,7 +25,7 @@
   #include "core/string/string_name.h"
   #include "core/object/class_db.h"
   #include "core/object/callable_mp.h"
-  #if VERSION_MAJOR < 4 || (VERSION_MAJOR == 4 && VERSION_MINOR < 7)
+  #if GODOT_VERSION_HEX < 0x040700
     #error The custom module needs Godot 4.7 or later.
   #endif
   #ifndef SNAME

@@ -22,7 +22,11 @@ using namespace godot;
 #include "core/math/vector2.h"
 #include "core/templates/hash_map.h"
 #include "core/variant/dictionary.h"
+#if GODOT_VERSION_HEX >= 0x040800
+#include "scene/resources/audio/audio_stream.h"
+#else
 #include "servers/audio/audio_stream.h"
+#endif
 #endif
 
 #include "format/ssab.h"
