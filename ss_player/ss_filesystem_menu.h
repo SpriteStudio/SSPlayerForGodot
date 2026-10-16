@@ -34,6 +34,8 @@ public:
 
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
   virtual void _popup_menu(const PackedStringArray &p_paths) override;
+#elif GODOT_VERSION_HEX >= 0x040800
+  virtual void get_options(const OptionsData &p_data) override;
 #else
   virtual void get_options(const Vector<String> &p_paths) override;
 #endif

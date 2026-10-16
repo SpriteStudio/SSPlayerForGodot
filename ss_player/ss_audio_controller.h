@@ -1,5 +1,7 @@
 #pragma once
 
+#include "ss_macros.h"
+
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
 #include <godot_cpp/classes/audio_stream.hpp>
 #include <godot_cpp/classes/audio_stream_player.hpp>
@@ -15,7 +17,11 @@ using namespace godot;
 #include "core/variant/dictionary.h"
 #include "core/string/ustring.h"
 #include "scene/audio/audio_stream_player.h"
+#if GODOT_VERSION_HEX >= 0x040800
+#include "scene/resources/audio/audio_stream.h"
+#else
 #include "servers/audio/audio_stream.h"
+#endif
 #endif
 
 #include "ss_audio_backend.h"
