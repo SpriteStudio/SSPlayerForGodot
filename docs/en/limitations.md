@@ -2,9 +2,6 @@
 
 Constraints and platform-specific caveats to be aware of when shipping with the current SpriteStudio Player for Godot. For what *is* supported, see the workflow guides.
 
-> [!NOTE]
-> This is a living document. Items are added as they are confirmed; wording and coverage may change as the plugin evolves.
-
 ## Not Yet Implemented
 
 > [!WARNING]
