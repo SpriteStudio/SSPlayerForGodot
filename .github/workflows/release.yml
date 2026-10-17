@@ -133,8 +133,14 @@ jobs:
         shell: pwsh
         run: ./scripts/download-sdk.ps1
 
-      - name: Setup SCons Cache
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      # Restores what ci.yml's weekly run saved on develop, and saves nothing: a
+      # cache saved from a release branch or a tag is visible to that ref alone.
+      # Not on Linux: ci.yml builds that on ubuntu-latest, and SCons does not
+      # track the system headers or the compiler, so its objects would bring
+      # that image's glibc and libstdc++ into this 24.04 build.
+      - name: Restore the SCons cache
+        if: matrix.platform != 'linux'
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.scons_cache
           key: ${{ runner.os }}-${{ matrix.platform }}-scons-${{ github.sha }}
