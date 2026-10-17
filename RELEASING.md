@@ -65,7 +65,7 @@ git commit -m "chore(release): $(cat ss_player/VERSION.txt)"
 
 ### 3. Pull request, QA build and local checks
 
-Open the pull request into `main`; its CI builds the GDExtension and the custom-module engine for all six platforms, and the documentation site.
+Open the pull request into `main`; its CI builds the GDExtension and the custom-module engine for every platform, and the documentation site.
 
 ```bash
 BRANCH=$(git branch --show-current | grep '^release/')
@@ -73,7 +73,7 @@ git push -u origin "${BRANCH:?}"
 gh pr create -B main -H "${BRANCH:?}" --title "Release $(cat ss_player/VERSION.txt)" --body ""
 ```
 
-Then dispatch the release workflow from the branch. A run from a branch builds all six platforms, signs the macOS and iOS binaries, assembles the add-on and checks it, keeps the result on the run (`ssplayer-godot-release-dist-<godot>`), and creates no Release. Fix anything on the branch and run this block again, until the run, the pull request's CI and the test suite below all pass.
+Then dispatch the release workflow from the branch. A run from a branch builds every platform, signs the macOS and iOS binaries, assembles the add-on and checks it, keeps the result on the run (`ssplayer-godot-release-dist-<godot>`), and creates no Release. Fix anything on the branch and run this block again, until the run, the pull request's CI and the test suite below all pass.
 
 ```bash
 BRANCH=$(git branch --show-current | grep '^release/')
@@ -188,7 +188,7 @@ git push origin ":refs/tags/${TAG:?}" && git tag -d "${TAG:?}"
 
 ## Replaying the packaging
 
-`scripts/build-release.sh` is the package: the `addons/spritestudio/` folder a user drops into a project — the descriptor, the icons it points at, every licence the shipped binaries carry, the documentation (`README.md` and the English pages under `docs/`, from the same commit), and `bin/<platform>/` for all six — then the zip and `SHA256SUMS`. `release.yml`'s package job **is** this script. It builds nothing, so it replays a matrix run in seconds — any run from the last week, as the workflow keeps its artifacts for seven days. `<run-id>` is that run's ID. The block checks out the commit the run built first: the script takes the documentation from the checkout, and the tag it names the release by too.
+`scripts/build-release.sh` is the package: the `addons/spritestudio/` folder a user drops into a project — the descriptor, the icons it points at, every licence the shipped binaries carry, the documentation (`README.md` and the English pages under `docs/`, from the same commit), and `bin/<platform>/` for every platform — then the zip and `SHA256SUMS`. `release.yml`'s package job **is** this script. It builds nothing, so it replays a matrix run in seconds — any run from the last week, as the workflow keeps its artifacts for seven days. `<run-id>` is that run's ID. The block checks out the commit the run built first: the script takes the documentation from the checkout, and the tag it names the release by too.
 
 ```bash
 RUN=<run-id>
@@ -270,7 +270,7 @@ git commit -m "chore(release): $(cat ss_player/VERSION.txt)"
 
 ### 3. プルリクエスト、QA ビルド、手元での確認
 
-`main` へのプルリクエストを作ります。その CI が、6 プラットフォームすべての GDExtension と custom module 版エンジン、ドキュメントサイトをビルドします。
+`main` へのプルリクエストを作ります。その CI が、すべてのプラットフォームの GDExtension と custom module 版エンジン、ドキュメントサイトをビルドします。
 
 ```bash
 BRANCH=$(git branch --show-current | grep '^release/')
@@ -278,7 +278,7 @@ git push -u origin "${BRANCH:?}"
 gh pr create -B main -H "${BRANCH:?}" --title "Release $(cat ss_player/VERSION.txt)" --body ""
 ```
 
-続けて、ブランチからリリースワークフローを実行します。ブランチからの実行では、6 プラットフォームすべてをビルドし、macOS と iOS のバイナリに署名し、アドオンを組み立てて検査し、結果を run に残し（`ssplayer-godot-release-dist-<godot>`）、Release は作りません。問題があればブランチで直し、このブロックをもう一度実行します。run、プルリクエストの CI、下のテストスイートがすべて通るまで繰り返します。
+続けて、ブランチからリリースワークフローを実行します。ブランチからの実行では、すべてのプラットフォームをビルドし、macOS と iOS のバイナリに署名し、アドオンを組み立てて検査し、結果を run に残し（`ssplayer-godot-release-dist-<godot>`）、Release は作りません。問題があればブランチで直し、このブロックをもう一度実行します。run、プルリクエストの CI、下のテストスイートがすべて通るまで繰り返します。
 
 ```bash
 BRANCH=$(git branch --show-current | grep '^release/')
@@ -393,7 +393,7 @@ git push origin ":refs/tags/${TAG:?}" && git tag -d "${TAG:?}"
 
 ## パッケージングの再実行
 
-`scripts/build-release.sh` がパッケージです。ユーザーがプロジェクトに置く `addons/spritestudio/` フォルダ — 記述子、そこが参照するアイコン、同梱バイナリのライセンス一式、ドキュメント（同じコミットの `README.md` と、`docs/` の英語ページ）、6 プラットフォーム分の `bin/<platform>/` — と、その zip および `SHA256SUMS` を作ります。`release.yml` のパッケージジョブはこのスクリプトです。ビルドは一切行わないので、マトリクス実行の成果物を数秒で流し直せます。ワークフローは成果物を 7 日間保持するので、対象は直近 1 週間の run です。`<run-id>` はその run の ID です。スクリプトはドキュメントも、リリースの名前にするタグもチェックアウトから取るので、ブロックは先にその run がビルドしたコミットをチェックアウトします。
+`scripts/build-release.sh` がパッケージです。ユーザーがプロジェクトに置く `addons/spritestudio/` フォルダ — 記述子、そこが参照するアイコン、同梱バイナリのライセンス一式、ドキュメント（同じコミットの `README.md` と、`docs/` の英語ページ）、プラットフォームごとの `bin/<platform>/` — と、その zip および `SHA256SUMS` を作ります。`release.yml` のパッケージジョブはこのスクリプトです。ビルドは一切行わないので、マトリクス実行の成果物を数秒で流し直せます。ワークフローは成果物を 7 日間保持するので、対象は直近 1 週間の run です。`<run-id>` はその run の ID です。スクリプトはドキュメントも、リリースの名前にするタグもチェックアウトから取るので、ブロックは先にその run がビルドしたコミットをチェックアウトします。
 
 ```bash
 RUN=<run-id>
