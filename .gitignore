@@ -882,3 +882,7 @@ GEMINI.md
 CLAUDE.md
 .claude/
 .antigravitycli/
+
+# Pre-release provenance reports: scripts/scan-snippets.sh writes its SCANOSS
+# report here, and RELEASING.md downloads provenance.yml's ScanCode report here.
+/qa/
