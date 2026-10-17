@@ -40,7 +40,10 @@ jobs:
       matrix:
         include:
           - name: 🐧 Linux (GCC)
-            os: ubuntu-latest
+          # A Linux binary runs only on a glibc at least as new as the one it was
+          # built against, and ubuntu-latest is moving to 26.04. 24.04 keeps the
+          # floor where the SDK's Linux builds are.
+            os: ubuntu-24.04
             platform: linux
 
           - name: 🏁 Windows (x86_64, MSVC)
