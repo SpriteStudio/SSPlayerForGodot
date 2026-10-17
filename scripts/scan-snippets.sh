@@ -45,9 +45,27 @@ mkdir "$WORK/src"
 mkdir -p "$ROOT_DIR/qa"
 tar -xf "$WORK/tracked.tar" -C "$WORK/src"
 
+# The scanner returns one match per file, so a match with our own
+# repositories, public like this one, would hide any other source.
+cat > "$WORK/scanoss.json" <<'EOF'
+{"bom": {"exclude": [
+  {"purl": "pkg:github/cri-middleware/spritestudio-sdk"},
+  {"purl": "pkg:github/cri-middleware/spritestudio-docs"},
+  {"purl": "pkg:github/cri-middleware/ssconvertergui"},
+  {"purl": "pkg:github/cri-middleware/ssplayerforflutter"},
+  {"purl": "pkg:github/cri-middleware/ssplayerforgodot"},
+  {"purl": "pkg:github/cri-middleware/ssplayerforreactnative"},
+  {"purl": "pkg:github/cri-middleware/ssplayerforrenpy"},
+  {"purl": "pkg:github/cri-middleware/ssplayerforunity"},
+  {"purl": "pkg:github/cri-middleware/ssplayerforweb"},
+  {"purl": "pkg:github/cri-middleware/ssplayerforwgpu"},
+  {"purl": "pkg:github/spritestudio/ssplayerforgodot"}
+]}}
+EOF
+
 # --all-folders: by default the scanner skips any folder named example or
 # examples, and those are tracked and published like the rest.
-"$BIN/scanoss-py" scan --all-folders --threads 1 -o "$OUT" "$WORK/src"
+"$BIN/scanoss-py" scan --all-folders --threads 1 --settings "$WORK/scanoss.json" -o "$OUT" "$WORK/src"
 
 "$BIN/python" - "$OUT" <<'EOF'
 import json
