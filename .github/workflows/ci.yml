@@ -5,6 +5,8 @@ name: CI
 # main) also build it for Windows, macOS, iOS and Android, build the custom-module
 # engine on all six (Godot itself with ss_player compiled in, one target each),
 # and build the documentation site.
+# The site goes through docs.yml, which a pull request that touches the docs
+# runs on its own.
 on:
   pull_request:
     paths-ignore:
@@ -337,31 +339,9 @@ jobs:
           target: ${{ matrix.module-target }}
           options: ${{ matrix.module-options }}
 
-  # Builds the site the way pages.yml publishes it, both locales --strict, so a
-  # broken link or nav entry surfaces here rather than when a release is
-  # published.
+  # docs.yml, the build pages.yml publishes, both locales --strict. A pull
+  # request into anything but main that touches the docs runs it on its own.
   docs:
     name: 📚 Docs site
     if: github.event_name != 'pull_request' || github.base_ref == 'main'
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - name: Check the Godot versions the docs name
-        run: ./scripts/check-godot-versions.sh
-
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
-        with:
-          python-version: 3.x
-          cache: pip
-          cache-dependency-path: docs/requirements.txt
-
-      - name: Install dependencies
-        run: ./scripts/prepare-docs.sh
-
-      - name: Build the Pages tree (docs, both locales, strict validation)
-        run: ./scripts/build-pages.sh prepare=no serve=no
+    uses: ./.github/workflows/docs.yml

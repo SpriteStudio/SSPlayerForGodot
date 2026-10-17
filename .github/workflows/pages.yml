@@ -83,9 +83,9 @@ jobs:
             zensical-
 
       # Both steps below run the same scripts a contributor runs locally, rather than
-      # repeating the commands here. Nothing builds the docs on a pull request, so there
-      # is no PR run to catch a divergence between the two — the fewer places the build
-      # is spelled out, the better.
+      # repeating the commands here, and so does docs.yml, which builds the docs on a
+      # pull request. That build catches what this one would hit only while both run
+      # the scripts — the fewer places the build is spelled out, the better.
       #
       # prepare-docs.sh creates .venv and installs the pins from docs/requirements.txt;
       # build-pages.sh then finds zensical there. (It falls back to PATH when there is no
