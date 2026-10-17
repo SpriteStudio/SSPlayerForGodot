@@ -43,8 +43,7 @@ waits on the runtime is under *Needs SDK* and tracked in the
     `stretch_mode` / `expand_mode` as `TextureRect` does over the family's `fit` (`contain` / `cover` / `none`) +
     `align`; the names, defaults and arithmetic are the SDK porting guide's `50_features/70_placement.md`.
   - [ ] **Part rect read-out** — `get_part_rect(part) -> Rect2` in player-local space, built from the `PartState`
-    fields delivered every frame (`size_x` / `size_y`, `anchor`, `pivot`) and the part transform; the auto-sizing
-    collider under *Collider integration* reads the same thing.
+    fields delivered every frame (`size_x` / `size_y`, `anchor`, `pivot`) and the part transform.
   - [ ] **Per-part hit testing** — `hit_test_part(point) -> int` and a `_has_point()` override on the `Control`, so an
     irregular button stops eating clicks around its artwork and mouse filtering lets what is behind through.
   - [ ] **UI state binding** — map `normal` / `hover` / `pressed` / `disabled` / `focused` to an animation or a label,
@@ -74,11 +73,6 @@ waits on the runtime is under *Needs SDK* and tracked in the
 
 ## Backlog
 
-- [ ] **Runtime material swap** — replace a part's `ShaderMaterial` at runtime: `_partcolor_materials` assigns internal
-  shaders, so investigate whether users need to inject their own `ShaderMaterial` per part for custom effects.
-- [ ] **Collider integration** — per-part collision shapes with callbacks. A `CollisionShape2D` or `Area2D` parented to
-  a `SpriteStudioPartAttachment2D` already delegates collision to Godot's physics, so evaluate whether an auto-sizing
-  `SpriteStudioPartCollider2D` (reading the part's vertex bounds) is needed at all.
 - [ ] **Bundle MoltenVK into the self-built iOS template** — an iOS export from a template built here needs
   `MoltenVK.xcframework` embedded and signed by hand (the Build Guide's iOS export steps). Bundling it into the
   template itself (`install-template.sh` / `misc/dist/apple_embedded_xcode`) would let the export embed and sign it, as
