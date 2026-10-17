@@ -80,15 +80,6 @@ jobs:
           cache: pip
           cache-dependency-path: docs/requirements.txt
 
-      - run: echo "cache_id=$(date --utc '+%V')" >> "$GITHUB_ENV"
-
-      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          key: zensical-${{ env.cache_id }}
-          path: .cache
-          restore-keys: |
-            zensical-
-
       # Both steps below run the same scripts a contributor runs locally, rather than
       # repeating the commands here, and so does docs.yml, which builds the docs on a
       # pull request. That build catches what this one would hit only while both run
