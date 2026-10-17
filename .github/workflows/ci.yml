@@ -80,6 +80,12 @@ jobs:
           owner: 'godotengine'
           repository: 'godot-cpp'
 
+      - name: setup for gdextension
+        uses: ./.github/actions/setup-extension
+        with:
+          platform: ${{ matrix.platform }}
+          os: ubuntu-latest
+
       - name: Setup Rust (Stable)
         uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master
         with:
@@ -130,12 +136,6 @@ jobs:
           key: ${{ runner.os }}-${{ matrix.platform }}-scons-${{ steps.scons.outputs.month }}-${{ steps.scons.outputs.godot-cpp }}-${{ hashFiles('SConstruct', 'ss_player/SCsub', 'ss_player/*.py', 'ss_player/*.cpp', 'ss_player/*.h', 'ss_player/*.in', 'ss_player/VERSION.txt', 'ss_player/format/**', 'ss_player/shaders/**', 'ss_player/doc_classes/**', 'ss_player/icons/**') }}
           restore-keys: |
             ${{ runner.os }}-${{ matrix.platform }}-scons-${{ steps.scons.outputs.month }}-
-
-      - name: setup for gdextension
-        uses: ./.github/actions/setup-extension
-        with:
-          platform: ${{ matrix.platform }}
-          os: ubuntu-latest
 
       # A pull request builds one target, the one that compiles the most of
       # ss_player: the editor on Linux, template_debug on the Web, which has no

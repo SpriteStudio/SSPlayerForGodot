@@ -108,7 +108,7 @@ jobs:
       # lives inside it at site/ja. build-docs.sh owns that order; the reason it exists is
       # that the opposite order silently publishes a site with no Japanese pages at all.
       #
-      # --strict fails the build on broken links / missing nav entries, so a publish
+      # --strict fails the build on broken links, so a publish
       # aborts rather than deploying a site with a dead link.
       #
       # Every option is spelled out rather than left to the script's defaults: they are

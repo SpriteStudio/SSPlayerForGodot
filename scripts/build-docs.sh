@@ -40,7 +40,7 @@ usage () {
   echo "  -h | --help             Show this help"
   echo ""
   echo "Output: site/ (English) and site/ja/ (Japanese). Both builds are --strict, so a"
-  echo "broken internal link or a nav entry pointing at a missing page fails the build."
+  echo "broken internal link fails the build."
   echo ""
   echo "locale=en on its own DELETES site/ja: the English build clears site/, and the"
   echo "Japanese site lives inside it. Use locale=all before serving or publishing."

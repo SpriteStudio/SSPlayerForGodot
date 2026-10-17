@@ -87,6 +87,12 @@ jobs:
           owner: 'godotengine'
           repository: 'godot-cpp'
 
+      - name: setup for gdextension
+        uses: ./.github/actions/setup-extension
+        with:
+          platform: ${{ matrix.platform }}
+          os: ${{ matrix.os }}
+
       # Fetch the prebuilt SDK runtime (headers + static libs) that the
       # GDExtension build links against. Requires the SpriteStudio-SDK release
       # assets to be downloadable from GitHub Releases.
@@ -98,12 +104,6 @@ jobs:
         if: matrix.platform == 'windows'
         shell: pwsh
         run: ./scripts/download-sdk.ps1
-
-      - name: setup for gdextension
-        uses: ./.github/actions/setup-extension
-        with:
-          platform: ${{ matrix.platform }}
-          os: ${{ matrix.os }}
 
       - name: Setup SCons Cache
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0

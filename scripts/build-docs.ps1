@@ -49,7 +49,7 @@ function Show-Usage {
     Write-Host "  -h | --help             Show this help"
     Write-Host ""
     Write-Host "Output: site/ (English) and site/ja/ (Japanese). Both builds are --strict, so a"
-    Write-Host "broken internal link or a nav entry pointing at a missing page fails the build."
+    Write-Host "broken internal link fails the build."
     Write-Host ""
     Write-Host "locale=en on its own DELETES site/ja: the English build clears site/, and the"
     Write-Host "Japanese site lives inside it. Use locale=all before serving or publishing."
