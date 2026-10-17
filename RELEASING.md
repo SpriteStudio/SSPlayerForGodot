@@ -80,10 +80,9 @@ BRANCH=$(git branch --show-current | grep '^release/')
 git push origin "${BRANCH:?}" &&
   RUN=$(gh workflow run release.yml --ref "${BRANCH:?}" | sed 's|.*/||')
 gh run watch "${RUN:?}" --exit-status
-! gh run view "${RUN:?}" --log | grep -E 'not set|Skipping' | grep -v 'echo '   # must print nothing
 ```
 
-A missing signing secret does not fail the macOS and iOS jobs: they skip signing or notarization, say so in the log, and pass. The block's last command looks for that, here and in step 5, and must print nothing. If it prints anything, no change on the branch fixes it: the organization's signing secrets are not reaching this repository. An organization owner decides which repositories they reach, and on GitHub Free they cannot reach a private one. Dispatch again once they do; in step 5, delete the draft first.
+A run from a `release/` branch or a `v*` tag needs the signing secrets: without one, the macOS or iOS job fails at its first step and names what is missing. No change on the branch fixes that: the organization's signing secrets are not reaching this repository. An organization owner decides which repositories they reach, and on GitHub Free they cannot reach a private one. Dispatch again once they do; in step 5, delete the draft first. A run from any other branch skips signing or notarization instead, says so in the log, and passes.
 
 One thing no CI runs, so run it on the branch: the headless test suite (the Test section of [CONTRIBUTING.md](./CONTRIBUTING.md)). It needs no person once the toolchain is in place, but its verdict is its `RESULT` line, the marker after it and its `ENGINE` line, not its exit code.
 
@@ -129,14 +128,13 @@ git switch main && git pull --ff-only &&
 
 ### 5. Build the Release
 
-Dispatch from the tag on `main`. The run builds again and creates a **draft** Release carrying the add-on zip, `SHA256SUMS` and generated notes; nothing is public yet. A tag that already has a Release, draft or published, keeps it as it is: the run builds, says so in a notice and creates nothing, so delete a draft before dispatching again ([Undoing a release](#undoing-a-release)). With `-f upload_release=false` a run from the tag only builds, its files kept on the run. The block's last command checks the signing as in step 3.
+Dispatch from the tag on `main`. The run builds again and creates a **draft** Release carrying the add-on zip, `SHA256SUMS` and generated notes; nothing is public yet. A tag that already has a Release, draft or published, keeps it as it is: the run builds, says so in a notice and creates nothing, so delete a draft before dispatching again ([Undoing a release](#undoing-a-release)). With `-f upload_release=false` a run from the tag only builds, its files kept on the run. As in step 3, a missing signing secret fails the run.
 
 ```bash
 git fetch origin --tags
 TAG=$(git describe --exact-match --tags --match 'v[0-9]*' origin/main)
 RUN=$(gh workflow run release.yml --ref "${TAG:?}" -f upload_release=true | sed 's|.*/||')
 gh run watch "${RUN:?}" --exit-status
-! gh run view "${RUN:?}" --log | grep -E 'not set|Skipping' | grep -v 'echo '   # must print nothing
 ```
 
 ### 6. Publish
@@ -286,10 +284,9 @@ BRANCH=$(git branch --show-current | grep '^release/')
 git push origin "${BRANCH:?}" &&
   RUN=$(gh workflow run release.yml --ref "${BRANCH:?}" | sed 's|.*/||')
 gh run watch "${RUN:?}" --exit-status
-! gh run view "${RUN:?}" --log | grep -E 'not set|Skipping' | grep -v 'echo '   # 何も出力されないこと
 ```
 
-署名の Secret が欠けていても macOS と iOS のジョブは失敗しません。署名や公証を飛ばし、その旨をログに出して成功します。ブロックの最後のコマンドはそれを探すもので、ここでも手順 5 でも何も出力されてはいけません。何か出力されたら、ブランチをどう変えても直りません。組織の署名用 Secret がこのリポジトリに届いていません。どのリポジトリに届けるかは組織のオーナーが決めますが、GitHub Free では private のリポジトリには届けられません。届くようになったら実行し直してください。手順 5 では先に下書きを消します。
+`release/` ブランチや `v*` タグからの実行には署名の Secret が必要です。欠けていると、macOS か iOS のジョブが最初のステップで失敗し、足りない Secret の名前を出します。ブランチをどう変えてもこれは直りません。組織の署名用 Secret がこのリポジトリに届いていません。どのリポジトリに届けるかは組織のオーナーが決めますが、GitHub Free では private のリポジトリには届けられません。届くようになったら実行し直してください。手順 5 では先に下書きを消します。ほかのブランチからの実行では、署名や公証を飛ばし、その旨をログに出して成功します。
 
 どの CI も実行しないものが 1 つあるので、ブランチ上で実行してください。ヘッドレスのテストスイート（[CONTRIBUTING.md](./CONTRIBUTING.md) のテストの節）です。ツールチェーンが揃っていれば人の手は要りませんが、判定は終了コードではなく、`RESULT` の行、その後のマーカー、`ENGINE` の行で行います。
 
@@ -335,14 +332,13 @@ git switch main && git pull --ff-only &&
 
 ### 5. Release のビルド
 
-`main` 上のタグからワークフローを実行します。もう一度ビルドし、アドオンの zip と `SHA256SUMS`、自動生成のリリースノートを持つ**下書き**の Release を作ります。まだ何も公開されていません。Release がすでにあるタグでは、下書きでも公開済みでも、その Release に触れません。run はビルドして notice を出すだけなので、もう一度実行するときは先に下書きを消します（[リリースの取り消し](#リリースの取り消し)）。`-f upload_release=false` を付けると、タグからの実行でもビルドだけを行い、成果物を run に残します。ブロックの最後のコマンドで、手順 3 と同じように署名を確認します。
+`main` 上のタグからワークフローを実行します。もう一度ビルドし、アドオンの zip と `SHA256SUMS`、自動生成のリリースノートを持つ**下書き**の Release を作ります。まだ何も公開されていません。Release がすでにあるタグでは、下書きでも公開済みでも、その Release に触れません。run はビルドして notice を出すだけなので、もう一度実行するときは先に下書きを消します（[リリースの取り消し](#リリースの取り消し)）。`-f upload_release=false` を付けると、タグからの実行でもビルドだけを行い、成果物を run に残します。手順 3 と同じく、署名の Secret が欠けていれば実行は失敗します。
 
 ```bash
 git fetch origin --tags
 TAG=$(git describe --exact-match --tags --match 'v[0-9]*' origin/main)
 RUN=$(gh workflow run release.yml --ref "${TAG:?}" -f upload_release=true | sed 's|.*/||')
 gh run watch "${RUN:?}" --exit-status
-! gh run view "${RUN:?}" --log | grep -E 'not set|Skipping' | grep -v 'echo '   # 何も出力されないこと
 ```
 
 ### 6. 公開

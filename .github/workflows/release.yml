@@ -74,6 +74,31 @@ jobs:
           submodules: recursive
           persist-credentials: false
 
+      - name: Require the signing secrets
+        if: (matrix.platform == 'macos' || matrix.platform == 'ios') && (startsWith(github.ref, 'refs/tags/v') || startsWith(github.ref, 'refs/heads/release/'))
+        shell: bash
+        env:
+          PLATFORM: ${{ matrix.platform }}
+          APPLE_DEV_ID_APP_CERT: ${{ secrets.APPLE_DEV_ID_APP_CERT }}
+          APPLE_DEV_ID_APP_CERT_PASS: ${{ secrets.APPLE_DEV_ID_APP_CERT_PASS }}
+          APPLE_DEV_ID_APP_NAME: ${{ secrets.APPLE_DEV_ID_APP_NAME }}
+          ASC_API_KEY_PASS: ${{ secrets.ASC_API_KEY_PASS }}
+          ASC_API_ISSUER_ID: ${{ secrets.ASC_API_ISSUER_ID }}
+          ASC_API_KEY_ID: ${{ secrets.ASC_API_KEY_ID }}
+        run: |
+          required="APPLE_DEV_ID_APP_CERT APPLE_DEV_ID_APP_CERT_PASS APPLE_DEV_ID_APP_NAME"
+          if [ "$PLATFORM" = macos ]; then
+            required="$required ASC_API_KEY_PASS ASC_API_ISSUER_ID ASC_API_KEY_ID"
+          fi
+          missing=""
+          for name in $required; do
+            [ -n "${!name}" ] || missing="$missing $name"
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::a run from $GITHUB_REF_NAME ships signed, and these secrets are not set:$missing"
+            exit 1
+          fi
+
       # The API every platform builds against is the floor the descriptor names.
       - name: Read the Godot API the extension targets
         shell: bash
