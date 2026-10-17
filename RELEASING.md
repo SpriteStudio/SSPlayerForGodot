@@ -141,7 +141,7 @@ gh run view "${RUN:?}" --log | grep -E 'not set|Skipping' | grep -v 'echo '   # 
 
 ### 6. Publish
 
-**A person runs this step**: the notes and the choice between a pre-release and the latest release are judgments, and a published Release is permanent. Open the draft on the [Releases](https://github.com/cri-middleware/SSPlayerForGodot/releases) page, check that the add-on zip and `SHA256SUMS` are attached, edit the notes, choose **Set as a pre-release** or **Set as the latest release** (a tag with a `-` can be either), and **Publish release**.
+**A person runs this step**: the notes are a judgment, and a published Release is permanent. Open the draft on the [Releases](https://github.com/cri-middleware/SSPlayerForGodot/releases) page, check that the add-on zip and `SHA256SUMS` are attached, edit the notes, and **Publish release** as the draft is marked: `scripts/release-channel.sh` made it a pre-release when a full release is already tagged, and left it to become Latest otherwise. Only a Release that becomes Latest deploys the site.
 
 Publishing also starts `pages.yml`, which deploys the [documentation site](https://cri-middleware.github.io/SSPlayerForGodot/). Watch the run through, then open the site: a failed run leaves the Release published and the site as it was. Once the cause is fixed, re-run it with `gh run rerun "${RUN:?}"`; a re-run builds the same tag.
 
@@ -346,7 +346,7 @@ gh run view "${RUN:?}" --log | grep -E 'not set|Skipping' | grep -v 'echo '   # 
 
 ### 6. 公開
 
-**この手順は人が行います。** リリースノートの中身と、pre-release か latest かの選択は判断が要り、公開した Release は取り消せないためです。[Releases](https://github.com/cri-middleware/SSPlayerForGodot/releases) ページで下書きを開き、アドオンの zip と `SHA256SUMS` が添付されていることを確かめ、リリースノートを編集し、**Set as a pre-release** か **Set as the latest release** を選んで（`-` を含むタグはどちらも選べます）、**Publish release** を押します。
+**この手順は人が行います。** リリースノートの中身は判断が要り、公開した Release は取り消せないためです。[Releases](https://github.com/cri-middleware/SSPlayerForGodot/releases) ページで下書きを開き、アドオンの zip と `SHA256SUMS` が添付されていることを確かめ、リリースノートを編集し、下書きの印のまま **Publish release** を押します。`scripts/release-channel.sh` が、正式版のタグがすでにあれば pre-release にし、なければ Latest になるようにしてあります。サイトをデプロイするのは Latest になる Release だけです。
 
 公開すると `pages.yml` が動き、[ドキュメントサイト](https://cri-middleware.github.io/SSPlayerForGodot/) をデプロイします。run を最後まで見届けてから、サイトを開いて確かめます。run が失敗しても Release は公開されたままで、サイトは元のまま残ります。原因を直したら `gh run rerun "${RUN:?}"` で再実行します。再実行は同じタグをビルドします。
 

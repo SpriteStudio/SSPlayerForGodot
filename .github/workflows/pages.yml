@@ -26,7 +26,40 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # A Release deploys the site only when it becomes Latest
+  # (scripts/release-channel.sh, read from the default branch): a pre-release
+  # once its package has a full release, or a patch to an earlier line, leaves
+  # the site as it is. A dispatch always deploys.
+  channel:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      deploy: ${{ steps.channel.outputs.deploy }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-tags: true
+          persist-credentials: false
+      - id: channel
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" != release ]; then
+            echo "deploy=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          channel="$(./scripts/release-channel.sh "$TAG")"
+          echo "::notice::${TAG} is a ${channel} release"
+          if [ "$channel" = latest ]; then
+            echo "deploy=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "deploy=false" >> "$GITHUB_OUTPUT"
+          fi
+
   build:
+    needs: channel
+    if: needs.channel.outputs.deploy == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
