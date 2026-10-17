@@ -165,6 +165,37 @@ git switch --detach origin/develop &&
 
 If the button on its pull request already deleted the release branch, the last line only reports that the branch does not exist. Nothing needs it afterwards: the line's next release cuts it again in step 1.
 
+## Patching an earlier line
+
+Fixes go to the latest release (SECURITY.md). When one has to reach an earlier line on request, as 7.0.2 after 7.1.0, `main` and `develop` carry the newer line, so the release differs from the one above in four places, and the blocks below run on the release branch.
+
+1. **Steps 1 to 3, without the pull request.** Step 1's patch block cuts `release/X.Y` from the line's latest tag. Commit or cherry-pick the fix onto it, set the version and date its changelog section as step 2 does, and run step 3 but leave out its `gh pr create`: nothing of this line goes into `main`.
+2. **The tag goes on the branch.** Once step 3's runs are green, the first block below tags the head of `release/X.Y`.
+3. **Build it, and publish it as an earlier line.** `scripts/release-channel.sh` calls the release `old`: the draft is not a pre-release, its generated notes start from the full release before it in that line, and `pages.yml` deploys nothing for it. Publish the Release with the last block, not from the Releases page, whose default would make it Latest.
+4. **No merge back.** Cherry-pick the fix onto `develop` if it still needs it; the last block deletes `release/X.Y`.
+
+```bash
+BRANCH=$(git branch --show-current | grep '^release/')
+git pull --ff-only origin "${BRANCH:?}" &&
+  TAG=$(cat ss_player/VERSION.txt) &&
+  git tag -a "$TAG" -m "$TAG" && git push origin "$TAG"
+```
+
+```bash
+git fetch origin --tags
+TAG=$(git describe --exact-match --tags --match 'v[0-9]*' HEAD)
+RUN=$(gh workflow run release.yml --ref "${TAG:?}" -f upload_release=true | sed 's|.*/||')
+gh run watch "${RUN:?}" --exit-status
+```
+
+```bash
+git fetch origin --tags
+TAG=$(git describe --exact-match --tags --match 'v[0-9]*' HEAD)
+BRANCH=$(git branch --show-current | grep '^release/')
+gh release edit "${TAG:?}" --draft=false --latest=false &&
+  git push origin --delete "${BRANCH:?}"
+```
+
 ## Undoing a release
 
 Until the Release is published, it can be undone. The draft goes first, if the run made one:
@@ -368,6 +399,37 @@ git switch --detach origin/develop &&
 ```
 
 プルリクエストのページのボタンでリリースブランチを消してあれば、最後の行は「ブランチが無い」と出るだけです。同じ系統の次のリリースは手順 1 で切り直すので、この後ブランチが要ることはありません。
+
+## 古い系統へのパッチ
+
+修正は最新のリリースにだけ出します（SECURITY.md）。依頼を受けて古い系統を直すとき（7.1.0 の後の 7.0.2 など）は、`main` と `develop` が新しい系統を持っているので、上の手順と 4 か所が違います。下のブロックはリリースブランチで実行します。
+
+1. **手順 1〜3 を、プルリクエストなしで。** 手順 1 のパッチのブロックで、その系統の最新のタグから `release/X.Y` を切ります。修正をコミットするか cherry-pick し、手順 2 のとおりにバージョンを設定して CHANGELOG の節に日付を入れ、手順 3 を `gh pr create` を除いて実行します。この系統のものは `main` に入れません。
+2. **タグはブランチに打つ。** 手順 3 の run が通ったら、最初のブロックで `release/X.Y` の先頭にタグを打ちます。
+3. **ビルドして、古い系統として公開する。** `scripts/release-channel.sh` がこのリリースを `old` と判定します。下書きは pre-release にならず、自動生成のノートはその系統の 1 つ前の正式版から比べ、`pages.yml` は何もデプロイしません。公開は Releases ページではなく最後のブロックで行います。ページの既定のままだと Latest になるためです。
+4. **develop へは戻さない。** `develop` にも要る修正なら cherry-pick します。最後のブロックが `release/X.Y` を消します。
+
+```bash
+BRANCH=$(git branch --show-current | grep '^release/')
+git pull --ff-only origin "${BRANCH:?}" &&
+  TAG=$(cat ss_player/VERSION.txt) &&
+  git tag -a "$TAG" -m "$TAG" && git push origin "$TAG"
+```
+
+```bash
+git fetch origin --tags
+TAG=$(git describe --exact-match --tags --match 'v[0-9]*' HEAD)
+RUN=$(gh workflow run release.yml --ref "${TAG:?}" -f upload_release=true | sed 's|.*/||')
+gh run watch "${RUN:?}" --exit-status
+```
+
+```bash
+git fetch origin --tags
+TAG=$(git describe --exact-match --tags --match 'v[0-9]*' HEAD)
+BRANCH=$(git branch --show-current | grep '^release/')
+gh release edit "${TAG:?}" --draft=false --latest=false &&
+  git push origin --delete "${BRANCH:?}"
+```
 
 ## リリースの取り消し
 
