@@ -1,0 +1,65 @@
+name: Docs
+
+# Builds the documentation the way pages.yml publishes it, both locales
+# --strict, so a broken link or nav entry surfaces before a release
+# publishes it.
+#
+# A pull request that touches the site's sources runs this on its own. ci.yml
+# calls it as well, for the weekly run, a dispatch and the release PR: that PR
+# targets main, which the trigger below leaves to ci.yml so it does not run
+# twice. ci.yml cannot carry the pull-request half itself, because it ignores a
+# change to Markdown alone, and the docs are almost nothing else.
+on:
+  pull_request:
+    branches-ignore:
+      - main
+    paths:
+      - 'docs/**'
+      - 'overrides/**'
+      - 'mkdocs*.yml'
+      - 'scripts/prepare-docs.*'
+      - 'scripts/build-docs.*'
+      - 'scripts/build-pages.*'
+      - 'README*.md'
+      - 'CONTRIBUTING.md'
+      - 'misc/ADDON_README.md'
+      - 'misc/spritestudio.gdextension'
+      - 'ss_player/ss_macros.h'
+      - 'scripts/GODOT_VERSION.txt'
+      - 'scripts/godot-api-version.*'
+      - 'scripts/check-godot-versions.sh'
+      - '.github/workflows/docs.yml'
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docs-${{ github.event_name }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: 📚 Docs site
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Check the Godot versions the docs name
+        run: ./scripts/check-godot-versions.sh
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: 3.x
+          cache: pip
+          cache-dependency-path: docs/requirements.txt
+
+      - name: Install dependencies
+        run: ./scripts/prepare-docs.sh
+
+      - name: Build the Pages tree (docs, both locales, strict validation)
+        run: ./scripts/build-pages.sh prepare=no serve=no
