@@ -1,8 +1,8 @@
 # Auto detect text files and perform LF normalization
 * text=auto eol=lf
 
-# Explicitly declare text files you want to always be normalized and converted
-# to native line endings on checkout.
+# Explicitly declare text files you want to always be normalized. The eol=lf
+# above still applies, so they are checked out with LF on every platform.
 *.c text
 *.cpp text
 *.h text

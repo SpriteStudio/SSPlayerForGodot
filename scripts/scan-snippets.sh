@@ -12,16 +12,8 @@
 set -euo pipefail
 
 APP="$(basename "$0")"
-usage () {
-  echo "Usage: $APP"
-  echo "Takes no options. Writes qa/scanoss-<commit>.json for the files tracked at HEAD"
-  echo "and prints every match as a Markdown table."
-}
-case "${1:-}" in
-  -h | --help) usage; exit 0 ;;
-esac
 if [ "$#" -gt 0 ]; then
-  usage >&2
+  echo "Usage: $APP" >&2
   exit 2
 fi
 
