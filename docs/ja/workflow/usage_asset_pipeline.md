@@ -14,7 +14,7 @@ SpriteStudio Player for Godot は単にアニメーションを再生するだ�
 2. 出力先（デフォルトは `res://ssab_generated`）を確認します。
 3. エクスプローラーや Finder から、目的の **`.sspj` ファイルを「SS Importer」ドックへドラッグ＆ドロップ** します。
 
-これだけでコンバート処理が走り、指定した出力先に `.ssab` と `.ssqb` が生成されます。生成された `.ssab` を 2D ビューポートへドラッグ＆ドロップして、あらかじめ `SpriteStudioPlayer2D` ノードを配置しておきましょう（詳細は [基本的な使い方](usage_basic.md) を参照）。
+これだけでコンバート処理が走ります。`.ssab` と `.ssqb` は、テクスチャと一緒に、出力先の下の `.sspj` と同じ名前のフォルダに書き出されます（`Ringo.sspj` なら `res://ssab_generated/Ringo/`。[生成アセットの構成と配信](generated_assets.md) を参照）。生成された `.ssab` を 2D ビューポートへドラッグ＆ドロップして、あらかじめ `SpriteStudioPlayer2D` ノードを配置しておきましょう（詳細は [基本的な使い方](usage_basic.md) を参照）。
 
 > [!TIP]
 > 
