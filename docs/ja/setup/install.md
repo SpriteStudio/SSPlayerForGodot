@@ -9,7 +9,17 @@ SpriteStudio Player for Godot を使い始めるための手順です。
 1. [公式サイト](https://godotengine.org/download/) より 4.7 系の Godot Engine をダウンロードします。
 2. [SSPlayerForGodot の最新の Release](https://github.com/cri-middleware/SSPlayerForGodot/releases/latest) を開き、**Assets** から `ssplayer-godot-extension-<Godot のバージョン>.zip` をダウンロードします。全プラットフォーム分のバイナリが 1 つの ZIP に入っています。
 3. ダウンロードした ZIP を解凍し、中にある `addons` フォルダをそのまま Godot プロジェクトのルートディレクトリにコピーします。
-   * 正しく配置されると、`res://addons/spritestudio/spritestudio.gdextension` が存在する状態になります。
+
+    ```
+    MyGame/                         ← project.godot のあるフォルダ
+    ├── addons/
+    │   └── spritestudio/           ← ZIP の addons/ から
+    │       ├── spritestudio.gdextension
+    │       ├── bin/
+    │       └── …
+    └── project.godot
+    ```
+
 4. Godot エディタを再起動すると `SpriteStudioPlayer2D` ノードや SS Importer ドックが利用可能になります。
 
 ## B. SpriteStudio Player for Godot のカスタムモジュールを組み込んだ Godot Engine を利用する
