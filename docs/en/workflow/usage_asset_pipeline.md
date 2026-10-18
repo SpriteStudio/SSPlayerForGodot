@@ -14,7 +14,7 @@ If there is no `.ssab` in your Godot project yet, you first need to import (conv
 2. Check the output directory (default is `res://ssab_generated`).
 3. **Drag and drop the `.sspj` file** from your Explorer/Finder into the "SS Importer" dock.
 
-This triggers the conversion process, generating `.ssab` and `.ssqb` files in the specified output directory.
+This triggers the conversion process. The `.ssab` and `.ssqb` files, with the textures beside them, are written to a folder named after the `.sspj` in the output directory — `res://ssab_generated/Ringo/` for `Ringo.sspj` (see [Generated Assets and Packs](generated_assets.md)).
 Drag and drop the generated `.ssab` file into the 2D viewport to place a `SpriteStudioPlayer2D` node in advance (see [Basic Usage](usage_basic.md) for details).
 
 > [!TIP]
