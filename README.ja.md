@@ -40,13 +40,29 @@
 
 [公式サイト](https://godotengine.org/download/) から 4.7 系の Godot エディタを用意してください。対応するのは **SpriteStudio 7.5 以上**で作成されたプロジェクトです。
 
-1. **配置**: [最新の Release](https://github.com/cri-middleware/SSPlayerForGodot/releases/latest) を開き、**Assets** から `ssplayer-godot-extension-<Godot のバージョン>.zip` をダウンロードします（タグが `v1` で始まる Release は 1.x 系のプラグインで、`SSABResource` も `SpriteStudioPlayer2D` もありません）。展開して、`addons` フォルダをご自身の Godot プロジェクトのルートにコピーします。
-2. **インポート**: `.sspj` をファイルマネージャーから **SS Importer** ドックへドラッグ＆ドロップして `.ssab` へ変換します（[アセットのインポートとエディタ連携](./docs/ja/workflow/usage_asset_pipeline.md) を参照）。
-3. **再生**: `SpriteStudioPlayer2D` ノードを追加し、`Ssab` プロパティに生成された `.ssab` を指定します。
+1. **配置**: [最新の Release](https://github.com/cri-middleware/SSPlayerForGodot/releases/latest) を開き、**Assets** から `ssplayer-godot-extension-<Godot のバージョン>.zip` をダウンロードします（タグが `v1` で始まる Release は 1.x 系のプラグインで、`SSABResource` も `SpriteStudioPlayer2D` もありません）。展開して `addons` フォルダをご自身の Godot プロジェクトのルートにコピーし、エディタを再起動します。
+2. **インポート**: `.sspj` をファイルマネージャーから **SS Importer** ドックへドラッグ＆ドロップします。ドックの既定の出力先 `res://ssab_generated/` の下に、`.sspj` と同じ名前のフォルダで変換されます（[アセットのインポートとエディタ連携](./docs/ja/workflow/usage_asset_pipeline.md) を参照）。
+
+   ```
+   MyGame/                         ← project.godot のあるフォルダ
+   ├── addons/
+   │   └── spritestudio/           ← ZIP の addons/ から
+   │       ├── spritestudio.gdextension
+   │       ├── bin/
+   │       └── …
+   ├── ssab_generated/
+   │   └── Ringo/                  ← Ringo.sspj から変換される
+   │       ├── Ringo.ssab
+   │       ├── Ringo.png
+   │       └── …
+   └── project.godot
+   ```
+
+3. **再生**: FileSystem ドックから `res://ssab_generated/Ringo/Ringo.ssab` を 2D ビューポートへドラッグ＆ドロップします。`Ssab` プロパティにそのパックが入り、先頭のアニメーションが選ばれた `SpriteStudioPlayer2D` ノードが置かれるので、シーンを実行すると再生されます。
 
 SpriteStudio のデータが手元に無くても始められます。[公式のサンプルデータ](https://www.webtech.co.jp/help/ja/spritestudio7/download/sample/)がそのまま使えます。キャラクターなら [Ringo](https://www.webtech.co.jp/help/ja/spritestudio7/download/sample/#ringo)、エフェクトを含むものなら [パーティクル](https://www.webtech.co.jp/help/ja/spritestudio7/download/sample/#Perticle_sample) が手頃です。
 
-詳細は [インストールガイド](./docs/ja/setup/install.md) を参照してください。
+**次に読む:** [インストール](./docs/ja/setup/install.md) · [基本的な使い方](./docs/ja/workflow/usage_basic.md) · [制約と適用範囲](./docs/ja/limitations.md)
 
 ## 🔗 関連リポジトリ
 

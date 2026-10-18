@@ -42,13 +42,29 @@ Everything after that (scripting, signals, per-part overrides) is the same path 
 
 You need a 4.7-series Godot editor from the [official site](https://godotengine.org/download/). Projects have to be authored in **SpriteStudio 7.5 or later**.
 
-1. **Install**: Open the [latest Release](https://github.com/cri-middleware/SSPlayerForGodot/releases/latest) and download `ssplayer-godot-extension-<Godot version>.zip` from its **Assets** — the Releases whose tag starts with `v1` are the 1.x plugin, which has neither `SSABResource` nor `SpriteStudioPlayer2D`. Extract it, and copy its `addons` folder into your Godot project root.
-2. **Import**: Drag your `.sspj` from your file manager onto the **SS Importer** dock to convert it to `.ssab` (see [Asset Import and Editor Integration](./docs/en/workflow/usage_asset_pipeline.md)).
-3. **Play**: Add a `SpriteStudioPlayer2D` node and assign the `.ssab` to its `Ssab` property.
+1. **Install**: Open the [latest Release](https://github.com/cri-middleware/SSPlayerForGodot/releases/latest) and download `ssplayer-godot-extension-<Godot version>.zip` from its **Assets** — the Releases whose tag starts with `v1` are the 1.x plugin, which has neither `SSABResource` nor `SpriteStudioPlayer2D`. Extract it, copy its `addons` folder into your Godot project root, and restart the editor.
+2. **Import**: Drag your `.sspj` from your file manager onto the **SS Importer** dock. It is converted into a folder named after it under `res://ssab_generated/`, the dock's default output folder (see [Asset Import and Editor Integration](./docs/en/workflow/usage_asset_pipeline.md)).
+
+   ```
+   MyGame/                         ← the folder holding project.godot
+   ├── addons/
+   │   └── spritestudio/           ← from the ZIP's addons/
+   │       ├── spritestudio.gdextension
+   │       ├── bin/
+   │       └── …
+   ├── ssab_generated/
+   │   └── Ringo/                  ← converted from Ringo.sspj
+   │       ├── Ringo.ssab
+   │       ├── Ringo.png
+   │       └── …
+   └── project.godot
+   ```
+
+3. **Play**: Drag `res://ssab_generated/Ringo/Ringo.ssab` from the FileSystem dock into the 2D viewport. That places a `SpriteStudioPlayer2D` node with the pack in its `Ssab` property and its first animation selected; run the scene to see it play.
 
 No `.sspj` of your own yet? SpriteStudio's [official sample data](https://www.webtech.co.jp/help/ja/spritestudio7/download/sample/) works as-is — the page is in Japanese, the downloads are not. [Ringo](https://www.webtech.co.jp/help/ja/spritestudio7/download/sample/#ringo) is a good character to start with, and [Particle](https://www.webtech.co.jp/help/ja/spritestudio7/download/sample/#Perticle_sample) a good one for effects.
 
-For more details, see the [Installation Guide](./docs/en/setup/install.md).
+**Read next:** [Installation](./docs/en/setup/install.md) · [Basic Usage](./docs/en/workflow/usage_basic.md) · [Limitations & Scope](./docs/en/limitations.md)
 
 ## 🔗 Related Repositories
 
