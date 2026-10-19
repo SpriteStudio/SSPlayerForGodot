@@ -79,6 +79,7 @@ Once the node is selected, you can adjust various settings from Godot's Inspecto
 | `Animation Process Mode`   | int      | Whether to sync with `_physics_process` (Physics) or `_process` (Idle), or to leave stepping to `advance()` (Manual) |
 | `Play Audio`               | bool     | Whether the built-in player sounds the animation's audio parts (see [Audio Playback](audio.md)) |
 | `Audio Volume`             | float    | Linear volume `[0, 1]` for the built-in audio playback |
+| `Audio Bus`                | StringName | Bus the built-in audio playback plays on (Default: `Master`) |
 | `Audio Backend`            | Resource | Optional `SpriteStudioAudioBackend` that replaces the built-in audio playback |
 
 > [!NOTE]

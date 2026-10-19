@@ -91,7 +91,7 @@ graph LR
 - **godot-cpp**: [master ブランチ](https://github.com/godotengine/godot-cpp/tree/master)
 
 > [!NOTE]
-> GDExtension は Godot 4.7 以降から正式サポートされます。
+> このプラグインの GDExtension 版は Godot 4.7 以降に対応しています。
 
 Windows / macOS でのビルドおよび実行を確認しています。
 

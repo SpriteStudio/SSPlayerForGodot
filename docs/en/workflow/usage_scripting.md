@@ -55,7 +55,7 @@ One of the most powerful features for Godot users is event linkage using "Signal
 * `audio(payload)`: Emitted when reaching an audio key. Observation only — the player sounds it as well unless you turn that off. See [Audio Playback](audio.md).
 * `frame_updated(frame_no)`: Emitted right after the frame's part poses are finalized. See [Part Tracking](#part-tracking-following-a-specified-part).
 
-All three timeline events (`user_data`, `signal_emitted`, `audio`) carry the same origin fields — `part_index`, `part_name` and `frame_no` — so a handler can tell *which* part fired without keeping a table of its own. On `user_data` and `audio` they sit in the payload; on `signal_emitted` they arrive as the separate `info` argument, because `value`'s keys are the parameter ids the animator authored and a fixed key could shadow one.
+All three timeline events (`user_data`, `signal_emitted`, `audio`) carry the same origin fields — `part_index`, `part_name`, `frame_no` and `source` — so a handler can tell *which* part fired without keeping a table of its own. On `user_data` and `audio` they sit in the payload; on `signal_emitted` they arrive as the separate `info` argument, because `value`'s keys are the parameter ids the animator authored and a fixed key could shadow one.
 
 ### Example: Sequential Animation Playback
 Here is an example where an "idle" animation automatically plays after an "attack" animation finishes.
@@ -103,7 +103,7 @@ func _ready():
 
 func _on_signal_emitted(command: String, value: Dictionary, info: Dictionary):
     # `value` is keyed by the parameter ids authored in SpriteStudio.
-    # `info` says where the key came from: part_index / part_name / frame_no.
+    # `info` says where the key came from: part_index / part_name / frame_no / source.
     if command == "spawn_effect":
         var effect_name: String = value.get("name", "")
         spawn_effect_at(effect_name, ss_player.get_part_transform(info["part_name"]))

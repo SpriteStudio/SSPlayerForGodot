@@ -28,7 +28,7 @@ git clone https://github.com/godotengine/godot-cpp.git -b master
 
 ## ビルド環境のセットアップ
 
-各プラットフォーム向けのビルドツール (コンパイラ・Python・SCons など) の準備は、Godot 公式のコンパイル手順を参照してください。
+各プラットフォーム向けのビルドツール (コンパイラ・Python・SCons など) の準備は、Godot 公式のコンパイル手順を参照してください。macOS / Linux のビルドスクリプト（`scripts/*.sh`）は zsh で動くため、zsh も必要です。
 
 - [Windows](https://docs.godotengine.org/ja/stable/engine_details/development/compiling/compiling_for_windows.html)
 - [macOS](https://docs.godotengine.org/ja/stable/engine_details/development/compiling/compiling_for_macos.html)
@@ -143,7 +143,7 @@ $env:PYTHONUTF8=1
 カスタムモジュールとして組み込んだプラグインのC++コード（`ss_player` 以下）をデバッグしたい場合は、以下の手順で行います。
 
 1. **デバッグ用バイナリの確認**
-   `target=editor` あるいは `target=template_debug` を指定してビルドしたGodotバイナリには、デフォルトでデバッグシンボルが含まれています。
+   `target=editor` や `target=template_debug` でも、Godot のビルドは既定ではデバッグシンボルを含みません。`debug_symbols=yes` を付けてビルドしてください（`./scripts/build.sh debug_symbols=yes`、Windows では `.ps1`）。出力先は次のとおりです。
    * **macOS:** `godot/Godot.app/Contents/MacOS/Godot`
    * **Windows:** `godot/bin/godot.windows.editor.x86_64.exe` 等
    * **Linux:** `godot/bin/godot.linuxbsd.editor.x86_64` 等

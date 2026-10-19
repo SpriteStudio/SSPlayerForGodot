@@ -11,7 +11,7 @@
 拡張が読み込まれていません。**GDExtension** 形態では次の順に確認してください。
 
 1. `res://addons/spritestudio/spritestudio.gdextension` が存在するか。`addons` フォルダは**プロジェクトルート**に置く必要があります（サブフォルダではありません）。
-2. エディタが **Godot 4.7** ビルドか。GDExtension は 4.7 から正式サポートで、異なる `godot-cpp` でビルドされたライブラリは読み込まれません。
+2. エディタが **Godot 4.7 以降** か。このプラグインの対応は 4.7 からで（`spritestudio.gdextension` の `compatibility_minimum = "4.7"`）、それより古いエディタでは読み込まれません。
 3. `addons/spritestudio/bin/<platform>/` に実行中プラットフォーム向けのライブラリがあるか。出力パネルに、開こうとしたファイル名が出ます。
 
 **カスタムモジュール** 形態には `addons` フォルダがありません。実行中のエディタバイナリにモジュールが組み込まれている場合にのみノードが存在します。
@@ -26,7 +26,7 @@
 
 ### アニメーションが選択されていない
 
-`.ssab` を割り当てただけでは再生されません。**Animation** ドロップダウンで名前を選ぶ（または `set_animation()` を呼ぶ）→ `play()`、もしくは **Autoplay** を有効にしてください。
+`.ssab` を割り当てただけでは再生されません。**Current Animation** ドロップダウンで名前を選ぶ（または `set_animation()` を呼ぶ）→ `play()`、もしくは **Autoplay** を有効にしてください。
 
 ### アニメーション名が存在しない
 
@@ -36,7 +36,7 @@
 [SS] res://ssab_generated/Ringo/Ringo.ssab has no animation "wakl".
 ```
 
-**Animation** ドロップダウンには実在する名前しか出ないので、これはスクリプトの `set_animation()` です。綴り間違いか、別のパックの名前を渡しているのが大半 — パック名も出しているのはそのためです。パックが実際に持っている一覧は `get_animation_names()` で取れます。
+**Current Animation** ドロップダウンには実在する名前しか出ないので、これはスクリプトの `set_animation()` です。綴り間違いか、別のパックの名前を渡しているのが大半 — パック名も出しているのはそのためです。パックが実際に持っている一覧は `get_animation_names()` で取れます。
 
 確かめるのに `get_current_animation()` は使えません。`set_animation("wakl")` の後でも `"wakl"` を返し、`get_total_frames()` は直前のアニメーションの値のままです。スクリプトや CI で確かめるなら、名前をその一覧と照合する手順を [コマンドラインで再生を検証する](workflow/verify_playback.md) に載せています。
 

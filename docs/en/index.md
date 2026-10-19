@@ -94,7 +94,7 @@ graph LR
 - **godot-cpp**: [master branch](https://github.com/godotengine/godot-cpp/tree/master)
 
 > [!NOTE]
-> GDExtension is officially supported starting from Godot 4.7.
+> The plugin's GDExtension build supports Godot 4.7 and later.
 
 Build and execution have been verified on Windows / macOS.
 

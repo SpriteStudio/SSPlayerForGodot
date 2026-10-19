@@ -39,7 +39,7 @@ func _ready() -> void:
 * `just_looped() -> bool`: 直近の update でループ境界を跨いだかどうか。**パルス**であって状態ではありません — ランタイムが毎 update の冒頭でクリアするので、跨いだ tick の内側でのみ `true` です（だから `is_looped` ではありません。1 tick 遅れて読むと `false` になります）。ポーリングしたくなければ `animation_looped` シグナルが同じエッジを配ります。
 * `get_animation_names() -> PackedStringArray`: 割り当てた [SSABResource] のアニメーション名一覧。`current_animation` プロパティが選ぶのと同じリストです。
 * `is_playing_forward() -> bool`: 再生ヘッドが**実際に**進んでいる向きです。設定した向きを返す `get_playback_direction()` とは別物で、ピンポン再生の戻りの脚では `get_playback_direction()` が `PLAYBACK_DIRECTION_FORWARD` のままでもこちらは `false` になります（速度 0 以下は逆再生ではなく停止なので、これも反転しません）。**音声のゲートに使ってください** — SpriteStudio に逆再生音声は無いため、後ろ向きの脚で跨いだサウンドキーは鳴らすべきものではありません。`play_audio` が有効なときにプレイヤー自身が掛けている判定と同じものです。何も再生していないときは `true`（前進が既定の状態）。
-* `set_frame_no(frame: float)` / `get_frame_no() -> float` / `get_total_frames() -> int`
+* `set_frame_no(frame: float)` / `get_frame_no() -> float` / `get_total_frames() -> int`: `get_total_frames()` は現在の再生区間のフレーム数（`get_end_frame() - get_start_frame() + 1`）です。`set_animation_section()` で区間を狭めると、アニメーション全体ではなく区間の長さを返します。
 * `get_start_frame() -> int` / `get_end_frame() -> int`: 実際に再生される先頭 / 末尾フレーム、すなわち現在の再生区間です。`get_animation_section_start()` / `get_animation_section_end()` と同じ値を返します（`set_animation_section()` で狭めるまではアニメーション全体）。
 * `set_speed_scale(speed_scale: float)` / `get_speed_scale() -> float`
 * `set_frame_rate(fps: int)` / `get_frame_rate() -> int`
@@ -47,10 +47,11 @@ func _ready() -> void:
 * `set_animation_section_start(start: int)` / `get_animation_section_start() -> int` / `set_animation_section_end(end: int)` / `get_animation_section_end() -> int`: 片方の端点だけを移動します（もう一方は維持）。インスペクタの `animation_section_start` / `animation_section_end` プロパティの実体です。
 * `set_playback_direction(direction: PlaybackDirection, style: PlaybackStyle)`: 再生方向と再生スタイルを指定します。値の意味は下表を参照してください。
 * `get_playback_direction() -> PlaybackDirection` / `get_playback_style() -> PlaybackStyle`: セッターで指定した 2 つの値をそれぞれ読み出します。
+* `frame_rate` / `playback_direction` / `playback_style` は、プロパティとしても読み書きできます（`player.playback_direction = ...`）。実行時専用で、インスペクタには出ず、シーンにも保存されません。
 * `set_loop_count(count: int)` / `get_loop_count() -> int`: `n` で `n` 回再生して停止（`1` なら1回のみ）。`-1` で無限ループ（`0` も無限ループの別名）。
 * `set_frame_skip_enabled(enabled: bool)` / `is_frame_skip_enabled() -> bool` (デフォルト: `true`)
 * `set_sub_frame_enabled(enabled: bool)` / `is_sub_frame_enabled() -> bool` (デフォルト: `false`)
-* `set_cellmap_texture(cellmap_name: String, texture: Texture2D)` / `get_cellmap_texture(cellmap_name: String) -> Texture2D`
+* `set_cellmap_texture(cellmap_name: String, texture: Texture2D)` / `get_cellmap_texture(cellmap_name: String) -> Texture2D`: インスペクタの **CellMap Overrides** グループに並ぶ `cellmaps/<セルマップ名>` プロパティと同じものです。
 * `get_cellmap_names() -> PackedStringArray` / `get_cell_names(cellmap_name: String) -> PackedStringArray`: 割り当て済みの `SSABResource` から読んだ名前一覧（未割り当てなら空）。`set_part_cell_override()` に渡す名前を調べる用途です。まだプレーヤに載せていない `.ssab` を調べたい場合は [`SSABResource`](resource.md) 自身にも同じメソッドがあります。
 * `set_play_audio(enabled: bool)` / `is_play_audio() -> bool` (デフォルト: `true`)、`set_audio_volume(volume: float)` / `get_audio_volume() -> float`、`set_audio_bus(bus: StringName)` / `get_audio_bus() -> StringName` (デフォルト: `&"Master"`)、`set_audio_backend(backend: SpriteStudioAudioBackend)` / `get_audio_backend() -> SpriteStudioAudioBackend`: 内蔵のサウンド再生。詳細は後述の [サウンド](#サウンド-audio) を参照してください。
 
@@ -179,7 +180,7 @@ pivot はキャンバス内のどこに原点があるかを表します。地�
 
 ### `user_data` の `payload` フィールド
 
-SpriteStudio 上でユーザーデータに設定した値が `Dictionary` として渡されます。発生元を示す 3 つのキーは **常に** 含まれます。値の 4 キーは **設定された項目のみ** 含まれます（未設定の項目はキーごと存在しません。`0` も作者が意図し得る値であるため、既定値で埋めることはしません）。
+SpriteStudio 上でユーザーデータに設定した値が `Dictionary` として渡されます。発生元を示す 4 つのキーは **常に** 含まれます。値の 4 キーは **設定された項目のみ** 含まれます（未設定の項目はキーごと存在しません。`0` も作者が意図し得る値であるため、既定値で埋めることはしません）。
 
 | キー | 型 | 内容 |
 | --- | --- | --- |
@@ -238,7 +239,7 @@ SpriteStudio 上でユーザーデータに設定した値が `Dictionary` と�
 
 オーバーライド可能なメソッドを 1 つだけ持つ `Resource` のサブクラスです。`audio_backend` に割り当てると **内蔵再生は抑制されます**（`audio_volume` と `audio_bus` も含む）。ボイスのライフサイクルと再生回数の管理はバックエンド側の責務になります。
 
-* `play_audio(payload: Dictionary, ssab: SSABResource, player: Node) -> void`: オーディオイベントごとに 1 回呼ばれます。`payload` は `audio` シグナルと同じ内容です。既定の実装は何もしません。
+* `play_audio(payload: Dictionary, ssab: SSABResource, player: Node) -> void`: 内蔵再生が鳴らすはずだったオーディオイベントごとに 1 回呼ばれます。内蔵再生と同じく、`play_audio` がオフのときと、順方向に再生していないとき（`is_playing_forward()` が `false`）は呼ばれません。どちらの場合も `audio` シグナルは送られます。`payload` は `audio` シグナルと同じ内容です。既定の実装は何もしません。
 
 ```gdscript
 extends SpriteStudioAudioBackend
