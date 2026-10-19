@@ -138,8 +138,10 @@ echo ""
 case "$LOCALE" in
   all)
     echo "$APP: done -> site/ (en) + site/ja/ (ja)"
+    # Loopback: on every interface http.server announces http://[::]:8000/,
+    # which is not a secure context, so Copy as Markdown cannot copy there.
     echo "$APP: serve both, so the language selector resolves:"
-    echo "$APP:   python3 -m http.server 8000 -d site"
+    echo "$APP:   python3 -m http.server 8000 --bind 127.0.0.1 -d site"
     ;;
   en)
     echo "$APP: done -> site/ (en)"

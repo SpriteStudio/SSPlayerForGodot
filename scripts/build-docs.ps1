@@ -145,8 +145,10 @@ Write-Host ""
 switch ($opts.locale) {
     "all" {
         Write-Host "${APP}: done -> site/ (en) + site/ja/ (ja)"
+        # Loopback: on every interface http.server announces http://[::]:8000/,
+        # which is not a secure context, so Copy as Markdown cannot copy there.
         Write-Host "${APP}: serve both, so the language selector resolves:"
-        Write-Host "${APP}:   py -m http.server 8000 -d site"
+        Write-Host "${APP}:   py -m http.server 8000 --bind 127.0.0.1 -d site"
     }
     "en" {
         Write-Host "${APP}: done -> site/ (en)"
