@@ -164,6 +164,9 @@ report "site/index.html" "en"
 report "site/ja/index.html" "ja"
 
 # --- serve ----------------------------------------------------------------
+# Bound to loopback, in the command it suggests as well. On every interface,
+# http.server announces http://[::]:PORT/, which is not a secure context, so
+# Copy as Markdown cannot copy there.
 PYTHON_CMD="python3"
 command -v "$PYTHON_CMD" > /dev/null 2>&1 || PYTHON_CMD="python"
 
@@ -177,9 +180,9 @@ if [ "$SERVE" = "yes" ]; then
   echo "$APP: http://localhost:$PORT/ja/  (Japanese)"
   echo "$APP: Ctrl-C to stop"
   echo ""
-  exec "$PYTHON_CMD" -m http.server "$PORT" -d site
+  exec "$PYTHON_CMD" -m http.server "$PORT" --bind 127.0.0.1 -d site
 else
   echo "$APP: serve it (one server over both locales, so the language selector resolves):"
   echo "$APP:   $APP serve=yes"
-  echo "$APP:   $PYTHON_CMD -m http.server $PORT -d site"
+  echo "$APP:   $PYTHON_CMD -m http.server $PORT --bind 127.0.0.1 -d site"
 fi
