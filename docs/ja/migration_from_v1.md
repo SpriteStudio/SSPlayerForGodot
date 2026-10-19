@@ -14,12 +14,15 @@ v1.x から本バージョンへ移行する場合は、以下の大きな変更
   - そのため、利用する（再生したい）アニメーションが含まれている `.ssab` を `set_ssab_resource(load("...ssab"))` のようにセットしてください。
 - **ループ再生の設定**: 以前の `set_loop(bool)` は廃止され、ループ回数を指定する `set_loop_count(int)` に変更されました（`-1` で無限ループ、`1` で1回再生（ループなし））。
 - **メソッドの変更と廃止**:
-  - `set_player_resource()` → `set_ssab_resource()`
+  - `set_player_resource()` / `get_player_resource()` → `set_ssab_resource()` / `get_ssab_resource()`
+  - `get_animation()` → `get_current_animation()`
+  - `set_frame()` / `get_frame()` → `set_frame_no()` / `get_frame_no()`
+  - `get_loop()` → `get_loop_count()`
   - `get_fps()` → `get_frame_rate()`
-  - `set_anime_pack()` → 廃止（アニメパックは `.ssab` ごとに含まれるため不要）
+  - `set_anime_pack()` / `get_anime_pack()` → 廃止（アニメパックは `.ssab` ごとに含まれるため不要）
   - `set_play()` / `get_play()` → 廃止（代わりに `play()`, `stop()`, `is_playing()` 等を利用してください）
   - `pause(bool)` → `pause()`（引数なしに変更）
-  - `set_texture_interpolate()` → 廃止（Godot 4 標準の `Texture Filter` (CanvasItem プロパティ) を利用してください）
+  - `set_texture_interpolate()` / `get_texture_interpolate()` → 廃止（Godot 4 標準の `Texture Filter` (CanvasItem プロパティ) を利用してください）
 - **シグナルの変更**: `animation_finished` と `animation_changed` は名前が変わっていません。それ以外は次のように変わりました。
   - `user_data(flag, int_value, rect_value, point_value, string_value)` → `user_data(payload: Dictionary)`
   - `signal(command, value)` → `signal_emitted(command, value, info)`（`signal` は GDScript の予約語のため）

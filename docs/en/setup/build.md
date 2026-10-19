@@ -28,7 +28,7 @@ The `godot-cpp` directory is required when building the GDExtension.
 
 ## Build Environment Setup
 
-For build tools (compiler, Python, SCons, etc.) on each platform, follow the official Godot compilation guides:
+For build tools (compiler, Python, SCons, etc.) on each platform, follow the official Godot compilation guides. The macOS / Linux build scripts (`scripts/*.sh`) run under zsh, so zsh is needed as well:
 
 - [Windows](https://docs.godotengine.org/en/stable/engine_details/development/compiling/compiling_for_windows.html)
 - [macOS](https://docs.godotengine.org/en/stable/engine_details/development/compiling/compiling_for_macos.html)
@@ -145,7 +145,7 @@ These scripts do **not** fetch or build `libssruntime`, so [1. Prepare libssrunt
 If you want to debug the C++ code (`ss_player/`) of the plugin embedded as a custom module, follow these steps:
 
 1. **Verify the Debug Binary**
-   Godot binaries built with `target=editor` or `target=template_debug` contain debug symbols by default.
+   Godot builds carry no debug symbols by default, `target=editor` and `target=template_debug` included. Build with `debug_symbols=yes` (`./scripts/build.sh debug_symbols=yes`, or the `.ps1` on Windows). The binaries are:
    * **macOS:** `godot/Godot.app/Contents/MacOS/Godot`
    * **Windows:** `godot/bin/godot.windows.editor.x86_64.exe` etc.
    * **Linux:** `godot/bin/godot.linuxbsd.editor.x86_64` etc.

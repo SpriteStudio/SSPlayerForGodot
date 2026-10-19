@@ -55,7 +55,7 @@ Godot ユーザーにとって最も強力な機能の一つが「シグナル (
 * `audio(payload)`               : オーディオキーに到達した時。観測用で、明示的に止めない限りプレーヤ側でも再生されます（[サウンド再生](audio.md) 参照）
 * `frame_updated(frame_no)`      : そのフレームのパーツ姿勢が確定した直後（[パーツトラッキング](#パーツトラッキング指定パーツへの追従) を参照）
 
-タイムライン系の 3 イベント（`user_data` / `signal_emitted` / `audio`）は、いずれも同じ発生元フィールド（`part_index` / `part_name` / `frame_no`）を持ちます。そのため、どのパーツが発火したかを判定するために自前の対応表を持つ必要はありません。`user_data` と `audio` では payload に、`signal_emitted` では別引数の `info` に入ります。`value` のキーは作者が設定したパラメータ ID であり、固定キーを混ぜると衝突しうるためです。
+タイムライン系の 3 イベント（`user_data` / `signal_emitted` / `audio`）は、いずれも同じ発生元フィールド（`part_index` / `part_name` / `frame_no` / `source`）を持ちます。そのため、どのパーツが発火したかを判定するために自前の対応表を持つ必要はありません。`user_data` と `audio` では payload に、`signal_emitted` では別引数の `info` に入ります。`value` のキーは作者が設定したパラメータ ID であり、固定キーを混ぜると衝突しうるためです。
 
 ### 実装例: アニメーションの連続再生
 「攻撃」アニメーションが終了したら、自動的に「待機」アニメーションへ遷移させる実装例です。
@@ -103,7 +103,7 @@ func _ready():
 
 func _on_signal_emitted(command: String, value: Dictionary, info: Dictionary):
     # `value` のキーは SpriteStudio 上で設定したパラメータ ID。
-    # `info` は発生元（part_index / part_name / frame_no）。
+    # `info` は発生元（part_index / part_name / frame_no / source）。
     if command == "spawn_effect":
         var effect_name: String = value.get("name", "")
         spawn_effect_at(effect_name, ss_player.get_part_transform(info["part_name"]))

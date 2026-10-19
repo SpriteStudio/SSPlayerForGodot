@@ -787,9 +787,9 @@ void SpriteStudioPlayer2D::_bind_methods() {
 
     // Not in the conventions' required set:
     // a host that called set_animation() already knows what it selected.
-    // It earns its place here because `animation` is an exported property, so
-    // the inspector, an AnimationPlayer track or a tool script can mount a
-    // different clip without any of the node's own callers touching it.
+    // It earns its place here because `current_animation` is an exported
+    // property, so the inspector, an AnimationPlayer track or a tool script can
+    // mount a different clip without any of the node's own callers touching it.
     ADD_SIGNAL(MethodInfo("animation_changed", PropertyInfo(Variant::STRING, "anim_name")));
     ADD_SIGNAL(MethodInfo("animation_started", PropertyInfo(Variant::STRING, "anim_name")));
     ADD_SIGNAL(MethodInfo("animation_finished", PropertyInfo(Variant::STRING, "anim_name")));

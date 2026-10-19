@@ -77,6 +77,7 @@ Godot エディタの強力な機能を活かし、最短の手順でアニメ�
 | `Animation Process Mode`   | int    | `_physics_process` (Physics) / `_process` (Idle) の同期設定、または `advance()` に委ねる (Manual) |
 | `Play Audio`               | bool   | アニメーションのサウンドパートを内蔵プレイヤーで鳴らすか（[サウンド再生](audio.md) 参照） |
 | `Audio Volume`             | float  | 内蔵サウンド再生のリニア音量 `[0, 1]`                               |
+| `Audio Bus`                | StringName | 内蔵サウンド再生を流すバス (既定: `Master`)                     |
 | `Audio Backend`            | Resource | 内蔵サウンド再生を置き換える `SpriteStudioAudioBackend`（任意）    |
 
 > [!NOTE]

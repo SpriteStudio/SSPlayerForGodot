@@ -11,7 +11,7 @@ Most failures here look the same from the outside — **nothing on screen** — 
 The extension did not load. In the **GDExtension** build, check in this order:
 
 1. `res://addons/spritestudio/spritestudio.gdextension` exists — the `addons` folder must be copied to the **project root**, not into a subfolder.
-2. The editor is a **Godot 4.7** build. GDExtension is officially supported from 4.7, and a library built against a different `godot-cpp` will not load.
+2. The editor is **Godot 4.7 or later**. The plugin supports 4.7 onward (`compatibility_minimum = "4.7"` in `spritestudio.gdextension`), and an older editor will not load it.
 3. `addons/spritestudio/bin/<platform>/` contains a library for the platform you are running. The Output panel names the file it tried to open.
 
 In the **custom module** build there is no `addons` folder — the node exists only if the module was compiled into the editor binary you are running.
@@ -26,7 +26,7 @@ Export needs the **same target** you export with: `--export-debug` uses the `tem
 
 ### No animation is selected
 
-Assigning the `.ssab` is not enough. Pick a name in the **Animation** dropdown (or call `set_animation()`), then `play()` — or turn **Autoplay** on.
+Assigning the `.ssab` is not enough. Pick a name in the **Current Animation** dropdown (or call `set_animation()`), then `play()` — or turn **Autoplay** on.
 
 ### The animation name does not exist
 
@@ -36,7 +36,7 @@ A name that is not in the pack leaves the node drawing nothing. The Output panel
 [SS] res://ssab_generated/Ringo/Ringo.ssab has no animation "wakl".
 ```
 
-The **Animation** dropdown only offers real names, so this is a `set_animation()` in a script — usually a typo, or a name that belongs to a different pack, which is why the pack is named too. `get_animation_names()` lists what the pack actually has.
+The **Current Animation** dropdown only offers real names, so this is a `set_animation()` in a script — usually a typo, or a name that belongs to a different pack, which is why the pack is named too. `get_animation_names()` lists what the pack actually has.
 
 Do not use `get_current_animation()` to find out: after `set_animation("wakl")` it returns `"wakl"` all the same, and `get_total_frames()` keeps reporting the previous animation. For a script or CI job, [Verifying Playback from the Command Line](workflow/verify_playback.md) checks the name against that list.
 

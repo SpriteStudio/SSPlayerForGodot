@@ -66,6 +66,8 @@ The enabler keeps working while its target is disabled: visibility is reported b
 
 > [!IMPORTANT]
 > **Re-read the box on `animation_changed`.** The canvas is authored per animation, so a pack whose animations differ in size — `Ringo`'s `dead` is `1300 x 600` where most of the others are `800 x 600` — will pop in late on the wider one if the rect is set once and left.
+>
+> The signal reports a change, so do not count on it for the first animation: the one the scene loads with is set up before any connection is made, and assigning or swapping `ssab` selects its first animation without sending it. That is why `_ready()` above reads the box once itself; after swapping `ssab` from a script, call `_refresh_cull_rect()` again the same way.
 
 > [!NOTE]
 > The canvas is the box the artist composed in, not a measured outline. Parts are free to draw outside it, so grow the rect if an animation throws something well past its canvas. `Rect2.grow()` on the value above is the whole fix.

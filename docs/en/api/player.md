@@ -40,7 +40,7 @@ func _ready() -> void:
 * `just_looped() -> bool`: Whether the last update crossed a loop boundary. A **pulse**, not a state — the runtime clears it at the top of every update, so it only reads `true` inside the tick that crossed (which is why it is not `is_looped`: reading it a tick late reads `false`). The `animation_looped` signal delivers the same edge if you would rather not poll.
 * `get_animation_names() -> PackedStringArray`: Names of the animations in the assigned [SSABResource] — the same list the `current_animation` property is chosen from.
 * `is_playing_forward() -> bool`: Which way the playhead is **actually** travelling. Not `get_playback_direction()`, which reports the configured heading: on a ping-pong return leg this reads `false` while that still reads `PLAYBACK_DIRECTION_FORWARD` (a speed of zero or below is a stop, not a reversal, and does not flip it either). **Gate audio on it** — SpriteStudio has no reverse audio, so a sound key crossed on a backward leg is not meant to sound, and this is the test the node itself applies when `play_audio` is on. `true` before anything has played: forward is the resting state.
-* `set_frame_no(frame: float)` / `get_frame_no() -> float` / `get_total_frames() -> int`
+* `set_frame_no(frame: float)` / `get_frame_no() -> float` / `get_total_frames() -> int`: `get_total_frames()` counts the frames of the current playback section (`get_end_frame() - get_start_frame() + 1`). Once `set_animation_section()` narrows the section, it returns the section's length, not the whole animation's.
 * `get_start_frame() -> int` / `get_end_frame() -> int`: The first and last frame that actually plays — the current playback section. They return the same values as `get_animation_section_start()` / `get_animation_section_end()`, which is the whole animation until `set_animation_section()` narrows it.
 * `set_speed_scale(speed_scale: float)` / `get_speed_scale() -> float`
 * `set_frame_rate(fps: int)` / `get_frame_rate() -> int`
@@ -48,10 +48,11 @@ func _ready() -> void:
 * `set_animation_section_start(start: int)` / `get_animation_section_start() -> int` / `set_animation_section_end(end: int)` / `get_animation_section_end() -> int`: Moves one endpoint of the section while keeping the other. These back the `animation_section_start` / `animation_section_end` inspector properties.
 * `set_playback_direction(direction: PlaybackDirection, style: PlaybackStyle)`: Sets the playback direction and style. See the table below for values.
 * `get_playback_direction() -> PlaybackDirection` / `get_playback_style() -> PlaybackStyle`: Reads back the two halves of the setter individually.
+* `frame_rate`, `playback_direction` and `playback_style` can also be read and written as properties (`player.playback_direction = ...`). They are runtime-only: not shown in the inspector and not saved with the scene.
 * `set_loop_count(count: int)` / `get_loop_count() -> int`: `n` plays `n` cycles then stops (`1` plays once). `-1` means infinite loop (`0` is an alias for infinite).
 * `set_frame_skip_enabled(enabled: bool)` / `is_frame_skip_enabled() -> bool` (default: `true`)
 * `set_sub_frame_enabled(enabled: bool)` / `is_sub_frame_enabled() -> bool` (default: `false`)
-* `set_cellmap_texture(cellmap_name: String, texture: Texture2D)` / `get_cellmap_texture(cellmap_name: String) -> Texture2D`
+* `set_cellmap_texture(cellmap_name: String, texture: Texture2D)` / `get_cellmap_texture(cellmap_name: String) -> Texture2D`: The same as the `cellmaps/<cell map name>` properties listed under the inspector's **CellMap Overrides** group.
 * `get_cellmap_names() -> PackedStringArray` / `get_cell_names(cellmap_name: String) -> PackedStringArray`: Names read from the assigned `SSABResource` (empty when none is assigned) — the discovery half of `set_part_cell_override()`. Also available on [`SSABResource`](resource.md) itself for an `.ssab` that is not on a player.
 * `set_play_audio(enabled: bool)` / `is_play_audio() -> bool` (default: `true`), `set_audio_volume(volume: float)` / `get_audio_volume() -> float`, `set_audio_bus(bus: StringName)` / `get_audio_bus() -> StringName` (default: `&"Master"`), `set_audio_backend(backend: SpriteStudioAudioBackend)` / `get_audio_backend() -> SpriteStudioAudioBackend`: Built-in audio playback. See [Audio](#audio) below.
 
@@ -180,7 +181,7 @@ Each setter returns `false` when no animation is set up, the animation name is n
 
 ### `user_data` payload fields
 
-The User Data values configured in SpriteStudio are delivered as a `Dictionary`. The three origin keys are **always** present; of the four value keys, **only the ones that were set are present** — an unset field is omitted entirely rather than defaulted, because `0` is a value an author can mean.
+The User Data values configured in SpriteStudio are delivered as a `Dictionary`. The four origin keys are **always** present; of the four value keys, **only the ones that were set are present** — an unset field is omitted entirely rather than defaulted, because `0` is a value an author can mean.
 
 | Key | Type | Meaning |
 | --- | --- | --- |
@@ -239,7 +240,7 @@ Audio parts play through Godot out of the box — the node owns a pooled set of 
 
 A `Resource` subclass with a single overridable method. Assigning one to `audio_backend` **suppresses the built-in playback**, `audio_volume` and `audio_bus` included, so the backend owns voice lifecycle and play counts.
 
-* `play_audio(payload: Dictionary, ssab: SSABResource, player: Node) -> void`: Called once per audio event, with the same `payload` the `audio` signal carries. The default implementation does nothing.
+* `play_audio(payload: Dictionary, ssab: SSABResource, player: Node) -> void`: Called once for each audio event the built-in playback would have sounded, with the same `payload` the `audio` signal carries. Like the built-in playback, it is not called while `play_audio` is off or while playback is not moving forward (`is_playing_forward()` is `false`); the `audio` signal is still sent in both cases. The default implementation does nothing.
 
 ```gdscript
 extends SpriteStudioAudioBackend
