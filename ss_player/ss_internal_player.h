@@ -403,6 +403,21 @@ private:
     // distinction lives on the material, not the underlying shader code).
     HashMap<uint64_t, Ref<Shader>> _partcolor_shaders;
 
+    // The mask uniforms a pooled material holds, so a frame that leaves them as
+    // they were sends nothing: every set goes through the server and queues the
+    // material's uniforms for upload again. NaN and -1 stand for never set.
+    struct MaskUniforms {
+        int8_t enabled = -1;
+        Vector4 uv_basis = Vector4(NAN, NAN, NAN, NAN);
+        Vector2 uv_off = Vector2(NAN, NAN);
+        int count = -1;
+        uint64_t meta_version = 0;
+        Vector2 tiles = Vector2(NAN, NAN);
+        float rank = NAN;
+        float visible_inside = NAN;
+        RID coverage;
+    };
+
     // Per-part ShaderMaterial pool for variants whose catalog entry has
     // `is_per_part=true`. Godot binds material state per-material (not
     // per-draw), so parts whose uniform values differ each need their own
@@ -413,9 +428,18 @@ private:
     // `_reset_per_part_pools()` at the next frame's start.
     struct PerPartMaterialPool {
         Vector<Ref<ShaderMaterial>> materials;
+        Vector<MaskUniforms> mask; // parallel to `materials`
         int in_use = 0;
     };
     HashMap<uint64_t, PerPartMaterialPool> _per_part_material_pools;
+    // A material handed out by `_acquire_per_part_material`, with where it sits
+    // in its pool so its MaskUniforms can be found again later in the frame.
+    struct PartMaterial {
+        Ref<ShaderMaterial> mat;
+        uint64_t pool_key = 0;
+        int pool_index = 0;
+    };
+    MaskUniforms& _held_mask_uniforms(const PartMaterial& pm);
 
     // Per-part canvas_item pool. Parts that use a per-part material need
     // their own canvas_item too (the material's uniform state otherwise leaks
@@ -831,6 +855,12 @@ private:
     Ref<Shader> _mask_write_shader;            // loaded from SS_MASK_WRITE
     Vector<Ref<ShaderMaterial>> _mask_write_materials; // per-instance, pooled
     int _mask_write_materials_in_use = 0;
+    // What each of `_mask_write_materials` was last given (see MaskUniforms).
+    struct MaskWriteUniforms {
+        Color bit_color = Color(NAN, NAN, NAN, NAN);
+        float threshold = NAN;
+    };
+    Vector<MaskWriteUniforms> _mask_write_uniforms;
     // Maps this player's local space (the space batch geometry lives in, world
     // matrices already applied) -> coverage UV [0,1]. Set per frame by the
     // coverage pass and read by maskable shaders. Derived from the same writer
@@ -871,7 +901,7 @@ private:
     // `r_mesh` the mesh it draws.
     RID _acquire_mask_canvas_item(int tile, SsDynamicMesh*& r_mesh);
     RID _mask_tile_canvas(int tile);
-    Ref<ShaderMaterial> _acquire_mask_write_material();
+    Ref<ShaderMaterial> _acquire_mask_write_material(MaskWriteUniforms*& r_held);
     // Render the whole instance tree's writers into the coverage bitmap (the
     // tree sequence must already be numbered). Computes the writer bounding box,
     // lays out the tiles, picks next frame's size class, and sets
@@ -905,6 +935,10 @@ private:
     // emitting maskable parts (P3). `_mask_meta_array` is one Vec4 per writer:
     // (open, close, bit, op_invert) — the writer's interval on the tree sequence.
     Array _mask_meta_array;
+    // Bumped whenever a frame's `_mask_meta_array` differs from the one before,
+    // so a material can tell whether it already holds this frame's array.
+    uint64_t _mask_meta_version = 1;
+    Array _mask_meta_prev;
     RID _mask_coverage_tex;
     // True if the part is a "pure" mask (PartTypeMask or a shape/text/nines
     // *_mask): it feeds the coverage bitmap but must not draw its own colour.
@@ -913,8 +947,12 @@ private:
     // child's mask parts must stay invisible even though the parent owns the
     // coverage pass), so callers must NOT gate it on `_mask_coverage_valid`.
     bool _is_pure_mask_part(int p_idx) const;
-    void _apply_mask_uniforms(Ref<ShaderMaterial> mat, uint16_t rank, bool visible_inside);
-    void _set_mask_uv_uniform(Ref<ShaderMaterial> mat, const Transform2D& local_to_uv);
+    void _apply_mask_uniforms(const Ref<ShaderMaterial>& mat, MaskUniforms& held, uint16_t rank, bool visible_inside);
+    // Turn the mask test on with this frame's coverage, sending only what
+    // `held` says the material does not hold already.
+    void _send_mask_test(const Ref<ShaderMaterial>& mat, MaskUniforms& held, const Transform2D& local_to_uv,
+                         int count, const Array& meta, uint64_t meta_version, const Vector2& tiles,
+                         float rank, RID coverage);
 
     // ---- Instance-hierarchy mask composition --------------------------------
     // The instance part's settings do NOT replace a sub-animation part's: they
@@ -964,7 +1002,7 @@ private:
     PartMaskDecision _resolve_part_mask(const DrawFrame& f, int p_idx, uint16_t rank) const;
     // Write the decision onto the part's material, and enrol it in the owner's
     // walk when this player is an instance child.
-    void _stamp_part_mask(const Ref<ShaderMaterial>& mat, uint16_t rank, const PartMaskDecision& md);
+    void _stamp_part_mask(const PartMaterial& pm, uint16_t rank, const PartMaskDecision& md);
 
     // Materials an instance child handed to its mask targets, with the rank each
     // was drawn at. Filled while building (which is when the composed polarity
@@ -973,7 +1011,7 @@ private:
     // exist. The visible instance children are recorded alongside so one walk
     // from the owner reaches the whole sub-tree.
     struct InheritedMaskMaterial {
-        Ref<ShaderMaterial> mat;
+        PartMaterial pm;
         uint16_t rank = 0;
     };
     Vector<InheritedMaskMaterial> _inherited_mask_materials;
@@ -982,7 +1020,7 @@ private:
         Transform2D slot_xf;
     };
     Vector<InheritedMaskChild> _inherited_mask_children;
-    void _apply_inherited_mask(RID coverage_tex, const Array& meta, int count,
+    void _apply_inherited_mask(RID coverage_tex, const Array& meta, uint64_t meta_version, int count,
                                const Vector2& tiles, const Transform2D& local_to_uv);
 
     void _reconfigure();
@@ -1121,7 +1159,7 @@ private:
     // Per-part material pool helpers. See member-doc above for the lifecycle.
     void _reset_per_part_pools();
     void _free_per_part_canvas_items();
-    Ref<ShaderMaterial> _acquire_per_part_material(uint32_t shader_id_hash, ss::format::BlendType blend_type);
+    PartMaterial _acquire_per_part_material(uint32_t shader_id_hash, ss::format::BlendType blend_type);
     RID _acquire_per_part_canvas_item();
     // Set the SS Shader-attribute uniforms (param0..7, map0/map1, cell rect)
     // on a per-part material. `params` must point to 8 floats. Texture refs
