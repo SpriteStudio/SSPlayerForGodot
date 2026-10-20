@@ -2643,9 +2643,17 @@ void SsInternalPlayer::_drive_instance_slot(InstanceChildState& state,
         return;
     }
 
-    child->_update_instance_children(r.child_frame_no, delta_seconds, r.child_looped);
+    // The child runs at the speed its slot stepped it with, so its sub-tree
+    // (grandchildren and the child's effects) must be stepped with the same
+    // scaling, or it drifts from the child. Read it from the slot after the
+    // step, not from `info`: once the parent goes back before an independent
+    // child's first key, `info` is the implicit key at speed 1 while the slot
+    // keeps the child at the last key's speed.
+    const float child_delta = delta_seconds * fabsf(ss_instance_slot_get_speed(state.instance_slot));
 
-    _redraw_child_if_frame_changed(child, r.child_frame_no, delta_seconds, r.child_looped);
+    child->_update_instance_children(r.child_frame_no, child_delta, r.child_looped);
+
+    _redraw_child_if_frame_changed(child, r.child_frame_no, child_delta, r.child_looped);
 }
 
 void SsInternalPlayer::_redraw_child_if_frame_changed(SsInternalPlayer* child, float frame_no, float delta_seconds, bool parent_looped) {
