@@ -27,6 +27,7 @@ void ss_runtime_log_bridge(int level, const char *message) {
 }
 
 #include "ss_shader_setup.h"
+#include "ss_macros.h"
 
 static HashMap<uint32_t, EmbeddedShader> s_shader_catalog_map;
 static uint32_t s_default_shader_id_hash = 0;
@@ -1869,8 +1870,8 @@ bool SsInternalPlayer::_bake_coverage_geometry(
     SsDynamicMesh* mask_mesh = nullptr;
     RID mask_ci = _acquire_mask_canvas_item(tile, mask_mesh);
     Ref<ShaderMaterial> mat = _acquire_mask_write_material();
-    mat->set_shader_parameter("mask_bit_color", bit_color);
-    mat->set_shader_parameter("mask_threshold", threshold);
+    mat->set_shader_parameter(SNAME("mask_bit_color"), bit_color);
+    mat->set_shader_parameter(SNAME("mask_threshold"), threshold);
     rs->canvas_item_set_material(mask_ci, mat->get_rid());
     rs->canvas_item_set_transform(mask_ci, Transform2D());
     // uvs/indices are unaffected by the placement transform; only verts move
@@ -1941,24 +1942,24 @@ bool SsInternalPlayer::_is_pure_mask_part(int p_idx) const {
 
 void SsInternalPlayer::_set_mask_uv_uniform(Ref<ShaderMaterial> mat, const Transform2D& local_to_uv) {
     if (mat.is_null()) return;
-    mat->set_shader_parameter("ss_mask_uv_basis",
+    mat->set_shader_parameter(SNAME("ss_mask_uv_basis"),
         Vector4(local_to_uv.columns[0].x, local_to_uv.columns[1].x,
                 local_to_uv.columns[0].y, local_to_uv.columns[1].y));
-    mat->set_shader_parameter("ss_mask_uv_off", local_to_uv.columns[2]);
+    mat->set_shader_parameter(SNAME("ss_mask_uv_off"), local_to_uv.columns[2]);
 }
 
 void SsInternalPlayer::_apply_mask_uniforms(Ref<ShaderMaterial> mat, uint16_t rank, bool visible_inside) {
     const int count = (int)_mask_tree_spans.size();
-    mat->set_shader_parameter("ss_mask_enabled", true);
+    mat->set_shader_parameter(SNAME("ss_mask_enabled"), true);
     _set_mask_uv_uniform(mat, _mask_local_to_uv);
-    mat->set_shader_parameter("ss_mask_count", count);
-    mat->set_shader_parameter("ss_mask_meta", _mask_meta_array);
-    mat->set_shader_parameter("ss_mask_tiles", _mask_tiles);
-    mat->set_shader_parameter("ss_mask_rank", rank < _mask_seq.size() ? _mask_seq[rank] : 0.0f);
-    mat->set_shader_parameter("ss_mask_visible_inside", visible_inside ? 1.0f : 0.0f);
+    mat->set_shader_parameter(SNAME("ss_mask_count"), count);
+    mat->set_shader_parameter(SNAME("ss_mask_meta"), _mask_meta_array);
+    mat->set_shader_parameter(SNAME("ss_mask_tiles"), _mask_tiles);
+    mat->set_shader_parameter(SNAME("ss_mask_rank"), rank < _mask_seq.size() ? _mask_seq[rank] : 0.0f);
+    mat->set_shader_parameter(SNAME("ss_mask_visible_inside"), visible_inside ? 1.0f : 0.0f);
     if (count > 0 && _mask_coverage_tex.is_valid()) {
         // Bind the coverage viewport's texture (RID) to the sampler uniform.
-        RenderingServer::get_singleton()->material_set_param(mat->get_rid(), "ss_mask_coverage", _mask_coverage_tex);
+        RenderingServer::get_singleton()->material_set_param(mat->get_rid(), SNAME("ss_mask_coverage"), _mask_coverage_tex);
     }
 }
 
@@ -1967,7 +1968,7 @@ void SsInternalPlayer::_stamp_part_mask(const Ref<ShaderMaterial>& mat, uint16_t
     if (mat.is_null()) return;
     if (!md.masked) {
         // Reuse of a pooled material — make sure masking is off.
-        mat->set_shader_parameter("ss_mask_enabled", false);
+        mat->set_shader_parameter(SNAME("ss_mask_enabled"), false);
         return;
     }
     if (!_parent_driven) {
@@ -1979,8 +1980,8 @@ void SsInternalPlayer::_stamp_part_mask(const Ref<ShaderMaterial>& mat, uint16_t
     // An instance child: the owner's coverage and the tree sequence do not exist
     // yet. Bake the composed polarity now; the owner's walk turns the test on
     // and binds the rest.
-    mat->set_shader_parameter("ss_mask_enabled", false);
-    mat->set_shader_parameter("ss_mask_visible_inside", md.visible_inside ? 1.0f : 0.0f);
+    mat->set_shader_parameter(SNAME("ss_mask_enabled"), false);
+    mat->set_shader_parameter(SNAME("ss_mask_visible_inside"), md.visible_inside ? 1.0f : 0.0f);
     InheritedMaskMaterial rec;
     rec.mat = mat;
     rec.rank = rank;
@@ -2059,18 +2060,18 @@ void SsInternalPlayer::_apply_inherited_mask(RID coverage_tex, const Array& meta
         const InheritedMaskMaterial& rec = _inherited_mask_materials[i];
         const Ref<ShaderMaterial>& mat = rec.mat;
         if (mat.is_null()) continue;
-        mat->set_shader_parameter("ss_mask_enabled", true);
+        mat->set_shader_parameter(SNAME("ss_mask_enabled"), true);
         _set_mask_uv_uniform(mat, local_to_uv);
-        mat->set_shader_parameter("ss_mask_count", count);
-        mat->set_shader_parameter("ss_mask_meta", meta);
-        mat->set_shader_parameter("ss_mask_tiles", tiles);
+        mat->set_shader_parameter(SNAME("ss_mask_count"), count);
+        mat->set_shader_parameter(SNAME("ss_mask_meta"), meta);
+        mat->set_shader_parameter(SNAME("ss_mask_tiles"), tiles);
         // The owner numbered this player's ranks on the tree sequence just now.
-        mat->set_shader_parameter("ss_mask_rank", rec.rank < _mask_seq.size() ? _mask_seq[rec.rank] : 0.0f);
+        mat->set_shader_parameter(SNAME("ss_mask_rank"), rec.rank < _mask_seq.size() ? _mask_seq[rec.rank] : 0.0f);
         // `ss_mask_visible_inside` was stamped per part while building, with the
         // composed polarity — flattening it here is exactly the bug this walk
         // exists to avoid.
         if (count > 0 && coverage_tex.is_valid()) {
-            rs->material_set_param(mat->get_rid(), "ss_mask_coverage", coverage_tex);
+            rs->material_set_param(mat->get_rid(), SNAME("ss_mask_coverage"), coverage_tex);
         }
     }
     // Nested instances: this frame's coverage only exists at its owner, so the
@@ -3123,17 +3124,19 @@ void SsInternalPlayer::_apply_per_part_uniforms(Ref<ShaderMaterial> mat, const f
     if (mat.is_null() || params == nullptr) return;
     // Uniform names match the declarations in shaders/ss_library_fs.glsl.
     // Setting an unknown uniform is harmless in Godot — it just no-ops.
-    mat->set_shader_parameter("ss_param0", params[0]);
-    mat->set_shader_parameter("ss_param1", params[1]);
-    mat->set_shader_parameter("ss_param2", params[2]);
-    mat->set_shader_parameter("ss_param3", params[3]);
-    mat->set_shader_parameter("ss_param4", params[4]);
-    mat->set_shader_parameter("ss_param5", params[5]);
-    mat->set_shader_parameter("ss_param6", params[6]);
-    mat->set_shader_parameter("ss_param7", params[7]);
-    mat->set_shader_parameter("map0", map0);
-    mat->set_shader_parameter("map1", map1);
-    mat->set_shader_parameter("ss_cell_rect", cell_rect);
+    // Only the add-on variants read these, so a default-shader part, drawn
+    // on its own only for its mask test, does not come here.
+    mat->set_shader_parameter(SNAME("ss_param0"), params[0]);
+    mat->set_shader_parameter(SNAME("ss_param1"), params[1]);
+    mat->set_shader_parameter(SNAME("ss_param2"), params[2]);
+    mat->set_shader_parameter(SNAME("ss_param3"), params[3]);
+    mat->set_shader_parameter(SNAME("ss_param4"), params[4]);
+    mat->set_shader_parameter(SNAME("ss_param5"), params[5]);
+    mat->set_shader_parameter(SNAME("ss_param6"), params[6]);
+    mat->set_shader_parameter(SNAME("ss_param7"), params[7]);
+    mat->set_shader_parameter(SNAME("map0"), map0);
+    mat->set_shader_parameter(SNAME("map1"), map1);
+    mat->set_shader_parameter(SNAME("ss_cell_rect"), cell_rect);
 }
 
 void SsInternalPlayer::_apply_partcolor_material(RenderingServer* rs, RID ci, uint32_t shader_id_hash, ss::format::BlendType ss_blend) {
@@ -3515,8 +3518,10 @@ void SsInternalPlayer::_emit_normal_batch(const DrawFrame& f,
 
             RID part_ci = _acquire_per_part_canvas_item();
             Ref<ShaderMaterial> mat = _acquire_per_part_material(psi.id_hash, ssab_blend);
-            const Vector4 cell_rect = _resolve_cell_rect_uv(f, p_idx, inv_tex_size);
-            _apply_per_part_uniforms(mat, psi.params, psi.map0, psi.map1, cell_rect);
+            if (psi.is_per_part) {
+                _apply_per_part_uniforms(mat, psi.params, psi.map0, psi.map1,
+                                         _resolve_cell_rect_uv(f, p_idx, inv_tex_size));
+            }
             _stamp_part_mask(mat, rank, md);
             rs->canvas_item_set_material(part_ci, mat->get_rid());
             rs->canvas_item_set_transform(part_ci, Transform2D());
@@ -3593,7 +3598,9 @@ void SsInternalPlayer::_emit_shape_batch(const DrawFrame& f,
             // Shape parts have no bound cellmap texture; pass a zero
             // cell_rect (degenerates ss-circle / ss-spot to discard, which
             // is the safest fallback when the variant is misapplied to a Shape).
-            _apply_per_part_uniforms(mat, psi.params, psi.map0, psi.map1, Vector4(0, 0, 0, 0));
+            if (psi.is_per_part) {
+                _apply_per_part_uniforms(mat, psi.params, psi.map0, psi.map1, Vector4(0, 0, 0, 0));
+            }
             _stamp_part_mask(mat, rank, md);
             f.rs->canvas_item_set_material(part_ci, mat->get_rid());
             _emit_partcolor_mesh(f.rs, part_ci, _shape_buf.indices.ptr(), _shape_buf.index_count,
@@ -3651,8 +3658,10 @@ void SsInternalPlayer::_emit_mesh_batch(const DrawFrame& f,
             _flush_default_run(f.rs);
             RID part_ci = _acquire_per_part_canvas_item();
             Ref<ShaderMaterial> mat = _acquire_per_part_material(psi.id_hash, ssab_blend);
-            const Vector4 cell_rect = _resolve_cell_rect_uv(f, p_idx, inv_tex_size);
-            _apply_per_part_uniforms(mat, psi.params, psi.map0, psi.map1, cell_rect);
+            if (psi.is_per_part) {
+                _apply_per_part_uniforms(mat, psi.params, psi.map0, psi.map1,
+                                         _resolve_cell_rect_uv(f, p_idx, inv_tex_size));
+            }
             _stamp_part_mask(mat, rank, md);
             f.rs->canvas_item_set_material(part_ci, mat->get_rid());
             _emit_partcolor_mesh(f.rs, part_ci, _mesh_buf.indices.ptr(), _mesh_buf.index_count,
