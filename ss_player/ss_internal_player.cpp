@@ -2200,8 +2200,14 @@ void SsInternalPlayer::_drawAnimation(float frame_no, float delta_seconds, bool 
     // Per-frame draw-order counter: batch CIs and per-part CIs draw in the
     // order they are emitted (rank order), not in CI-pool allocation order.
     _draw_seq = 0;
+    _run = DefaultRun();
     for (uint32_t bi = 0; bi < batch_count; bi++) {
         const auto* batch = draw_batches->Get(bi);
+        const auto kind = batch->kind();
+        // Drawn before this batch's canvas item takes its draw index below.
+        if (_run.open && !_run_can_take(kind, batch)) {
+            _flush_default_run(f.rs);
+        }
         RID ci = _ensure_batch_ci((int)bi);
 
         // Reset batch CI state before use. Pool reuse can leak properties
@@ -2218,8 +2224,9 @@ void SsInternalPlayer::_drawAnimation(float frame_no, float delta_seconds, bool 
         // other nodes in the scene. Tree order (child index) is not usable here
         // because our CI pool is reused and ordering is fixed at allocation.
         f.rs->canvas_item_set_draw_index(ci, _draw_seq++);
+        _batch_ci = ci;
+        _batch_ci_free = true;
 
-        const auto kind = batch->kind();
         // Pure masks feed only the coverage bitmap and must not draw their own
         // colour (PartTypeMask has no draw branch below; this also suppresses
         // shape/text/nines *_mask color draws so they read as holes, not fills).
@@ -2227,9 +2234,9 @@ void SsInternalPlayer::_drawAnimation(float frame_no, float delta_seconds, bool 
         // and can mix mask and non-mask parts, so those test per part inside
         // their emit loops; the single-part kinds are handled here.
         if (kind == ss::runtime::DrawBatchKind_Normal) {
-            _emit_normal_batch(f, ci, batch, draw_order_data);
+            _emit_normal_batch(f, batch, draw_order_data);
         } else if (kind == ss::runtime::DrawBatchKind_Shape) {
-            _emit_shape_batch(f, ci, batch, draw_order_data);
+            _emit_shape_batch(f, batch, draw_order_data);
         } else if (kind == ss::runtime::DrawBatchKind_Instance) {
             int p_idx = (int)draw_order_data[batch->start_rank()];
             if (_is_pure_mask_part(p_idx)) continue;
@@ -2247,13 +2254,101 @@ void SsInternalPlayer::_drawAnimation(float frame_no, float delta_seconds, bool 
             if (!drawing_m) continue;
             _emit_effect_slot(f, ci, p_idx, drawing_m);
         } else if (kind == ss::runtime::DrawBatchKind_Mesh) {
-            _emit_mesh_batch(f, ci, batch, draw_order_data);
+            _emit_mesh_batch(f, batch, draw_order_data);
         }
         // DrawBatchKind_Text / Nines: not yet implemented. Mask is not missing —
         // it is consumed by the mask planner above, not emitted as a batch here.
     }
+    _flush_default_run(f.rs);
 
     _batch_canvas_items_in_use = (int)batch_count;
+}
+
+bool SsInternalPlayer::_run_can_take(ss::runtime::DrawBatchKind kind, const ss::runtime::DrawBatch* batch) const {
+    switch (kind) {
+        case ss::runtime::DrawBatchKind_Mask:
+        case ss::runtime::DrawBatchKind_Text:
+        case ss::runtime::DrawBatchKind_Nines:
+            return true;
+        case ss::runtime::DrawBatchKind_Normal:
+        case ss::runtime::DrawBatchKind_Mesh:
+            return !_run.shape && _run.texture_hash == batch->texture_hash()
+                && _run.blend == (ss::format::BlendType)batch->blend_type();
+        case ss::runtime::DrawBatchKind_Shape:
+            return _run.shape && _run.blend == (ss::format::BlendType)batch->blend_type();
+        default:
+            return false;
+    }
+}
+
+void SsInternalPlayer::_run_begin(bool shape, uint32_t texture_hash, const RID& texture, ss::format::BlendType blend) {
+    _run.open = true;
+    _run.shape = shape;
+    _run.texture_hash = texture_hash;
+    _run.texture = texture;
+    _run.blend = blend;
+    _run.ci = _batch_ci_free ? _batch_ci : RID();
+    _batch_ci_free = false;
+    _run.vertex_count = 0;
+    _run.index_count = 0;
+}
+
+void SsInternalPlayer::_run_reserve(int vertices, int indices) {
+    RunStreams& s = _run_streams;
+    const int need_v = _run.vertex_count + vertices;
+    if (need_v > s.vertex_capacity) {
+        s.vertex_capacity = MAX(need_v, s.vertex_capacity + s.vertex_capacity / 2);
+        _normal_verts.resize(s.vertex_capacity);
+        _normal_uvs.resize(s.vertex_capacity);
+        _normal_colors.resize(s.vertex_capacity);
+        _normal_custom0.resize(s.vertex_capacity * 4);
+        s.verts = _normal_verts.ptrw();
+        s.uvs = _normal_uvs.ptrw();
+        s.colors = _normal_colors.ptrw();
+        s.custom0 = _normal_custom0.ptrw();
+    }
+    const int need_i = _run.index_count + indices;
+    if (need_i > s.index_capacity) {
+        s.index_capacity = MAX(need_i, s.index_capacity + s.index_capacity / 2);
+        _normal_indices.resize(s.index_capacity);
+        s.indices = (int32_t*)_normal_indices.ptrw();
+    }
+}
+
+void SsInternalPlayer::_run_append(const Vector2* verts, const Vector2* uvs, const Color* colors, const float* custom0,
+                                   int vertex_count, const int32_t* indices, int index_count) {
+    _run_reserve(vertex_count, index_count);
+    const RunStreams& s = _run_streams;
+    const int vbase = _run.vertex_count;
+    memcpy(s.verts + vbase, verts, vertex_count * sizeof(Vector2));
+    memcpy(s.uvs + vbase, uvs, vertex_count * sizeof(Vector2));
+    memcpy(s.colors + vbase, colors, vertex_count * sizeof(Color));
+    memcpy(s.custom0 + vbase * 4, custom0, vertex_count * 4 * sizeof(float));
+    int32_t* dst = s.indices + _run.index_count;
+    for (int i = 0; i < index_count; i++) {
+        dst[i] = vbase + indices[i];
+    }
+    _run.vertex_count += vertex_count;
+    _run.index_count += index_count;
+}
+
+void SsInternalPlayer::_flush_default_run(RenderingServer* rs) {
+    if (!_run.open) return;
+    _run.open = false;
+    if (_run.index_count == 0) return;
+    RID run_ci = _run.ci;
+    if (run_ci.is_valid()) {
+        // The batch gave its canvas item a placeholder draw index before the
+        // run's place in the rank order was known; this is that place.
+        rs->canvas_item_set_draw_index(run_ci, _draw_seq++);
+    } else {
+        run_ci = _acquire_per_part_canvas_item(); // draw_index = _draw_seq++
+    }
+    _apply_partcolor_material(rs, run_ci, s_default_shader_id_hash, _run.blend);
+    rs->canvas_item_set_transform(run_ci, Transform2D());
+    const RunStreams& s = _run_streams;
+    _emit_partcolor_mesh(rs, run_ci, s.indices, _run.index_count, s.verts, s.colors, s.uvs,
+                         s.custom0, _run.vertex_count, _run.texture);
 }
 
 
@@ -3321,7 +3416,7 @@ bool SsInternalPlayer::_build_shape_geometry(const DrawFrame& f, int p_idx,
     return true;
 }
 
-void SsInternalPlayer::_emit_normal_batch(const DrawFrame& f, RID ci,
+void SsInternalPlayer::_emit_normal_batch(const DrawFrame& f,
                                           const ss::runtime::DrawBatch* batch,
                                           const uint16_t* draw_order_data) {
     if (!batch || !draw_order_data) return;
@@ -3340,37 +3435,6 @@ void SsInternalPlayer::_emit_normal_batch(const DrawFrame& f, RID ci,
     if (tex.is_null()) return;
     const Vector2 tex_size = tex->get_size();
     const Vector2 inv_tex_size = Vector2(1.0f / tex_size.x, 1.0f / tex_size.y);
-
-    const int vertex_count = (int)batch->vertex_count();
-    if (_normal_verts.size() < vertex_count) {
-        _normal_verts.resize(vertex_count);
-    }
-    if (_normal_uvs.size() < vertex_count) {
-        _normal_uvs.resize(vertex_count);
-    }
-    if (_normal_colors.size() < vertex_count) {
-        _normal_colors.resize(vertex_count);
-    }
-    if (_normal_custom0.size() < vertex_count * 4) {
-        _normal_custom0.resize(vertex_count * 4);
-    }
-    const int index_count = (int)batch->index_count();
-    if (_normal_indices.size() < index_count) {
-        _normal_indices.resize(index_count);
-    }
-    SsIntArray&   indices = _normal_indices;
-
-    // The accumulators are peak-retained (grown above, never shrunk), so their
-    // size is the largest batch seen so far; each run emits only what it wrote.
-    Vector2* verts_ptr = _normal_verts.ptrw();
-    Vector2* uvs_ptr = _normal_uvs.ptrw();
-    Color* colors_ptr = _normal_colors.ptrw();
-    float* custom0_ptr = _normal_custom0.ptrw();
-    int32_t* indices_ptr = (int32_t*)indices.ptrw();
-
-    int vbase = 0;
-    int ibase = 0;
-    bool batch_ci_used = false;
 
     // batch->blend_type() is the runtime BlendType; converted to ssab BlendType
     // by raw u8 value (the two enums are layout-equivalent).
@@ -3394,36 +3458,6 @@ void SsInternalPlayer::_emit_normal_batch(const DrawFrame& f, RID ci,
     if (_per_part_normal_indices.size() < INDICES_COUNT_PENTAGON) {
         _per_part_normal_indices.resize(INDICES_COUNT_PENTAGON);
     }
-
-    // Flush the run of contiguous default (shared-shader) parts accumulated so
-    // far onto a canvas_item, giving it a draw_index at the CURRENT rank
-    // position. This is what keeps default and per-part parts interleaved in
-    // rank order within a single batch. Without it, all of a batch's default
-    // parts collapse onto one CI whose draw_index is fixed before any part is
-    // processed, so they always sink behind that batch's per-part parts —
-    // which hid the rank-1 "face" behind the rank-0 shader-driven "head".
-    // The first run reuses the batch CI; a run that resumes after a per-part
-    // part gets a fresh pooled CI so it can carry its own (later) draw_index.
-    auto flush_default_run = [&]() {
-        if (ibase == 0) return;
-        RID run_ci;
-        if (!batch_ci_used) {
-            run_ci = ci;
-            batch_ci_used = true;
-            // The caller gave `ci` a placeholder draw_index before the parts (and
-            // thus the per-part/default split) were known; set its real rank
-            // position now.
-            rs->canvas_item_set_draw_index(ci, _draw_seq++);
-        } else {
-            run_ci = _acquire_per_part_canvas_item(); // fresh CI, draw_index = _draw_seq++
-        }
-        _apply_partcolor_material(rs, run_ci, s_default_shader_id_hash, ssab_blend);
-        rs->canvas_item_set_transform(run_ci, Transform2D());
-        _emit_partcolor_mesh(rs, run_ci, indices_ptr, ibase, verts_ptr, colors_ptr,
-                             uvs_ptr, custom0_ptr, vbase, tex_rid);
-        vbase = 0;
-        ibase = 0;
-    };
 
     for (uint16_t k = 0; k < count; k++) {
         int p_idx = (int)draw_order_data[batch->start_rank() + k];
@@ -3450,10 +3484,12 @@ void SsInternalPlayer::_emit_normal_batch(const DrawFrame& f, RID ci,
 
         PartShaderInfo psi = _resolve_part_shader_info(f, part);
         if (psi.is_per_part || masked) {
-            // Emit any default parts accumulated ahead of this per-part part
-            // first, so they keep a lower (behind) draw_index than it — this
-            // per-part CI is acquired (and indexed) right below.
-            flush_default_run();
+            // Draw the default parts gathered ahead of this per-part part first,
+            // so they keep a lower (behind) draw_index than it — this per-part
+            // CI is acquired (and indexed) right below. Without it the run's
+            // parts would all sink behind the batch's per-part parts, which hid
+            // the rank-1 "face" behind the rank-0 shader-driven "head".
+            _flush_default_run(rs);
             // Per-part path: build into the small scratch buffers (vbase=0),
             // acquire dedicated canvas_item + ShaderMaterial, emit one mesh.
             Vector2* p_verts_ptr = _per_part_normal_verts.ptrw();
@@ -3489,40 +3525,31 @@ void SsInternalPlayer::_emit_normal_batch(const DrawFrame& f, RID ci,
             continue;
         }
 
-        // Default / shared path: accumulate into the batch arrays.
+        // Default / shared path: built straight into the default run.
+        if (!_run.open) _run_begin(false, batch->texture_hash(), tex_rid, ssab_blend);
+        _run_reserve(MAX_VERTICES_COUNT, INDICES_COUNT_PENTAGON);
+        const int vbase = _run.vertex_count;
+        const RunStreams& s = _run_streams;
         const int vert_count = _build_normal(f, p_idx, part, drawing_m, inv_tex_size,
-                                             verts_ptr, uvs_ptr, colors_ptr, custom0_ptr, vbase);
+                                             s.verts, s.uvs, s.colors, s.custom0, vbase);
         if (vert_count == 0) continue;
 
         // Append per-part indices with vertex base offset.
+        int32_t* indices_ptr = s.indices + _run.index_count;
         if (vert_count == MAX_VERTICES_COUNT) {
             const int p[INDICES_COUNT_PENTAGON] = { 0,1,4, 1,3,4, 3,2,4, 2,0,4 };
-            for (int j = 0; j < INDICES_COUNT_PENTAGON && ibase + j < indices.size(); j++) {
-                indices_ptr[ibase + j] = vbase + p[j];
-            }
-            ibase += INDICES_COUNT_PENTAGON;
+            for (int j = 0; j < INDICES_COUNT_PENTAGON; j++) indices_ptr[j] = vbase + p[j];
+            _run.index_count += INDICES_COUNT_PENTAGON;
         } else {
             const int q[INDICES_COUNT_QUAD] = { 0,1,2, 1,3,2 };
-            for (int j = 0; j < INDICES_COUNT_QUAD && ibase + j < indices.size(); j++) {
-                indices_ptr[ibase + j] = vbase + q[j];
-            }
-            ibase += INDICES_COUNT_QUAD;
+            for (int j = 0; j < INDICES_COUNT_QUAD; j++) indices_ptr[j] = vbase + q[j];
+            _run.index_count += INDICES_COUNT_QUAD;
         }
-        vbase += vert_count;
-    }
-
-    // Flush the trailing run of default parts.
-    flush_default_run();
-
-    if (!batch_ci_used) {
-        // Every part in this batch took the per-part route (or the batch was
-        // empty): the batch canvas_item drew nothing this frame. Clear it so
-        // stale geometry from a previous frame on this pooled CI does not linger.
-        rs->canvas_item_clear(ci);
+        _run.vertex_count += vert_count;
     }
 }
 
-void SsInternalPlayer::_emit_shape_batch(const DrawFrame& f, RID ci,
+void SsInternalPlayer::_emit_shape_batch(const DrawFrame& f,
                                           const ss::runtime::DrawBatch* batch,
                                           const uint16_t* draw_order_data) {
     if (!batch || !draw_order_data) return;
@@ -3534,29 +3561,6 @@ void SsInternalPlayer::_emit_shape_batch(const DrawFrame& f, RID ci,
     // shape pipeline now shares the PartColor shader with Normal/Mesh, so
     // the GPU framebuffer blend is selected via _apply_partcolor_material.
     const auto ssab_blend = (ss::format::BlendType)batch->blend_type();
-    // Default (shared-shader) parts of a batch must interleave with its per-part
-    // parts by rank, not all sink behind them onto the single batch CI (whose
-    // draw_index is fixed before any part is processed). Emit each contiguous run
-    // of default parts onto its own canvas item, indexed at that run's rank
-    // position: the first run reuses the batch CI; a run resumed after a per-part
-    // part takes a fresh pooled CI. (Same fix as _emit_normal_batch.)
-    RID run_ci;
-    bool batch_ci_used = false;
-    auto default_run_ci = [&]() -> RID {
-        if (run_ci.is_valid()) return run_ci;
-        if (!batch_ci_used) {
-            run_ci = ci;
-            batch_ci_used = true;
-            // Override the placeholder draw_index the caller set before the
-            // per-part/default split (and thus the rank order) was known.
-            f.rs->canvas_item_set_draw_index(ci, _draw_seq++);
-        } else {
-            run_ci = _acquire_per_part_canvas_item(); // draw_index = _draw_seq++
-        }
-        f.rs->canvas_item_set_transform(run_ci, Transform2D());
-        _apply_partcolor_material(f.rs, run_ci, s_default_shader_id_hash, ssab_blend);
-        return run_ci;
-    };
 
     for (uint16_t k = 0; k < count; k++) {
         int p_idx = (int)draw_order_data[batch->start_rank() + k];
@@ -3583,7 +3587,7 @@ void SsInternalPlayer::_emit_shape_batch(const DrawFrame& f, RID ci,
 
         PartShaderInfo psi = _resolve_part_shader_info(f, part);
         if (psi.is_per_part || masked) {
-            run_ci = RID(); // end the current default run; a later default part starts a new CI after this one
+            _flush_default_run(f.rs);
             RID part_ci = _acquire_per_part_canvas_item();
             Ref<ShaderMaterial> mat = _acquire_per_part_material(psi.id_hash, ssab_blend);
             // Shape parts have no bound cellmap texture; pass a zero
@@ -3596,19 +3600,15 @@ void SsInternalPlayer::_emit_shape_batch(const DrawFrame& f, RID ci,
                                  _shape_buf.verts.ptr(), _shape_buf.colors.ptr(), _shape_buf.uvs.ptr(),
                                  _shape_buf.custom0.ptr(), _shape_buf.vert_count, RID());
         } else {
-            _emit_partcolor_mesh(f.rs, default_run_ci(), _shape_buf.indices.ptr(), _shape_buf.index_count,
-                                 _shape_buf.verts.ptr(), _shape_buf.colors.ptr(), _shape_buf.uvs.ptr(),
-                                 _shape_buf.custom0.ptr(), _shape_buf.vert_count, RID());
+            if (!_run.open) _run_begin(true, 0, RID(), ssab_blend);
+            _run_append(_shape_buf.verts.ptr(), _shape_buf.uvs.ptr(), _shape_buf.colors.ptr(),
+                        _shape_buf.custom0.ptr(), _shape_buf.vert_count,
+                        _shape_buf.indices.ptr(), _shape_buf.index_count);
         }
-    }
-    if (!batch_ci_used) {
-        // Every Shape part in this batch took the per-part route (batch CI unused).
-        // Clear stale commands so the previous frame's draws don't linger.
-        f.rs->canvas_item_clear(ci);
     }
 }
 
-void SsInternalPlayer::_emit_mesh_batch(const DrawFrame& f, RID ci,
+void SsInternalPlayer::_emit_mesh_batch(const DrawFrame& f,
                                         const ss::runtime::DrawBatch* batch,
                                         const uint16_t* draw_order_data) {
     if (!batch || !draw_order_data) return;
@@ -3629,26 +3629,6 @@ void SsInternalPlayer::_emit_mesh_batch(const DrawFrame& f, RID ci,
     // BlendType by raw u8 value (same convention as _emit_normal_batch).
     const auto ssab_blend = (ss::format::BlendType)batch->blend_type();
     const RID tex_rid = tex->get_rid();
-    // Interleave default (shared-shader) parts with per-part parts by rank —
-    // emit each contiguous default run onto its own rank-indexed canvas item
-    // (first run reuses the batch CI, later runs take pooled CIs) instead of
-    // collapsing them all onto the batch CI behind the per-part parts.
-    // (Same fix as _emit_normal_batch.)
-    RID run_ci;
-    bool batch_ci_used = false;
-    auto default_run_ci = [&]() -> RID {
-        if (run_ci.is_valid()) return run_ci;
-        if (!batch_ci_used) {
-            run_ci = ci;
-            batch_ci_used = true;
-            f.rs->canvas_item_set_draw_index(ci, _draw_seq++);
-        } else {
-            run_ci = _acquire_per_part_canvas_item(); // draw_index = _draw_seq++
-        }
-        f.rs->canvas_item_set_transform(run_ci, Transform2D());
-        _apply_partcolor_material(f.rs, run_ci, s_default_shader_id_hash, ssab_blend);
-        return run_ci;
-    };
 
     for (uint16_t k = 0; k < count; k++) {
         int p_idx = (int)draw_order_data[batch->start_rank() + k];
@@ -3668,7 +3648,7 @@ void SsInternalPlayer::_emit_mesh_batch(const DrawFrame& f, RID ci,
 
         PartShaderInfo psi = _resolve_part_shader_info(f, part);
         if (psi.is_per_part || masked) {
-            run_ci = RID(); // end the current default run; a later default part starts a new CI after this one
+            _flush_default_run(f.rs);
             RID part_ci = _acquire_per_part_canvas_item();
             Ref<ShaderMaterial> mat = _acquire_per_part_material(psi.id_hash, ssab_blend);
             const Vector4 cell_rect = _resolve_cell_rect_uv(f, p_idx, inv_tex_size);
@@ -3679,13 +3659,11 @@ void SsInternalPlayer::_emit_mesh_batch(const DrawFrame& f, RID ci,
                                  _mesh_buf.verts.ptr(), _mesh_buf.colors.ptr(), _mesh_buf.uvs.ptr(),
                                  _mesh_buf.custom0.ptr(), _mesh_buf.vert_count, tex_rid);
         } else {
-            _emit_partcolor_mesh(f.rs, default_run_ci(), _mesh_buf.indices.ptr(), _mesh_buf.index_count,
-                                 _mesh_buf.verts.ptr(), _mesh_buf.colors.ptr(), _mesh_buf.uvs.ptr(),
-                                 _mesh_buf.custom0.ptr(), _mesh_buf.vert_count, tex_rid);
+            if (!_run.open) _run_begin(false, batch->texture_hash(), tex_rid, ssab_blend);
+            _run_append(_mesh_buf.verts.ptr(), _mesh_buf.uvs.ptr(), _mesh_buf.colors.ptr(),
+                        _mesh_buf.custom0.ptr(), _mesh_buf.vert_count,
+                        _mesh_buf.indices.ptr(), _mesh_buf.index_count);
         }
-    }
-    if (!batch_ci_used) {
-        f.rs->canvas_item_clear(ci);
     }
 }
 
@@ -3767,8 +3745,8 @@ bool SsInternalPlayer::_build_mesh_geometry(const DrawFrame& f, int p_idx,
         x_ptr[i*4 + 3] = 0.0f;
     }
 
-    // Triangle indices are part-local 0-based; this is a singleton batch, so
-    // no vertex-base rebasing is required.
+    // Triangle indices are part-local 0-based; the default run rebases them
+    // when it takes the part.
     int32_t* i_ptr = (int32_t*)out.indices.ptrw();
     const int32_t* src = f.mesh_indices + i0;
     for (int i = 0; i < index_count; i++) {

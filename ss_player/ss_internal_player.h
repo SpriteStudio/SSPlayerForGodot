@@ -680,12 +680,48 @@ private:
         SsIntArray indices;
     };
 
+    // The streams of the default run below, grown and never shrunk.
     SsVec2Array  _normal_verts;
     SsVec2Array  _normal_uvs;
     SsColorArray _normal_colors;
     // 4 floats per vertex, same layout as MeshGeometryBuffers::custom0.
     SsFloatArray _normal_custom0;
     SsIntArray   _normal_indices;
+    // Their pointers and sizes, taken again only when `_run_reserve` resizes
+    // them: every ptrw() and size() on a Packed array is a call into the engine,
+    // and the run writes to them part by part.
+    struct RunStreams {
+        Vector2* verts = nullptr;
+        Vector2* uvs = nullptr;
+        Color* colors = nullptr;
+        float* custom0 = nullptr;
+        int32_t* indices = nullptr;
+        int vertex_capacity = 0;
+        int index_capacity = 0;
+    };
+    RunStreams _run_streams;
+
+    // Default-shader parts gathered into one draw. A run carries on across
+    // Normal and Mesh batches with the same texture and blend (Shape batches,
+    // which have no texture, only across Shape batches), and is drawn as soon as
+    // anything that takes a draw index of its own comes next: a per-part part,
+    // an Instance or Effect batch, or a batch it cannot carry on into. The
+    // batches that draw nothing here (Mask, Text, Nines) do not end it.
+    struct DefaultRun {
+        bool open = false;
+        bool shape = false;
+        uint32_t texture_hash = 0;
+        RID texture;
+        ss::format::BlendType blend = (ss::format::BlendType)0;
+        // The canvas item of the batch the run began in, if that batch had not
+        // used it yet; otherwise the run takes a pooled one when drawn.
+        RID ci;
+        int vertex_count = 0;
+        int index_count = 0;
+    };
+    DefaultRun _run;
+    RID _batch_ci;
+    bool _batch_ci_free = false;
     SsVec2Array  _effect_verts;
     SsVec2Array  _effect_uvs;
     SsColorArray _effect_colors;
@@ -985,22 +1021,27 @@ private:
                               const Vector2& inv_tex_size,
                               MeshGeometryBuffers& out);
 
-    // Per-batch emit helpers. `ci` is the batch's canvas_item from
-    // `_batch_canvas_items`; caller has already cleared it and set z_index.
-    // For Normal batches multiple parts' geometry is concatenated into a
-    // single mesh.
-    void _emit_normal_batch(const DrawFrame& f, RID ci,
+    // Per-batch emit helpers. The caller has already cleared the batch's
+    // canvas_item and left it in `_batch_ci`. Default-shader parts go into the
+    // default run; per-part parts draw on pooled canvas items of their own.
+    void _emit_normal_batch(const DrawFrame& f,
                             const ss::runtime::DrawBatch* batch,
                             const uint16_t* draw_order_data);
-    void _emit_shape_batch(const DrawFrame& f, RID ci,
+    void _emit_shape_batch(const DrawFrame& f,
                            const ss::runtime::DrawBatch* batch,
                            const uint16_t* draw_order_data);
-    // Mesh singleton emit: skinned mesh parts are non-batchable, so each gets
-    // its own batch (like Shape). Vertices arrive world-space from the runtime,
-    // so no world-matrix multiply is applied here.
-    void _emit_mesh_batch(const DrawFrame& f, RID ci,
+    // Mesh vertices arrive world-space from the runtime, so no world-matrix
+    // multiply is applied here.
+    void _emit_mesh_batch(const DrawFrame& f,
                           const ss::runtime::DrawBatch* batch,
                           const uint16_t* draw_order_data);
+
+    bool _run_can_take(ss::runtime::DrawBatchKind kind, const ss::runtime::DrawBatch* batch) const;
+    void _run_begin(bool shape, uint32_t texture_hash, const RID& texture, ss::format::BlendType blend);
+    void _run_reserve(int vertices, int indices);
+    void _run_append(const Vector2* verts, const Vector2* uvs, const Color* colors, const float* custom0,
+                     int vertex_count, const int32_t* indices, int index_count);
+    void _flush_default_run(RenderingServer* rs);
 
     // Pool helpers
     RID _ensure_batch_ci(int batch_idx);
