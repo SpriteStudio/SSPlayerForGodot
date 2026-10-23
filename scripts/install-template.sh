@@ -117,8 +117,8 @@ case "$PLATFORM" in
         echo "Processing Web (nothreads) templates..."
         [ -f godot.web.template_release.wasm32.nothreads.zip ] && cp godot.web.template_release.wasm32.nothreads.zip "$TEMPLATES_DIR/web_nothreads_release.zip"
         [ -f godot.web.template_debug.wasm32.nothreads.zip ] && cp godot.web.template_debug.wasm32.nothreads.zip "$TEMPLATES_DIR/web_nothreads_debug.zip"
-        [ -f godot.web.template_release.wasm32.nothreads.dlink.zip ] && cp godot.web.template_release.wasm32.nothreads.dlink.zip "$TEMPLATES_DIR/web_nothreads_dlink_release.zip"
-        [ -f godot.web.template_debug.wasm32.nothreads.dlink.zip ] && cp godot.web.template_debug.wasm32.nothreads.dlink.zip "$TEMPLATES_DIR/web_nothreads_dlink_debug.zip"
+        [ -f godot.web.template_release.wasm32.nothreads.dlink.zip ] && cp godot.web.template_release.wasm32.nothreads.dlink.zip "$TEMPLATES_DIR/web_dlink_nothreads_release.zip"
+        [ -f godot.web.template_debug.wasm32.nothreads.dlink.zip ] && cp godot.web.template_debug.wasm32.nothreads.dlink.zip "$TEMPLATES_DIR/web_dlink_nothreads_debug.zip"
         ;;
         
     *)

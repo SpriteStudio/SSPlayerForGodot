@@ -6,7 +6,7 @@ No warranty or support is provided for this branch, and we cannot respond to fea
 Interfaces may change without notice.  
 
 A plugin for playing back animations created with [SpriteStudio](https://www.webtech.co.jp/spritestudio/) inside [Godot Engine](https://godotengine.org/).
-Animation playback uses `libssruntime` provided by [SpriteStudio-SDK](https://github.com/cri-middleware/SpriteStudio-SDK).
+Drag a `.sspj` onto the **SS Importer** dock, then drop the converted `.ssab` into the 2D viewport — no code to reach the first frame.
 
 !!! tip "No SpriteStudio data of your own yet?"
     The [official sample data](https://www.webtech.co.jp/help/ja/spritestudio7/download/sample/) works as-is — that page is
@@ -21,15 +21,15 @@ Animation playback uses `libssruntime` provided by [SpriteStudio-SDK](https://gi
     - [Build Guide](setup/build.md)
 - **Workflow**
     - [Basic Usage](workflow/usage_basic.md)
-    - [Integration with AnimationPlayer](workflow/animation_player.md)
-    - [Asset Import and Editor Integration](workflow/usage_asset_pipeline.md) (start here for the initial `.sspj` import)
-    - [Scripting and Events](workflow/usage_scripting.md)
+    - [Asset Import & Editor Integration](workflow/usage_asset_pipeline.md) (start here for the initial `.sspj` import)
+    - [Scripting & Events](workflow/usage_scripting.md)
     - [Motion Blending](workflow/motion_blending.md)
     - [Audio Playback](workflow/audio.md)
+    - [AnimationPlayer Integration](workflow/animation_player.md)
     - [Exporting Your Project](workflow/export.md)
     - [Generated Assets and Packs](workflow/generated_assets.md) (dependencies, export modes, `.pck`)
 - **Advanced Topics**
-    - [CLI Conversion and Automation](workflow/import.md)
+    - [CLI Conversion & CI/CD](workflow/import.md)
     - [Verifying Playback from the Command Line](workflow/verify_playback.md) (headless checks and a PNG snapshot, for CI and coding assistants)
     - [Performance Tuning and Advanced Settings](workflow/tips.md)
 - **API Reference**
@@ -90,13 +90,7 @@ graph LR
 
 ## Supported Versions
 
-- **Godot Engine**: [4.7 branch](https://github.com/godotengine/godot/tree/4.7)
-- **godot-cpp**: [master branch](https://github.com/godotengine/godot-cpp/tree/master)
-
-> [!NOTE]
-> The plugin's GDExtension build supports Godot 4.7 and later.
-
-Build and execution have been verified on Windows / macOS.
+- **Godot Engine**: 4.7 or later.
 
 ## Related Repositories
 

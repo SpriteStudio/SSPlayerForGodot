@@ -7,7 +7,7 @@ Godot の設計思想（ノードとシグナル）に沿った直感的な API 
 
 ## 直感的な再生制御
 
-インスペクタでの操作と同様に、スクリプトからもシンプルなメソッド呼び出しでアニメーションを制御できます。
+インスペクターでの操作と同様に、スクリプトからもシンプルなメソッド呼び出しでアニメーションを制御できます。
 
 ```gdscript
 extends Node2D
@@ -119,7 +119,7 @@ func _on_signal_emitted(command: String, value: Dictionary, info: Dictionary):
 
 ```gdscript
 func change_costume():
-    # セルマップ名は SpriteStudio で定義された名前（get_cellmap_names() で取得、インスペクタの CellMap Overrides に表示）を指定する
+    # セルマップ名は SpriteStudio で定義された名前（get_cellmap_names() で取得、インスペクターの CellMap Overrides に表示）を指定する
     var new_costume_texture = preload("res://assets/sailor_uniform.png")
     ss_player.set_cellmap_texture("Clothes 1", new_costume_texture)
 ```
@@ -142,7 +142,7 @@ func change_costume():
 
 | プロパティ | 説明 |
 |---|---|
-| **Part Name** (`part_name`) | 追従対象のパーツ名（`.ssab` の PartData 名）。インスペクタではアセットのパーツ名からドロップダウンで選べます（プレーヤを解決できない場面のために手入力も可）。スキンメッシュのパーツはドロップダウンには出ません（後述の注記を参照） |
+| **Part Name** (`part_name`) | 追従対象のパーツ名（`.ssab` の PartData 名）。インスペクターではアセットのパーツ名からドロップダウンで選べます（プレーヤを解決できない場面のために手入力も可）。スキンメッシュのパーツはドロップダウンには出ません（後述の注記を参照） |
 | **Follow Path** (`follow_path`) | 追従元の `SpriteStudioPlayer2D`。空（既定）なら**最も近い祖先**のプレーヤを使います |
 | **Remote Path** (`remote_path`) | 駆動する対象の `Node2D`。空（既定）なら自分自身を動かし、子はシーンツリーの継承で追従します。指定するとその外部ノードへ姿勢を書き込みます（プレーヤのサブツリーの外に置いた資産を追従させたい場合） |
 | **Use Global Coordinates** (`use_global_coordinates`) | ON（既定）でグローバル座標として、OFF で対象のローカル座標として書き込みます |

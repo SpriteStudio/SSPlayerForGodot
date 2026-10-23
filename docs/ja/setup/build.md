@@ -253,8 +253,8 @@ scons platform=web target=template_release dlink_enabled=yes threads=no
 
 ```bash
 ./scripts/install-template.sh web
-# インストール先 → <export_templates>/<version>/web_nothreads_dlink_debug.zip
-#                                              web_nothreads_dlink_release.zip
+# インストール先 → <export_templates>/<version>/web_dlink_nothreads_debug.zip
+#                                              web_dlink_nothreads_release.zip
 ```
 
 インストール後は、Web プリセットで **Extensions Support** を ON にするだけでエクスポートできます。Godot が名前一致で `..._dlink_...` テンプレートを自動選択するため、`custom_template` の指定は不要です。プリセット側の操作（利用者視点）は [プロジェクトのエクスポート → Web](../workflow/export.md#web) を参照してください。

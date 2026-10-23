@@ -5,7 +5,7 @@
 本developブランチに関してはいかなる保証もサポートも提供しません。リクエストやバグ報告への返信もできません。  
 インターフェースは予告なく変更される可能性があります。
 
-[SpriteStudio](https://www.webtech.co.jp/spritestudio/) で作成したアニメーションを [Godot Engine](https://godotengine.org/) 上で再生するためのプラグインです。再生処理は [SpriteStudio-SDK](https://github.com/cri-middleware/SpriteStudio-SDK) が提供する `libssruntime` を介して行います。
+[SpriteStudio](https://www.webtech.co.jp/spritestudio/) で作成したアニメーションを [Godot Engine](https://godotengine.org/) 上で再生するためのプラグインです。`.sspj` を **SS Importer** ドックにドラッグし、変換された `.ssab` を 2D ビューポートへドロップすれば、コードを書かずに再生できます。
 
 !!! tip "SpriteStudio のデータが手元に無くても始められます"
     [公式のサンプルデータ](https://www.webtech.co.jp/help/ja/spritestudio7/download/sample/)がそのまま使えます。キャラクターなら
@@ -18,11 +18,11 @@
     - [ビルドガイド](setup/build.md)
 - **ワークフロー**
     - [基本的な使い方](workflow/usage_basic.md)
-    - [AnimationPlayer との連携](workflow/animation_player.md)
     - [アセットのインポートとエディタ連携](workflow/usage_asset_pipeline.md)（初回の `.sspj` インポートはこちら）
     - [スクリプト制御とイベント](workflow/usage_scripting.md)
     - [モーションブレンド](workflow/motion_blending.md)
     - [サウンド再生](workflow/audio.md)
+    - [AnimationPlayer との連携](workflow/animation_player.md)
     - [プロジェクトのエクスポート](workflow/export.md)
     - [生成アセットの構成と配信](workflow/generated_assets.md)（依存関係・エクスポートモード・`.pck`）
 - **応用**
@@ -44,7 +44,7 @@
 本プラグインは、Godot Engine 上で SpriteStudio の表現力をフルに引き出します。
 
 *   **幅広い機能サポート:** ボーン階層、メッシュ＆デフォーム、パーティクルエフェクトなど、SpriteStudio のほぼ全機能を標準でサポートします（一部の未対応は [制約と適用範囲](limitations.md) を参照）。
-*   **シームレスな統合と強力なアセットパイプライン:** Godot のエディタ内に統合された「SS Importer」ドックへのドラッグ＆ドロップによる簡単なインポートに加え、インスペクタから直接 SpriteStudio を開いて 1 クリックで再コンバートできます。詳しくは [アセットのインポートとエディタ連携](workflow/usage_asset_pipeline.md) をご覧ください。
+*   **シームレスな統合と強力なアセットパイプライン:** Godot のエディタ内に統合された「SS Importer」ドックへのドラッグ＆ドロップによる簡単なインポートに加え、インスペクターから直接 SpriteStudio を開いて 1 クリックで再コンバートできます。詳しくは [アセットのインポートとエディタ連携](workflow/usage_asset_pipeline.md) をご覧ください。
 *   **動的な着せ替え (CellMap Overrides):** 実行時にテクスチャ（セルマップ）を差し替えることで、キャラクターのカラーバリエーションや装備変更を簡単に実装できます。
 *   **シグナルとイベント:** タイムライン上に設定した「ユーザーデータ」や「シグナル」を Godot のシグナルとして受け取り、ゲームロジックのトリガーを正確なタイミングで行えます。どのパーツが発火したかも各イベントが持っています。
 *   **モーションブレンド:** アニメーションをトラックに重ね、クロスフェードで切り替えられます。動きから動きへ、カットではなくなめらかに移れます。詳しくは [モーションブレンド](workflow/motion_blending.md) をご覧ください。
@@ -77,7 +77,7 @@ graph LR
     DOCK -. "自動生成" .-> BIN
     CLI -. "生成" .-> BIN
     
-    BIN -- "インスペクタにセット" --> NODE
+    BIN -- "インスペクターにセット" --> NODE
     NODE -. "高速再生" .-> RT
     NODE -- "描画" --> RENDER{{" 画面 "}}
 
@@ -87,13 +87,7 @@ graph LR
 
 ## 対応バージョン
 
-- **Godot Engine**: [4.7 ブランチ](https://github.com/godotengine/godot/tree/4.7)
-- **godot-cpp**: [master ブランチ](https://github.com/godotengine/godot-cpp/tree/master)
-
-> [!NOTE]
-> このプラグインの GDExtension 版は Godot 4.7 以降に対応しています。
-
-Windows / macOS でのビルドおよび実行を確認しています。
+- **Godot Engine**: 4.7 以降。
 
 ## 関連リポジトリ
 

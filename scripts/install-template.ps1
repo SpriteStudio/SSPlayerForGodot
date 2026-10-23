@@ -79,8 +79,8 @@ switch ($Platform) {
         Write-Host "Processing Web (nothreads) templates..."
         if (Test-Path "godot.web.template_release.wasm32.nothreads.zip") { Copy-Item "godot.web.template_release.wasm32.nothreads.zip" "$TemplatesDir\web_nothreads_release.zip" -Force }
         if (Test-Path "godot.web.template_debug.wasm32.nothreads.zip") { Copy-Item "godot.web.template_debug.wasm32.nothreads.zip" "$TemplatesDir\web_nothreads_debug.zip" -Force }
-        if (Test-Path "godot.web.template_release.wasm32.nothreads.dlink.zip") { Copy-Item "godot.web.template_release.wasm32.nothreads.dlink.zip" "$TemplatesDir\web_nothreads_dlink_release.zip" -Force }
-        if (Test-Path "godot.web.template_debug.wasm32.nothreads.dlink.zip") { Copy-Item "godot.web.template_debug.wasm32.nothreads.dlink.zip" "$TemplatesDir\web_nothreads_dlink_debug.zip" -Force }
+        if (Test-Path "godot.web.template_release.wasm32.nothreads.dlink.zip") { Copy-Item "godot.web.template_release.wasm32.nothreads.dlink.zip" "$TemplatesDir\web_dlink_nothreads_release.zip" -Force }
+        if (Test-Path "godot.web.template_debug.wasm32.nothreads.dlink.zip") { Copy-Item "godot.web.template_debug.wasm32.nothreads.dlink.zip" "$TemplatesDir\web_dlink_nothreads_debug.zip" -Force }
     }
     
     "macos" {

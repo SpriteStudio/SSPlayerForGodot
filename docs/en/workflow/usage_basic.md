@@ -83,14 +83,13 @@ Once the node is selected, you can adjust various settings from Godot's Inspecto
 | `Audio Backend`            | Resource | Optional `SpriteStudioAudioBackend` that replaces the built-in audio playback |
 
 > [!NOTE]
-> **What an animation change keeps.** Everything you set: `Loop Count`, `Speed Scale`, `Frame Skip Enabled`, `Sub Frame Enabled`, a `frame_rate` override, and the playback **direction and style** all survive `set_animation()`. They describe the playback rather than the clip that happens to be loaded. Only the **playback section** is per-transition — frame indices mean nothing against a different animation, so it resets to the new clip's own range.
+> **What an animation change keeps.** Everything you set: `Loop Count`, `Speed Scale`, `Frame Skip Enabled`, `Sub Frame Enabled`, a `frame_rate` override, and the playback **direction and style** all survive `set_animation()`. Only the **playback section** resets, to the new clip's own range.
 >
-> The direction, style and `frame_rate` are reachable from a script (`player.playback_direction`, `player.frame_rate`) but are deliberately absent from the inspector, so they are neither shown nor saved with the scene.
+> The direction, style and `frame_rate` are set from a script (`player.playback_direction`, `player.frame_rate`) and are not saved with the scene.
 
 ---
 
 ## Support for Mask Parts
 
 This plugin supports SpriteStudio's "Mask" feature (for its limits, see [Limitations & Scope → Masks](../limitations.md#masks)).
-No special setup is required; if your `.ssab` file contains mask parts, clipping processes are automatically applied in Godot.
-Since the rendering is fully resolved internally via batch processing and Godot's rendering pipeline, there is no need for users to manually assign specific materials or configure `clip_children` on CanvasItems. You can use it simply by placing it in the scene.
+Nothing to set up: mask parts in your `.ssab` clip as authored when you place it in the scene.

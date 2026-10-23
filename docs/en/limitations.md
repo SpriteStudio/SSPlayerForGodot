@@ -7,7 +7,6 @@ Constraints and platform-specific caveats to be aware of when shipping with the 
 > [!WARNING]
 > - **Text parts** — not drawn. The runtime reserves the part's slot in the draw plan but supplies no glyphs (glyph layout and rasterization are the player's job), and the plugin has no Godot text pass yet.
 > - **9-slice parts** — not drawn. The runtime builds the whole grid into its dedicated `Nines` buffers, but the plugin does not read them yet, so the part renders as nothing rather than as a stretched cell.
-> - **Sequences (`.ssqb`)** — not played. `SSQBResource` loads them, but no node plays one; chain animations from GDScript on `animation_finished` instead.
 
 Text and 9-slice parts still occupy their place in the draw order, so an animation that uses them plays with those parts missing rather than failing. If you ship one, replace it with an ordinary part at authoring time.
 
@@ -21,7 +20,7 @@ The plugin draws straight to Godot's `RenderingServer` canvas item with no inter
 ## Masks
 
 > [!WARNING]
-> - **At most 96 masks at once in one animation**, counting both mask parts and parts that write a clipping mask (`writeMask`), and counting the animations it plays through instance parts. An instance's masks count again every time the instance is placed; a hidden mask, or one whose mask value is 0, does not count. Past 96, the rest are ignored and a warning is printed once — restructure the data rather than raising the count.
+> - **At most 96 masks at once in one animation**, counting both mask parts and parts that write a clipping mask (`writeMask`), and counting the animations it plays through instance parts. An instance's masks count again every time the instance is placed; a hidden mask, or one whose mask value is 0, does not count. Past 96, the rest are ignored and a warning is printed once.
 > - **Effect parts are not clipped by masks.**
 
 Godot's 2D canvas has no stencil buffer, so the plugin draws every mask of an animation — its instances included — into one offscreen bitmap, one bit per mask. Up to 24 fit at full resolution; past that the bitmap is split into two or four tiles of the same size, so an animation with many masks gets coarser mask edges rather than taking more memory.
@@ -36,19 +35,19 @@ The animation draws on canvas items of its own beneath the node, not on the node
 
 ## Platforms & Export
 
-The plugin ships in two build variants — **GDExtension** and **custom module** — and both can be exported to every Godot target. Build and execution are actively verified on **Windows / macOS**; the other targets are supported but less frequently exercised. See [Build Guide](setup/build.md) for the export flow of each.
+The plugin ships in two build variants — **GDExtension** and **custom module** — and both can be exported to every Godot target. See [Exporting Your Project](workflow/export.md) for the export flow of each.
 
 Per-platform caveats to keep in mind:
 
-- **macOS (GDExtension)** — released as a `universal` build (`arch=universal`).
-- **iOS** — requires macOS + Xcode, and only `template_debug` / `template_release` are produced (no editor target).
-- **Android** — the runtime is shipped as a native library placed under the matching ABI directory (`arm64-v8a` / `armeabi-v7a` / `x86_64`); build only the ABI of the device/emulator you run on.
+- **macOS (GDExtension)** — one universal build covers Apple silicon and Intel.
+- **iOS** — exporting requires macOS + Xcode.
+- **Android** — the runtime ships for `arm64-v8a`, `armeabi-v7a` and `x86_64`.
 - **Web** — see the dedicated section below.
 
 ## Web (WASM)
 
 > [!WARNING]
-> - **Single-threaded (`nothread`) only.** On the Web the plugin runs without threads. The upside is that no cross-origin isolation (COOP/COEP) headers are required, so a plain HTTP server is enough to run an export. Build the extension with `threads=no`.
+> - **Single-threaded (`nothread`) only.** On the Web the plugin runs without threads. The upside is that no cross-origin isolation (COOP/COEP) headers are required, so a plain HTTP server is enough to run an export. Leave **Thread Support** off in the export preset.
 > - **WebAssembly SIMD is required.** The runtime is built with WebAssembly SIMD instructions and will **not run on browsers without SIMD support**. Treat SIMD support as a browser requirement for your distribution.
 > - **GDExtension on the Web needs a dlink-enabled engine template.** The official Godot Web export templates do not support GDExtension libraries. You must supply an engine template built with `dlink_enabled=yes` and turn on **"Extensions Support"** in the export preset — otherwise the exported page fails with *"GDExtension libraries are not supported by this engine version."* See [Exporting Your Project → Web](workflow/export.md#web) for the steps. (The **custom module** variant embeds the code into the engine itself and does not need this.)
 
