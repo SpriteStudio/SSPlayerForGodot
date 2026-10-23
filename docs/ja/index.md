@@ -15,7 +15,6 @@
 
 - **セットアップ**
     - [インストール](setup/install.md)
-    - [ビルドガイド](setup/build.md)
 - **ワークフロー**
     - [基本的な使い方](workflow/usage_basic.md)
     - [アセットのインポートとエディタ連携](workflow/usage_asset_pipeline.md)（初回の `.sspj` インポートはこちら）
@@ -35,6 +34,9 @@
 - [トラブルシューティング](troubleshooting.md)
 - [制約と適用範囲](limitations.md)
 - [v1.x からのマイグレーション](migration_from_v1.md)
+- **Player・SDK 開発者向け**
+    - [ビルドガイド](setup/build.md)
+    - [プレイヤーの構成](development/internals.md)（ファイルの対応、変更した版の使い方、Godot での確かめ方、ファイルをまたぐ設計の理由）
 - **ライセンス**
     - [ライセンス](license.md)
     - [サードパーティライセンス](third_party_notices.md)

@@ -36,7 +36,7 @@
 ## 🚀 GDExtension を用いたクイックスタート
 
 **ゲームで使う場合**はこのまま下へ。アドオンを入れる → `.sspj` をエディタに D&D → ノードを置く。その先（スクリプト制御、シグナル、パーツ単位の上書き）も同じ道の続きで、[ドキュメント](./docs/ja/index.md)にあります。
-**Player 自体や、その下の Rust ランタイムを変更する場合**は [CONTRIBUTING.md](./CONTRIBUTING.md) と[ビルドガイド](./docs/ja/setup/build.md)へ。
+**Player 自体や、その下の Rust ランタイムを変更する場合**は [CONTRIBUTING.md](./CONTRIBUTING.md) と[ビルドガイド](./docs/ja/setup/build.md)へ。ファイルの対応、変更した版の使い方、Godot での確かめ方、ファイルをまたぐ設計の理由は[プレイヤーの構成](./docs/ja/development/internals.md)にあります。
 
 [公式サイト](https://godotengine.org/download/) から 4.7 系の Godot エディタを用意してください。対応するのは **SpriteStudio 7.5 以上**で作成されたプロジェクトです。
 

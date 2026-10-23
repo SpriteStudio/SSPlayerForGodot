@@ -52,7 +52,7 @@ waits on the runtime is under *Needs SDK* and tracked in the
 
 ## Needs SDK
 
-- [ ] **Sequence player node (`SpriteStudioSequence2D`)** — play `.ssqe` playlists: `SSQBResource` loads them but no
+- [ ] **Sequence player node (`SpriteStudioSequence2D`)** — play sequences (`.ssqb`, converted from `.ssqe`): `SSQBResource` loads them but no
   node executes one. Once the runtime advances sequences, add the node (or extend `SpriteStudioPlayer2D`) and surface
   step callbacks as Godot signals. Waits for: State machine implementation (Sequence playback).
 - [ ] **Stretch a 9-slice part to a layout rect** — a Nines part that follows the size of the `Control` it lives in, so

@@ -51,7 +51,7 @@ res://ssab_generated/overall/
 | File | Produced from | Godot representation | What it holds |
 |---|---|---|---|
 | `<anime pack>.ssab` | One file per `.ssae` | `SSABResource` | Animations (keyframes), part structure, **the cell map (the source rectangle, pivot and original image size on the atlas)**, effect definitions, user data / signals, referenced texture names, sound references |
-| `<sequence pack>.ssqb` | One file per `.ssqe` | `SSQBResource` | The animation playback order (sequence). Playback is not supported ([Limitations and Scope](../limitations.md)) |
+| `<sequence pack>.ssqb` | One file per `.ssqe` | `SSQBResource` | The animation playback order (sequence). Playback is not supported; chain animations on `animation_finished` instead ([Choosing Between SSAB and SSQB](tips.md#choosing-between-ssab-and-ssqb)) |
 | `<texture>.png` and so on | The images referenced by the `.sspj` | `Texture2D` (Godot writes an `.import` and converts to `.ctex`) | The artwork itself (the atlas image) |
 | `sound/<audio file>` | The sounds referenced by the `.sspj` | `AudioStream` | The audio played by sound parts ([Audio Playback](audio.md)) |
 
