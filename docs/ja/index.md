@@ -87,13 +87,7 @@ graph LR
 
 ## 対応バージョン
 
-- **Godot Engine**: [4.7 ブランチ](https://github.com/godotengine/godot/tree/4.7)
-- **godot-cpp**: [master ブランチ](https://github.com/godotengine/godot-cpp/tree/master)
-
-> [!NOTE]
-> このプラグインの GDExtension 版は Godot 4.7 以降に対応しています。
-
-Windows / macOS でのビルドおよび実行を確認しています。
+- **Godot Engine**: 4.7 以降。
 
 ## 関連リポジトリ
 

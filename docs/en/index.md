@@ -90,13 +90,7 @@ graph LR
 
 ## Supported Versions
 
-- **Godot Engine**: [4.7 branch](https://github.com/godotengine/godot/tree/4.7)
-- **godot-cpp**: [master branch](https://github.com/godotengine/godot-cpp/tree/master)
-
-> [!NOTE]
-> The plugin's GDExtension build supports Godot 4.7 and later.
-
-Build and execution have been verified on Windows / macOS.
+- **Godot Engine**: 4.7 or later.
 
 ## Related Repositories
 
