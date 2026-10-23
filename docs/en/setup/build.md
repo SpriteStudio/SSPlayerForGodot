@@ -260,8 +260,8 @@ Then install the built templates so Godot can resolve them by name:
 
 ```bash
 ./scripts/install-template.sh web
-# installs → <export_templates>/<version>/web_nothreads_dlink_debug.zip
-#                                          web_nothreads_dlink_release.zip
+# installs → <export_templates>/<version>/web_dlink_nothreads_debug.zip
+#                                          web_dlink_nothreads_release.zip
 ```
 
 Once these are installed, exporting only requires turning on **Extensions Support** in the Web preset — Godot auto-selects the matching `..._dlink_...` template by name, so no `custom_template` is needed. The preset side (from a plugin user's perspective) is covered in [Exporting Your Project → Web](../workflow/export.md#web).
