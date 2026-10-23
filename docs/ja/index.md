@@ -35,8 +35,8 @@
 - [制約と適用範囲](limitations.md)
 - [v1.x からのマイグレーション](migration_from_v1.md)
 - **Player・SDK 開発者向け**
-    - [ビルドガイド](setup/build.md)
-    - [プレイヤーの構成](development/internals.md)（ファイルの対応、変更した版の使い方、Godot での確かめ方、ファイルをまたぐ設計の理由）
+    - [ビルドガイド](development/build.md)
+    - [プレイヤーの構成](development/architecture.md)（層と、この作りになっている理由）
 - **ライセンス**
     - [ライセンス](license.md)
     - [サードパーティライセンス](third_party_notices.md)

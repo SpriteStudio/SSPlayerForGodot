@@ -50,7 +50,7 @@ If you find a bug, please use the provided Issue Templates. Include:
 - zsh (the build scripts use a `#!/usr/bin/env zsh` shebang)
 - `godot-cpp`, cloned into the repository root: `git clone https://github.com/godotengine/godot-cpp.git -b master` (it is not a submodule)
 
-For the complete build guide, see [docs/en/setup/build.md](./docs/en/setup/build.md). How the player is put together — the file map, using a changed build in a project, checking it in Godot, the reasons that span files — is [docs/en/development/internals.md](./docs/en/development/internals.md).
+For the complete build guide — and using a changed build in a project, and checking it in Godot — see [docs/en/development/build.md](./docs/en/development/build.md). How the player is put together, and the reasons that span files, is [docs/en/development/architecture.md](./docs/en/development/architecture.md).
 
 ### Build the Plugin
 To compile the Godot Extension, put the SDK runtime in place first, then compile the C++ extension using the provided build scripts:
@@ -85,7 +85,7 @@ Once built, open the `examples/Ringo` project in the Godot Editor to verify your
 ```
 `deploy-examples` converts the fixtures with `ssconverter-cli` built from the submodule, so it needs Rust. Without it, open `test_gdextension` in the Godot Editor and drop the SDK's `tests/overall/overall.sspj` and `tests/Ringo/Ringo.sspj` onto the SS Importer dock, which writes the same `ssab_generated/`.
 
-`run-tests.sh` needs a Godot binary — `godot=<path>`, else `$GODOT`, `godot-bin/`, then `PATH` — and refuses to start without the addon and the `.ssab` both installed, rather than skipping its way to a green run. **A green run is silent**: the suite ends with an `ENGINE` line counting the warnings and errors Godot itself printed, and anything it lists is a defect or a newly tolerated message. The verdict is the RESULT line, the marker after it, and that `ENGINE` line — not the exit code. Windows uses the `.ps1` variant of each script. The suite sees no pixels and nothing wired on entering the tree; [checking against Godot](./docs/en/development/internals.md#3-checking-against-godot) runs both, and the editor UI, from a script.
+`run-tests.sh` needs a Godot binary — `godot=<path>`, else `$GODOT`, `godot-bin/`, then `PATH` — and refuses to start without the addon and the `.ssab` both installed, rather than skipping its way to a green run. **A green run is silent**: the suite ends with an `ENGINE` line counting the warnings and errors Godot itself printed, and anything it lists is a defect or a newly tolerated message. The verdict is the RESULT line, the marker after it, and that `ENGINE` line — not the exit code. Windows uses the `.ps1` variant of each script. The suite sees no pixels and nothing wired on entering the tree; [checking against Godot](./docs/en/development/build.md#checking-against-the-real-host) runs both, and the editor UI, from a script.
 
 ### Documentation
 Pages live as both `docs/en/<path>` and `docs/ja/<path>`; there is no fallback locale, so a page missing from one side is a nav entry pointing at nothing. Each locale also ships its own `docs/<locale>/assets/`, and asset paths are source-relative (`../assets/…`) **including inside raw `<video>` / `<img>` HTML**, which Zensical rewrites the same way it rewrites Markdown links. If you edit a page, build both locales before you finish. CI builds them too, both `--strict`, on a pull request that touches the site's sources, on the release PR and weekly.
@@ -165,7 +165,7 @@ Godot Engineとのネイティブな統合と高いパフォーマンスを維�
 - zsh (ビルドスクリプトは `#!/usr/bin/env zsh` を使用しています)
 - `godot-cpp`（submodule ではありません。リポジトリのルートに `git clone https://github.com/godotengine/godot-cpp.git -b master` で取得してください）
 
-完全なビルド手順については、[docs/ja/setup/build.md](./docs/ja/setup/build.md) を参照してください。プレイヤーの構成（ファイルの対応、変更した版をプロジェクトで使う方法、Godot での確かめ方、ファイルをまたぐ設計の理由）は [docs/ja/development/internals.md](./docs/ja/development/internals.md) にあります。
+完全なビルド手順（変更した版をプロジェクトで使う方法と、Godot での確かめ方を含む）については、[docs/ja/development/build.md](./docs/ja/development/build.md) を参照してください。プレイヤーの構成と、ファイルをまたぐ設計の理由は [docs/ja/development/architecture.md](./docs/ja/development/architecture.md) にあります。
 
 ### ビルド方法
 提供されているスクリプトを使用して、まず SDK のランタイムを配置し、次に GDExtension をコンパイルします。
@@ -200,7 +200,7 @@ Godot Engineとのネイティブな統合と高いパフォーマンスを維�
 ```
 `deploy-examples` は submodule からビルドした `ssconverter-cli` でフィクスチャを変換するため、Rust が必要です。Rust が無い場合は、Godot エディタで `test_gdextension` を開き、SDK の `tests/overall/overall.sspj` と `tests/Ringo/Ringo.sspj` を SS Importer ドックへドロップしてください。同じ `ssab_generated/` が書き出されます。
 
-`run-tests.sh` は Godot バイナリを必要とします（`godot=<path>`、無ければ `$GODOT`、`godot-bin/`、最後に `PATH`）。addon と `.ssab` が揃っていなければ、スキップして緑にするのではなく起動を拒否します。**成功した実行は何も出力しません。** スイートの最後に Godot 自身が出した警告とエラーを数える `ENGINE` 行が出て、そこに並ぶものは不具合か新たに容認したメッセージのどちらかです。判定は終了コードではなく、RESULT 行とその後のマーカー、そしてこの `ENGINE` 行で行います。Windows は各スクリプトの `.ps1` 版を使ってください。スイートには画素と、ツリーに入ったときに結線するものが見えません。その両方とエディタの UI をスクリプトから確かめる方法は、[Godot で確かめる](./docs/ja/development/internals.md#3-godot-で確かめる)にあります。
+`run-tests.sh` は Godot バイナリを必要とします（`godot=<path>`、無ければ `$GODOT`、`godot-bin/`、最後に `PATH`）。addon と `.ssab` が揃っていなければ、スキップして緑にするのではなく起動を拒否します。**成功した実行は何も出力しません。** スイートの最後に Godot 自身が出した警告とエラーを数える `ENGINE` 行が出て、そこに並ぶものは不具合か新たに容認したメッセージのどちらかです。判定は終了コードではなく、RESULT 行とその後のマーカー、そしてこの `ENGINE` 行で行います。Windows は各スクリプトの `.ps1` 版を使ってください。スイートには画素と、ツリーに入ったときに結線するものが見えません。その両方とエディタの UI をスクリプトから確かめる方法は、[Godot で確かめる](./docs/ja/development/build.md#実際のホストで確かめる)にあります。
 
 ### ドキュメント
 ページは `docs/en/<path>` と `docs/ja/<path>` の両方に存在します。フォールバックロケールは無いため、片方に欠けたページは行き先の無い nav エントリになります。アセットもロケールごとに `docs/<locale>/assets/` を持ち、パスはソース相対（`../assets/…`）です。**生の `<video>` / `<img>` HTML の中でも同じ**で、Zensical は Markdown リンクと同じ規則で書き換えます。ページを編集したら、仕上げる前に両ロケールをビルドしてください。CI も、サイトのソースに触れるプルリクエスト、リリースのプルリクエスト、週次の実行で、両ロケールを `--strict` でビルドします。

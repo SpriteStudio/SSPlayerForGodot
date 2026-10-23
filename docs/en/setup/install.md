@@ -24,7 +24,7 @@ The shortest path to using the plugin without any build work.
 
 ## B. Use a Godot Engine with the SpriteStudio Player for Godot Custom Module
 
-If you want to build and use the plugin as a custom module, refer to the [Build Guide](./build.md).
+If you want to build and use the plugin as a custom module, refer to the [Build Guide](../development/build.md).
 
 ## Next Steps
 

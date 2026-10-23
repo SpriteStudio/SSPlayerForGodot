@@ -18,7 +18,7 @@ In the **custom module** build there is no `addons` folder — the node exists o
 
 ### It works in the editor but the exported game has no node
 
-Export needs the **same target** you export with: `--export-debug` uses the `template_debug` library and `--export-release` the `template_release` one. If only an `editor` build exists, the export still "succeeds" and ships an extension with no library behind it. See [Build Guide](setup/build.md).
+Export needs the **same target** you export with: `--export-debug` uses the `template_debug` library and `--export-release` the `template_release` one. If only an `editor` build exists, the export still "succeeds" and ships an extension with no library behind it. See [Build Guide](development/build.md).
 
 ---
 

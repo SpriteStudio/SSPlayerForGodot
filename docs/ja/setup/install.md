@@ -24,7 +24,7 @@ SpriteStudio Player for Godot を使い始めるための手順です。
 
 ## B. SpriteStudio Player for Godot のカスタムモジュールを組み込んだ Godot Engine を利用する
 
-カスタムモジュールとしてビルドして利用する場合は、[ビルドガイド](./build.md) を参照してください。
+カスタムモジュールとしてビルドして利用する場合は、[ビルドガイド](../development/build.md) を参照してください。
 
 ## 次のステップ
 

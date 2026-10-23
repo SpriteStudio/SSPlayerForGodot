@@ -1,6 +1,6 @@
-# 🛠️ ビルド / 開発
+# 🛠️ ビルドガイド
 
-GDExtension またはカスタムモジュール組み込み Godot Engine を自分でビルドしたい場合、および SpriteStudio-SDK と並行してプラグインを開発したい場合は、以下の手順に従ってください。
+GDExtension またはカスタムモジュール組み込み Godot Engine を自分でビルドしたい場合、および SpriteStudio-SDK と並行してプラグインを開発したい場合は、以下の手順に従ってください。変更したプレイヤーをプロジェクトで使う方法と、Godot での確かめ方もここにあります。プレイヤーの構成とその理由は[プレイヤーの構成](architecture.md)にあります。
 
 ## 概要
 
@@ -137,6 +137,12 @@ $env:PYTHONUTF8=1
 | Web              | `./scripts/release-web.sh`            | `wasm32`（`threads=no`）、`template_debug` / `template_release` のみ |
 
 > Linux 向けのカスタムモジュール用一括ビルドスクリプトは用意していません。`./scripts/build.sh platform=linux target=...` を `editor` / `template_debug` / `template_release` で個別に呼び出してください。
+
+## 変更したプレイヤーを使う
+
+`scripts/build-extension.sh` はホスト向けの GDExtension をビルドし、`misc/spritestudio.gdextension`・アイコン・ライセンスと一緒に `examples/dev_gdextension/addons/spritestudio/` とほかのすべてのサンプルに入れます。そのフォルダを自分のプロジェクトの `addons/spritestudio/` にコピーし、プロジェクトを開き直してください。入っているのはホストのプラットフォームのバイナリだけです。ほかのプラットフォームは[リリースビルド](#リリースビルド)にあるプラットフォームごとのスクリプトで作ります。リリースの zip（`scripts/build-release.sh`）は、CI が作った全プラットフォームの成果物から組み立てるものです。
+
+カスタムモジュールでは、エンジンそのものがプレイヤーです。`scripts/build.sh` がプレイヤーを組み込んだエディタをビルドし、リリース用のスクリプトがエクスポートテンプレートをビルドし、`scripts/install-template.sh` がそれをインストールします。
 
 ## カスタムモジュールのデバッグ方法
 
@@ -433,6 +439,54 @@ GDExtension の場合も、カスタムモジュールとほぼ同じ手順でC+
     "cwd": "${workspaceFolder}"
 }
 ```
+
+## 実際のホストで確かめる
+
+`scripts/run-tests.sh` は GDExtension 版をヘッドレスで回します（規則は CONTRIBUTING にあります）。それで見えないものが 2 つあります。画素（`--headless` はダミーのラスタライザを入れるため）と、ツリーに入ったときに結線するもの（スイートはルートがツリーに入る前に全ケースを回すため）です。`SpriteStudioPartAttachment2D` と音がそれに当たります。CI は全プラットフォームの GDExtension とカスタムモジュールをコンパイルするだけで、テストは回しません。スイートは自分で回してください。エクスポート先ごとの確かめ方は[エクスポート機能のテスト・デバッグ方法](#エクスポート機能のテストデバッグ方法)に、デバッガの付け方はデバッグ方法の節にあります。
+
+### Godot の表記の引き方
+
+ガイドでは、エディタのメニューとドックを Godot の表示どおりに書きます。英語の文字列はエンジンのソース（`godot/editor/`）に、日本語は `godot/editor/translations/editor/ja.po` にあります。プラグインは自分の文字列を翻訳していますが、エディタには表示されません。エディタはメインの翻訳ドメインを無効にし、自分の UI を `godot.editor` ドメインで翻訳するため、日本語のエディタでもドックとインスペクタは英語のままです。日本語のページでボタンの名前を英語で書いているのはこのためです。
+
+### スクリプトから画素とツリーを確かめる
+
+`--script` で走らせる `SceneTree` のスクリプトは、実際に描画し、ツリーにも入ります。
+
+```bash
+rsync -a --exclude 'ssab_generated/*' examples/dev_gdextension/ <scratch>/proj/
+rsync -a examples/dev_gdextension/ssab_generated/<pack> <scratch>/proj/ssab_generated/
+cd <scratch>/proj && <godot> --path . --script res://probe.gd
+```
+
+プロジェクトを `.godot/` ごとコピーすると、再インポートせずに `load()` が通ります。
+
+- ノードを足すのは `await process_frame` の後です。`_initialize` の直後はまだツリーができていません。
+- `await RenderingServer.frame_post_draw` の後で `get_root().get_texture().get_image().save_png(…)` するか、`Image.get_pixel` で画素を読みます。
+- プレイヤーの `animation_process_mode` を `ANIMATION_PROCESS_MANUAL` にして `frame_no` を代入します。代入は必ず描き直しますが、同じフレームでの `advance(0.0)` は描き直さないことがあります。
+- テクスチャを読めないエフェクトは描かれません。SDK のテストプロジェクトと比べるときは、作業用のプロジェクトに `.ssab` を元の画像と同じ階層に置き、`<godot> --headless --path <proj> --import` で一度取り込みます。
+- 1 つを除くすべてのパーツに `set_part_visibility_override` を掛けると、そのパーツが何を描いているかが分かります。
+- レンダラーの比較は `--rendering-method forward_plus` で行います。`dev_gdextension` の既定は Compatibility、`test_gdextension` 由来のプロジェクトは Forward+ です。
+- ライトマスクは `PointLight2D` で確かめます。`DirectionalLight2D` は `range_item_cull_mask` に関係なく `light_mask = 2` の `Sprite2D` を照らすので、プレイヤーの横に対照の `Sprite2D` を置いてください。
+
+### スクリプトからエディタを確かめる
+
+`addons/spritestudio`（`.uid` ファイルは除く）と `.ssab`、`project.godot` で有効にした（`[editor_plugins] enabled=`）`@tool` の EditorPlugin を置いた作業用のプロジェクトで、プラグインのエディタ UI を動かせます。先に一度 `--headless --editor --quit` を実行して、`extension_list.cfg` を書かせてください。
+
+- **再生パネル:** `EditorInterface.open_scene_from_path`、`edit_node` のあと、`get_base_control()` の下から `find_child` でパネルを掴み、ボタンを押します。元に戻す・やり直すは `get_undo_redo().get_history_undo_redo(get_object_history_id(node))` を通します。
+- **インポートドック:** 同じようにドックを掴み、最近使ったファイルの一覧が呼ぶハンドラを呼びます。
+- **ファイルのドロップ:** ドックのドロップのハンドラはマウスがドックの上にあるかを見ますが、ヘッドレスには OS のカーソルがありません。`Input.parse_input_event` でドックの中心に `InputEventMouseMotion` を置き、`Input.flush_buffered_events()` のあと `get_tree().root.files_dropped.emit([<dir>])` を呼びます。ダイアログは表示中の `AcceptDialog` で、ボタンは `pressed.emit()` で押します。
+- **ファイルシステムのメニュー:** `EditorInterface.select_file(<path>)` のあと、ドックの最初の `Tree` で右ボタンの `item_mouse_selected` を emit すると、ドックの `PopupMenu` が埋まります。項目は `id_pressed.emit(<id>)` で押します。プラグインの項目は、2000 番台が `_get_menu_options`、3000 番台が `_popup_menu` から来るので、どちらの経路を通ったかが ID で分かります。
+- **自分の設定を変えずに別の言語のエディタを見る:** `Godot.app` をコピーし（APFS なら `cp -Rc`）、コピーの横に空の `._sc_` を置きます。これで自己完結型になり、設定はその隣の `editor_data/editor_settings-4.7.tres` に入るので、そこで `interface/editor/localization/editor_language` を設定します。`--headless` を付けずに起動し、スクリーンショットはプローブから撮ります。`TabContainer.get_tab_title()` は翻訳前の文字列を返します。
+
+### クラッシュしたとき
+
+公式のエディタには lldb で接続できません（hardened runtime）。シンボル付きのエンジンをビルドし（`godot/` で `scons platform=macos target=editor dev_build=yes scu_build=yes arch=arm64`。モジュール版の横に `bin/godot.macos.editor.dev.arm64` ができます）、`--disable-crash-handler` を付けて、`lldb --batch -o run -k "bt all"` で実行します。拡張は `build-extension.sh debug_symbols=yes` でビルドしてください。シンボルが無いと、`atos` でも `libSSGodot` のフレームに名前が付きません。
+
+プレイヤーのせいではないクラッシュが 2 つあります。1 つは、ビルド直後や新しい clone でのスイートの最初の import pass が、`Parameter "singleton" is null` の後に終了処理で落ちるものです。バックトレースに拡張のフレームは無く、2 回目は通ります。もう 1 つは `godot/bin/` のエディタで、これはモジュール版なので、GDExtension を読み込むとすべてのクラスが二重に登録されます（"already registered"）。GDExtension には `scripts/fetch-godot.sh` が置く `godot-bin/` を使ってください。
+
+### SDK の変更を試す
+
+`build-runtime` はサブモジュールからビルドするので、サブモジュールを SDK のブランチに向けて `scripts/build-runtime.sh` を実行します。手元のブランチなら push は要りません（`ss_player/SpriteStudio-SDK` の中で `git remote add local-sdk <SDK のチェックアウト>` を実行し、ブランチを fetch して checkout します）。そのあと、GDExtension なら `build-extension.sh`、モジュールなら `build.sh` でビルドし直してください。しないとモジュールは古い `libssruntime.a` のままです。終わったらサブモジュールを元に戻してください。
 
 ## SpriteStudio-SDK 開発者向け
 

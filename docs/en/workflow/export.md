@@ -19,7 +19,7 @@ Web builds have two plugin-specific requirements when you use the **GDExtension*
    In the Export dialog, select your **Web** preset → **Options** → turn on **Extensions Support**. GDExtension libraries only load on the Web when the engine template supports dynamic linking, and this option tells Godot to use that template.
 
 2. **The dlink-enabled Web export templates must be installed.**
-   The stock Godot Web templates do not support GDExtension. You need the `web_dlink_nothreads_debug.zip` / `web_dlink_nothreads_release.zip` templates installed in your Godot export-templates folder. Building and installing them is an advanced step covered in the [Build Guide → GDExtension on the Web](../setup/build.md#gdextension-on-the-web-extensions-support--dlink). Once they are in place, enabling **Extensions Support** is all the preset needs — Godot finds the right template automatically.
+   The stock Godot Web templates do not support GDExtension. You need the `web_dlink_nothreads_debug.zip` / `web_dlink_nothreads_release.zip` templates installed in your Godot export-templates folder. Building and installing them is an advanced step covered in the [Build Guide → GDExtension on the Web](../development/build.md#gdextension-on-the-web-extensions-support--dlink). Once they are in place, enabling **Extensions Support** is all the preset needs — Godot finds the right template automatically.
 
 > [!WARNING]
 > If a Web build fails at startup with *"GDExtension libraries are not supported by this engine version…"*, one of the two requirements above is missing (Extensions Support is off, or the dlink templates are not installed).
@@ -31,4 +31,4 @@ Additional notes for the Web:
 - The runtime uses **WebAssembly SIMD**, so the target browser must support it.
 
 > [!NOTE]
-> The **custom module** variant needs none of the steps above — no *Extensions Support* and no dlink template — because the plugin is compiled into the engine. It still runs single-threaded on the Web, and (like every custom-module target) it uses **your own engine-built Web template**, which already contains the plugin, rather than a stock Godot template. That build/install flow is described in the [Build Guide](../setup/build.md).
+> The **custom module** variant needs none of the steps above — no *Extensions Support* and no dlink template — because the plugin is compiled into the engine. It still runs single-threaded on the Web, and (like every custom-module target) it uses **your own engine-built Web template**, which already contains the plugin, rather than a stock Godot template. That build/install flow is described in the [Build Guide](../development/build.md).

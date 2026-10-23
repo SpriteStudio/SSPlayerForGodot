@@ -17,7 +17,7 @@
 
 1. **Web エクスポートプリセットで「Extensions Support」を有効にする。** エクスポートダイアログで **Web** プリセット → **オプション** → **Extensions Support** を ON にします。GDExtension ライブラリは、エンジンテンプレートが動的リンクに対応している場合のみ Web で読み込まれます。このオプションが、そのテンプレートを使うよう Godot に指示します。
 
-2. **dlink 対応の Web エクスポートテンプレートがインストールされている必要がある。** 素の Godot Web テンプレートは GDExtension に対応していません。`web_dlink_nothreads_debug.zip` / `web_dlink_nothreads_release.zip` テンプレートを Godot のエクスポートテンプレートフォルダに導入しておく必要があります。これらのビルドと導入は上級者向けの手順で、[ビルドガイド → Web での GDExtension](../setup/build.md#web-での-gdextensionextensions-support--dlink) にまとめてあります。導入済みであれば、プリセット側は **Extensions Support** を ON にするだけで、Godot が適切なテンプレートを自動選択します。
+2. **dlink 対応の Web エクスポートテンプレートがインストールされている必要がある。** 素の Godot Web テンプレートは GDExtension に対応していません。`web_dlink_nothreads_debug.zip` / `web_dlink_nothreads_release.zip` テンプレートを Godot のエクスポートテンプレートフォルダに導入しておく必要があります。これらのビルドと導入は上級者向けの手順で、[ビルドガイド → Web での GDExtension](../development/build.md#web-での-gdextensionextensions-support--dlink) にまとめてあります。導入済みであれば、プリセット側は **Extensions Support** を ON にするだけで、Godot が適切なテンプレートを自動選択します。
 
 > [!WARNING]
 > Web ビルドが起動時に *「GDExtension libraries are not supported by this engine version…」* で失敗する場合、上記2つの要件のいずれかが欠けています（Extensions Support が OFF、または dlink テンプレートが未インストール）。
@@ -29,4 +29,4 @@ Web に関する補足:
 - ランタイムは **WebAssembly SIMD** を利用するため、対象ブラウザが SIMD に対応している必要があります。
 
 > [!NOTE]
-> **カスタムモジュール** 形態では上記の手順はいずれも不要です（*Extensions Support* も dlink テンプレートも不要）。プラグインがエンジンにコンパイル済みのためです。ただし Web では同じくシングルスレッドで動作し、他の custom-module ターゲットと同様、素の Godot テンプレートではなく **自分でビルドしたエンジン入り Web テンプレート**（プラグインを含む）を使います。そのビルド／インストール手順は [ビルドガイド](../setup/build.md) を参照してください。
+> **カスタムモジュール** 形態では上記の手順はいずれも不要です（*Extensions Support* も dlink テンプレートも不要）。プラグインがエンジンにコンパイル済みのためです。ただし Web では同じくシングルスレッドで動作し、他の custom-module ターゲットと同様、素の Godot テンプレートではなく **自分でビルドしたエンジン入り Web テンプレート**（プラグインを含む）を使います。そのビルド／インストール手順は [ビルドガイド](../development/build.md) を参照してください。

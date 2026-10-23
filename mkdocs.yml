@@ -48,8 +48,8 @@ nav:
   - ⚠️ Limitations & Scope: limitations.md
   - 🔄 Migration Guide: migration_from_v1.md
   - 🛠️ For Player & SDK Developers:
-      - Build Guide: setup/build.md
-      - How the Player Is Put Together: development/internals.md
+      - Build Guide: development/build.md
+      - How the Player Is Put Together: development/architecture.md
   - ⚖️ License:
       - License: license.md
       - Third-Party Notices: third_party_notices.md
