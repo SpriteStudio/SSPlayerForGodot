@@ -18,7 +18,7 @@
 
 ### エディタでは動くが、書き出したゲームにノードが無い
 
-エクスポートには**書き出す target と同じビルド**が必要です。`--export-debug` は `template_debug` ライブラリを、`--export-release` は `template_release` を使います。`editor` ビルドしか無い場合でもエクスポート自体は「成功」し、ライブラリの実体が無い拡張が同梱されます。[ビルドガイド](setup/build.md) を参照してください。
+エクスポートには**書き出す target と同じビルド**が必要です。`--export-debug` は `template_debug` ライブラリを、`--export-release` は `template_release` を使います。`editor` ビルドしか無い場合でもエクスポート自体は「成功」し、ライブラリの実体が無い拡張が同梱されます。[ビルドガイド](development/build.md) を参照してください。
 
 ---
 

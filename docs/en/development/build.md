@@ -1,6 +1,6 @@
-# 🛠️ Building / Developing
+# 🛠️ Build Guide
 
-If you want to build the GDExtension or a custom-module Godot Engine yourself, or to develop the plugin in parallel with SpriteStudio-SDK, follow these steps.
+If you want to build the GDExtension or a custom-module Godot Engine yourself, or to develop the plugin in parallel with SpriteStudio-SDK, follow these steps. They also cover using a changed player in a project and checking it in Godot; how the player is put together, and why, is on [How the Player Is Put Together](architecture.md).
 
 ## Overview
 
@@ -139,6 +139,18 @@ These scripts do **not** fetch or build `libssruntime`, so [1. Prepare libssrunt
 | Web      | `./scripts/release-web.sh`            | `wasm32`, `threads=no`; only `template_debug` / `template_release` |
 
 > No batch release script is provided for the Linux custom module. Invoke `./scripts/build.sh platform=linux target=...` directly for each of `editor` / `template_debug` / `template_release`.
+
+## Using a Changed Player
+
+`scripts/build-extension.sh` builds the GDExtension for the host and installs it, with
+`misc/spritestudio.gdextension`, the icons and the licenses, into `examples/dev_gdextension/addons/spritestudio/`
+and every other sample. Copy that folder to your project's `addons/spritestudio/` and reopen the
+project. It holds the host platform's binaries only: other platforms come from the per-platform
+scripts in [Release Builds](#release-builds), and the
+release zip, `scripts/build-release.sh`, is assembled from CI's artifacts of every platform.
+
+For the custom module, the engine is the player: `scripts/build.sh` builds an editor with it, and
+the release scripts build the export templates that `scripts/install-template.sh` installs.
 
 ## Debugging the Custom Module
 
@@ -444,6 +456,101 @@ You can debug the C++ code for GDExtensions using almost the same steps as a cus
     "cwd": "${workspaceFolder}"
 }
 ```
+
+## Checking Against the Real Host
+
+`scripts/run-tests.sh` runs the GDExtension build headless (CONTRIBUTING has its rules). Two
+things it cannot see: pixels, because `--headless` installs a dummy rasteriser, and anything wired
+on entering the tree, because the suite runs every case before its root enters one —
+`SpriteStudioPartAttachment2D` and sound are two. CI compiles every platform's GDExtension and the
+custom module and runs no tests, so run the suite yourself.
+[Export Testing and Debugging](#export-testing-and-debugging) covers each export platform, and the
+debugging sections cover attaching a debugger.
+
+### Where Godot's labels come from
+
+The guides name the editor's menus and docks as Godot shows them. The English strings are in the
+engine source (`godot/editor/`), and the Japanese ones in `godot/editor/translations/editor/ja.po`.
+The plugin translates its own strings, but the editor does not show them: it turns
+off the main translation domain and translates its own UI from the `godot.editor` domain, so the
+dock and the inspector read in English in a Japanese editor, and the Japanese pages name their
+buttons in English.
+
+### Pixels and the tree, from a script
+
+A `SceneTree` script run with `--script` draws for real and enters the tree:
+
+```bash
+rsync -a --exclude 'ssab_generated/*' examples/dev_gdextension/ <scratch>/proj/
+rsync -a examples/dev_gdextension/ssab_generated/<pack> <scratch>/proj/ssab_generated/
+cd <scratch>/proj && <godot> --path . --script res://probe.gd
+```
+
+Copying the project with its `.godot/` lets `load()` work without a re-import.
+
+- Add nodes after `await process_frame`; the tree is not up straight after `_initialize`.
+- `await RenderingServer.frame_post_draw`, then
+  `get_root().get_texture().get_image().save_png(…)`, or read pixels with `Image.get_pixel`.
+- Set the player's `animation_process_mode` to `ANIMATION_PROCESS_MANUAL` and assign
+  `frame_no`; assignment always redraws, while `advance(0.0)` on the same frame may not.
+- An effect whose texture cannot be read is not drawn. To compare an SDK test project, put the
+  `.ssab` beside the original images in a scratch project and import it once with
+  `<godot> --headless --path <proj> --import`.
+- `set_part_visibility_override` on all but one part shows what that part draws.
+- Compare renderers with `--rendering-method forward_plus`: `dev_gdextension` defaults to
+  Compatibility, the projects derived from `test_gdextension` to Forward+.
+- Check a light mask with a `PointLight2D`. A `DirectionalLight2D` lights a `light_mask = 2`
+  `Sprite2D` whatever its `range_item_cull_mask`, so keep a `Sprite2D` beside the player as the
+  control.
+
+### The editor, from a script
+
+A scratch project with `addons/spritestudio` (without its `.uid` files), a `.ssab` and an
+`@tool` EditorPlugin enabled in `project.godot` (`[editor_plugins] enabled=`) can drive the
+plugin's editor UI. Run `--headless --editor --quit` once first, to write
+`extension_list.cfg`.
+
+- **Playback panel:** `EditorInterface.open_scene_from_path`, `edit_node`, then find the panel
+  under `get_base_control()` with `find_child` and press its buttons. Undo and redo go through
+  `get_undo_redo().get_history_undo_redo(get_object_history_id(node))`.
+- **Import dock:** find the dock the same way and call the handler its recent-file list calls.
+- **Dropping files:** the dock's drop handler checks that the mouse is over the dock, and
+  headless there is no OS cursor. Put an `InputEventMouseMotion` at the dock's centre through
+  `Input.parse_input_event`, `Input.flush_buffered_events()`, then
+  `get_tree().root.files_dropped.emit([<dir>])`. Dialogs are the visible `AcceptDialog`s, and a
+  button is pressed with `pressed.emit()`.
+- **FileSystem menu:** `EditorInterface.select_file(<path>)`, then emit `item_mouse_selected`
+  with the right button on the dock's first `Tree`; the dock's `PopupMenu` fills, and an item is
+  pressed with `id_pressed.emit(<id>)`. The plugin's items in the 2000s come through
+  `_get_menu_options`, those in the 3000s through `_popup_menu`, so the ID says which path ran.
+- **The editor in another language, without touching your settings:** copy `Godot.app`
+  (`cp -Rc` on APFS) and put an empty `._sc_` beside the copy. That makes it self-contained, with
+  its settings in `editor_data/editor_settings-4.7.tres` next to it; set
+  `interface/editor/localization/editor_language` there. Run it without `--headless` and take the
+  screenshot from the probe; `TabContainer.get_tab_title()` returns the untranslated text.
+
+### When it crashes
+
+The official editor cannot be attached to by lldb (hardened runtime). Build the engine with
+symbols — `scons platform=macos target=editor dev_build=yes scu_build=yes arch=arm64` in
+`godot/`, which writes `bin/godot.macos.editor.dev.arm64` beside the module build — run it with
+`--disable-crash-handler`, and use `lldb --batch -o run -k "bt all"`. Build the extension with
+`build-extension.sh debug_symbols=yes`; without symbols, `atos` cannot name a frame in
+`libSSGodot`.
+
+Two crashes are not the player's. The suite's first import pass, straight after a build or in a
+new clone, can crash in shutdown with `Parameter "singleton" is null` and no extension frame in
+the backtrace; a second run passes. And `godot/bin/`'s editor is the module build: loading the
+GDExtension into it registers every class twice ("already registered") — use `godot-bin/`, from
+`scripts/fetch-godot.sh`, for the GDExtension.
+
+### Trying an SDK change
+
+`build-runtime` builds from the submodule, so point the submodule at the SDK branch — a local one
+needs no push (`git remote add local-sdk <SDK checkout>` inside `ss_player/SpriteStudio-SDK`,
+then fetch and check out the branch) — and run `scripts/build-runtime.sh`. Then rebuild:
+`build-extension.sh` for the GDExtension, `build.sh` for the module, or the module keeps the
+old `libssruntime.a`. Put the submodule back when you are done.
 
 ## For SpriteStudio-SDK Developers
 

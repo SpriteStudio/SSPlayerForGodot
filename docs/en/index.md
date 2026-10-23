@@ -38,8 +38,8 @@ Drag a `.sspj` onto the **SS Importer** dock, then drop the converted `.ssab` in
 - [Limitations & Scope](limitations.md)
 - [Migration from v1.x](migration_from_v1.md)
 - **For Player & SDK Developers**
-    - [Build Guide](setup/build.md)
-    - [How the Player Is Put Together](development/internals.md) (the file map, using a changed build, checking in Godot, the reasons that span files)
+    - [Build Guide](development/build.md)
+    - [How the Player Is Put Together](development/architecture.md) (the layers, and why the player is built the way it is)
 - **License**
     - [License](license.md)
     - [Third-Party Notices](third_party_notices.md)
