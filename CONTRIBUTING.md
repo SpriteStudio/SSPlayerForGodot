@@ -37,7 +37,7 @@ If you find a bug, please use the provided Issue Templates. Include:
 ### Pull Requests
 1. Fork the repository and create your branch from `develop`.
 2. Ensure your code follows the existing style and Godot conventions.
-3. Test your changes locally by running the sample projects in the `examples/` directory.
+3. Test your changes locally with `scripts/run-tests.sh` (see Test below) and by running the sample projects in the `examples/` directory. CI only compiles; it runs neither.
 4. Submit a Pull Request targeting the `develop` branch with a clear description of the changes.
 
 ## Development Environment
@@ -50,7 +50,7 @@ If you find a bug, please use the provided Issue Templates. Include:
 - zsh (the build scripts use a `#!/usr/bin/env zsh` shebang)
 - `godot-cpp`, cloned into the repository root: `git clone https://github.com/godotengine/godot-cpp.git -b master` (it is not a submodule)
 
-For the complete build guide, see [docs/en/setup/build.md](./docs/en/setup/build.md).
+For the complete build guide, see [docs/en/setup/build.md](./docs/en/setup/build.md). How the player is put together — the file map, using a changed build in a project, checking it in Godot, the reasons that span files — is [docs/en/development/internals.md](./docs/en/development/internals.md).
 
 ### Build the Plugin
 To compile the Godot Extension, put the SDK runtime in place first, then compile the C++ extension using the provided build scripts:
@@ -85,7 +85,7 @@ Once built, open the `examples/Ringo` project in the Godot Editor to verify your
 ```
 `deploy-examples` converts the fixtures with `ssconverter-cli` built from the submodule, so it needs Rust. Without it, open `test_gdextension` in the Godot Editor and drop the SDK's `tests/overall/overall.sspj` and `tests/Ringo/Ringo.sspj` onto the SS Importer dock, which writes the same `ssab_generated/`.
 
-`run-tests.sh` needs a Godot binary — `godot=<path>`, else `$GODOT`, `godot-bin/`, then `PATH` — and refuses to start without the addon and the `.ssab` both installed, rather than skipping its way to a green run. **A green run is silent**: the suite ends with an `ENGINE` line counting the warnings and errors Godot itself printed, and anything it lists is a defect or a newly tolerated message. The verdict is the RESULT line, the marker after it, and that `ENGINE` line — not the exit code. Windows uses the `.ps1` variant of each script.
+`run-tests.sh` needs a Godot binary — `godot=<path>`, else `$GODOT`, `godot-bin/`, then `PATH` — and refuses to start without the addon and the `.ssab` both installed, rather than skipping its way to a green run. **A green run is silent**: the suite ends with an `ENGINE` line counting the warnings and errors Godot itself printed, and anything it lists is a defect or a newly tolerated message. The verdict is the RESULT line, the marker after it, and that `ENGINE` line — not the exit code. Windows uses the `.ps1` variant of each script. The suite sees no pixels and nothing wired on entering the tree; [checking against Godot](./docs/en/development/internals.md#3-checking-against-godot) runs both, and the editor UI, from a script.
 
 ### Documentation
 Pages live as both `docs/en/<path>` and `docs/ja/<path>`; there is no fallback locale, so a page missing from one side is a nav entry pointing at nothing. Each locale also ships its own `docs/<locale>/assets/`, and asset paths are source-relative (`../assets/…`) **including inside raw `<video>` / `<img>` HTML**, which Zensical rewrites the same way it rewrites Markdown links. If you edit a page, build both locales before you finish. CI builds them too, both `--strict`, on a pull request that touches the site's sources, on the release PR and weekly.
@@ -152,7 +152,7 @@ Godot Engineとのネイティブな統合と高いパフォーマンスを維�
 ### プルリクエスト
 1. リポジトリをフォークし、`develop` ブランチから作業用ブランチを作成してください。
 2. 既存のGodot C++規約に従ってコードを記述してください。
-3. `examples/` ディレクトリ内のサンプルプロジェクトを実行し、動作確認を行ってください。
+3. `scripts/run-tests.sh`（下の「テスト」を参照）と、`examples/` ディレクトリ内のサンプルプロジェクトの実行で、手元で動作確認を行ってください。CI はコンパイルするだけで、どちらも実行しません。
 4. `develop` ブランチに向けて、変更内容を明確に記載したプルリクエストを送信してください。
 
 ## 開発環境のセットアップ
@@ -165,7 +165,7 @@ Godot Engineとのネイティブな統合と高いパフォーマンスを維�
 - zsh (ビルドスクリプトは `#!/usr/bin/env zsh` を使用しています)
 - `godot-cpp`（submodule ではありません。リポジトリのルートに `git clone https://github.com/godotengine/godot-cpp.git -b master` で取得してください）
 
-完全なビルド手順については、[docs/ja/setup/build.md](./docs/ja/setup/build.md) を参照してください。
+完全なビルド手順については、[docs/ja/setup/build.md](./docs/ja/setup/build.md) を参照してください。プレイヤーの構成（ファイルの対応、変更した版をプロジェクトで使う方法、Godot での確かめ方、ファイルをまたぐ設計の理由）は [docs/ja/development/internals.md](./docs/ja/development/internals.md) にあります。
 
 ### ビルド方法
 提供されているスクリプトを使用して、まず SDK のランタイムを配置し、次に GDExtension をコンパイルします。
@@ -200,7 +200,7 @@ Godot Engineとのネイティブな統合と高いパフォーマンスを維�
 ```
 `deploy-examples` は submodule からビルドした `ssconverter-cli` でフィクスチャを変換するため、Rust が必要です。Rust が無い場合は、Godot エディタで `test_gdextension` を開き、SDK の `tests/overall/overall.sspj` と `tests/Ringo/Ringo.sspj` を SS Importer ドックへドロップしてください。同じ `ssab_generated/` が書き出されます。
 
-`run-tests.sh` は Godot バイナリを必要とします（`godot=<path>`、無ければ `$GODOT`、`godot-bin/`、最後に `PATH`）。addon と `.ssab` が揃っていなければ、スキップして緑にするのではなく起動を拒否します。**成功した実行は何も出力しません。** スイートの最後に Godot 自身が出した警告とエラーを数える `ENGINE` 行が出て、そこに並ぶものは不具合か新たに容認したメッセージのどちらかです。判定は終了コードではなく、RESULT 行とその後のマーカー、そしてこの `ENGINE` 行で行います。Windows は各スクリプトの `.ps1` 版を使ってください。
+`run-tests.sh` は Godot バイナリを必要とします（`godot=<path>`、無ければ `$GODOT`、`godot-bin/`、最後に `PATH`）。addon と `.ssab` が揃っていなければ、スキップして緑にするのではなく起動を拒否します。**成功した実行は何も出力しません。** スイートの最後に Godot 自身が出した警告とエラーを数える `ENGINE` 行が出て、そこに並ぶものは不具合か新たに容認したメッセージのどちらかです。判定は終了コードではなく、RESULT 行とその後のマーカー、そしてこの `ENGINE` 行で行います。Windows は各スクリプトの `.ps1` 版を使ってください。スイートには画素と、ツリーに入ったときに結線するものが見えません。その両方とエディタの UI をスクリプトから確かめる方法は、[Godot で確かめる](./docs/ja/development/internals.md#3-godot-で確かめる)にあります。
 
 ### ドキュメント
 ページは `docs/en/<path>` と `docs/ja/<path>` の両方に存在します。フォールバックロケールは無いため、片方に欠けたページは行き先の無い nav エントリになります。アセットもロケールごとに `docs/<locale>/assets/` を持ち、パスはソース相対（`../assets/…`）です。**生の `<video>` / `<img>` HTML の中でも同じ**で、Zensical は Markdown リンクと同じ規則で書き換えます。ページを編集したら、仕上げる前に両ロケールをビルドしてください。CI も、サイトのソースに触れるプルリクエスト、リリースのプルリクエスト、週次の実行で、両ロケールを `--strict` でビルドします。
