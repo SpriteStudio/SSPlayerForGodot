@@ -5,7 +5,7 @@
 本developブランチに関してはいかなる保証もサポートも提供しません。リクエストやバグ報告への返信もできません。  
 インターフェースは予告なく変更される可能性があります。
 
-[SpriteStudio](https://www.webtech.co.jp/spritestudio/) で作成したアニメーションを [Godot Engine](https://godotengine.org/) 上で再生するためのプラグインです。再生処理は [SpriteStudio-SDK](https://github.com/cri-middleware/SpriteStudio-SDK) が提供する `libssruntime` を介して行います。
+[SpriteStudio](https://www.webtech.co.jp/spritestudio/) で作成したアニメーションを [Godot Engine](https://godotengine.org/) 上で再生するためのプラグインです。`.sspj` を **SS Importer** ドックにドラッグし、変換された `.ssab` を 2D ビューポートへドロップすれば、コードを書かずに再生できます。
 
 !!! tip "SpriteStudio のデータが手元に無くても始められます"
     [公式のサンプルデータ](https://www.webtech.co.jp/help/ja/spritestudio7/download/sample/)がそのまま使えます。キャラクターなら
@@ -18,11 +18,11 @@
     - [ビルドガイド](setup/build.md)
 - **ワークフロー**
     - [基本的な使い方](workflow/usage_basic.md)
-    - [AnimationPlayer との連携](workflow/animation_player.md)
     - [アセットのインポートとエディタ連携](workflow/usage_asset_pipeline.md)（初回の `.sspj` インポートはこちら）
     - [スクリプト制御とイベント](workflow/usage_scripting.md)
     - [モーションブレンド](workflow/motion_blending.md)
     - [サウンド再生](workflow/audio.md)
+    - [AnimationPlayer との連携](workflow/animation_player.md)
     - [プロジェクトのエクスポート](workflow/export.md)
     - [生成アセットの構成と配信](workflow/generated_assets.md)（依存関係・エクスポートモード・`.pck`）
 - **応用**

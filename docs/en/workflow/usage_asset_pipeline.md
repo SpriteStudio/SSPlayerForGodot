@@ -2,7 +2,7 @@
 
 This page explains **how to bring your `.sspj` into a Godot project (the initial conversion)** and the workflows for iterating quickly between SpriteStudio and Godot afterwards.
 
-SpriteStudio Player for Godot does not just play animations; it provides a **powerful asset pipeline for seamless transitions between SpriteStudio and Godot**, allowing you to iterate quickly from tweaking animations to seeing them reflected in-game.
+Besides playing animations, SpriteStudio Player for Godot lets you move between SpriteStudio and Godot as you iterate, from tweaking an animation to seeing it in the game.
 
 ---
 
@@ -43,7 +43,7 @@ This action automatically launches SpriteStudio and opens the underlying `.sspj`
 
 ---
 
-## 3. Powerful Asset Pipeline (Seamless Editor Integration)
+## 3. Reconverting After Saving in SpriteStudio
 
 After modifying and saving the animation in SpriteStudio, return to the Godot editor.
 With just the following steps, your changes will instantly reflect in the game (and in the editor preview).
@@ -53,7 +53,7 @@ With just the following steps, your changes will instantly reflect in the game (
 
 > [!IMPORTANT]
 > **The shortest workflow: "Open" -> "Save" -> "Reconvert"**
-> You can call SpriteStudio directly from the Inspector with the node selected, and immediately reconvert in Godot after editing — which drastically lowers the cost of trial and error during animation adjustments.
+> You can call SpriteStudio directly from the Inspector with the node selected, and immediately reconvert in Godot after editing.
 
 > [!TIP]
 > 
@@ -69,7 +69,7 @@ With just the following steps, your changes will instantly reflect in the game (
 
 ## Limitations and Team Development Notes
 
-While this powerful cross-editor integration (`Open SSPJ` and `Reconvert`) is incredibly convenient, it has some limitations due to how it works. Please keep these in mind, especially when working in a team.
+`Open SSPJ` and `Reconvert` have some limitations. Keep them in mind, especially when working in a team.
 
 > [!WARNING]
 > **SpriteStudio installation is required**
