@@ -11,7 +11,7 @@ Godot 標準の `AnimationPlayer` と組み合わせることで、`SpriteStudio
 `SpriteStudioPlayer2D` を `AnimationPlayer` で制御するためには、まず対象の `.ssab` に含まれるすべてのアニメーション（walk, attack など）を Godot が読み込める `AnimationLibrary`（`_anims.res`）に変換する必要があります。
 
 1. Godot エディタ上で、ファイルシステムから `.ssab` ファイルを選択します。
-2. インスペクタ上部、**Reconvert** の隣にある **「Gen AnimLib」** ボタン（AnimationPlayer 用ライブラリの生成）をクリックします。
+2. インスペクター上部、**Reconvert** の隣にある **「Gen AnimLib」** ボタン（AnimationPlayer 用ライブラリの生成）をクリックします。
 3. 成功すると、同じフォルダに `[元のファイル名]_anims.res` というファイルが生成されます。
 
 > [!NOTE]
@@ -25,7 +25,7 @@ Godot 標準の `AnimationPlayer` と組み合わせることで、`SpriteStudio
 
 1. **ノードの準備** シーン上に `SpriteStudioPlayer2D` ノードを配置し、対象の `.ssab` を `Ssab` にセットしておきます。
 2. **AnimationPlayer の追加** シーン内に `AnimationPlayer` ノードを追加します。
-3. **ターゲットの指定（重要！）** 追加した `AnimationPlayer` ノードを選択し、インスペクタ内の **`Root Node`** を、手順1の **`SpriteStudioPlayer2D` ノード** に設定します。*※自動生成されたアニメーションは「対象ノード自身の `current_animation` と `frame_no` を制御する」ようになっているため、Root Node を対象ノードに向ける必要があります。*
+3. **ターゲットの指定（重要！）** 追加した `AnimationPlayer` ノードを選択し、インスペクター内の **`Root Node`** を、手順1の **`SpriteStudioPlayer2D` ノード** に設定します。*※自動生成されたアニメーションは「対象ノード自身の `current_animation` と `frame_no` を制御する」ようになっているため、Root Node を対象ノードに向ける必要があります。*
 4. **ライブラリの読み込み** エディタ下部の「アニメーション (Animation)」パネルを開き、「アニメーション」メニュー ＞ **「アニメーションを管理... (Manage Animations)」** をクリックします。出てきたウィンドウのフォルダアイコン（ライブラリをロード）を押し、生成された `_anims.res` を読み込みます。
 
 これで AnimationPlayer のドロップダウンに、SpriteStudio で作成したアニメーション一覧が表示されるようになります！
