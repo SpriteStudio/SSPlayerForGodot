@@ -2248,12 +2248,17 @@ void SsInternalPlayer::_drawAnimation(float frame_no, float delta_seconds, bool 
     // order they are emitted (rank order), not in CI-pool allocation order.
     _draw_seq = 0;
     _run = DefaultRun();
+    _fx_run.open = false;
     for (uint32_t bi = 0; bi < batch_count; bi++) {
         const auto* batch = draw_batches->Get(bi);
         const auto kind = batch->kind();
         // Drawn before this batch's canvas item takes its draw index below.
         if (_run.open && !_run_can_take(kind, batch)) {
             _flush_default_run(f.rs);
+        }
+        if (_fx_run.open && kind != ss::runtime::DrawBatchKind_Effect && kind != ss::runtime::DrawBatchKind_Mask
+            && kind != ss::runtime::DrawBatchKind_Text && kind != ss::runtime::DrawBatchKind_Nines) {
+            _flush_effect_run(f.rs);
         }
         RID ci = _ensure_batch_ci((int)bi);
 
@@ -2307,6 +2312,7 @@ void SsInternalPlayer::_drawAnimation(float frame_no, float delta_seconds, bool 
         // it is consumed by the mask planner above, not emitted as a batch here.
     }
     _flush_default_run(f.rs);
+    _flush_effect_run(f.rs);
 
     _batch_canvas_items_in_use = (int)batch_count;
 }
@@ -2401,6 +2407,85 @@ void SsInternalPlayer::_flush_default_run(RenderingServer* rs) {
 
 
 
+
+void SsInternalPlayer::_fx_run_reserve(int quads) {
+    EffectStreams& s = _fx_streams;
+    const int need = _fx_run.quad_count + quads;
+    if (need <= s.quad_capacity) return;
+    s.quad_capacity = MAX(need, s.quad_capacity + s.quad_capacity / 2);
+    _effect_verts.resize(s.quad_capacity * 4);
+    _effect_uvs.resize(s.quad_capacity * 4);
+    _effect_colors.resize(s.quad_capacity * 4);
+    _effect_indices.resize(s.quad_capacity * 6);
+    s.verts = _effect_verts.ptrw();
+    s.uvs = _effect_uvs.ptrw();
+    s.colors = _effect_colors.ptrw();
+    s.indices = (int32_t*)_effect_indices.ptrw();
+}
+
+void SsInternalPlayer::_fx_run_append(const ss::runtime::EffectDrawPlan* plan, const ss::runtime::EffectDrawCommand* cmd,
+                                      const float* matrix) {
+    // PackedVector2Array stores Vector2 = (real_t, real_t). The plan emits
+    // flat float pairs (vert_stride == 2), so cast the storage as float* —
+    // only valid when real_t == float.
+    static_assert(sizeof(Vector2) == 2 * sizeof(float),
+                  "EffectDrawPlan vert_stride=2 requires Godot built with real_t == float");
+    // The plan's colours are copied into Color storage as float quadruples, and
+    // the draw reads them back the same way.
+    static_assert(sizeof(Color) == 4 * sizeof(float), "the colour stream is read as RGBA floats");
+
+    const int qc = (int)cmd->quad_count();
+    const uint32_t off = cmd->particle_offset();
+    _fx_run_reserve(qc);
+    const EffectStreams& s = _fx_streams;
+    const int vbase = _fx_run.quad_count * 4;
+    memcpy(s.verts + vbase, plan->verts()->data() + off * 8, qc * 8 * sizeof(float));
+    memcpy(s.uvs + vbase, plan->uvs()->data() + off * 8, qc * 8 * sizeof(float));
+    memcpy(s.colors + vbase, plan->colors()->data() + off * 16, qc * 16 * sizeof(float));
+    int32_t* dst_idx = s.indices + _fx_run.quad_count * 6;
+    const int32_t* src_idx = plan->indices()->data() + off * 6;
+    for (int i = 0; i < qc * 6; i++) {
+        dst_idx[i] = src_idx[i] + vbase;
+    }
+
+    if (_fx_run_parts.is_empty() || _fx_run_parts[_fx_run_parts.size() - 1].matrix != matrix) {
+        EffectRunPart part;
+        part.matrix = matrix;
+        part.first_vertex = vbase;
+        _fx_run_parts.push_back(part);
+    }
+    _fx_run_parts[_fx_run_parts.size() - 1].vertex_count += qc * 4;
+    _fx_run.quad_count += qc;
+}
+
+void SsInternalPlayer::_flush_effect_run(RenderingServer* rs) {
+    if (!_fx_run.open) return;
+    _fx_run.open = false;
+    EffectSlotState& slot = _effect_slots[_fx_run.slot];
+    const RID e_ci = slot.emitter_cis[_fx_run.emitter];
+    const EffectStreams& s = _fx_streams;
+    if (_fx_run_parts.size() == 1) {
+        rs->canvas_item_set_transform(e_ci, matrix_to_transform2d(_fx_run_parts[0].matrix));
+    } else {
+        // The parts share one canvas item, so each part's particles are placed
+        // by its own world matrix here.
+        rs->canvas_item_set_transform(e_ci, Transform2D());
+        for (const EffectRunPart& part : _fx_run_parts) {
+            for (int v = part.first_vertex; v < part.first_vertex + part.vertex_count; v++) {
+                s.verts[v] = xform_raw(part.matrix, s.verts[v].x, s.verts[v].y);
+            }
+        }
+    }
+
+    SsMeshStreams streams;
+    streams.verts = s.verts;
+    streams.uvs = s.uvs;
+    streams.colors = (const float*)s.colors;
+    streams.vertex_count = _fx_run.quad_count * 4;
+    streams.indices = s.indices;
+    streams.index_count = _fx_run.quad_count * 6;
+    _draw_dynamic_mesh(rs, slot.emitter_meshes[_fx_run.emitter], e_ci, streams, _fx_run.texture);
+}
 
 void SsInternalPlayer::_load_external_ssabs() {
     _external_ssabs.clear();
@@ -2813,126 +2898,60 @@ void SsInternalPlayer::_emit_effect_slot(const DrawFrame& f, RID ci, int p_idx, 
         return;
     }
 
-    f.rs->canvas_item_set_transform(ci, matrix_to_transform2d(slot_matrix));
-
     // Cascade the Effect slot part's alpha attribute down to all child
     // emitter CIs via modulate. The runtime / EffectDrawPlan only carries
     // per-particle simulator colors, so without this the part's own alpha
-    // curve (e.g. a fade-out keyed on the Effect part itself) is ignored.
+    // curve (e.g. a fade-out keyed on the Effect part itself) is ignored. A run
+    // takes in the next part's particles only while that part's alpha is the
+    // same, so they draw under the alpha they would have had.
     const float part_alpha = _parts_by_idx[p_idx] ? _parts_by_idx[p_idx]->alpha() : 1.0f;
     f.rs->canvas_item_set_modulate(ci, Color(1, 1, 1, part_alpha));
 
     const uint32_t cmd_count = plan->commands()->size();
-
-
-    // PackedVector2Array stores Vector2 = (real_t, real_t). The plan emits
-    // flat float pairs (vert_stride == 2), so cast the storage as float* —
-    // only valid when real_t == float.
-    static_assert(sizeof(Vector2) == 2 * sizeof(float),
-                  "EffectDrawPlan vert_stride=2 requires Godot built with real_t == float");
-    // The plan's colours are copied into Color storage as float quadruples, and
-    // the draw reads them back the same way.
-    static_assert(sizeof(Color) == 4 * sizeof(float), "the colour stream is read as RGBA floats");
-
-    const float* V = plan->verts()->data();
-    const float* U = plan->uvs()->data();
-    const float* C = plan->colors()->data();
-    const int32_t* I = plan->indices()->data();
-
     uint32_t drawn_cis = 0;
 
-    for (uint32_t e_idx = 0; e_idx < cmd_count; ) {
+    for (uint32_t e_idx = 0; e_idx < cmd_count; e_idx++) {
         const auto* cmd = plan->commands()->Get(e_idx);
-        if (!cmd || cmd->quad_count() == 0) {
-            e_idx++;
-            continue;
-        }
+        if (!cmd || cmd->quad_count() == 0) continue;
 
         const uint32_t cellmap_hash = cmd->cellmap_hash();
-        if (cellmap_hash == 0 || !_textures.has(cellmap_hash)) {
-            e_idx++;
-            continue;
-        }
+        if (cellmap_hash == 0 || !_textures.has(cellmap_hash)) continue;
         Ref<Texture2D> tex = _textures[cellmap_hash];
-        if (tex.is_null()) {
-            e_idx++;
-            continue;
-        }
+        if (tex.is_null()) continue;
 
-        uint32_t merge_qc = cmd->quad_count();
-        uint32_t merge_end = e_idx + 1;
-        while (merge_end < cmd_count) {
-            const auto* next_cmd = plan->commands()->Get(merge_end);
-            if (next_cmd && next_cmd->quad_count() > 0 &&
-                next_cmd->cellmap_hash() == cellmap_hash &&
-                next_cmd->blend() == cmd->blend()) {
-                merge_qc += next_cmd->quad_count();
-                merge_end++;
-            } else {
-                break;
+        if (!_fx_run.open || _fx_run.cellmap_hash != cellmap_hash || _fx_run.blend != cmd->blend()
+            || _fx_run.part_alpha != part_alpha) {
+            _flush_effect_run(f.rs);
+
+            while ((uint32_t)slot.emitter_cis.size() <= drawn_cis) {
+                RID e_ci = f.rs->canvas_item_create();
+                f.rs->canvas_item_set_parent(e_ci, ci);
+                _apply_canvas_item_defaults(e_ci);
+                slot.emitter_cis.push_back(e_ci);
+                slot.emitter_meshes.push_back(SsDynamicMesh());
             }
-        }
 
-        while ((uint32_t)slot.emitter_cis.size() <= drawn_cis) {
-            RID e_ci = f.rs->canvas_item_create();
+            RID e_ci = slot.emitter_cis[drawn_cis];
             f.rs->canvas_item_set_parent(e_ci, ci);
-            _apply_canvas_item_defaults(e_ci);
-            slot.emitter_cis.push_back(e_ci);
-            slot.emitter_meshes.push_back(SsDynamicMesh());
+            f.rs->canvas_item_clear(e_ci);
+            f.rs->canvas_item_set_draw_index(e_ci, (int)drawn_cis);
+            f.rs->canvas_item_set_visible(e_ci, true);
+
+            const ss::format::BlendType blend = (cmd->blend() == 1) ? ss::format::BlendType_Add : ss::format::BlendType_Mix;
+            _apply_blend_material(f.rs, e_ci, blend);
+
+            _fx_run.open = true;
+            _fx_run.cellmap_hash = cellmap_hash;
+            _fx_run.blend = cmd->blend();
+            _fx_run.part_alpha = part_alpha;
+            _fx_run.texture = tex->get_rid();
+            _fx_run.slot = p_idx;
+            _fx_run.emitter = (int)drawn_cis;
+            _fx_run.quad_count = 0;
+            _fx_run_parts.clear();
+            drawn_cis++;
         }
-
-        RID e_ci = slot.emitter_cis[drawn_cis];
-        f.rs->canvas_item_set_parent(e_ci, ci);
-        f.rs->canvas_item_clear(e_ci);
-        f.rs->canvas_item_set_draw_index(e_ci, (int)drawn_cis);
-        f.rs->canvas_item_set_visible(e_ci, true);
-
-        const ss::format::BlendType blend = (cmd->blend() == 1) ? ss::format::BlendType_Add : ss::format::BlendType_Mix;
-        _apply_blend_material(f.rs, e_ci, blend);
-
-        // Grown, never shrunk: the draw below takes the counts, not the sizes.
-        if (_effect_verts.size() < (int)merge_qc * 4) {
-            _effect_verts.resize(merge_qc * 4);
-            _effect_uvs.resize(merge_qc * 4);
-            _effect_colors.resize(merge_qc * 4);
-            _effect_indices.resize(merge_qc * 6);
-        }
-        SsVec2Array&  p_verts   = _effect_verts;
-        SsVec2Array&  p_uvs     = _effect_uvs;
-        SsColorArray& p_colors  = _effect_colors;
-        SsIntArray&   p_indices = _effect_indices;
-
-        uint32_t dest_qc = 0;
-        for (uint32_t m = e_idx; m < merge_end; m++) {
-            const auto* m_cmd = plan->commands()->Get(m);
-            uint32_t qc = m_cmd->quad_count();
-            uint32_t off = m_cmd->particle_offset();
-            
-            memcpy(p_verts.ptrw() + dest_qc * 4,   V + off * 8,  qc * 8  * sizeof(float));
-            memcpy(p_uvs.ptrw() + dest_qc * 4,     U + off * 8,  qc * 8  * sizeof(float));
-            memcpy(p_colors.ptrw() + dest_qc * 4,  C + off * 16, qc * 16 * sizeof(float));
-            
-            int32_t* dst_idx = p_indices.ptrw() + dest_qc * 6;
-            const int32_t* src_idx = I + off * 6;
-            int32_t v_offset = dest_qc * 4;
-            for (uint32_t i = 0; i < qc * 6; i++) {
-                dst_idx[i] = src_idx[i] + v_offset;
-            }
-
-            dest_qc += qc;
-        }
-
-        SsMeshStreams streams;
-        streams.verts = p_verts.ptr();
-        streams.uvs = p_uvs.ptr();
-        streams.colors = (const float*)p_colors.ptr();
-        streams.vertex_count = (int)merge_qc * 4;
-        streams.indices = p_indices.ptr();
-        streams.index_count = (int)merge_qc * 6;
-        _draw_dynamic_mesh(f.rs, slot.emitter_meshes[drawn_cis], e_ci, streams, tex->get_rid());
-
-        drawn_cis++;
-        e_idx = merge_end;
+        _fx_run_append(plan, cmd, slot_matrix);
     }
 
     for (int e = (int)drawn_cis; e < slot.emitter_cis.size(); e++) {

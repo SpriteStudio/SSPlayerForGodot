@@ -46,6 +46,8 @@ namespace runtime {
 struct FrameData;
 struct PartState;
 struct DrawBatch;
+struct EffectDrawPlan;
+struct EffectDrawCommand;
 // Fixed-underlying-type enum: forward-declarable so signatures can name it
 // without pulling in format/framedata.h.
 enum DrawBatchKind : uint8_t;
@@ -746,10 +748,47 @@ private:
     DefaultRun _run;
     RID _batch_ci;
     bool _batch_ci_free = false;
+    // Particle commands gathered into one draw. A run carries on across the
+    // commands of consecutive Effect batches while the cell map, the blend and
+    // the effect part's alpha stay the same, and is drawn when anything else
+    // comes next. The Mask, Text and Nines batches between do not end it. It
+    // draws into the next emitter canvas item of the slot it began in, under
+    // that slot's batch canvas item, so its place in the rank order is fixed
+    // when it begins.
+    struct EffectRun {
+        bool open = false;
+        uint32_t cellmap_hash = 0;
+        uint8_t blend = 0;
+        float part_alpha = 1.0f;
+        RID texture;
+        int slot = 0;
+        int emitter = 0;
+        int quad_count = 0;
+    };
+    EffectRun _fx_run;
+    // Where each effect part's particles sit in the run, with the world matrix
+    // they are drawn under. The plan's vertices are in the part's own space; a
+    // run of one part keeps them so and lets its canvas item place them.
+    struct EffectRunPart {
+        const float* matrix = nullptr;
+        int first_vertex = 0;
+        int vertex_count = 0;
+    };
+    LocalVector<EffectRunPart> _fx_run_parts;
+    // The run's streams, grown and never shrunk, with their pointers taken
+    // again only when `_fx_run_reserve` resizes them.
     SsVec2Array  _effect_verts;
     SsVec2Array  _effect_uvs;
     SsColorArray _effect_colors;
     SsIntArray   _effect_indices;
+    struct EffectStreams {
+        Vector2* verts = nullptr;
+        Vector2* uvs = nullptr;
+        Color* colors = nullptr;
+        int32_t* indices = nullptr;
+        int quad_capacity = 0;
+    };
+    EffectStreams _fx_streams;
     ShapeGeometryBuffers _shape_buf;
     MeshGeometryBuffers _mesh_buf;
 
@@ -1080,6 +1119,10 @@ private:
     void _run_append(const Vector2* verts, const Vector2* uvs, const Color* colors, const float* custom0,
                      int vertex_count, const int32_t* indices, int index_count);
     void _flush_default_run(RenderingServer* rs);
+    void _fx_run_reserve(int quads);
+    void _fx_run_append(const ss::runtime::EffectDrawPlan* plan, const ss::runtime::EffectDrawCommand* cmd,
+                        const float* matrix);
+    void _flush_effect_run(RenderingServer* rs);
 
     // Pool helpers
     RID _ensure_batch_ci(int batch_idx);
