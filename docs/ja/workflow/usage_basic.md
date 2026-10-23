@@ -81,12 +81,12 @@ Godot エディタの強力な機能を活かし、最短の手順でアニメ�
 | `Audio Backend`            | Resource | 内蔵サウンド再生を置き換える `SpriteStudioAudioBackend`（任意）    |
 
 > [!NOTE]
-> **アニメーション切り替えで残るもの。** 設定したものはすべて残ります。`Loop Count` / `Speed Scale` / `Frame Skip Enabled` / `Sub Frame Enabled`、`frame_rate` の上書き、再生**方向とスタイル** はいずれも `set_animation()` を跨いで保持されます。これらはたまたま読み込まれているクリップではなく、再生そのものを記述するものだからです。遷移ごとにリセットされるのは **再生区間** だけで、フレーム番号は別のアニメーションに対して意味を持たないため、新しいクリップ自身の範囲に戻ります。
+> **アニメーション切り替えで残るもの。** 設定したものはすべて残ります。`Loop Count` / `Speed Scale` / `Frame Skip Enabled` / `Sub Frame Enabled`、`frame_rate` の上書き、再生**方向とスタイル** はいずれも `set_animation()` を跨いで保持されます。リセットされるのは **再生区間** だけで、新しいクリップ自身の範囲に戻ります。
 >
-> 方向・スタイル・`frame_rate` はスクリプトから触れますが（`player.playback_direction` / `player.frame_rate`）、意図的にインスペクタには出していないため、表示も保存もされません。
+> 方向・スタイル・`frame_rate` はスクリプトから設定し（`player.playback_direction` / `player.frame_rate`）、シーンには保存されません。
 
 ---
 
 ## マスクパーツへの対応
 
-本プラグインは SpriteStudio の「マスク機能（Mask）」に対応しています（上限などは [制約と適用範囲 → マスク](../limitations.md#マスク) を参照）。特別な設定は必要なく、`.ssab` ファイルにマスクパーツが含まれていれば、Godot 上でも自動的にクリッピング処理が行われます。描画は内部のバッチ処理と Godot の描画パイプラインで自動的に完結するため、ユーザー側で特定のマテリアルを割り当てたり、CanvasItem の `clip_children` を手動設定する必要はありません。そのままシーンに配置してお使いいただけます。
+本プラグインは SpriteStudio の「マスク機能（Mask）」に対応しています（上限などは [制約と適用範囲 → マスク](../limitations.md#マスク) を参照）。設定は要りません。`.ssab` にマスクパーツがあれば、シーンに置くだけで作ったとおりにクリッピングされます。

@@ -90,8 +90,7 @@ graph LR
 
 - **The thick edge is the only resource reference.** All a scene holds is a reference to the `.ssab`; everything beyond it is **resolved by path at runtime**, building a `res://` path against the `.ssab`'s own directory and handing it to `ResourceLoader`.
 - Four things are resolved that way: the **cell map atlases**, the **replacement textures for texture change (TCHG)**, the **audio under `sound/`**, and the **`.ssab` that an Instance part plays** — looked up as `<anime pack>.ssab` in the **same folder**.
-- Image paths may contain a subfolder (`font/RoundedMPlus_0.png` in the example above). Move them with their position relative to the `.ssab` intact.
-- Conversely, there is no equivalent of Unity's Addressables problem where a dependency you did not register explicitly is duplicated into every bundle. One copy at the expected `res://` path is seen by everyone referencing it.
+- Image paths may contain a subfolder (`font/RoundedMPlus_0.png` in the example above). Move them with their position relative to the `.ssab` intact. One copy at the expected `res://` path is seen by everyone referencing it.
 
 > [!NOTE]
 > **The Godot editor tracks these dependencies.**

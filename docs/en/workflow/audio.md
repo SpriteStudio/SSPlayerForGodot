@@ -2,16 +2,13 @@
 
 Audio parts authored in SpriteStudio play through Godot **without any setup**: assign the `.ssab`, press play, and the sounds on the timeline sound. This page covers the three ways to take that over — turning it off, adjusting it, or replacing it with your own audio stack.
 
-> [!NOTE]
-> Audio is one place where this player does more than the shared runtime. `libssruntime` only *reports* that an audio key was crossed — the Flutter, React Native and wgpu players hand that report straight to the application. `SpriteStudioPlayer2D` also ships a built-in player for it, because Godot already has everything needed to make the sound; the Unity, Web and Ren'Py players do the same in their own engines.
-
 ---
 
 ## How it works out of the box
 
 The converter copies the sound files referenced by the project next to the generated `.ssab`, so they are ordinary Godot resources by the time you play. When the playhead crosses an audio key, the player resolves the referenced file through the bound `SSABResource` and starts an `AudioStreamPlayer` for it.
 
-The voices are created on demand as **internal** children of the `SpriteStudioPlayer2D` node — they do not appear in the scene tree and are never saved with the scene — and they are pooled, so a finished voice is reused rather than freed and a busy animation does not churn nodes. `audio_volume` is a linear value converted to decibels on each voice.
+The voices are **internal** children of the `SpriteStudioPlayer2D` node: they do not appear in the scene tree and are never saved with the scene. `audio_volume` is a linear value converted to decibels on each voice.
 
 Four properties control it, all on `SpriteStudioPlayer2D`:
 
@@ -41,7 +38,7 @@ Audio is **fire-and-forget**: a sound starts at the moment its frame is passed, 
 
 - **Forward playback only.** Nothing sounds while the effective direction is backward — a reversed direction, or the return leg of ping-pong. This is a [shared limitation](../limitations.md#playback-feature-constraints), not a Godot one. A negative `speed_scale` is not one of those cases: it stops the playhead rather than reversing it, and a stopped playhead crosses no audio keys either.
 - **Seeking does not replay what it skipped.** Jumping the playhead fires only the destination frame's events, and a sound already playing is not re-synced to the new position.
-- **A sound outlives the playback that started it.** `pause()`, `stop()` and a `set_animation()` switch end the *animation*, not the sound; voices already sounding play out. This is the rule across every official player, and it is the only one that can be honoured: pausing the voices would reach only the sounds already playing, so a sound whose key falls inside the hold would never start and no `resume()` could bring it back. Since `loop_num` is a play count with no infinite value, every sound ends on its own anyway — one that outlasts its animation is the animation data's business. Turning `play_audio` off does stop them, as does the node leaving the tree.
+- **A sound outlives the playback that started it.** `pause()`, `stop()` and a `set_animation()` switch end the *animation*, not the sound; voices already sounding play out, and every sound ends on its own, since `loop_num` has no infinite value. Turning `play_audio` off stops them, as does the node leaving the tree.
 - **Re-firing overlaps rather than cuts.** A sound triggered again while a previous instance is still audible — across a loop boundary, typically — starts a second voice. Nothing cuts the first one off.
 - **`loop_num` is a play count, not a flag.** SpriteStudio has no infinite audio loop: `1` plays once, `n` plays `n` times in a row.
 
