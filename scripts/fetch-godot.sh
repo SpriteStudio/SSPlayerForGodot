@@ -16,9 +16,12 @@
 # register the classes a second time and abort on the extension's own project.
 # Reach for it only with a project that carries no addons/spritestudio.
 #
-# Usage: scripts/fetch-godot.sh [force=yes] [out=<dir>]
+# Usage: scripts/fetch-godot.sh [force=yes] [out=<dir>] [arch=<arm64|x86_64>]
 #   force : yes to re-download even when the pinned version is installed
 #   out   : install directory (default: godot-bin/)
+#   arch  : the macOS build to install from Godot 4.8 on, which ships one per
+#           architecture (default: this host's, uname -m). Earlier versions
+#           ship a single universal build, so it is ignored there.
 #
 # Requires curl and unzip.
 set -euo pipefail
@@ -31,10 +34,12 @@ usage() { sed -n '/^# Usage:/,/^# Requires/p' "$0" | sed 's/^# \{0,1\}//'; }
 
 FORCE="no"
 OUT_DIR="${ROOTDIR}/godot-bin"
+ARCH=$(uname -m)
 for item in "$@"; do
   case "$item" in
     force=*) FORCE="${item#*=}" ;;
     out=*)   OUT_DIR="${item#*=}" ;;
+    arch=*)  ARCH="${item#*=}" ;;
     -h|--help|help) usage; exit 0 ;;
     *) echo "$APP: unknown arg '$item'" >&2; usage; exit 2 ;;
   esac
@@ -44,16 +49,20 @@ VERSION=$(tr -d ' \r\n' < "${SCRIPTDIR}/GODOT_VERSION.txt")
 VERSION_FILE="${OUT_DIR}/VERSION"
 CACHE_DIR="${SCRIPTDIR}/.godot-cache"
 
-if [ "$FORCE" != "yes" ] && [ -f "$VERSION_FILE" ] \
-   && [ "$(tr -d ' \r\n' < "$VERSION_FILE")" = "$VERSION" ]; then
-  echo "$APP: Godot $VERSION is already installed in $(basename "$OUT_DIR")/. Nothing to do."
-  exit 0
-fi
-
 # The asset name encodes the platform; ARM Linux and 32-bit are not published as
 # editor builds, so those hosts have to bring their own binary.
 case "$(uname -s)" in
-  Darwin) ASSET="Godot_v${VERSION}_macos.universal.zip" ;;
+  Darwin)
+    MAJOR=$(printf '%s' "$VERSION" | cut -d. -f1)
+    MINOR=$(printf '%s' "$VERSION" | cut -d. -f2 | sed 's/[^0-9].*//')
+    if [ "$MAJOR" -gt 4 ] || { [ "$MAJOR" -eq 4 ] && [ "$MINOR" -ge 8 ]; }; then
+      case "$ARCH" in
+        arm64|x86_64) ASSET="Godot_v${VERSION}_macos.${ARCH}.zip" ;;
+        *) echo "$APP: arch must be arm64 or x86_64 (got '$ARCH')" >&2; exit 2 ;;
+      esac
+    else
+      ASSET="Godot_v${VERSION}_macos.universal.zip"
+    fi ;;
   Linux)
     case "$(uname -m)" in
       x86_64) ASSET="Godot_v${VERSION}_linux.x86_64.zip" ;;
@@ -61,6 +70,13 @@ case "$(uname -s)" in
     esac ;;
   *) ASSET="Godot_v${VERSION}_win64.exe.zip" ;;
 esac
+
+# VERSION records the asset installed, so a different arch= is not mistaken for it.
+if [ "$FORCE" != "yes" ] && [ -f "$VERSION_FILE" ] \
+   && [ "$(tr -d ' \r\n' < "$VERSION_FILE")" = "$ASSET" ]; then
+  echo "$APP: $ASSET is already installed in $(basename "$OUT_DIR")/. Nothing to do."
+  exit 0
+fi
 
 URL="https://github.com/godotengine/godot-builds/releases/download/${VERSION}/${ASSET}"
 ZIP_FILE="${CACHE_DIR}/${ASSET}"
@@ -97,5 +113,5 @@ case "$(uname -s)" in
     [ -n "$CONSOLE" ] && mv "$CONSOLE" "${OUT_DIR}/godot_console.exe" ;;
 esac
 
-printf '%s\n' "$VERSION" > "$VERSION_FILE"
+printf '%s\n' "$ASSET" > "$VERSION_FILE"
 echo "$APP: Godot $VERSION installed in $(basename "$OUT_DIR")/"
