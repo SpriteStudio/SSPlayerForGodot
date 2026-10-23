@@ -53,11 +53,15 @@ static bool _is_supported_output(const String &p_path) {
     return ext == "ssab" || ext == "ssqb";
 }
 
+#if GODOT_VERSION_HEX >= 0x040800
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
-void SSFileSystemContextMenu::_popup_menu(const PackedStringArray &p_paths) {
-#elif GODOT_VERSION_HEX >= 0x040800
+void SSFileSystemContextMenu::_get_menu_options(const TypedDictionary<StringName, Variant> &p_data) {
+#else
 void SSFileSystemContextMenu::get_options(const OptionsData &p_data) {
+#endif
     const PackedStringArray p_paths = p_data.get(SNAME("selected_files"), PackedStringArray());
+#elif defined(SPRITESTUDIO_GODOT_EXTENSION)
+void SSFileSystemContextMenu::_popup_menu(const PackedStringArray &p_paths) {
 #else
 void SSFileSystemContextMenu::get_options(const Vector<String> &p_paths) {
 #endif
@@ -78,7 +82,7 @@ void SSFileSystemContextMenu::get_options(const Vector<String> &p_paths) {
 
     Callable on_open(this, "_on_open_in_editor");
     Callable on_convert(this, "_on_convert");
-#if !defined(SPRITESTUDIO_GODOT_EXTENSION) && GODOT_VERSION_HEX >= 0x040800
+#if GODOT_VERSION_HEX >= 0x040800
     // Godot 4.8 calls an item's callback with p_data, not the paths: drop it and pass the paths.
     on_open = on_open.bind(p_paths).unbind(1);
     on_convert = on_convert.bind(p_paths).unbind(1);

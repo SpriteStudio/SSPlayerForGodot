@@ -10,6 +10,9 @@
 #ifdef SPRITESTUDIO_GODOT_EXTENSION
   #include <godot_cpp/core/version.hpp>
   #include <godot_cpp/variant/string_name.hpp>
+  // godot-cpp names the API it was generated from (api_version) but not as the
+  // engine's hex, which the checks shared with the custom module compare.
+  #define GODOT_VERSION_HEX (0x10000 * GODOT_VERSION_MAJOR + 0x100 * GODOT_VERSION_MINOR + GODOT_VERSION_PATCH)
   #define SNAME(x) ([]() -> const godot::StringName & { static const godot::StringName *_ss_sname = new godot::StringName(x); return *_ss_sname; }())
   #define SS_FILE_EXISTS(x) FileAccess::file_exists(x)
   #define RS_VIEWPORT_UPDATE_ONCE RenderingServer::VIEWPORT_UPDATE_ONCE

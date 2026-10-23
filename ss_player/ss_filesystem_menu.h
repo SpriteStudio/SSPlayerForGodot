@@ -32,7 +32,9 @@ public:
 
   void set_importer(SSImporter *p_importer) { importer = p_importer; }
 
-#ifdef SPRITESTUDIO_GODOT_EXTENSION
+#if defined(SPRITESTUDIO_GODOT_EXTENSION) && GODOT_VERSION_HEX >= 0x040800
+  virtual void _get_menu_options(const TypedDictionary<StringName, Variant> &p_data) override;
+#elif defined(SPRITESTUDIO_GODOT_EXTENSION)
   virtual void _popup_menu(const PackedStringArray &p_paths) override;
 #elif GODOT_VERSION_HEX >= 0x040800
   virtual void get_options(const OptionsData &p_data) override;
