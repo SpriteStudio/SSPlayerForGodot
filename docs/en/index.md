@@ -18,7 +18,6 @@ Drag a `.sspj` onto the **SS Importer** dock, then drop the converted `.ssab` in
 
 - **Setup**
     - [Installation](setup/install.md)
-    - [Build Guide](setup/build.md)
 - **Workflow**
     - [Basic Usage](workflow/usage_basic.md)
     - [Asset Import & Editor Integration](workflow/usage_asset_pipeline.md) (start here for the initial `.sspj` import)
@@ -38,6 +37,9 @@ Drag a `.sspj` onto the **SS Importer** dock, then drop the converted `.ssab` in
 - [Troubleshooting](troubleshooting.md)
 - [Limitations & Scope](limitations.md)
 - [Migration from v1.x](migration_from_v1.md)
+- **For Player & SDK Developers**
+    - [Build Guide](setup/build.md)
+    - [How the Player Is Put Together](development/internals.md) (the file map, using a changed build, checking in Godot, the reasons that span files)
 - **License**
     - [License](license.md)
     - [Third-Party Notices](third_party_notices.md)
