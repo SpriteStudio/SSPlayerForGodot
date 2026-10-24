@@ -1021,15 +1021,15 @@ void SpriteStudioPlayer2D::_validate_property(PropertyInfo& p_property) const {
         return;
     }
 
-    // The playhead and the section endpoints are bounded by the current
-    // animation's length, which only the instance knows.
-    bool is_frame = p_property.name == StringName("frame_no");
-    bool is_section = p_property.name == StringName("animation_section_start") ||
-                      p_property.name == StringName("animation_section_end");
-    if (is_frame || is_section) {
-        int total = getTotalFrames();
-        int max_frame = total > 0 ? total - 1 : 0;
-        p_property.hint_string = "0," + String::num(max_frame) + (is_frame ? ",0.01" : ",1");
+    // The playhead stays inside the section, and the section's ends inside the
+    // animation; only the instance knows either. Before an animation is set up
+    // both read 0.
+    if (p_property.name == StringName("frame_no")) {
+        p_property.hint_string = vformat("%d,%d,0.01", getAnimationSectionStart(), getAnimationSectionEnd());
+    } else if (p_property.name == StringName("animation_section_start") ||
+               p_property.name == StringName("animation_section_end")) {
+        const ss::format::AnimationData* animation = _internal->getCurrentAnimationData();
+        p_property.hint_string = animation ? vformat("%d,%d,1", animation->start_frame(), animation->end_frame()) : String("0,0,1");
     }
 }
 
