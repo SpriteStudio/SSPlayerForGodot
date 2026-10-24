@@ -25,7 +25,7 @@ func _ready():
 			target_cellmap = cellmaps[0]
 			print("Target cellmap for override: ", target_cellmap)
 
-	ss_player.set_frame(0)
+	ss_player.set_frame_no(0)
 	ss_player.set_loop_count(-1) # -1 = infinite loop
 	ss_player.play()
 
