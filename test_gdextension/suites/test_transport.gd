@@ -122,6 +122,34 @@ func test_a_seek_after_play_is_where_reverse_carries_on_from() -> void:
 	near(player.get_frame_no(), 9.0, "and the next step goes backwards from there", 0.001)
 
 
+func test_a_section_can_start_on_the_last_frame() -> void:
+	var last: int = player.get_end_frame()
+	ok(player.set_animation_section(last, last), "a one-frame section on the last frame")
+	eq([player.get_start_frame(), player.get_end_frame()], [last, last], "the section is that frame")
+	ok(player.set_animation_section(last, -1), "an end of -1 is the animation's edge")
+	eq([player.get_start_frame(), player.get_end_frame()], [last, last], "which is that frame too")
+	player.set_loop_count(1)
+	player.play()
+	player.advance(dt)
+	near(player.get_frame_no(), float(last), "playback holds it")
+
+
+## Engine messages are off around the refused calls: the warning is the API
+## working, and the run has to stay silent.
+func test_a_section_that_ends_before_it_starts_is_refused() -> void:
+	ok(player.set_animation_section(2, 5), "a forward section")
+	player.set_frame_no(4.0)
+	Engine.print_error_messages = false
+	var taken: bool = player.set_animation_section(5, 2)
+	player.animation_section_start = 6
+	Engine.print_error_messages = true
+	not_ok(taken, "an end before the start")
+	eq([player.get_start_frame(), player.get_end_frame()], [2, 5], "the section stays")
+	near(player.get_frame_no(), 4.0, "the playhead stays")
+	ok(player.set_animation_section(5, -1), "an end out of range is the animation's edge")
+	eq(player.get_start_frame(), 5, "and the start is taken")
+
+
 func test_flip_is_reported_back() -> void:
 	not_ok(player.is_flipped_h(), "not flipped to start with")
 	not_ok(player.is_flipped_v(), "not flipped to start with")

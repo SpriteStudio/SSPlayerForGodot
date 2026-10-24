@@ -72,8 +72,8 @@ Once the node is selected, you can adjust various settings from Godot's Inspecto
 | `Frame No`                 | float    | The current frame position                                          |
 | `Speed Scale`              | float    | Playback speed multiplier (Default: 1.0)                            |
 | `Loop Count`               | int      | Number of loops (`-1` for infinite loop)                            |
-| `Animation Section Start`  | int      | Start frame for partial playback                                    |
-| `Animation Section End`    | int      | End frame for partial playback                                      |
+| `Animation Section Start`  | int      | Start frame for partial playback. It cannot go past `Animation Section End`: move the end first |
+| `Animation Section End`    | int      | End frame for partial playback. It cannot go before `Animation Section Start`: move the start first |
 | `Frame Skip Enabled`       | bool     | Whether to skip frames when the draw interval exceeds the frame interval |
 | `Sub Frame Enabled`        | bool     | Whether to enable sub-frame interpolation                           |
 | `Animation Process Mode`   | int      | Whether to sync with `_physics_process` (Physics) or `_process` (Idle), or to leave stepping to `advance()` (Manual) |

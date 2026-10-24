@@ -70,8 +70,8 @@ Godot エディタの強力な機能を活かし、最短の手順でアニメ�
 | `Frame No`                 | float  | 現在のフレーム位置                                                  |
 | `Speed Scale`              | float  | 再生速度倍率 (既定: 1.0)                                            |
 | `Loop Count`               | int    | ループ回数 (`-1` で無限ループ)                                      |
-| `Animation Section Start` | int    | 部分再生の開始フレーム                                              |
-| `Animation Section End`   | int    | 部分再生の終了フレーム                                              |
+| `Animation Section Start` | int    | 部分再生の開始フレーム。`Animation Section End` より後ろへは動かせないので、先に終了フレームを動かす |
+| `Animation Section End`   | int    | 部分再生の終了フレーム。`Animation Section Start` より前へは動かせないので、先に開始フレームを動かす |
 | `Frame Skip Enabled`       | bool   | 描画間隔がフレーム間隔を超えた際にフレームを飛ばすか                |
 | `Sub Frame Enabled`        | bool   | サブフレーム補間を有効化するか                                      |
 | `Animation Process Mode`   | int    | `_physics_process` (Physics) / `_process` (Idle) の同期設定、または `advance()` に委ねる (Manual) |
