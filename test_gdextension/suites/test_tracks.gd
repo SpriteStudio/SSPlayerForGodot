@@ -382,9 +382,15 @@ func test_fade_track_and_its_cancel() -> void:
 ## Refusals the node makes itself, before the runtime is asked: a name the pack
 ## does not have, and a track or source number that cannot name one.
 func test_what_names_nothing_is_refused() -> void:
-	not_ok(player.set_track_animation(1, "no such animation"), "an unknown animation")
-	not_ok(player.crossfade(0, "no such animation", 0.1), "crossfade to one")
-	eq(player.add_track_source(0, "no such animation", 1.0), -1, "add_track_source of one")
+	# The node reports each refusal once; the run has to stay silent.
+	Engine.print_error_messages = false
+	var laid: bool = player.set_track_animation(1, "no such animation")
+	var faded: bool = player.crossfade(0, "no such animation", 0.1)
+	var source: int = player.add_track_source(0, "no such animation", 1.0)
+	Engine.print_error_messages = true
+	not_ok(laid, "an unknown animation")
+	not_ok(faded, "crossfade to one")
+	eq(source, -1, "add_track_source of one")
 	not_ok(player.set_track_alpha(-1, 0.5), "a negative track")
 	eq(player.get_track_main_source(7), -1, "the main source of a track that does not exist")
 	near(player.get_track_alpha(7), 0.0, "the alpha of one")

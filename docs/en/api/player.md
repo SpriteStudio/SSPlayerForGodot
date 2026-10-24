@@ -90,7 +90,7 @@ To use this box to skip players that are off screen, see [Performance Tuning →
 
 ## Part overrides
 
-Override a single part's color / cell / visibility so that it wins over the keyframes. Every method returns `true` on success, or `false` when the part is unknown or the runtime rejects the call. See [Scripting and Event-Driven Control → Part Overrides](../workflow/usage_scripting.md) for the details and caveats.
+Override a single part's color / cell / visibility so that it wins over the keyframes. Every method returns `true` on success, or `false` when the part is unknown or the runtime rejects the call; the Output panel then names the call and what it was given, once for each. See [Scripting and Event-Driven Control → Part Overrides](../workflow/usage_scripting.md) for the details and caveats.
 
 * `set_part_color_override(part_name: String, color: Color, blend_op: ColorBlendOperation = COLOR_BLEND_MIX, priority: OverridePriority = OVERRIDE_PRIORITY_HOLD_UNTIL_NEXT_ANIMATION) -> bool`
 * `set_part_color_override_corners(part_name: String, corners: PackedColorArray, blend_op: ColorBlendOperation = COLOR_BLEND_MIX, priority: OverridePriority = OVERRIDE_PRIORITY_HOLD_UNTIL_NEXT_ANIMATION) -> bool`: Four-corner (per-vertex) colour, for a gradient across the part. `corners` holds exactly four colours in the order left-top, right-top, left-bottom, right-bottom. Shares one override slot with `set_part_color_override` — the last call wins, and `clear_part_color_override` clears either kind.
@@ -148,7 +148,7 @@ Play several animations of the assigned `.ssab` at once, stacked on tracks: trac
 * `set_source_frame(source: int, frame_no: float) -> bool` / `get_source_frame(source: int) -> float`
 * `set_source_event_threshold(source: int, threshold: float) -> bool` / `get_source_event_threshold(source: int) -> float`: The weight at or above which the source fires its events. Starts at `INF`, so only track 0's main source fires by default.
 
-Each setter returns `false` when no animation is set up, the animation name is not in the `.ssab`, or the runtime refuses the call. A read of a track or source that does not exist returns `0` (check `get_track_count()` first), except the two whose `0` is a real answer: `get_track_fade_progress()` returns `-1`, and the source handles are `-1`.
+Each setter returns `false` when no animation is set up, the animation name is not in the `.ssab`, or the runtime refuses the call. `set_track_animation()`, `crossfade()`, `add_track_source()`, `set_track_blend()` and `set_track_sync()` also name the call in the Output panel, once for each call and what it was given. A read of a track or source that does not exist returns `0` (check `get_track_count()` first), except the two whose `0` is a real answer: `get_track_fade_progress()` returns `-1`, and the source handles are `-1`.
 
 `set_animation()` to a different animation folds the stack back to track 0 alone, every track setting included. `play()` heads out track 0 only; `pause()`, `resume()` and `stop()` act on every track and fade; and track 0 finishing does not stop the overlays. `is_playing()`, `is_pausing()`, `is_finished()` and the `animation_*` signals describe track 0.
 

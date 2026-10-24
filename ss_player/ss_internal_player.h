@@ -274,6 +274,9 @@ public:
     //
     // Resolve a part name to its index in the current binary; -1 if unknown.
     int resolve_part_index(const String& p_name) const;
+    // The runtime's reason for the last override or mixing command it refused,
+    // or empty; reading it clears it.
+    String take_runtime_refusal();
     // Player-local Transform2D of the part for the current frame (the same
     // matrix the part draws with, via matrix_to_transform2d of its world
     // matrix). False if the index is out of range or no frame data exists.
@@ -1071,6 +1074,11 @@ private:
     // is a change the next draw has to pick up. Passes the result through so
     // the mutators stay one line.
     bool _override_applied(bool p_ok);
+    // Why the runtime refused the last override or mixing command, from its
+    // last error; empty when the command stopped before reaching the runtime.
+    // The user-facing node reports it, once.
+    String _runtime_refusal;
+    void _note_runtime_refusal(bool p_ok);
     // Instance slot emit: re-parent the child's _root_ci under this slot's
     // batch CI and apply the slot's world matrix as the child's root
     // transform. The child's own draw + simulation already happened earlier
