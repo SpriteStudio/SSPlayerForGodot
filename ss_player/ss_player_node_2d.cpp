@@ -575,7 +575,15 @@ int SpriteStudioPlayer2D::getFrameRate() const { return _internal->getFrameRate(
 int SpriteStudioPlayer2D::getStartFrame() const { return _internal->getAnimationSectionStart(); }
 int SpriteStudioPlayer2D::getEndFrame() const { return _internal->getAnimationSectionEnd(); }
 
-void SpriteStudioPlayer2D::setAnimationSection(int p_start, int p_end) { _internal->setAnimationSection(p_start, p_end); }
+bool SpriteStudioPlayer2D::setAnimationSection(int p_start, int p_end) {
+    if (_internal->setAnimationSection(p_start, p_end)) return true;
+    const uint64_t key = ((uint64_t)(uint32_t)p_start << 32) | (uint32_t)p_end;
+    if (!_reported_sections.has(key)) {
+        _reported_sections.insert(key);
+        WARN_PRINT(vformat("[SS] set_animation_section(%d, %d) ends before it starts, so the section stays as it was.", p_start, p_end));
+    }
+    return false;
+}
 void SpriteStudioPlayer2D::setAnimationSectionStart(int p_start) { setAnimationSection(p_start, getAnimationSectionEnd()); }
 void SpriteStudioPlayer2D::setAnimationSectionEnd(int p_end) { setAnimationSection(getAnimationSectionStart(), p_end); }
 int SpriteStudioPlayer2D::getAnimationSectionStart() const { return _internal->getAnimationSectionStart(); }

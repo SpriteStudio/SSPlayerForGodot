@@ -195,7 +195,7 @@ public:
     void setFrameRate(int p_fps);
     int getFrameRate() const;
 
-    void setAnimationSection(int p_start, int p_end);
+    bool setAnimationSection(int p_start, int p_end);
     int getAnimationSectionStart() const;
     int getAnimationSectionEnd() const;
 

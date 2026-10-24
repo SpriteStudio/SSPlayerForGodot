@@ -158,7 +158,7 @@ public:
     void setFrameRate( int p_fps );
     int getFrameRate() const;
 
-    void setAnimationSection( int p_start, int p_end );
+    bool setAnimationSection( int p_start, int p_end );
     // Single-endpoint setters backing the `animation_section_start` /
     // `animation_section_end` properties; each keeps the other endpoint.
     void setAnimationSectionStart( int p_start );
@@ -339,6 +339,7 @@ private:
     void _handle_audio(const Dictionary& payload);
 
     HashMap<String, Ref<Texture2D>> _cellmap_overrides;
+    HashSet<uint64_t> _reported_sections;
     // On, so a node dropped into a scene animates when the scene runs. A player
     // sitting on its first frame reads as broken, and there is no code to call
     // `play()` for a node that was placed rather than constructed -- which is

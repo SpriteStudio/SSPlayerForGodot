@@ -43,8 +43,8 @@ func _ready() -> void:
 * `get_start_frame() -> int` / `get_end_frame() -> int`: 実際に再生される先頭 / 末尾フレーム、すなわち現在の再生区間です。`get_animation_section_start()` / `get_animation_section_end()` と同じ値を返します（`set_animation_section()` で狭めるまではアニメーション全体）。
 * `set_speed_scale(speed_scale: float)` / `get_speed_scale() -> float`
 * `set_frame_rate(fps: int)` / `get_frame_rate() -> int`
-* `set_animation_section(start: int, end: int)`: 再生するフレーム区間を限定します。
-* `set_animation_section_start(start: int)` / `get_animation_section_start() -> int` / `set_animation_section_end(end: int)` / `get_animation_section_end() -> int`: 片方の端点だけを移動します（もう一方は維持）。インスペクターの `animation_section_start` / `animation_section_end` プロパティの実体です。
+* `set_animation_section(start: int, end: int) -> bool`: 再生するフレーム区間を `start` から `end` までに限定します（両端を含みます）。`start == end` ならその 1 フレームを再生し、最後のフレームでも同じです。アニメーションの範囲外の値（`-1` など）を渡すと、その側はアニメーションの端になります。両端が範囲内で `end` が `start` より前なら `false` を返し、区間と再生ヘッドはそのままにします。出力パネルには、その組を一度だけ出します。
+* `set_animation_section_start(start: int)` / `get_animation_section_start() -> int` / `set_animation_section_end(end: int)` / `get_animation_section_end() -> int`: 片方の端点だけを移動します（もう一方は維持）。インスペクターの `animation_section_start` / `animation_section_end` プロパティの実体です。どちらも `set_animation_section()` を通るので、今の終わりより後ろへ始まりを、今の始まりより前へ終わりを動かすと受け付けません。先にもう一方の端点を動かすか、`set_animation_section()` で両方を指定してください。
 * `set_playback_direction(direction: PlaybackDirection, style: PlaybackStyle)`: 再生方向と再生スタイルを指定します。値の意味は下表を参照してください。
 * `get_playback_direction() -> PlaybackDirection` / `get_playback_style() -> PlaybackStyle`: セッターで指定した 2 つの値をそれぞれ読み出します。
 * `frame_rate` / `playback_direction` / `playback_style` は、プロパティとしても読み書きできます（`player.playback_direction = ...`）。実行時専用で、インスペクターには出ず、シーンにも保存されません。

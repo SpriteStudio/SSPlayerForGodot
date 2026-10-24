@@ -123,11 +123,12 @@
 			</description>
 		</method>
 		<method name="set_animation_section">
-			<return type="void" />
+			<return type="bool" />
 			<param index="0" name="start" type="int" />
 			<param index="1" name="end" type="int" />
 			<description>
-				Limits playback to the inclusive frame range [code][start, end][/code].
+				Limits playback to the inclusive frame range [code][start, end][/code], so [code]start == end[/code] plays that one frame, the last frame included. An end outside the animation ([code]-1[/code], say) is the animation's edge on that side.
+				Returns [code]false[/code] when both ends are inside the animation and [param end] is before [param start]: the section and the playhead stay as they were, and the Output panel names the pair, once for each pair.
 			</description>
 		</method>
 		<method name="set_playback_direction">
@@ -673,10 +674,10 @@
 			Determines whether to advance the animation in [code]_physics_process[/code] ([constant ANIMATION_PROCESS_PHYSICS]) or [code]_process[/code] ([constant ANIMATION_PROCESS_IDLE]). Use Physics if the parent node moves using the physics engine to avoid jitter. [constant ANIMATION_PROCESS_MANUAL] stops the node advancing itself, leaving playback to [method advance].
 		</member>
 		<member name="animation_section_start" type="int" setter="set_animation_section_start" getter="get_animation_section_start" default="0">
-			First frame of the played section, inclusive. Setting it keeps [member animation_section_end]; use [method set_animation_section] to move both endpoints at once.
+			First frame of the played section, inclusive. Setting it keeps [member animation_section_end], so a start past that end is refused, as [method set_animation_section] refuses it: move the end first, or use [method set_animation_section] to move both endpoints at once.
 		</member>
 		<member name="animation_section_end" type="int" setter="set_animation_section_end" getter="get_animation_section_end" default="0">
-			Last frame of the played section, inclusive. Setting it keeps [member animation_section_start]; use [method set_animation_section] to move both endpoints at once.
+			Last frame of the played section, inclusive. Setting it keeps [member animation_section_start], so an end before that start is refused, as [method set_animation_section] refuses it: move the start first, or use [method set_animation_section] to move both endpoints at once.
 		</member>
 		<member name="frame_no" type="float" setter="set_frame_no" getter="get_frame_no" default="0.0">
 			Where the playhead is, in frames. Fractional: sub-frame interpolation puts it between two authored frames, which is why it is not called [code]frame[/code] - [member AnimatedSprite2D.frame] is an integer index into a [SpriteFrames] set and means something else. Editor-only display. Can be keyframed from an [AnimationPlayer] to drive playback from a timeline.

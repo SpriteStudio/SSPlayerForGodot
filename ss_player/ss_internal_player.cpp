@@ -935,8 +935,8 @@ int SsInternalPlayer::getFrameRate() const {
     return ss_runtime_get_frame_rate(runtime_ctx);
 }
 
-void SsInternalPlayer::setAnimationSection(int p_start, int p_end) {
-    ss_runtime_set_animation_section(runtime_ctx, p_start, p_end);
+bool SsInternalPlayer::setAnimationSection(int p_start, int p_end) {
+    return ss_runtime_set_animation_section(runtime_ctx, p_start, p_end);
 }
 
 int SsInternalPlayer::getAnimationSectionStart() const {
