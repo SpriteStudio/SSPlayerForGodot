@@ -89,7 +89,7 @@ pivot はキャンバス内のどこに原点があるかを表します。地�
 
 ## パーツオーバーライド
 
-パーツ単位で、カラー / セル / 表示指定をキーフレームより優先して上書きします。各メソッドは成功時に `true`、パーツが不明な場合やランタイムが受け付けなかった場合に `false` を返します。詳細と注意点は [スクリプト制御とイベント → パーツオーバーライド](../workflow/usage_scripting.md) を参照してください。
+パーツ単位で、カラー / セル / 表示指定をキーフレームより優先して上書きします。各メソッドは成功時に `true`、パーツが不明な場合やランタイムが受け付けなかった場合に `false` を返し、出力パネルにその呼び出しと渡されたものを、それぞれ一度だけ出します。詳細と注意点は [スクリプト制御とイベント → パーツオーバーライド](../workflow/usage_scripting.md) を参照してください。
 
 * `set_part_color_override(part_name: String, color: Color, blend_op: ColorBlendOperation = COLOR_BLEND_MIX, priority: OverridePriority = OVERRIDE_PRIORITY_HOLD_UNTIL_NEXT_ANIMATION) -> bool`
 * `set_part_color_override_corners(part_name: String, corners: PackedColorArray, blend_op: ColorBlendOperation = COLOR_BLEND_MIX, priority: OverridePriority = OVERRIDE_PRIORITY_HOLD_UNTIL_NEXT_ANIMATION) -> bool`: 4 頂点それぞれに色を指定して、パーツ内をグラデーションにします。`corners` には左上・右上・左下・右下の順にちょうど 4 色を入れます。`set_part_color_override` と同じオーバーライド枠を共有するので、後から呼んだ方が有効になり、`clear_part_color_override` はどちらも解除します。
@@ -147,7 +147,7 @@ pivot はキャンバス内のどこに原点があるかを表します。地�
 * `set_source_frame(source: int, frame_no: float) -> bool` / `get_source_frame(source: int) -> float`
 * `set_source_event_threshold(source: int, threshold: float) -> bool` / `get_source_event_threshold(source: int) -> float`: ソースがイベントを発火する weight の下限。初期値は `INF` なので、既定では track 0 の主ソースだけが発火します。
 
-設定のメソッドは、アニメーションが設定されていないとき、アニメーション名が `.ssab` に無いとき、ランタイムが受け付けなかったときに `false` を返します。存在しないトラックやソースの読み出しは `0` を返します（先に `get_track_count()` で確かめてください）。ただし `0` が正しい値になりうる 2 つは別で、`get_track_fade_progress()` は `-1` を返し、ソースのハンドルは `-1` です。
+設定のメソッドは、アニメーションが設定されていないとき、アニメーション名が `.ssab` に無いとき、ランタイムが受け付けなかったときに `false` を返します。`set_track_animation()`・`crossfade()`・`add_track_source()`・`set_track_blend()`・`set_track_sync()` は、出力パネルにもその呼び出しを、呼び出しと渡されたものごとに一度だけ出します。存在しないトラックやソースの読み出しは `0` を返します（先に `get_track_count()` で確かめてください）。ただし `0` が正しい値になりうる 2 つは別で、`get_track_fade_progress()` は `-1` を返し、ソースのハンドルは `-1` です。
 
 別のアニメーションへの `set_animation()` は、トラックの設定も含めてスタックを track 0 だけに戻します。`play()` は track 0 だけを先頭へ戻し、`pause()`・`resume()`・`stop()` はすべてのトラックとフェードに効きます。track 0 が終わっても、重ねたトラックは止まりません。`is_playing()`・`is_pausing()`・`is_finished()` と `animation_*` シグナルは track 0 の状態を表します。
 

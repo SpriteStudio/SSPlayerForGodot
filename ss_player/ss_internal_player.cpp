@@ -16,16 +16,6 @@
 #endif
 
 namespace {
-// Bridges ssruntime's `ss_log!` output into the Godot console. Without this
-// the runtime's log callback stays null and FFI-side diagnostics are silent.
-void ss_runtime_log_bridge(int level, const char *message) {
-    (void)level;
-    if (!message) {
-        return;
-    }
-    WARN_PRINT(String("[ssruntime] ") + String::utf8(message));
-}
-
 #include "ss_shader_setup.h"
 #include "ss_macros.h"
 
@@ -235,12 +225,6 @@ private:
 } // namespace
 
 SsInternalPlayer::SsInternalPlayer() {
-    // Register once; the runtime stores the callback in a process-global slot.
-    static bool log_callback_registered = false;
-    if (!log_callback_registered) {
-        ss_runtime_set_log_callback(&ss_runtime_log_bridge);
-        log_callback_registered = true;
-    }
     runtime_ctx = ss_runtime_create();
     _reconfigure();
 
@@ -477,7 +461,18 @@ String SsInternalPlayer::get_part_name(int p_part_index) const {
 
 bool SsInternalPlayer::_override_applied(bool p_ok) {
     if (p_ok) _overrides_dirty = true;
+    _note_runtime_refusal(p_ok);
     return p_ok;
+}
+
+void SsInternalPlayer::_note_runtime_refusal(bool p_ok) {
+    _runtime_refusal = p_ok ? String() : String::utf8(ss_runtime_error_message(ss_runtime_get_last_error(runtime_ctx)));
+}
+
+String SsInternalPlayer::take_runtime_refusal() {
+    String refusal = _runtime_refusal;
+    _runtime_refusal = String();
+    return refusal;
 }
 
 bool SsInternalPlayer::set_part_visibility_override(int p_part_index, bool p_force_hidden, bool p_cascade) {
@@ -551,6 +546,7 @@ bool SsInternalPlayer::_mixing_applied(bool p_ok) {
         // way it shows an override: without stepping the animation.
         _overrides_dirty = true;
     }
+    _note_runtime_refusal(p_ok);
     return p_ok;
 }
 
@@ -627,7 +623,9 @@ bool SsInternalPlayer::setTrackSync(int p_track, int p_sync) {
     SS_TRACK_OR_FAIL(p_track, false);
     // Not a change to the pose: it only decides where the next animation laid on
     // the track starts, so it does not mark the stack as in use.
-    return ss_runtime_set_track_sync(runtime_ctx, (uint32_t)p_track, (uint32_t)p_sync);
+    const bool ok = ss_runtime_set_track_sync(runtime_ctx, (uint32_t)p_track, (uint32_t)p_sync);
+    _note_runtime_refusal(ok);
+    return ok;
 }
 
 int SsInternalPlayer::getTrackSync(int p_track) const {

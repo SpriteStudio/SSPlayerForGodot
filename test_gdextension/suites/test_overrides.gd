@@ -124,8 +124,11 @@ func test_the_index_half_agrees_with_the_name_half() -> void:
 
 
 func test_an_unknown_part_is_refused_rather_than_ignored() -> void:
-	not_ok(player.set_part_visibility_override("no such part", true),
-		"an override on a part that does not exist")
+	# The node reports the refusal once; the run has to stay silent.
+	Engine.print_error_messages = false
+	var taken: bool = player.set_part_visibility_override("no such part", true)
+	Engine.print_error_messages = true
+	not_ok(taken, "an override on a part that does not exist")
 	eq(player.find_part_index("no such part"), -1, "and it has no index")
 
 

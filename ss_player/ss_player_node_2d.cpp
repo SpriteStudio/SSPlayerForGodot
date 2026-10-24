@@ -88,6 +88,7 @@ void SpriteStudioPlayer2D::setSSABResource(const Ref<SSABResource>& ssabRes) {
     }
 
     _internal->setSSABResource(ssabRes);
+    _reported_refusals.clear();
     _apply_transport_settings();
 
     notify_property_list_changed();
@@ -227,6 +228,30 @@ PackedStringArray SpriteStudioPlayer2D::get_part_names() const {
     return names;
 }
 
+// ---- Refusals -------------------------------------------------------------
+
+// Says, once per call and what it was given, that a command did nothing: a
+// script that repeats a refused call every frame would otherwise fill the
+// Output panel. The reason is the runtime's when it refused, else p_why.
+bool SpriteStudioPlayer2D::_refused(bool p_ok, const String& p_call, const String& p_why) {
+    const String runtime = _internal->take_runtime_refusal();
+    if (p_ok) return true;
+    if (!_reported_refusals.has(p_call)) {
+        _reported_refusals.insert(p_call);
+        const String why = runtime.is_empty() ? p_why : runtime;
+        WARN_PRINT(vformat("[SS] %s did nothing%s.", p_call, why.is_empty() ? String() : ": " + why));
+    }
+    return false;
+}
+
+String SpriteStudioPlayer2D::_no_part(int p_index) const {
+    return p_index < 0 ? String("the animation has no such part") : String();
+}
+
+String SpriteStudioPlayer2D::_no_animation(const String& p_name) const {
+    return get_animation_names().has(p_name) ? String() : String("the SSAB has no such animation");
+}
+
 // ---- Override Layer (Phase 2) --------------------------------------------
 
 // By-index variants. The runtime addresses parts by index, so these skip the
@@ -234,15 +259,18 @@ PackedStringArray SpriteStudioPlayer2D::get_part_names() const {
 // An out-of-range index is a no-op returning false (guarded in SsInternalPlayer).
 
 bool SpriteStudioPlayer2D::set_part_visibility_override_by_index(int part_index, bool force_hidden, bool cascade) {
-    return _internal->set_part_visibility_override(part_index, force_hidden, cascade);
+    return _refused(_internal->set_part_visibility_override(part_index, force_hidden, cascade),
+                    vformat("set_part_visibility_override_by_index(%d)", part_index), _no_part(part_index));
 }
 
 bool SpriteStudioPlayer2D::clear_part_visibility_override_by_index(int part_index) {
-    return _internal->clear_part_visibility_override(part_index);
+    return _refused(_internal->clear_part_visibility_override(part_index),
+                    vformat("clear_part_visibility_override_by_index(%d)", part_index), _no_part(part_index));
 }
 
 bool SpriteStudioPlayer2D::set_part_color_override_by_index(int part_index, const Color& color, ColorBlendOperation blend_op, OverridePriority priority) {
-    return _internal->set_part_color_override(part_index, color, (int)blend_op, (int)priority);
+    return _refused(_internal->set_part_color_override(part_index, color, (int)blend_op, (int)priority),
+                    vformat("set_part_color_override_by_index(%d)", part_index), _no_part(part_index));
 }
 
 bool SpriteStudioPlayer2D::set_part_color_override_corners_by_index(int part_index, const PackedColorArray& corners,
@@ -253,51 +281,72 @@ bool SpriteStudioPlayer2D::set_part_color_override_corners_by_index(int part_ind
     // default Color is, which looks like a gradient bug rather than a bad call.
     ERR_FAIL_COND_V_MSG(corners.size() != 4, false,
                         "corners must hold exactly 4 colours, in left-top, right-top, left-bottom, right-bottom order");
-    return _internal->set_part_color_override_corners(part_index, corners[0], corners[1], corners[2], corners[3], (int)blend_op, (int)priority);
+    return _refused(_internal->set_part_color_override_corners(part_index, corners[0], corners[1], corners[2], corners[3], (int)blend_op, (int)priority),
+                    vformat("set_part_color_override_corners_by_index(%d)", part_index), _no_part(part_index));
 }
 
 bool SpriteStudioPlayer2D::clear_part_color_override_by_index(int part_index) {
-    return _internal->clear_part_color_override(part_index);
+    return _refused(_internal->clear_part_color_override(part_index),
+                    vformat("clear_part_color_override_by_index(%d)", part_index), _no_part(part_index));
 }
 
 bool SpriteStudioPlayer2D::set_part_cell_override_by_index(int part_index, const String& cellmap_name, const String& cell_name, OverridePriority priority) {
-    return _internal->set_part_cell_override(part_index, cellmap_name, cell_name, (int)priority);
+    return _refused(_internal->set_part_cell_override(part_index, cellmap_name, cell_name, (int)priority),
+                    vformat("set_part_cell_override_by_index(%d, \"%s\", \"%s\")", part_index, cellmap_name, cell_name), _no_part(part_index));
 }
 
 bool SpriteStudioPlayer2D::clear_part_cell_override_by_index(int part_index) {
-    return _internal->clear_part_cell_override(part_index);
+    return _refused(_internal->clear_part_cell_override(part_index),
+                    vformat("clear_part_cell_override_by_index(%d)", part_index), _no_part(part_index));
 }
 
-// Name-based convenience wrappers — resolve the name and delegate to the
-// by-index variant (an unknown name resolves to -1 → no-op returning false).
+// Name-based convenience wrappers — resolve the name and call the same
+// mutator (an unknown name resolves to -1 → no-op returning false). They report
+// a refusal by the name they were given, as the by-index forms do by index.
 
 bool SpriteStudioPlayer2D::set_part_visibility_override(const String& part_name, bool force_hidden, bool cascade) {
-    return set_part_visibility_override_by_index(_internal->resolve_part_index(part_name), force_hidden, cascade);
+    const int index = _internal->resolve_part_index(part_name);
+    return _refused(_internal->set_part_visibility_override(index, force_hidden, cascade),
+                    vformat("set_part_visibility_override(\"%s\")", part_name), _no_part(index));
 }
 
 bool SpriteStudioPlayer2D::clear_part_visibility_override(const String& part_name) {
-    return clear_part_visibility_override_by_index(_internal->resolve_part_index(part_name));
+    const int index = _internal->resolve_part_index(part_name);
+    return _refused(_internal->clear_part_visibility_override(index),
+                    vformat("clear_part_visibility_override(\"%s\")", part_name), _no_part(index));
 }
 
 bool SpriteStudioPlayer2D::set_part_color_override(const String& part_name, const Color& color, ColorBlendOperation blend_op, OverridePriority priority) {
-    return set_part_color_override_by_index(_internal->resolve_part_index(part_name), color, blend_op, priority);
+    const int index = _internal->resolve_part_index(part_name);
+    return _refused(_internal->set_part_color_override(index, color, (int)blend_op, (int)priority),
+                    vformat("set_part_color_override(\"%s\")", part_name), _no_part(index));
 }
 
 bool SpriteStudioPlayer2D::set_part_color_override_corners(const String& part_name, const PackedColorArray& corners,
                                                            ColorBlendOperation blend_op, OverridePriority priority) {
-    return set_part_color_override_corners_by_index(_internal->resolve_part_index(part_name), corners, blend_op, priority);
+    ERR_FAIL_COND_V_MSG(corners.size() != 4, false,
+                        "corners must hold exactly 4 colours, in left-top, right-top, left-bottom, right-bottom order");
+    const int index = _internal->resolve_part_index(part_name);
+    return _refused(_internal->set_part_color_override_corners(index, corners[0], corners[1], corners[2], corners[3], (int)blend_op, (int)priority),
+                    vformat("set_part_color_override_corners(\"%s\")", part_name), _no_part(index));
 }
 
 bool SpriteStudioPlayer2D::clear_part_color_override(const String& part_name) {
-    return clear_part_color_override_by_index(_internal->resolve_part_index(part_name));
+    const int index = _internal->resolve_part_index(part_name);
+    return _refused(_internal->clear_part_color_override(index),
+                    vformat("clear_part_color_override(\"%s\")", part_name), _no_part(index));
 }
 
 bool SpriteStudioPlayer2D::set_part_cell_override(const String& part_name, const String& cellmap_name, const String& cell_name, OverridePriority priority) {
-    return set_part_cell_override_by_index(_internal->resolve_part_index(part_name), cellmap_name, cell_name, priority);
+    const int index = _internal->resolve_part_index(part_name);
+    return _refused(_internal->set_part_cell_override(index, cellmap_name, cell_name, (int)priority),
+                    vformat("set_part_cell_override(\"%s\", \"%s\", \"%s\")", part_name, cellmap_name, cell_name), _no_part(index));
 }
 
 bool SpriteStudioPlayer2D::clear_part_cell_override(const String& part_name) {
-    return clear_part_cell_override_by_index(_internal->resolve_part_index(part_name));
+    const int index = _internal->resolve_part_index(part_name);
+    return _refused(_internal->clear_part_cell_override(index),
+                    vformat("clear_part_cell_override(\"%s\")", part_name), _no_part(index));
 }
 
 bool SpriteStudioPlayer2D::clear_all_part_overrides() {
@@ -307,7 +356,8 @@ bool SpriteStudioPlayer2D::clear_all_part_overrides() {
 // ---- Animation mixing ----------------------------------------------------
 
 bool SpriteStudioPlayer2D::set_track_animation(int track, const String& anim_name) {
-    if (!_internal->setTrackAnimation(track, anim_name)) return false;
+    if (!_refused(_internal->setTrackAnimation(track, anim_name),
+                  vformat("set_track_animation(%d, \"%s\")", track, anim_name), _no_animation(anim_name))) return false;
     if (track == 0) _track_zero_switched();
     return true;
 }
@@ -315,9 +365,9 @@ int SpriteStudioPlayer2D::get_track_count() const { return _internal->getTrackCo
 bool SpriteStudioPlayer2D::clear_track(int track) { return _internal->clearTrack(track); }
 bool SpriteStudioPlayer2D::set_track_alpha(int track, float alpha) { return _internal->setTrackAlpha(track, alpha); }
 float SpriteStudioPlayer2D::get_track_alpha(int track) const { return _internal->getTrackAlpha(track); }
-bool SpriteStudioPlayer2D::set_track_blend(int track, TrackBlend blend) { return _internal->setTrackBlend(track, (int)blend); }
+bool SpriteStudioPlayer2D::set_track_blend(int track, TrackBlend blend) { return _refused(_internal->setTrackBlend(track, (int)blend), vformat("set_track_blend(%d)", track)); }
 SpriteStudioPlayer2D::TrackBlend SpriteStudioPlayer2D::get_track_blend(int track) const { return (TrackBlend)_internal->getTrackBlend(track); }
-bool SpriteStudioPlayer2D::set_track_sync(int track, TrackSync sync) { return _internal->setTrackSync(track, (int)sync); }
+bool SpriteStudioPlayer2D::set_track_sync(int track, TrackSync sync) { return _refused(_internal->setTrackSync(track, (int)sync), vformat("set_track_sync(%d)", track)); }
 SpriteStudioPlayer2D::TrackSync SpriteStudioPlayer2D::get_track_sync(int track) const { return (TrackSync)_internal->getTrackSync(track); }
 bool SpriteStudioPlayer2D::set_track_frame(int track, float frame_no) { return _internal->setTrackFrame(track, frame_no); }
 float SpriteStudioPlayer2D::get_track_frame(int track) const { return _internal->getTrackFrame(track); }
@@ -344,7 +394,8 @@ bool SpriteStudioPlayer2D::track_just_looped(int track) const { return _internal
 bool SpriteStudioPlayer2D::set_track_outgoing_event_threshold(int track, float threshold) { return _internal->setTrackOutgoingEventThreshold(track, threshold); }
 float SpriteStudioPlayer2D::get_track_outgoing_event_threshold(int track) const { return _internal->getTrackOutgoingEventThreshold(track); }
 bool SpriteStudioPlayer2D::crossfade(int track, const String& anim_name, float duration) {
-    if (!_internal->crossfade(track, anim_name, duration)) return false;
+    if (!_refused(_internal->crossfade(track, anim_name, duration),
+                  vformat("crossfade(%d, \"%s\")", track, anim_name), _no_animation(anim_name))) return false;
     if (track == 0) _track_zero_switched();
     return true;
 }
@@ -352,7 +403,11 @@ bool SpriteStudioPlayer2D::fade_track(int track, float target_alpha, float durat
 float SpriteStudioPlayer2D::get_track_fade_progress(int track) const { return _internal->getTrackFadeProgress(track); }
 bool SpriteStudioPlayer2D::cancel_track_fade(int track) { return _internal->cancelTrackFade(track); }
 int64_t SpriteStudioPlayer2D::get_track_main_source(int track) const { return _internal->getTrackMainSource(track); }
-int64_t SpriteStudioPlayer2D::add_track_source(int track, const String& anim_name, float weight) { return _internal->addTrackSource(track, anim_name, weight); }
+int64_t SpriteStudioPlayer2D::add_track_source(int track, const String& anim_name, float weight) {
+    const int64_t source = _internal->addTrackSource(track, anim_name, weight);
+    _refused(source >= 0, vformat("add_track_source(%d, \"%s\")", track, anim_name), _no_animation(anim_name));
+    return source;
+}
 bool SpriteStudioPlayer2D::set_source_weight(int64_t source, float weight) { return _internal->setSourceWeight(source, weight); }
 float SpriteStudioPlayer2D::get_source_weight(int64_t source) const { return _internal->getSourceWeight(source); }
 bool SpriteStudioPlayer2D::set_source_frame(int64_t source, float frame_no) { return _internal->setSourceFrame(source, frame_no); }
@@ -576,13 +631,8 @@ int SpriteStudioPlayer2D::getStartFrame() const { return _internal->getAnimation
 int SpriteStudioPlayer2D::getEndFrame() const { return _internal->getAnimationSectionEnd(); }
 
 bool SpriteStudioPlayer2D::setAnimationSection(int p_start, int p_end) {
-    if (_internal->setAnimationSection(p_start, p_end)) return true;
-    const uint64_t key = ((uint64_t)(uint32_t)p_start << 32) | (uint32_t)p_end;
-    if (!_reported_sections.has(key)) {
-        _reported_sections.insert(key);
-        WARN_PRINT(vformat("[SS] set_animation_section(%d, %d) ends before it starts, so the section stays as it was.", p_start, p_end));
-    }
-    return false;
+    return _refused(_internal->setAnimationSection(p_start, p_end),
+                    vformat("set_animation_section(%d, %d)", p_start, p_end), "its end is before its start");
 }
 void SpriteStudioPlayer2D::setAnimationSectionStart(int p_start) { setAnimationSection(p_start, getAnimationSectionEnd()); }
 void SpriteStudioPlayer2D::setAnimationSectionEnd(int p_end) { setAnimationSection(getAnimationSectionStart(), p_end); }

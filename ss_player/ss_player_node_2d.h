@@ -339,7 +339,12 @@ private:
     void _handle_audio(const Dictionary& payload);
 
     HashMap<String, Ref<Texture2D>> _cellmap_overrides;
-    HashSet<uint64_t> _reported_sections;
+    // The commands already reported as having done nothing, by the call and
+    // what it was given, since the SSAB was set. See _refused.
+    HashSet<String> _reported_refusals;
+    bool _refused(bool p_ok, const String& p_call, const String& p_why = String());
+    String _no_part(int p_index) const;
+    String _no_animation(const String& p_name) const;
     // On, so a node dropped into a scene animates when the scene runs. A player
     // sitting on its first frame reads as broken, and there is no code to call
     // `play()` for a node that was placed rather than constructed -- which is
