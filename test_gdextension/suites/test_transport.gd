@@ -134,6 +134,23 @@ func test_a_section_can_start_on_the_last_frame() -> void:
 	near(player.get_frame_no(), float(last), "playback holds it")
 
 
+func _hint(property: String) -> String:
+	for info in player.get_property_list():
+		if info["name"] == property:
+			return info["hint_string"]
+	return ""
+
+
+## The Inspector's ranges: the playhead's is the section, and the section ends'
+## is the whole animation, however narrow the section is.
+func test_the_inspector_ranges_follow_the_section_and_the_animation() -> void:
+	var last: int = player.get_end_frame()
+	ok(player.set_animation_section(2, 5), "a narrow section")
+	eq(_hint("frame_no"), "2,5,0.01", "the playhead's range is the section")
+	eq(_hint("animation_section_start"), "0,%d,1" % last, "a section end ranges over the animation")
+	eq(_hint("animation_section_end"), "0,%d,1" % last, "both ends do")
+
+
 ## Engine messages are off around the refused calls: the warning is the API
 ## working, and the run has to stay silent.
 func test_a_section_that_ends_before_it_starts_is_refused() -> void:
