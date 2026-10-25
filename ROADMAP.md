@@ -49,7 +49,9 @@ waits on the runtime is under *Needs SDK* and tracked in the
     eating clicks around its artwork and mouse filtering lets what is behind through.
   - [ ] **UI state binding** — map `normal` / `hover` / `pressed` / `disabled` / `focused` to label sections, read
     from `BaseButton.get_draw_mode()` when drawing (`BaseButton` has no hover or disabled signal), as properties on the
-    node rather than a second node.
+    node rather than a second node. With `toggle_mode` on, `get_draw_mode()` reports a toggle that is on as
+    `DRAW_PRESSED` / `DRAW_HOVER_PRESSED`, so read the guide's selected state from `button_pressed` instead and play
+    the `selected_` labels.
   - [ ] **Reduced motion** — a `reduced_motion` property the game sets, holding each state's first frame and playing a
     `reduced_motion` label in place of `normal`.
   - [ ] **Nines and Text parts** — the two part kinds authored for UI; neither draws today. Nines is a draw path and
