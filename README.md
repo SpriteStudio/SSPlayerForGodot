@@ -40,7 +40,7 @@ Everything after that (scripting, signals, per-part overrides) is the same path 
 [documentation](./docs/en/index.md).
 **Working on the Player, or the Rust runtime under it?** [CONTRIBUTING.md](./CONTRIBUTING.md), the [Build Guide](./docs/en/development/build.md) — which also covers using a changed build and checking it in Godot — and [How the Player Is Put Together](./docs/en/development/architecture.md) for the layers and the reasons that span files.
 
-You need a 4.7-series Godot editor from the [official site](https://godotengine.org/download/). Projects have to be authored in **SpriteStudio 7.5 or later**.
+You need a 4.7-series Godot editor from the [official site](https://godotengine.org/download/). Projects have to be authored in **SpriteStudio 7.6 or later**.
 
 1. **Install**: Open the [latest Release](https://github.com/cri-middleware/SSPlayerForGodot/releases/latest) and download `ssplayer-godot-extension-<Godot version>.zip` from its **Assets** — the Releases whose tag starts with `v1` are the 1.x plugin, which has neither `SSABResource` nor `SpriteStudioPlayer2D`. Extract it, copy its `addons` folder into your Godot project root, and restart the editor.
 2. **Import**: Drag your `.sspj` from your file manager onto the **SS Importer** dock. It is converted into a folder named after it under `res://ssab_generated/`, the dock's default output folder (see [Asset Import and Editor Integration](./docs/en/workflow/usage_asset_pipeline.md)).

@@ -38,7 +38,7 @@
 **ゲームで使う場合**はこのまま下へ。アドオンを入れる → `.sspj` をエディタに D&D → ノードを置く。その先（スクリプト制御、シグナル、パーツ単位の上書き）も同じ道の続きで、[ドキュメント](./docs/ja/index.md)にあります。
 **Player 自体や、その下の Rust ランタイムを変更する場合**は [CONTRIBUTING.md](./CONTRIBUTING.md) と[ビルドガイド](./docs/ja/development/build.md)へ。変更した版の使い方と Godot での確かめ方もビルドガイドに、層とファイルをまたぐ設計の理由は[プレイヤーの構成](./docs/ja/development/architecture.md)にあります。
 
-[公式サイト](https://godotengine.org/download/) から 4.7 系の Godot エディタを用意してください。対応するのは **SpriteStudio 7.5 以上**で作成されたプロジェクトです。
+[公式サイト](https://godotengine.org/download/) から 4.7 系の Godot エディタを用意してください。対応するのは **SpriteStudio 7.6 以上**で作成されたプロジェクトです。
 
 1. **配置**: [最新の Release](https://github.com/cri-middleware/SSPlayerForGodot/releases/latest) を開き、**Assets** から `ssplayer-godot-extension-<Godot のバージョン>.zip` をダウンロードします（タグが `v1` で始まる Release は 1.x 系のプラグインで、`SSABResource` も `SpriteStudioPlayer2D` もありません）。展開して `addons` フォルダをご自身の Godot プロジェクトのルートにコピーし、エディタを再起動します。
 2. **インポート**: `.sspj` をファイルマネージャーから **SS Importer** ドックへドラッグ＆ドロップします。ドックの既定の出力先 `res://ssab_generated/` の下に、`.sspj` と同じ名前のフォルダで変換されます（[アセットのインポートとエディタ連携](./docs/ja/workflow/usage_asset_pipeline.md) を参照）。
