@@ -131,6 +131,25 @@
 				Returns [code]false[/code] when both ends are inside the animation and [param end] is before [param start]: the section and the playhead stay as they were, and the Output panel names the pair, once for each pair.
 			</description>
 		</method>
+		<method name="set_animation_section_by_label">
+			<return type="bool" />
+			<param index="0" name="start_label" type="String" />
+			<param index="1" name="end_label" type="String" />
+			<param index="2" name="start_offset" type="int" default="0" />
+			<param index="3" name="end_offset" type="int" default="0" />
+			<description>
+				[method set_animation_section] with the ends named by labels of the current animation: from [param start_label]'s frame plus [param start_offset] to [param end_label]'s frame plus [param end_offset], the rule an Instance part's start and end labels follow. [code]_start[/code] and [code]_end[/code] name the animation's own first and last frame, as in SpriteStudio, unless the animation has a real label of that name. It does not play.
+				Returns [code]false[/code] when the animation has no such label, or when the frames the labels name are a section [method set_animation_section] refuses; the section and the playhead stay as they were, and the Output panel says which, once for each call. Unlike an Instance part, a missing label is not read as the animation's edge. Returns [code]false[/code] without a word before an animation is set up.
+			</description>
+		</method>
+		<method name="get_label_table" qualifiers="const">
+			<return type="Array" />
+			<param index="0" name="animation" type="String" default="&quot;&quot;" />
+			<description>
+				Returns the labels of [param animation] - the current animation when empty - in frame order, as dictionaries with a [code]name[/code] ([String]) and a [code]frame[/code] ([int]). Empty for an animation the [member ssab] does not have, and when no resource is assigned.
+				It is read out of the resource on every call, so keep the result rather than asking each frame.
+			</description>
+		</method>
 		<method name="set_playback_direction">
 			<return type="void" />
 			<param index="0" name="direction" type="int" enum="SpriteStudioPlayer2D.PlaybackDirection" />
@@ -191,6 +210,23 @@
 			<param index="0" name="part_name" type="String" />
 			<description>
 				Resolves a part name to its index, or [code]-1[/code] when the asset has no such part. Indices are stable within one [code].ssab[/code], so code that sets overrides often should resolve once here and use the [code]_by_index[/code] methods afterwards.
+			</description>
+		</method>
+		<method name="get_part_quad" qualifiers="const">
+			<return type="PackedVector2Array" />
+			<param index="0" name="part_name" type="String" />
+			<description>
+				Returns the outline the part is drawn with on the current frame, as four corners - top-left, top-right, bottom-right, bottom-left - in this node's local space with [member flip_h], [member flip_v] and [member offset] applied, as [method get_part_transform] does. The corners go round the part, so the array can be drawn with [method CanvasItem.draw_polyline] or tested with [method Geometry2D.is_point_in_polygon] as it is.
+				A part with a cell is its four drawn corners, skew and vertex deformation included. A Mesh part is the axis-aligned box around its vertices. A part with a size and no cell - a Shape - is that size around its pivot; a vertex deformation that carries a corner outside the size is not followed. Returns an empty array for a part that is unknown or hidden on the current frame, and for a Null, bone, Instance or Effect part, which has no size. A part drawn at alpha 0 still has an outline.
+			</description>
+		</method>
+		<method name="hit_test_part" qualifiers="const">
+			<return type="int" />
+			<param index="0" name="point" type="Vector2" />
+			<param index="1" name="parts" type="PackedStringArray" default="PackedStringArray()" />
+			<description>
+				Returns the index of the front-most part whose [method get_part_quad] outline holds [param point], given in this node's local space - or [code]-1[/code] when none does, as [method find_part_index] answers for an unknown name. With [param parts], only the parts named there are tested, and a name the asset does not have is skipped; empty, every part is.
+				It answers from the current frame and evaluates nothing, so it is cheap enough to call on every pointer move. To turn a point on the screen into this node's space, use [code]to_local()[/code] or [code]get_global_transform().affine_inverse()[/code].
 			</description>
 		</method>
 		<method name="get_part_transform" qualifiers="const">

@@ -41,6 +41,10 @@ converted binaries (`.ssab`) instead of parsing `.sspj` at runtime. See the
 - **Authored canvas queries**: `get_canvas_size()` and `get_canvas_rect()` report the box the
   animation was composed in, placed against the node's origin by its pivot. Hand the rect to a
   `VisibleOnScreenEnabler2D` to stop evaluating a player that is off screen.
+- **Label sections and part outlines**: `set_animation_section_by_label()` sets the playback
+  section between two labels, with offsets, and `get_label_table()` lists an animation's labels in
+  frame order. `get_part_quad()` reports the outline a part is drawn with, and `hit_test_part()`
+  the front-most part under a point.
 - **Manual playback**: `ANIMATION_PROCESS_MANUAL` plus `advance(delta)`, for custom pause groups,
   a time scale of your own, or deterministic stepping.
 - **Audio playback**: audio parts play through Godot with no setup, in the editor preview as

@@ -6,10 +6,6 @@ waits on the runtime is under *Needs SDK* and tracked in the
 
 ## Playback & rendering
 
-- [ ] **Label playback** — set the playback section by a start and an end label, each with an offset. Labels already
-  ride in the `.ssab` payload (`AnimationData.Labels`), so no SDK change is needed: resolve them in `SsInternalPlayer`
-  and add `set_animation_section_by_label(start_label, end_label, start_offset, end_offset)` on `SpriteStudioPlayer2D`,
-  beside the existing `set_animation_section`, under the stem the SDK's API conventions register.
 - [ ] **Six blend modes draw as Mix** — Screen, Exclusion, Invert, Div2, Screen2 and Overlay2 composite as ordinary
   alpha blending, because a canvas item's `render_mode` expresses only Mix / Mul / Add / Sub (Mulalpha and Mul2 draw
   as Mul, as in SpriteStudio Player for wgpu and `ssplayer-pixi`, unchecked against the Editor). A Screen light over a
@@ -41,9 +37,6 @@ waits on the runtime is under *Needs SDK* and tracked in the
     `get_canvas_size()` / `get_canvas_rect()`) and the draw fits the animation into the node's rect, exposed as
     `stretch_mode` / `expand_mode` as `TextureRect` does over the family's `fit` (`contain` / `cover` / `none`) +
     `align`; the names, defaults and arithmetic are the SDK porting guide's `50_features/70_placement.md`.
-  - [ ] **Part outline read-out** — `get_part_quad(part) -> PackedVector2Array`, the four corners in player-local
-    space, built as the SDK guide recommends: a cell part's drawn corners, a Mesh part's vertex box, a Shape's size
-    around its pivot.
   - [ ] **Per-part hit testing** — `hit_test_part(point, parts) -> int` and a `_has_point()` override on the `Control`
     that answers from the parts the scene names (the whole rect when it names none), so an irregular button stops
     eating clicks around its artwork and mouse filtering lets what is behind through.

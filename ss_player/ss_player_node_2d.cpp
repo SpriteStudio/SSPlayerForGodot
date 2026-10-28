@@ -105,6 +105,7 @@ void SpriteStudioPlayer2D::setSSABResource(const Ref<SSABResource>& ssabRes) {
             _internal->setCellMapOverrideTexture(hash, E.value);
         }
     }
+    _drawn_rect_changed();
 }
 
 void SpriteStudioPlayer2D::_on_ssab_changed() {
@@ -119,6 +120,7 @@ void SpriteStudioPlayer2D::_on_ssab_changed() {
     }
     notify_property_list_changed();
     update_configuration_warnings();
+    _drawn_rect_changed();
 }
 
 Ref<SSABResource> SpriteStudioPlayer2D::getSSABResource() const {
@@ -192,9 +194,13 @@ Vector2 SpriteStudioPlayer2D::get_canvas_size() const {
 }
 
 Rect2 SpriteStudioPlayer2D::get_canvas_rect() const {
+    return get_canvas_rect_of(_internal->getCurrentAnimation());
+}
+
+Rect2 SpriteStudioPlayer2D::get_canvas_rect_of(const String& p_animation) const {
     Ref<SSABResource> res = _internal->getSSABResource();
     if (res.is_null()) return Rect2();
-    const Rect2 rect = res->get_canvas_rect(_internal->getCurrentAnimation());
+    const Rect2 rect = res->get_canvas_rect(p_animation);
     if (rect.size == Vector2()) return rect;
     // Flip and offset live on the internal root canvas item rather than on the
     // Node2D transform, so a caller reading a box in this node's local space
@@ -228,6 +234,33 @@ PackedStringArray SpriteStudioPlayer2D::get_part_names() const {
     return names;
 }
 
+PackedVector2Array SpriteStudioPlayer2D::get_part_quad(const String& part_name) const {
+    PackedVector2Array quad;
+    Vector2 corners[4];
+    const int index = _internal->resolve_part_index(part_name);
+    if (index < 0 || !_internal->try_get_part_quad(index, corners)) return quad;
+    // Flip and offset are on the internal root canvas item, as for
+    // get_part_transform.
+    const Transform2D root = _make_root_transform();
+    quad.resize(4);
+    for (int i = 0; i < 4; i++) {
+        quad.set(i, root.xform(corners[i]));
+    }
+    return quad;
+}
+
+int SpriteStudioPlayer2D::hit_test_part(const Vector2& p_point, const PackedStringArray& p_parts) const {
+    const Vector2 point = _make_root_transform().affine_inverse().xform(p_point);
+    if (p_parts.is_empty()) return _internal->hit_test_part(point, nullptr, 0);
+    _hit_targets.clear();
+    for (int i = 0; i < p_parts.size(); i++) {
+        const int index = _internal->resolve_part_index(p_parts[i]);
+        if (index >= 0) _hit_targets.push_back(index);
+    }
+    if (_hit_targets.is_empty()) return -1;
+    return _internal->hit_test_part(point, _hit_targets.ptr(), (int)_hit_targets.size());
+}
+
 // ---- Refusals -------------------------------------------------------------
 
 // Says, once per call and what it was given, that a command did nothing: a
@@ -250,6 +283,10 @@ String SpriteStudioPlayer2D::_no_part(int p_index) const {
 
 String SpriteStudioPlayer2D::_no_animation(const String& p_name) const {
     return get_animation_names().has(p_name) ? String() : String("the SSAB has no such animation");
+}
+
+void SpriteStudioPlayer2D::_drawn_rect_changed() {
+    emit_signal(SNAME("item_rect_changed"));
 }
 
 // ---- Override Layer (Phase 2) --------------------------------------------
@@ -416,10 +453,12 @@ bool SpriteStudioPlayer2D::set_source_event_threshold(int64_t source, float thre
 float SpriteStudioPlayer2D::get_source_event_threshold(int64_t source) const { return _internal->getSourceEventThreshold(source); }
 
 void SpriteStudioPlayer2D::setAnimation(const String& strName) {
+    const String before = _internal->getCurrentAnimation();
     _internal->setAnimation(strName);
     _apply_transport_settings();
     notify_property_list_changed();
     update_configuration_warnings();
+    if (_internal->getCurrentAnimation() != before) _drawn_rect_changed();
 }
 
 String SpriteStudioPlayer2D::getCurrentAnimation() const {
@@ -492,6 +531,7 @@ Ref<SpriteStudioAudioBackend> SpriteStudioPlayer2D::get_audio_backend() const { 
 void SpriteStudioPlayer2D::set_flip_h(bool p_flip) {
     _flip_h = p_flip;
     _update_root_transform();
+    _drawn_rect_changed();
 }
 
 bool SpriteStudioPlayer2D::is_flipped_h() const { return _flip_h; }
@@ -499,6 +539,7 @@ bool SpriteStudioPlayer2D::is_flipped_h() const { return _flip_h; }
 void SpriteStudioPlayer2D::set_flip_v(bool p_flip) {
     _flip_v = p_flip;
     _update_root_transform();
+    _drawn_rect_changed();
 }
 
 bool SpriteStudioPlayer2D::is_flipped_v() const { return _flip_v; }
@@ -506,6 +547,7 @@ bool SpriteStudioPlayer2D::is_flipped_v() const { return _flip_v; }
 void SpriteStudioPlayer2D::set_offset(const Vector2& p_offset) {
     _offset = p_offset;
     _update_root_transform();
+    _drawn_rect_changed();
 }
 
 Vector2 SpriteStudioPlayer2D::get_offset() const { return _offset; }
@@ -639,6 +681,46 @@ void SpriteStudioPlayer2D::setAnimationSectionEnd(int p_end) { setAnimationSecti
 int SpriteStudioPlayer2D::getAnimationSectionStart() const { return _internal->getAnimationSectionStart(); }
 int SpriteStudioPlayer2D::getAnimationSectionEnd() const { return _internal->getAnimationSectionEnd(); }
 
+bool SpriteStudioPlayer2D::set_animation_section_by_label(const String& p_start_label, const String& p_end_label,
+                                                          int p_start_offset, int p_end_offset) {
+    const ss::format::AnimationData* animation = _internal->getCurrentAnimationData();
+    if (!animation) return false;
+    LocalVector<SsLabel> labels;
+    SsInternalPlayer::get_label_table(animation, labels);
+    const String call = vformat("set_animation_section_by_label(\"%s\", \"%s\", %d, %d)",
+                                p_start_label, p_end_label, p_start_offset, p_end_offset);
+    int start = 0;
+    int end = 0;
+    const bool has_start = SsInternalPlayer::find_label_frame(animation, labels, p_start_label, start);
+    const bool has_end = SsInternalPlayer::find_label_frame(animation, labels, p_end_label, end);
+    if (!has_start || !has_end) {
+        PackedStringArray missing;
+        if (!has_start) missing.push_back("\"" + p_start_label + "\"");
+        if (!has_end && p_end_label != p_start_label) missing.push_back("\"" + p_end_label + "\"");
+        return _refused(false, call, vformat("animation \"%s\" has no label %s", getCurrentAnimation(), String(" or ").join(missing)));
+    }
+    const int from = start + p_start_offset;
+    const int to = end + p_end_offset;
+    return _refused(_internal->setAnimationSection(from, to), call,
+                    vformat("its labels name frames %d to %d, and the end is before the start", from, to));
+}
+
+Array SpriteStudioPlayer2D::get_label_table(const String& p_animation) const {
+    Array table;
+    Ref<SSABResource> res = _internal->getSSABResource();
+    if (res.is_null()) return table;
+    const ss::format::AnimationData* animation = res->find_animation(p_animation.is_empty() ? getCurrentAnimation() : p_animation);
+    LocalVector<SsLabel> labels;
+    SsInternalPlayer::get_label_table(animation, labels);
+    for (uint32_t i = 0; i < labels.size(); i++) {
+        Dictionary label;
+        label["name"] = labels[i].name;
+        label["frame"] = labels[i].frame;
+        table.push_back(label);
+    }
+    return table;
+}
+
 void SpriteStudioPlayer2D::setPlaybackDirection(PlaybackDirection p_direction, PlaybackStyle p_style) { _internal->setPlaybackDirection((int)p_direction, (int)p_style); }
 SpriteStudioPlayer2D::PlaybackDirection SpriteStudioPlayer2D::getPlaybackDirection() const { return (PlaybackDirection)_internal->getPlaybackDirection(); }
 SpriteStudioPlayer2D::PlaybackStyle SpriteStudioPlayer2D::getPlaybackStyle() const { return (PlaybackStyle)_internal->getPlaybackStyle(); }
@@ -662,6 +744,7 @@ void SpriteStudioPlayer2D::_track_zero_switched() {
     _apply_transport_settings();
     // `current_animation` now names the incoming animation.
     notify_property_list_changed();
+    _drawn_rect_changed();
 }
 
 void SpriteStudioPlayer2D::setFrameSkipEnabled(bool p_skip) { _internal->setSkipFrames(p_skip); }
@@ -708,6 +791,8 @@ void SpriteStudioPlayer2D::_bind_methods() {
     ClassDB::bind_method( D_METHOD( "set_animation_section_end", "end" ), &SpriteStudioPlayer2D::setAnimationSectionEnd );
     ClassDB::bind_method( D_METHOD( "get_animation_section_start" ), &SpriteStudioPlayer2D::getAnimationSectionStart );
     ClassDB::bind_method( D_METHOD( "get_animation_section_end" ), &SpriteStudioPlayer2D::getAnimationSectionEnd );
+    ClassDB::bind_method( D_METHOD( "set_animation_section_by_label", "start_label", "end_label", "start_offset", "end_offset" ), &SpriteStudioPlayer2D::set_animation_section_by_label, DEFVAL(0), DEFVAL(0) );
+    ClassDB::bind_method( D_METHOD( "get_label_table", "animation" ), &SpriteStudioPlayer2D::get_label_table, DEFVAL(String()) );
 
     ClassDB::bind_method( D_METHOD( "set_playback_direction", "direction", "style" ), &SpriteStudioPlayer2D::setPlaybackDirection );
     ClassDB::bind_method( D_METHOD( "get_playback_direction" ), &SpriteStudioPlayer2D::getPlaybackDirection );
@@ -754,6 +839,8 @@ void SpriteStudioPlayer2D::_bind_methods() {
     ClassDB::bind_method( D_METHOD( "is_part_hidden", "part_name" ), &SpriteStudioPlayer2D::is_part_hidden );
     ClassDB::bind_method( D_METHOD( "is_part_skinned_mesh", "part_name" ), &SpriteStudioPlayer2D::is_part_skinned_mesh );
     ClassDB::bind_method( D_METHOD( "get_part_names" ), &SpriteStudioPlayer2D::get_part_names );
+    ClassDB::bind_method( D_METHOD( "get_part_quad", "part_name" ), &SpriteStudioPlayer2D::get_part_quad );
+    ClassDB::bind_method( D_METHOD( "hit_test_part", "point", "parts" ), &SpriteStudioPlayer2D::hit_test_part, DEFVAL(PackedStringArray()) );
 
     ClassDB::bind_method( D_METHOD( "get_canvas_size" ), &SpriteStudioPlayer2D::get_canvas_size );
     ClassDB::bind_method( D_METHOD( "get_canvas_rect" ), &SpriteStudioPlayer2D::get_canvas_rect );

@@ -44,6 +44,8 @@ func _ready() -> void:
 * `set_speed_scale(speed_scale: float)` / `get_speed_scale() -> float`
 * `set_frame_rate(fps: int)` / `get_frame_rate() -> int`
 * `set_animation_section(start: int, end: int) -> bool`: 再生するフレーム区間を `start` から `end` までに限定します（両端を含みます）。`start == end` ならその 1 フレームを再生し、最後のフレームでも同じです。アニメーションの範囲外の値（`-1` など）を渡すと、その側はアニメーションの端になります。両端が範囲内で `end` が `start` より前なら `false` を返し、区間と再生ヘッドはそのままにします。出力パネルには、その組を一度だけ出します。
+* `set_animation_section_by_label(start_label: String, end_label: String, start_offset: int = 0, end_offset: int = 0) -> bool`: 区間の両端を、今のアニメーションのラベルで指定する `set_animation_section()` です。`start_label` のフレームに `start_offset` を足した位置から、`end_label` のフレームに `end_offset` を足した位置までで、インスタンスパーツの開始・終了ラベルと同じ規則です。`_start` と `_end` は、SpriteStudio と同じくアニメーション自身の最初と最後のフレームです（同じ名前のラベルが実際にあれば、そちらを使います）。再生はしません。アニメーションに無いラベルを渡したときや、求めたフレームが `set_animation_section()` の受け付けない区間になったときは `false` を返し、区間と再生ヘッドはそのままにします。出力パネルには、どちらだったかを呼び出しごとに一度だけ出します。
+* `get_label_table(animation: String = "") -> Array`: `animation`（空なら今のアニメーション）のラベルを、フレーム順に `{ "name": String, "frame": int }` の辞書で返します。アセットに無いアニメーションなら空です。呼ぶたびにリソースから読み出すので、毎フレーム呼ばずに結果を持っておいてください。
 * `set_animation_section_start(start: int)` / `get_animation_section_start() -> int` / `set_animation_section_end(end: int)` / `get_animation_section_end() -> int`: 片方の端点だけを移動します（もう一方は維持）。インスペクターの `animation_section_start` / `animation_section_end` プロパティの実体です。どちらも `set_animation_section()` を通るので、今の終わりより後ろへ始まりを、今の始まりより前へ終わりを動かすと受け付けません。先にもう一方の端点を動かすか、`set_animation_section()` で両方を指定してください。
 * `set_playback_direction(direction: PlaybackDirection, style: PlaybackStyle)`: 再生方向と再生スタイルを指定します。値の意味は下表を参照してください。
 * `get_playback_direction() -> PlaybackDirection` / `get_playback_style() -> PlaybackStyle`: セッターで指定した 2 つの値をそれぞれ読み出します。
@@ -71,6 +73,8 @@ func _ready() -> void:
 * `get_part_transform(part_name: String) -> Transform2D`: 現在のフレームでのパーツの `Transform2D`（プレイヤーノードのローカル空間。`flip_h` / `flip_v` / `offset` を含みます）。パーツが不明な場合は単位行列を返します。
 * `is_part_hidden(part_name: String) -> bool`: 現在のフレームでそのパーツが非表示かどうか。
 * `is_part_skinned_mesh(part_name: String) -> bool`: そのパーツがスキンメッシュかどうか（パーツが不明な場合は `false`）。スキンメッシュパーツは追従先に向かないため、`SpriteStudioPartAttachment2D` は対象から除外します。
+* `get_part_quad(part_name: String) -> PackedVector2Array`: 現在のフレームでパーツを描いている輪郭です。左上・右上・右下・左下の 4 点を、プレイヤーノードのローカル空間（`flip_h` / `flip_v` / `offset` を含みます）で返します。パーツを一周する順なので、そのまま `draw_polyline()` や `Geometry2D.is_point_in_polygon()` に渡せます。セルのあるパーツは描いた四隅（スキューと頂点変形を含みます）、メッシュパーツは頂点を囲む矩形、シェイプはサイズをピボットの周りに取った矩形です。パーツが不明・非表示のとき、サイズの無いヌル・ボーン・インスタンス・エフェクトのパーツでは空の配列を返します。
+* `hit_test_part(point: Vector2, parts: PackedStringArray = []) -> int`: `get_part_quad()` の輪郭が `point`（プレイヤーノードのローカル空間。画面上の点は `to_local()` で変換します）を含むパーツのうち、一番手前のもののインデックス。どれにも当たらなければ `-1`。`parts` を渡すとそのパーツだけを調べ、アセットに無い名前は飛ばします。現在のフレームを読むだけでほかの計算をしないので、ポインタが動くたびに呼べます。
 
 指定したパーツにノードを追従させる `SpriteStudioPartAttachment2D` については [スクリプト制御とイベント駆動 → パーツトラッキング](../workflow/usage_scripting.md) を参照してください。
 
