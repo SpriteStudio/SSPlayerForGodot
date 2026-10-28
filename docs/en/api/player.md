@@ -77,7 +77,7 @@ func _ready() -> void:
 * `get_part_quad(part_name: String) -> PackedVector2Array`: The outline the part is drawn with on the current frame: four corners — top-left, top-right, bottom-right, bottom-left — in the player node's local space (`flip_h` / `flip_v` / `offset` included). The corners go round the part, so the array works with `draw_polyline()` and `Geometry2D.is_point_in_polygon()` as it is. A part with a cell is its drawn corners, skew and vertex deformation included; a Mesh part is the box around its vertices; a Shape is its size around its pivot. Empty for a part that is unknown or hidden, and for a Null, bone, Instance or Effect part, which has no size.
 * `hit_test_part(point: Vector2, parts: PackedStringArray = []) -> int`: The index of the front-most part whose `get_part_quad()` outline holds `point` (the player node's local space — use `to_local()` for a point on the screen), or `-1`. With `parts`, only those parts are tested, and an unknown name is skipped. It reads the current frame and computes nothing else, so it is cheap enough for every pointer move.
 
-See [Scripting and Event-Driven Control → Part Tracking](../workflow/usage_scripting.md) for `SpriteStudioPartAttachment2D`, the node that makes another node follow a specified part.
+See [Scripting and Event-Driven Control → Part Tracking](../workflow/usage_scripting.md) for `SpriteStudioPartAttachment2D`, the node that makes another node follow a specified part, and [UI Buttons](../workflow/ui_buttons.md) for `SpriteStudioButton`, which takes clicks on the parts you name.
 
 ## The authored canvas
 

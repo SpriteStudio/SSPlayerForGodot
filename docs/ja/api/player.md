@@ -76,7 +76,7 @@ func _ready() -> void:
 * `get_part_quad(part_name: String) -> PackedVector2Array`: 現在のフレームでパーツを描いている輪郭です。左上・右上・右下・左下の 4 点を、プレイヤーノードのローカル空間（`flip_h` / `flip_v` / `offset` を含みます）で返します。パーツを一周する順なので、そのまま `draw_polyline()` や `Geometry2D.is_point_in_polygon()` に渡せます。セルのあるパーツは描いた四隅（スキューと頂点変形を含みます）、メッシュパーツは頂点を囲む矩形、シェイプはサイズをピボットの周りに取った矩形です。パーツが不明・非表示のとき、サイズの無いヌル・ボーン・インスタンス・エフェクトのパーツでは空の配列を返します。
 * `hit_test_part(point: Vector2, parts: PackedStringArray = []) -> int`: `get_part_quad()` の輪郭が `point`（プレイヤーノードのローカル空間。画面上の点は `to_local()` で変換します）を含むパーツのうち、一番手前のもののインデックス。どれにも当たらなければ `-1`。`parts` を渡すとそのパーツだけを調べ、アセットに無い名前は飛ばします。現在のフレームを読むだけでほかの計算をしないので、ポインタが動くたびに呼べます。
 
-指定したパーツにノードを追従させる `SpriteStudioPartAttachment2D` については [スクリプト制御とイベント駆動 → パーツトラッキング](../workflow/usage_scripting.md) を参照してください。
+指定したパーツにノードを追従させる `SpriteStudioPartAttachment2D` については [スクリプト制御とイベント駆動 → パーツトラッキング](../workflow/usage_scripting.md) を、指定したパーツでクリックを受ける `SpriteStudioButton` については [UI ボタン](../workflow/ui_buttons.md) を参照してください。
 
 ## オーサリング時のキャンバス
 

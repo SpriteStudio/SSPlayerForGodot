@@ -33,6 +33,7 @@ nav:
       - アセットのインポートとエディタ連携: workflow/usage_asset_pipeline.md
       - スクリプト制御とイベント: workflow/usage_scripting.md
       - モーションブレンド: workflow/motion_blending.md
+      - UI ボタン: workflow/ui_buttons.md
       - サウンド再生: workflow/audio.md
       - AnimationPlayer 連携: workflow/animation_player.md
       - プロジェクトのエクスポート: workflow/export.md

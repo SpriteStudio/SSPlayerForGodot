@@ -27,26 +27,14 @@ waits on the runtime is under *Needs SDK* and tracked in the
 ## UI integration
 
 - [ ] **`SpriteStudioPlayerUI` (`Control`)** — `SpriteStudioPlayer2D` is a `Node2D`, so under a `Control` it draws but
-  is invisible to `Container` layout, anchors and offsets, `_gui_input`, focus traversal and `theme`; the same
-  `SsInternalPlayer` behind a `Control` closes that gap. The check is a demo screen that puts a player inside a
-  `VBoxContainer`, resizes with the window, receives `gui_input` on its own artwork, and changes animation as a
-  `Button` is hovered and pressed. Being a class of its own, it costs `SpriteStudioPlayer2D` users nothing; whether
-  it is this node or a `BaseButton`-derived add-on is still open. Hit testing, UI states and reduced motion follow the
-  SDK porting guide's [UI integration page](https://github.com/cri-middleware/SpriteStudio-SDK/blob/HEAD/libs/ssruntime/docs/50_features/80_ui_integration.md).
-  - [ ] **Sizing and fit** — `_get_minimum_size()` returns the authored canvas (already reported by
-    `get_canvas_size()` / `get_canvas_rect()`) and the draw fits the animation into the node's rect, exposed as
-    `stretch_mode` / `expand_mode` as `TextureRect` does over the family's `fit` (`contain` / `cover` / `none`) +
-    `align`; the names, defaults and arithmetic are the SDK porting guide's `50_features/70_placement.md`.
-  - [ ] **Per-part hit testing** — `hit_test_part(point, parts) -> int` and a `_has_point()` override on the `Control`
-    that answers from the parts the scene names (the whole rect when it names none), so an irregular button stops
-    eating clicks around its artwork and mouse filtering lets what is behind through.
-  - [ ] **UI state binding** — map `normal` / `hover` / `pressed` / `disabled` / `focused` to label sections, read
-    from `BaseButton.get_draw_mode()` when drawing (`BaseButton` has no hover or disabled signal), as properties on the
-    node rather than a second node. With `toggle_mode` on, `get_draw_mode()` reports a toggle that is on as
-    `DRAW_PRESSED` / `DRAW_HOVER_PRESSED`, so read the guide's selected state from `button_pressed` instead and play
-    the `selected_` labels.
-  - [ ] **Reduced motion** — a `reduced_motion` property the game sets, holding each state's first frame and playing a
-    `reduced_motion` label in place of `normal`.
+  is invisible to `Container` layout, anchors and offsets, `_gui_input`, focus traversal and `theme`.
+  `SpriteStudioButton` closes that gap for a button; artwork that is not one — a portrait in a dialog box, a panel —
+  needs the same `SsInternalPlayer` behind a `Control` of its own. The check is a demo screen that puts a player inside
+  a `VBoxContainer`, resizes with the window and receives `gui_input` on its own artwork. Being a class of its own, it
+  costs `SpriteStudioPlayer2D` users nothing.
+  - [ ] **Sizing** — `_get_minimum_size()` returns the authored canvas (already reported by `get_canvas_size()`), and
+    the draw fits the animation into the node's rect with `SpriteStudioButton`'s `stretch_mode` /
+    `alignment_horizontal` / `alignment_vertical`.
   - [ ] **Nines and Text parts** — the two part kinds authored for UI; neither draws today. Nines is a draw path and
     nothing more, because the runtime hands over finished vertices (`get_nines_*`); Text arrives as a batch with no
     geometry plus the authored string, to draw through Godot's `Font` / `TextServer` with the string substitutable at

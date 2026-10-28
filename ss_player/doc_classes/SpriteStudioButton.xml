@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="SpriteStudioButton" inherits="BaseButton" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+	<brief_description>
+		A button drawn by a SpriteStudio animation, which plays a section for each state the button is in.
+	</brief_description>
+	<description>
+		Place a [SpriteStudioPlayer2D] as a child of this node, as a [CollisionShape2D] is placed under its body. The player keeps its own properties and its preview in the editor; the button fits its canvas into the button's rectangle ([member stretch_mode]) and, while the game runs, plays on it the section of the state the button is in. The first [SpriteStudioPlayer2D] child is the one used.
+		The states are [code]normal[/code], [code]hover[/code], [code]pressed[/code], [code]disabled[/code] and [code]focused[/code]. When several hold at once the first of [code]disabled[/code], [code]pressed[/code], [code]hover[/code], [code]focused[/code] wins, and [code]normal[/code] when none does. Focus counts only where [Button] would show it. With [member BaseButton.toggle_mode] on, a toggle that is on is [i]selected[/i]: a sixth state it is not, but every state then looks for a [code]selected_[/code] label first ([code]selected_normal[/code], [code]selected_hover[/code], ...).
+		Each state plays from the label of the same name, in the animation the player has selected, up to the frame before the next label of any name, and loops. An animation with no label for a state falls back: [code]hover[/code], [code]focused[/code] and [code]disabled[/code] to [code]normal[/code], [code]pressed[/code] to [code]hover[/code] and then [code]normal[/code], and [code]normal[/code] to the whole animation. A selected button tries the [code]selected_[/code] labels of that chain before the plain ones, except that [code]selected_pressed[/code] falls back to [code]pressed[/code] first. [member state_clips] replaces a label with a section of your choosing.
+		A state change plays the new section from its first frame at once. The button holds the player's playback - animation, section, loop count, play and stop - so do not drive the same player from a script; selecting another animation on it in a script makes that the animation the states are read from.
+		By default the whole rectangle takes the pointer, as any [Control]. [member hit_parts] and [member hit_on_artwork] narrow it to the artwork, so an irregular button stops taking clicks around its art and what is behind it gets them. Keyboard, gamepad and screen-reader activation are not narrowed.
+		The animation is decorative to a screen reader: give the button its name with [member Control.accessibility_name].
+		[b]Note:[/b] in the editor the player shows what its own properties say; the states play only while the game runs.
+	</description>
+	<tutorials>
+	</tutorials>
+	<members>
+		<member name="alignment_horizontal" type="int" setter="set_alignment_horizontal" getter="get_alignment_horizontal" enum="SpriteStudioButton.AlignmentMode" default="1">
+			Where the canvas sits across the rectangle when the two do not share a shape: against the left edge, centered, or against the right edge. Ignored with [constant STRETCH_KEEP].
+		</member>
+		<member name="alignment_vertical" type="int" setter="set_alignment_vertical" getter="get_alignment_vertical" enum="SpriteStudioButton.AlignmentMode" default="1">
+			Where the canvas sits down the rectangle when the two do not share a shape: against the top edge, centered, or against the bottom edge. Ignored with [constant STRETCH_KEEP].
+		</member>
+		<member name="hit_on_artwork" type="bool" setter="set_hit_on_artwork" getter="is_hit_on_artwork" default="false">
+			If [code]true[/code] and [member hit_parts] is empty, the pointer is taken only on the outline of a part the player draws, as [method SpriteStudioPlayer2D.hit_test_part] answers, rather than anywhere in the rectangle.
+		</member>
+		<member name="hit_parts" type="PackedStringArray" setter="set_hit_parts" getter="get_hit_parts" default="PackedStringArray()">
+			The parts that take the pointer: a point counts when it is on the outline of one of them, as [method SpriteStudioPlayer2D.hit_test_part] answers. Empty, the whole rectangle does, or every part with [member hit_on_artwork].
+			With [member Control.clip_contents] on, only the part of an outline inside the rectangle counts, since nothing outside it is drawn. Without it, artwork that overhangs the rectangle takes the pointer too.
+		</member>
+		<member name="reduced_motion" type="bool" setter="set_reduced_motion" getter="is_reduced_motion" default="false">
+			If [code]true[/code], each state shows the first frame of its section and holds it, stopped, so the player fires no events. [code]normal[/code], and a state that falls back to it, plays the section of a [code]reduced_motion[/code] label instead when the animation has one, so a calm loop can stand in for the usual one; a section from a [code]selected_[/code] label is held, so a toggle that is on still looks on.
+			The button does not read the system setting. To follow it where Godot reports one, set this from [method DisplayServer.accessibility_should_reduce_animation].
+		</member>
+		<member name="state_clips" type="Dictionary" setter="set_state_clips" getter="get_state_clips" default="{}">
+			Replacements for the labels named after the states. Each key is a state, with or without the [code]selected_[/code] prefix, and each value a [Dictionary] with an [code]animation[/code], a [code]label[/code] or both: with only [code]animation[/code], the state plays the whole of it; with only [code]label[/code], the section from that label in the animation the states are read from; with both, that label's section in that animation.
+			[codeblock]
+			$Button.state_clips = {
+			    "normal": {"animation": "wait1"},
+			    "hover": {"animation": "walk"},
+			    "pressed": {"label": "push"},
+			}
+			[/codeblock]
+			A replacement also serves the states that fall back to it: with one for [code]hover[/code], a [code]pressed[/code] with no label plays it too. One that names an animation or a label the [SSABResource] does not have is reported once in the Output panel, and the state plays as if it had none. A key that is not a state, or a value that names nothing, is listed in the node's configuration warnings.
+		</member>
+		<member name="stretch_mode" type="int" setter="set_stretch_mode" getter="get_stretch_mode" enum="SpriteStudioButton.StretchMode" default="0">
+			How the player's canvas is fitted into the button's rectangle. The canvas is that of the animation the states are read from, so a [member state_clips] entry that plays an animation with another canvas does not change the fit. The button sets the player's [member Node2D.position] and [member Node2D.scale]; move the artwork inside the canvas with [member SpriteStudioPlayer2D.offset] instead.
+		</member>
+	</members>
+	<constants>
+		<constant name="STRETCH_FIT" value="0" enum="StretchMode">
+			The whole canvas fits inside the rectangle, at the largest scale that keeps its aspect.
+		</constant>
+		<constant name="STRETCH_COVER" value="1" enum="StretchMode">
+			The canvas covers the whole rectangle, at the smallest scale that keeps its aspect; what overhangs is drawn unless [member Control.clip_contents] is on.
+		</constant>
+		<constant name="STRETCH_KEEP" value="2" enum="StretchMode">
+			The canvas keeps its authored size, with the player's origin at the rectangle's center.
+		</constant>
+		<constant name="ALIGNMENT_BEGIN" value="0" enum="AlignmentMode">
+			Against the left or top edge.
+		</constant>
+		<constant name="ALIGNMENT_CENTER" value="1" enum="AlignmentMode">
+			Centered.
+		</constant>
+		<constant name="ALIGNMENT_END" value="2" enum="AlignmentMode">
+			Against the right or bottom edge.
+		</constant>
+	</constants>
+</class>
