@@ -159,6 +159,15 @@ public:
     int getFrameRate() const;
 
     bool setAnimationSection( int p_start, int p_end );
+    // The section from p_start_label's frame plus p_start_offset to
+    // p_end_label's plus p_end_offset, in the current animation -- the rule an
+    // Instance part's start and end labels follow. Unlike an Instance part, a
+    // label the animation does not have is refused rather than read as its edge.
+    bool set_animation_section_by_label( const String& p_start_label, const String& p_end_label,
+                                         int p_start_offset = 0, int p_end_offset = 0 );
+    // The labels of p_animation (the current one when empty) in frame order, as
+    // { "name", "frame" } dictionaries. Empty for an animation the SSAB lacks.
+    Array get_label_table( const String& p_animation = String() ) const;
     // Single-endpoint setters backing the `animation_section_start` /
     // `animation_section_end` properties; each keeps the other endpoint.
     void setAnimationSectionStart( int p_start );
@@ -219,6 +228,14 @@ public:
     bool is_part_skinned_mesh(const String& part_name) const;
     // All part names in the current binary (for the attachment's dropdown).
     PackedStringArray get_part_names() const;
+    // The part's outline on the current frame in this node's local space, flip
+    // and offset included, as top-left, top-right, bottom-right, bottom-left.
+    // Empty when the part is unknown, hidden or draws nothing of its own.
+    PackedVector2Array get_part_quad(const String& part_name) const;
+    // The index of the front-most part, among p_parts (every part when empty),
+    // whose outline holds p_point (local space); -1 when none does. A name the
+    // SSAB does not have is skipped.
+    int hit_test_part(const Vector2& p_point, const PackedStringArray& p_parts = PackedStringArray()) const;
 
     // ---- Authored canvas --------------------------------------------------
     // The current animation's authored canvas — see SSABResource for what that
@@ -231,6 +248,10 @@ public:
     // re-reading it on `animation_changed`, because the canvas is authored per
     // animation and a pack's animations do not all share one.
     Rect2 get_canvas_rect() const;
+    // get_canvas_rect for p_animation rather than the current one. Not bound:
+    // SpriteStudioButton fits the animation its states are read from, which
+    // stays put while a state plays another.
+    Rect2 get_canvas_rect_of(const String& p_animation) const;
 
     // ---- Override Layer (Phase 2): per-part runtime overrides -------------
     // Overrides win over both keyframes and blend for the named part. Return
@@ -345,6 +366,12 @@ private:
     bool _refused(bool p_ok, const String& p_call, const String& p_why = String());
     String _no_part(int p_index) const;
     String _no_animation(const String& p_name) const;
+    // What the drawn box depends on -- the SSAB, the animation, flip, offset --
+    // changed, which CanvasItem says with `item_rect_changed`, as Sprite2D does.
+    void _drawn_rect_changed();
+    // hit_test_part's resolved names, kept so a pointer moving over a button
+    // does not allocate.
+    mutable LocalVector<int> _hit_targets;
     // On, so a node dropped into a scene animates when the scene runs. A player
     // sitting on its first frame reads as broken, and there is no code to call
     // `play()` for a node that was placed rather than constructed -- which is

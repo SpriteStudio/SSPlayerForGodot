@@ -29,6 +29,11 @@ converted binaries (`.ssab`) instead of parsing `.sspj` at runtime. See the
   color variants. Cell map / cell names are enumerable from the player and the resource.
 - **`SpriteStudioPartAttachment2D` node**: mirrors one part's pose onto a `Node2D` so Godot
   content can be pinned to a part. Modeled on `RemoteTransform2D`.
+- **`SpriteStudioButton` node**: a `BaseButton` drawn by the `SpriteStudioPlayer2D` placed under
+  it. It fits the animation's canvas into the button, plays the label section of the state it is
+  in (`normal` / `hover` / `pressed` / `disabled` / `focused`, with `selected_` labels for a toggle
+  that is on, and `state_clips` to play other sections), can take the pointer only on the parts it
+  names, and holds each state's first frame under `reduced_motion`.
 - **Signals**: timeline `user_data` and `signal_emitted` events, audio events, animation
   lifecycle (`animation_started` / `_changed` / `_finished` / `_looped`), and `frame_updated`.
   Every timeline event carries where it came from — `part_index`, `part_name` and `frame_no` —
@@ -41,6 +46,10 @@ converted binaries (`.ssab`) instead of parsing `.sspj` at runtime. See the
 - **Authored canvas queries**: `get_canvas_size()` and `get_canvas_rect()` report the box the
   animation was composed in, placed against the node's origin by its pivot. Hand the rect to a
   `VisibleOnScreenEnabler2D` to stop evaluating a player that is off screen.
+- **Label sections and part outlines**: `set_animation_section_by_label()` sets the playback
+  section between two labels, with offsets, and `get_label_table()` lists an animation's labels in
+  frame order. `get_part_quad()` reports the outline a part is drawn with, and `hit_test_part()`
+  the front-most part under a point.
 - **Manual playback**: `ANIMATION_PROCESS_MANUAL` plus `advance(delta)`, for custom pause groups,
   a time scale of your own, or deterministic stepping.
 - **Audio playback**: audio parts play through Godot with no setup, in the editor preview as

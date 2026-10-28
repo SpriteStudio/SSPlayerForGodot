@@ -103,6 +103,12 @@ inline void ss_free_dynamic_mesh(RenderingServer* p_rs, SsDynamicMesh& p_mesh) {
     p_mesh = SsDynamicMesh();
 }
 
+// A label of one animation: its name and the frame it marks.
+struct SsLabel {
+    String name;
+    int frame = 0;
+};
+
 // Receiver for animation events that need to bubble up to engine-level
 // signals (GDScript signals, Unity events, etc.). The host (Node2D wrapper,
 // editor preview, etc.) implements this. SsInternalPlayer never assumes a
@@ -296,6 +302,28 @@ public:
     // of range). Used to populate the editor part-name dropdown.
     int get_part_count() const;
     String get_part_name(int p_part_index) const;
+    // The outline the part is drawn with on the frame last drawn, in the root
+    // canvas item's space, as top-left, top-right, bottom-right, bottom-left. A
+    // part with a cell is its drawn corners, skew and vertex deform included; a
+    // Mesh part is the box around its vertices, which the runtime hands over in
+    // world space and a skinned mesh's own transform does not describe; a part
+    // with a size and no cell (a Shape) is that size around its pivot. False
+    // for a part that is unknown, hidden or has no size (Null, bone, Instance,
+    // Effect), and when no frame is drawn.
+    bool try_get_part_quad(int p_part_index, Vector2 r_quad[4]) const;
+    // The front-most part whose outline holds p_point (root canvas item space),
+    // among the p_target_count indices at p_targets, or every part when
+    // p_targets is null; -1 when none does.
+    int hit_test_part(const Vector2& p_point, const int* p_targets, int p_target_count) const;
+
+    // The labels of p_animation in frame order -- the pack keeps them in name
+    // hash order, which says nothing about which label comes next.
+    static void get_label_table(const ss::format::AnimationData* p_animation, LocalVector<SsLabel>& r_labels);
+    // The frame p_label marks in p_labels (p_animation's table). `_start` and
+    // `_end` are the animation's own first and last frame, as in SpriteStudio,
+    // unless a real label has that name. False when there is no such label.
+    static bool find_label_frame(const ss::format::AnimationData* p_animation, const LocalVector<SsLabel>& p_labels,
+                                 const String& p_label, int& r_frame);
 
     // ---- Override Layer (Phase 2): per-part runtime overrides ------------
     // Thin wrappers over the ssruntime override FFI. Each is a no-op returning

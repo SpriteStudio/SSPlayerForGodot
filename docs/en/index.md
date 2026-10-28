@@ -23,6 +23,7 @@ Drag a `.sspj` onto the **SS Importer** dock, then drop the converted `.ssab` in
     - [Asset Import & Editor Integration](workflow/usage_asset_pipeline.md) (start here for the initial `.sspj` import)
     - [Scripting & Events](workflow/usage_scripting.md)
     - [Motion Blending](workflow/motion_blending.md)
+    - [UI Buttons](workflow/ui_buttons.md)
     - [Audio Playback](workflow/audio.md)
     - [AnimationPlayer Integration](workflow/animation_player.md)
     - [Exporting Your Project](workflow/export.md)
@@ -53,6 +54,7 @@ This plugin brings SpriteStudio's full expressive power to Godot Engine.
 *   **Dynamic Customization (CellMap Overrides):** Easily swap textures at runtime to implement character equipment changes or color variations.
 *   **Signals & Events:** Receive "User Data" and "Signals" from your animation timeline directly as Godot Signals, allowing frame-perfect triggers for game logic. Every event says which part fired it.
 *   **Motion Blending:** Lay animations over one another on tracks and cross-fade between them, so a character slides from one motion into the next instead of cutting. See [Motion Blending](workflow/motion_blending.md).
+*   **Animated UI Buttons:** `SpriteStudioButton` makes an animation a Godot button that plays its own section for hover, press, disabled and focus, and can take clicks only on its artwork. See [UI Buttons](workflow/ui_buttons.md).
 *   **Audio That Just Plays:** Audio parts sound through Godot with no setup — in the editor preview too. Adjust the volume, take it over through the `audio` signal, or route every sound to your own audio middleware with a [backend resource](workflow/audio.md).
 *   **Per-Part Effects:** The thirteen SpriteStudio add-on shaders (sepia, outline, HSB, blur, pixelate, wave, noise and more) are reproduced natively — assigned in SpriteStudio, nothing to wire up in Godot.
 *   **Smooth Slow-Motion:** Built-in sub-frame interpolation ensures buttery-smooth playback even on high-refresh-rate displays or during slow-motion effects.

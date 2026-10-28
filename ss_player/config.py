@@ -10,6 +10,7 @@ def get_doc_classes():
     return [
         "SpriteStudioPlayer2D",
         "SpriteStudioPartAttachment2D",
+        "SpriteStudioButton",
         "SpriteStudioAudioBackend",
         "SSABResource",
         "SSQBResource",

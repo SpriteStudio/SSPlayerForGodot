@@ -70,6 +70,8 @@ $DEPLOYMENTS = @(
     "overall|overall_gdextension"
     "Doll|overall"
     "Doll|overall_gdextension"
+    "Ringo|overall"
+    "Ringo|overall_gdextension"
     "Ringo|Ringo"
     "Ringo|Override_Ringo"
     "Ringo|Scripting"

@@ -22,8 +22,9 @@ a playback core with no node of its own, which drives `libssruntime` over its C 
 frame's draw batches and draws them through `RenderingServer` on one root canvas item, with one
 child core per Instance part; masks, effects and the per-part meshes live there. The canvas-item
 shader is assembled from GLSL pieces when a material is made. Sound plays through the player
-unless a `SpriteStudioAudioBackend` takes it over, and `SpriteStudioPartAttachment2D` is the
-user's node that follows a part. `SSABResource` and `SSQBResource` load the converted files; one
+unless a `SpriteStudioAudioBackend` takes it over. `SpriteStudioPartAttachment2D` is the user's
+node that follows a part, and `SpriteStudioButton` a button drawn by the player placed under it.
+`SSABResource` and `SSQBResource` load the converted files; one
 parse of a `.ssab` is shared by every player bound to it. The runtime libraries sit under
 `ss_player/runtime/`, from `download-sdk` or `build-runtime`.
 
@@ -45,8 +46,19 @@ Each reason here spans files; the code it concerns carries the detail in its com
 **The playback core has no node.** The core owns a root canvas item and draws through
 `RenderingServer`, and `SpriteStudioPlayer2D` wraps it. An animation with a hundred parts is one
 node in the scene tree, and nothing in the core depends on the tree: it needs a parent canvas item
-and somewhere to send its events. `SpriteStudioPartAttachment2D` exists because following a part is
-the one place the user needs a node of their own.
+and somewhere to send its events. `SpriteStudioPartAttachment2D` and `SpriteStudioButton` exist
+because following a part and taking the pointer are where the user needs a node of their own.
+
+**The button wraps a player rather than drawing one.** Only the pressed node can narrow where the
+pointer lands: the viewport asks that node's own `has_point`, and a child cannot take back what its
+parent's rect already holds. So the button is the `BaseButton`, and the `SpriteStudioPlayer2D` under
+it keeps everything a player needs from its node — the viewport, the on-screen scale, the texture
+settings, `self_modulate`, sound, signals — and the editor's playback panel, which work only with
+that class. The button reads its state from `get_draw_mode()` when it is drawn, because
+`BaseButton` signals neither hover nor disabled, and listens to the player's `item_rect_changed`,
+which the player sends when what it draws may have moved: an SSAB, an animation, a flip, an
+offset. It drives playback only while the game runs, so a saved scene holds what the inspector
+set.
 
 **Masks are a coverage bitmap, not a stencil.** Godot's canvas has no stencil buffer for a plugin,
 so each frame the mask writers are drawn into an offscreen bitmap, one bit per writer, and each

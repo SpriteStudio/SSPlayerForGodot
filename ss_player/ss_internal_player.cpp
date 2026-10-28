@@ -1943,6 +1943,143 @@ bool SsInternalPlayer::_fill_frame_from_runtime(DrawFrame& f) {
     return true;
 }
 
+bool SsInternalPlayer::try_get_part_quad(int p_part_index, Vector2 r_quad[4]) const {
+    if (runtime_ctx == nullptr || _currentAnimationData == nullptr) return false;
+    if (p_part_index < 0 || (uint32_t)p_part_index >= _parts_by_idx.size()) return false;
+    const ss::runtime::PartState* part = _parts_by_idx[p_part_index];
+    if (!part || part->hide()) return false;
+    const float* wm = nullptr;
+    uintptr_t wm_len = 0;
+    ss_runtime_get_world_matrices(runtime_ctx, &wm, &wm_len);
+    constexpr int FLOATS_PER_MATRIX = 16;
+    if (!wm || (uintptr_t)p_part_index * FLOATS_PER_MATRIX + FLOATS_PER_MATRIX > wm_len) return false;
+    const float* m = wm + p_part_index * FLOATS_PER_MATRIX;
+
+    const uint32_t* mesh_at = nullptr;
+    uintptr_t mesh_at_len = 0;
+    ss_runtime_get_mesh_vertex_offsets(runtime_ctx, &mesh_at, &mesh_at_len);
+    if (mesh_at && (uintptr_t)p_part_index + 1 < mesh_at_len && mesh_at[p_part_index + 1] > mesh_at[p_part_index]) {
+        const float* xs = nullptr;
+        const float* ys = nullptr;
+        uintptr_t xs_len = 0;
+        uintptr_t ys_len = 0;
+        ss_runtime_get_mesh_vertices_x(runtime_ctx, &xs, &xs_len);
+        ss_runtime_get_mesh_vertices_y(runtime_ctx, &ys, &ys_len);
+        const uint32_t end = mesh_at[p_part_index + 1];
+        if (!xs || !ys || end > xs_len || end > ys_len) return false;
+        Vector2 lo(xs[mesh_at[p_part_index]], ys[mesh_at[p_part_index]]);
+        Vector2 hi = lo;
+        for (uint32_t v = mesh_at[p_part_index] + 1; v < end; v++) {
+            lo.x = MIN(lo.x, xs[v]);
+            lo.y = MIN(lo.y, ys[v]);
+            hi.x = MAX(hi.x, xs[v]);
+            hi.y = MAX(hi.y, ys[v]);
+        }
+        r_quad[0] = lo;
+        r_quad[1] = Vector2(hi.x, lo.y);
+        r_quad[2] = hi;
+        r_quad[3] = Vector2(lo.x, hi.y);
+        return true;
+    }
+
+    if (part->cell() >= 0) {
+        const float* local = nullptr;
+        uintptr_t local_len = 0;
+        ss_runtime_get_local_vertices(runtime_ctx, &local, &local_len);
+        constexpr int FLOATS_PER_PART = 10;
+        if (!local || (uintptr_t)p_part_index * FLOATS_PER_PART + 8 > local_len) return false;
+        const float* v = local + p_part_index * FLOATS_PER_PART;
+        // The runtime's order is left-top, right-top, left-bottom, right-bottom.
+        r_quad[0] = xform_raw(m, v[0], v[1]);
+        r_quad[1] = xform_raw(m, v[2], v[3]);
+        r_quad[2] = xform_raw(m, v[6], v[7]);
+        r_quad[3] = xform_raw(m, v[4], v[5]);
+        return true;
+    }
+
+    const float width = part->size_x();
+    const float height = part->size_y();
+    if (!(width > 0.0f && height > 0.0f)) return false;
+    const float left = -(0.5f + part->pivot_x()) * width;
+    const float top = -(0.5f + part->pivot_y()) * height;
+    r_quad[0] = xform_raw(m, left, top);
+    r_quad[1] = xform_raw(m, left + width, top);
+    r_quad[2] = xform_raw(m, left + width, top + height);
+    r_quad[3] = xform_raw(m, left, top + height);
+    return true;
+}
+
+namespace {
+// Even-odd, so a quad a vertex deform has folded over itself still answers.
+bool ss_quad_contains(const Vector2 p_quad[4], const Vector2& p_point) {
+    bool inside = false;
+    for (int i = 0, j = 3; i < 4; j = i++) {
+        const Vector2& a = p_quad[i];
+        const Vector2& b = p_quad[j];
+        if ((a.y > p_point.y) != (b.y > p_point.y) &&
+            p_point.x < (b.x - a.x) * (p_point.y - a.y) / (b.y - a.y) + a.x) {
+            inside = !inside;
+        }
+    }
+    return inside;
+}
+} // namespace
+
+int SsInternalPlayer::hit_test_part(const Vector2& p_point, const int* p_targets, int p_target_count) const {
+    // The runtime leaves hidden parts out of the draw order, so the first
+    // outline that holds the point walking it back to front is the one on top.
+    for (int rank = (int)_mask_draw_order.size() - 1; rank >= 0; rank--) {
+        const int index = _mask_draw_order[rank];
+        if (p_targets) {
+            bool wanted = false;
+            for (int i = 0; i < p_target_count && !wanted; i++) {
+                wanted = p_targets[i] == index;
+            }
+            if (!wanted) continue;
+        }
+        Vector2 quad[4];
+        if (try_get_part_quad(index, quad) && ss_quad_contains(quad, p_point)) return index;
+    }
+    return -1;
+}
+
+void SsInternalPlayer::get_label_table(const ss::format::AnimationData* p_animation, LocalVector<SsLabel>& r_labels) {
+    r_labels.clear();
+    if (!p_animation || !p_animation->labels()) return;
+    auto labels = p_animation->labels();
+    for (uint32_t i = 0; i < labels->size(); i++) {
+        const auto* label = labels->Get(i);
+        if (!label || !label->name()) continue;
+        SsLabel entry;
+        entry.name = String::utf8(label->name()->c_str());
+        entry.frame = label->time();
+        r_labels.push_back(entry);
+    }
+    struct ByFrame {
+        bool operator()(const SsLabel& a, const SsLabel& b) const { return a.frame < b.frame; }
+    };
+    r_labels.sort_custom<ByFrame>();
+}
+
+bool SsInternalPlayer::find_label_frame(const ss::format::AnimationData* p_animation, const LocalVector<SsLabel>& p_labels,
+                                        const String& p_label, int& r_frame) {
+    for (uint32_t i = 0; i < p_labels.size(); i++) {
+        if (p_labels[i].name == p_label) {
+            r_frame = p_labels[i].frame;
+            return true;
+        }
+    }
+    if (p_animation && p_label == "_start") {
+        r_frame = p_animation->start_frame();
+        return true;
+    }
+    if (p_animation && p_label == "_end") {
+        r_frame = p_animation->end_frame();
+        return true;
+    }
+    return false;
+}
+
 bool SsInternalPlayer::_is_pure_mask_part(int p_idx) const {
     if (p_idx < 0 || (uint32_t)p_idx >= _part_pure_mask.size()) return false;
     return _part_pure_mask[p_idx] != 0;

@@ -35,5 +35,6 @@ linux.release.x86_64 = "bin/linux/libSSGodot.linux.template_release.x86_64.so"
 [icons]
 
 SpriteStudioPlayer2D = "res://addons/spritestudio/icons/icon_sprite_studio_player_2d.svg"
+SpriteStudioButton = "res://addons/spritestudio/icons/icon_sprite_studio_button.svg"
 SSABResource = "res://addons/spritestudio/icons/icon_ssab_resource.svg"
 SSQBResource = "res://addons/spritestudio/icons/icon_ssqb_resource.svg"
