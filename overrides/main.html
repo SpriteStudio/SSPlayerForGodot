@@ -100,7 +100,7 @@
   pages would resolve to /ja/ja/.
 
   Jinja cannot replace one line of a block, so this is the theme's `site_meta` block copied
-  from Zensical 0.0.70 base.html with only the alternate links changed. Re-copy it when
+  from Zensical 0.0.74 base.html with only the alternate links changed. Re-copy it when
   bumping Zensical if the stock block has moved.
 
   Each link names this same page in that locale, as an absolute URL - search engines want
@@ -113,9 +113,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   {% if page.meta and page.meta.description %}
-    <meta name="description" content="{{ page.meta.description }}">
+    <meta name="description" content="{{ page.meta.description | e }}">
   {% elif config.site_description %}
-    <meta name="description" content="{{ config.site_description }}">
+    <meta name="description" content="{{ config.site_description | e }}">
   {% endif %}
   {% if page.meta and page.meta.author %}
     <meta name="author" content="{{ page.meta.author }}">
