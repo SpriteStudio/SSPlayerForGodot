@@ -22,7 +22,7 @@ Drag and drop the generated `.ssab` file into the 2D viewport to place a `Sprite
 > <video autoplay loop muted playsinline width="100%">
 >   <source src="../assets/1-sspj_import.webm" type="video/webm">
 > </video>
-> <img src="../assets/1-sspj_import.webp" width="100%" style="display: none;">
+> <img src="../assets/1-sspj_import.webp" width="100%" style="display: none;" loading="lazy">
 
 > [!TIP]
 > If you do not have a `.sspj` yet and just want to try this out, the [official SpriteStudio sample data](https://www.webtech.co.jp/help/ja/spritestudio7/download/sample/) works as-is (that page is only available in Japanese; the downloads themselves are language-neutral). [Ringo](https://www.webtech.co.jp/help/ja/spritestudio7/download/sample/#ringo) is a good character sample, and [Particle](https://www.webtech.co.jp/help/ja/spritestudio7/download/sample/#Perticle_sample) is a good one if you want effects. Drop the downloaded `.sspj` onto the "SS Importer" dock exactly as described above.
@@ -60,7 +60,7 @@ With just the following steps, your changes will instantly reflect in the game (
 > <video autoplay loop muted playsinline width="100%">
 >   <source src="../assets/2-fast_iteration_inspector.webm" type="video/webm">
 > </video>
-> <img src="../assets/2-fast_iteration_inspector.webp" width="100%" style="display: none;">
+> <img src="../assets/2-fast_iteration_inspector.webp" width="100%" style="display: none;" loading="lazy">
 
 > [!TIP]
 > What each file in the output folder does, how they depend on each other, which of them you have to re-ship after each kind of edit, how to choose an export mode, and how to ship updates as a `.pck` are collected in [Generated Assets and Packs](generated_assets.md).
