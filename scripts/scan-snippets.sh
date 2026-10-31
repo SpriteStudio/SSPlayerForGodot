@@ -4,7 +4,7 @@
 # and print every match. Only their fingerprints are sent, to SCANOSS's free
 # service. It limits calls per address, and GitHub's runners share addresses it
 # has often limited already, so this runs on a maintainer's machine rather than
-# in provenance.yml. RELEASING.md runs it before a release.
+# in provenance.yml.
 #
 #   scripts/scan-snippets.sh            # -> qa/scanoss-<commit>.json
 #
